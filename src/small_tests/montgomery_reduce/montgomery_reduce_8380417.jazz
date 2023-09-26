@@ -1,0 +1,48 @@
+
+/*
+	rsb	r2, r0, r0, lsl #3
+	mov	r3, r0
+	       push	{r4}
+	add	r2, r0, r2, lsl #10
+	ldr	r4, .L4
+	mov	r0, r1
+	add	r2, r3, r2, lsl #13
+	smlal	r3, r0, r2, r4 
+	        pop	{r4}
+	bx	lr
+*/
+
+u32 MINUS_Q = -8380417;
+
+inline fn __montgomery_reduce_8380417(
+  reg u32 a_low a_high
+) -> reg u32
+{
+  reg u32 a_low_x7 a_low_x7169 a_low_x58728449;
+  reg u32 minus_q;
+  reg u32 res;
+
+	a_low_x7 = #RSB(a_low, (a_low << 3));
+	a_low_x7169 = a_low + (a_low_x7 << 10);
+
+  minus_q = MINUS_Q;
+
+  a_low_x58728449 = a_low + (a_low_x7169 << 13);
+
+	// (a_low_x58728449 * minus_q) + (a_low + a_high * 2**32); 
+  _, res = #SMLAL(a_low, a_high, a_low_x58728449, minus_q);
+
+  res = res;
+  return res;
+}
+
+
+export fn montgomery_reduce_8380417(reg u32 al ah) -> reg u32
+{
+  reg u32 r;
+
+  r = __montgomery_reduce_8380417(al, ah);
+
+  return r;
+}
+
