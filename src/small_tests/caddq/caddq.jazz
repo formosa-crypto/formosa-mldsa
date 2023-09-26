@@ -1,0 +1,61 @@
+
+/*
+int32_t caddq(int32_t a) {
+    a += (a >> 31) & Q;
+    return a;
+}
+*/
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_caddq
+*
+* Description: Add Q if input coefficient is negative.
+*
+* Arguments:   - int32_t: finite field element a
+*
+* Returns r.
+**************************************************/
+inline fn __caddq_v0(reg u32 a) -> reg u32
+{
+  reg u32 q one res;
+
+  one = 1;
+  q = ((1 << 11) - 1);
+  q = one + (q << 12);
+
+  res = q & (a >> 31);
+  res += a;
+
+  return res;
+}
+
+/*
+	ldr	r3, .L3
+	and	r3, r3, r0, asr #31
+	add	r0, r0, r3
+*/
+
+u32 Q = 8380417;
+
+inline fn __caddq_v1(reg u32 a) -> reg u32
+{
+  reg u32 q res;
+
+  q = Q;
+  res = q & (a >> 31);
+  res += a;
+
+  return res;
+}
+
+
+export fn caddq(reg u32 a) -> reg u32
+{
+  reg u32 r;
+
+  r = __caddq_v0(a); // TODO: test which one is faster.
+
+  r = r;
+  return r;
+}
+

@@ -22,7 +22,7 @@ int32_t montgomery_reduce(int64_t a) {
 }
 */
 
-u32 MINUS_Q = -8380417;
+u32 MINUS_Q = -8380417; // this should be -Q
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce
