@@ -57,7 +57,7 @@ inline fn __montgomery_reduce_8380417(
   return res;
 }
 
-export fn montgomery_reduce_8380417(reg u32 al ah) -> reg u32
+export fn montgomery_reduce_8380417_jazz(reg u32 al ah) -> reg u32
 {
   reg u32 r;
 

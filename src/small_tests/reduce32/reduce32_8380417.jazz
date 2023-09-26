@@ -48,7 +48,7 @@ inline fn __reduce32_8380417(reg u32 a) -> reg u32
   return res;
 }
 
-export fn reduce32_8380417(reg u32 a) -> reg u32
+export fn reduce32_8380417_jazz(reg u32 a) -> reg u32
 {
   reg u32 r;
 

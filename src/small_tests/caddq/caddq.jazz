@@ -49,7 +49,7 @@ inline fn __caddq_v1(reg u32 a) -> reg u32
 }
 
 
-export fn caddq(reg u32 a) -> reg u32
+export fn caddq_jazz(reg u32 a) -> reg u32
 {
   reg u32 r;
 
