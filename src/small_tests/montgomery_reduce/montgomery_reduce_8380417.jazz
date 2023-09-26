@@ -12,7 +12,28 @@
 	bx	lr
 */
 
+/*
+int32_t montgomery_reduce(int64_t a) {
+    int32_t t;
+
+    t = (int32_t)((uint64_t)a * (uint64_t)QINV);
+    t = (a - (int64_t)t * Q) >> 32;
+    return t;
+}
+*/
+
 u32 MINUS_Q = -8380417;
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce
+*
+* Description: For finite field element a with -2^{31}Q <= a <= Q*2^31,
+*              compute r \equiv a*2^{-32} (mod Q) such that -Q < r < Q.
+*
+* Arguments:   - int64_t: finite field element a
+*
+* Returns r.
+**************************************************/
 
 inline fn __montgomery_reduce_8380417(
   reg u32 a_low a_high
@@ -35,7 +56,6 @@ inline fn __montgomery_reduce_8380417(
   res = res;
   return res;
 }
-
 
 export fn montgomery_reduce_8380417(reg u32 al ah) -> reg u32
 {
