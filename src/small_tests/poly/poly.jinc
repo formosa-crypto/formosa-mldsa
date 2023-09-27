@@ -3,6 +3,7 @@
 
 from Dilithium require "reduce.jinc"
 from Dilithium require "rounding.jinc"
+from Dilithium require "ntt.jinc"
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_reduce
@@ -216,11 +217,60 @@ inline __poly_decompose(reg ptr u32[N] a1 a0, const reg ptr u32[N] a) -> reg ptr
   return a1, a0;
 }
 
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_ntt
+*
+* Description: Inplace forward NTT. Coefficients can grow by
+*              8*Q in absolute value.
+*
+* Arguments:   - poly *a: pointer to input/output polynomial
+**************************************************/
+
+inline fn __poly_ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
+
+    a = __ntt(a);
+    return a;
+}
+
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery
+*
+* Description: Pointwise multiplication of polynomials in NTT domain
+*              representation and multiplication of resulting polynomial
+*              by 2^{-32}.
+*
+* Arguments:   - poly *c: pointer to output polynomial
+*              - const poly *a: pointer to first input polynomial
+*              - const poly *b: pointer to second input polynomial
+**************************************************/
+inline fn __poly_pointwise_montgomery(reg ptr u32[N] c, const reg ptr u32[N] a, const reg ptr u32[N]b) ->
+       reg ptr u32[N] 
+{
+
+  reg u32 i coeff_c coeff_a coeff_b;
+
+  i = 0;
+  while(i < N)
+  {
+    /* c->coeffs[i] = PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce((int64_t)a->coeffs[i] * b->coeffs[i]); */
+    coeff_a = a[(int) i];
+    coeff_b = b[(int) i];
+    aux_hi, aux_lo = #SMULL(coeff_a, coeff_b);
+    coeff_c = __montgomery_reduce_8380417(aux_lo, aux_hi);
+    c[(int) i] = coeff_c;
+
+    i += 1;
+  }
+
+  return r;
+}
+
 /*
 // TODO list
-void PQCLEAN_DILITHIUM5_CLEAN_poly_ntt(poly *a) {
+
 void PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont(poly *a) {
-void PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery(poly *c, const poly *a, const poly *b) {
+
 
 unsigned int PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint(poly *h, const poly *a0, const poly *a1) {
 void PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint(poly *b, const poly *a, const poly *h) {
