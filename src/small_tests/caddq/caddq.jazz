@@ -23,7 +23,7 @@ inline fn __caddq_v0(reg u32 a) -> reg u32
   q = ((1 << 11) - 1);
   q = one + (q << 12);
 
-  res = q & (a >> 31);
+  res = q & (a >>s 31);
   res += a;
 
   return res;
@@ -42,7 +42,7 @@ inline fn __caddq_v1(reg u32 a) -> reg u32
   reg u32 q res;
 
   q = Q;
-  res = q & (a >> 31);
+  res = q & (a >>s 31);
   res += a;
 
   return res;
