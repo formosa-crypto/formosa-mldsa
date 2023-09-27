@@ -266,6 +266,95 @@ inline fn __poly_pointwise_montgomery(reg ptr u32[N] c, const reg ptr u32[N] a, 
   return r;
 }
 
+/* FIXME move this in param */
+param int OMEGA = 75;
+param int K = 8;
+param int POLYETA_PACKEDBYTES = OMEGA + K;
+param int ETA = 2;
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_polyeta_pack
+*
+* Description: Bit-pack polynomial with coefficients in [-ETA,ETA].
+*
+* Arguments:   - uint8_t *r: pointer to output byte array with at least
+*                            POLYETA_PACKEDBYTES bytes
+*              - const poly *a: pointer to input polynomial
+**************************************************/
+
+inline fn __polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, const reg ptr u32[N] a) 
+  -> reg ptr u8[POLYETA_PACKEDBYTES]
+{
+  reg u32 i i_0 i_1 i_2 aux ;
+  inline int j;
+  reg u8[8] t;
+  
+  i = 0;
+  while {
+    i8j = i << 3;
+
+    /*  
+     t[0] = (uint8_t) (ETA - a->coeffs[8 * i + 0]);
+     t[1] = (uint8_t) (ETA - a->coeffs[8 * i + 1]);
+     t[2] = (uint8_t) (ETA - a->coeffs[8 * i + 2]);
+     r[3 * i + 0]  = (t[0] >> 0) | (t[1] << 3) | (t[2] << 6);
+    */
+
+    for j = 0 to 3 {
+      // FIXME do a function for this 
+      coef = a[i8j]; 
+      t[j] = #RSB(coef, ETA); // ETA - coef
+      i8j += 1;
+    }
+    aux  = t[0] >> 0;  // unsign shift 
+    aux |= t[1] << 3;
+    aux |= t[2] << 6;
+    
+    i_0 = i + i << 2; // i = 3 * i + 0
+    r[i_0] = aux;  // This perform the cast to an u8
+
+    /* 
+    t[3] = (uint8_t) (ETA - a->coeffs[8 * i + 3]);
+    t[4] = (uint8_t) (ETA - a->coeffs[8 * i + 4]);
+    t[5] = (uint8_t) (ETA - a->coeffs[8 * i + 5]);
+    r[3 * i + 1]  = (t[2] >> 2) | (t[3] << 1) | (t[4] << 4) | (t[5] << 7);
+    */ 
+    
+    for j = 3 to 6 {
+      coef = a[i8j]; 
+      t[j] = #RSB(coef, ETA); // ETA - coef
+      i8j += 1;
+    }     
+ 
+    aux  = t[2] >> 0;  // unsign shift 
+    aux |= t[3] << 1;
+    aux |= t[4] << 4;
+    aux |= t[5] << 7;
+    i_1 = i_0 + 1;         // i = 3 * i + 1;
+    r[i_1] = aux;
+
+    /*
+    t[6] = (uint8_t) (ETA - a->coeffs[8 * i + 6]);
+    t[7] = (uint8_t) (ETA - a->coeffs[8 * i + 7]);
+    r[3 * i + 2]  = (t[5] >> 1) | (t[6] << 2) | (t[7] << 5);
+    */ 
+    for j = 6 to 8 {
+      coef = a[i8j]; 
+      t[j] = #RSB(coef, ETA); // ETA - coef
+      i8j += 1;
+    } 
+    aux  = t[5] >> 1;
+    aux |= t[6] << 2;
+    aux |= t[7] << 5;
+    i_2 = i_0 + 2;         // i = 3 * i + 2;
+    r[i_2] = aux;
+    
+    i += 1;
+  } (i < N / 8)      
+  return r;
+}
+
+
 /*
 // TODO list
 
