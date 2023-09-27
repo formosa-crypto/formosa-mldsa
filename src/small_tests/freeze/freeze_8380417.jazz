@@ -30,7 +30,7 @@ inline fn __freeze(reg u32 a) -> reg u32
 }
 
 
-export fn freeze(reg u32 a) -> reg u32
+export fn freeze_8380417_jazz(reg u32 a) -> reg u32
 {
   reg u32 r;
 
