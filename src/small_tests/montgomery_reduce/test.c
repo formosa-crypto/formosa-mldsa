@@ -1,4 +1,4 @@
-#include <stdint.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -20,7 +20,7 @@ int main () {
     int32_t res_jazz = montgomery_reduce_8380417_jazz(arg);
 
     if (res_c != res_jazz) {
-      printf("%d -> %d != %d\n", arg, res_c, res_jazz);
+      printf("%" PRId64 " -> %" PRId32 " != %" PRId32 "\n", arg, res_c, res_jazz);
       printf("FAIL: montgomery_reduce\n");
       exit(1);
     }
