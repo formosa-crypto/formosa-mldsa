@@ -1,8 +1,15 @@
+JASMIN ?= jasminc
+ARMCC ?= arm-none-linux-gnueabihf-gcc
 
-freeze_8380417.s: freeze_8380417.jazz
-	jasminc -arch=arm-m4 $< -o $@
+all: test
+	./test
+
+%_jazz.s: %.jazz
+	$(JASMIN) -arch=arm-m4 -o $@ $^
+
+test: freeze_8380417_jazz.s
+	$(ARMCC) -static -o $@ test.c freeze.c ../randombytes/notrandombytes.c $^
 
 .PHONY: clean
 clean:
-	rm -f *.s
-
+	rm -f test freeze_8380417_jazz.s
