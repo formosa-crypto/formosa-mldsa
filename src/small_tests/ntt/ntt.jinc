@@ -75,10 +75,8 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
 
   k = 0;
   /* for (len = 128; len > 0; len >>= 1) { */
-  len = 128 * 2;
+  len = 128;
   while {
-    ?{zf}, len = #LSRS(len, 1);
-  } (!zf) {
     start = 0;
     start_len = start + len;
   
@@ -110,7 +108,9 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
       }
       start = j_len;  // start = start + 2 * len
     } 
-  }         
+
+    ?{zf}, len = #LSRS(len, 1);
+  } (!zf)        
   
   return a;
 }
@@ -118,20 +118,19 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
 export fn ntt(reg u32 p) -> reg u32 {
   stack u32[N] a;
   reg u32 aux;
+  inline int i;
 
-  /*inline int i;
   for i = 0 to N {
     aux = (u32)[p + 4 * i];
     a[i] = aux;
-  } */
+  } 
+
   a = __ntt(a);
-  /*
+  
   for i = 0 to N {
     aux = a[i];
     (u32)[p + 4 * i] = aux;
   }
   aux = 0;
-*/
-  aux = a[0];
   return aux;
 }
