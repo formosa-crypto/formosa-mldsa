@@ -65,7 +65,7 @@ inline fn decompose_a0a1(reg u32 a q) -> reg u32, reg u32
   
   /* a1  = (a + 127) >> 7; */
   a1 =  a + 127;
-  a1 >>= 7;
+  a1 >>s= 7;
   
   /* a1  = (a1 * 1025 + (1 << 21)) >> 22;
      a1 &= 15; */
@@ -83,7 +83,7 @@ inline fn decompose_a0a1(reg u32 a q) -> reg u32, reg u32
   /* (Q - 1) / 2 = 1023 * 2^12 */
   aux = 1023;
   aux = #RSB(a0, aux << 12); // (Q - 1) / 2 - *a0
-  aux = q & (aux >> 31);
+  aux = q & (aux >>s 31);
   a0 -= aux;
   
   return a0, a1;
