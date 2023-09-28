@@ -46,6 +46,7 @@ static const int32_t zetas[N] = {
 *
 * Arguments:   - uint32_t p[N]: input/output coefficient array
 **************************************************/
+#ifndef ntt_jazz 
 void PQCLEAN_DILITHIUM5_CLEAN_ntt(int32_t a[N]) {
     unsigned int len, start, j, k;
     int32_t zeta, t;
@@ -62,6 +63,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_ntt(int32_t a[N]) {
         }
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont
@@ -74,6 +76,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_ntt(int32_t a[N]) {
 *
 * Arguments:   - uint32_t p[N]: input/output coefficient array
 **************************************************/
+#ifndef invntt_tomont_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont(int32_t a[N]) {
     unsigned int start, len, j, k;
     int32_t t, zeta;
@@ -96,3 +99,4 @@ void PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont(int32_t a[N]) {
         a[j] = PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce((int64_t)f * a[j]);
     }
 }
+#endif

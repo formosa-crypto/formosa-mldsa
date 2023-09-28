@@ -9,6 +9,13 @@
 #define montgomery_reduce_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce_jazz
 
+#define ntt_jazz
+#define PQCLEAN_DILITHIUM5_CLEAN_ntt PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz
+
+#define invntt_tomont_jazz
+#define PQCLEAN_DILITHIUM5_CLEAN_ntt PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz
+
+
 #endif
 
 #endif

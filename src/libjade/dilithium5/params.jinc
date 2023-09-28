@@ -1,3 +1,34 @@
 
 u32 MINUS_Q = -8380417; // this should be -Q
 
+param int N = 256;
+
+
+/* ********************************************************************** */
+/* Helper functions for the test and export function                      */
+
+inline fn __mem_to_poly (reg u32 p) -> stack u32[N] {
+  stack u32[N] a;
+  reg u32 ai i;
+  i = 0;
+  while (i < N) { 
+    ai = (u32)[p + 4 * i];
+    a[(int) i] = ai;
+    i += 1;
+  } 
+  return a;
+}
+
+inline fn __poly_to_mem (stack u32[N] a, reg u32 p) {
+  reg u32 ai i;
+  i = 0;
+  while (i < N) { 
+    ai = a[(int) i];
+    (u32)[p + 4 * i] = ai;
+    i += 1;
+  } 
+}
+
+
+
+
