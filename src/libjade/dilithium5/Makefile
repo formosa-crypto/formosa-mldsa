@@ -1,9 +1,9 @@
 #-------------------------------------------------------------------------------
 
-CC := arm-linux-gnueabi-gcc
-CFLAGS := -Wall -O3 -march=armv7 -fPIC
+ARMCC ?= arm-linux-gnueabi-gcc
+ARMCFLAGS ?= -Wall -O3 -march=armv7 -fPIC
 #-mcpu=cortex-m4 # not working
-AR := arm-linux-gnueabi-ar
+ARMAR ?= arm-linux-gnueabi-ar
 
 #-------------------------------------------------------------------------------
 # This Makefile can be used with GNU Make or BSD Make
@@ -24,11 +24,13 @@ JASMIN_LIB := library
 
 default: compile
 
+benjamin:
+	$(MAKE) ARMCC=arm-none-eabi-gcc ARMAR=arm-none-eabi-ar default
 
 #-------------------------------------------------------------------------------
 
 $(JASMIN_LIB).o: $(JASMIN_LIB).s
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(ARMCC) $(ARMCFLAGS) -c -o $@ $<
 
 $(ASM_JASMIN_FILES):
 %.s: %.jazz
@@ -46,10 +48,10 @@ $(JASMIN_LIB).jazz:
 compile: $(LIB)
 
 %.o: %.c $(HEADERS)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(ARMCC) $(ARMCFLAGS) -c -o $@ $<
 
 $(LIB): $(OBJECTS)
-	$(AR) -r $@ $(OBJECTS)
+	$(ARMAR) -r $@ $(OBJECTS)
 
 
 #-------------------------------------------------------------------------------
