@@ -1,0 +1,10 @@
+require "reduce.jinc"
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce_jazz(reg u32 al ah) -> reg u32
+{
+  reg u32 r;
+
+  r = __montgomery_reduce_8380417(al, ah);
+
+  return r;
+}
