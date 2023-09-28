@@ -20,12 +20,31 @@ OBJ_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%_jazz.o)
 
 JASMIN_LIB := library
 
+FULL_TESTING ?=
+
+#-------------------------------------------------------------------------------
+#-- TODO, improve, done quick
+
+small-testing:
+	$(MAKE) clean
+	$(MAKE) compile
+
+full-testing:
+	$(MAKE) clean
+	$(MAKE) FULL_TESTING='-DJAZZ' compile
+
 #-------------------------------------------------------------------------------
 
-default: compile
+benjamin: benjamin-small-testing
 
-benjamin:
-	$(MAKE) ARMCC=arm-none-eabi-gcc ARMAR=arm-none-eabi-ar default
+benjamin-small-testing:
+	$(MAKE) clean
+	$(MAKE) ARMCC=arm-none-eabi-gcc ARMAR=arm-none-eabi-ar compile
+
+
+benjamin-full-testing:
+	$(MAKE) clean
+	$(MAKE) ARMCC=arm-none-eabi-gcc ARMAR=arm-none-eabi-ar FULL_TESTING='-DJAZZ' compile
 
 #-------------------------------------------------------------------------------
 
@@ -48,7 +67,7 @@ $(JASMIN_LIB).jazz:
 compile: $(LIB)
 
 %.o: %.c $(HEADERS)
-	$(ARMCC) $(ARMCFLAGS) -c -o $@ $<
+	$(ARMCC) $(ARMCFLAGS) $(FULL_TESTING) -c -o $@ $<
 
 $(LIB): $(OBJECTS)
 	$(ARMAR) -r $@ $(OBJECTS)

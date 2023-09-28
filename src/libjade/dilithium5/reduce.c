@@ -13,7 +13,7 @@
 * Returns r.
 **************************************************/
 
-#if 1
+#ifndef montgomery_reduce_jazz
 int32_t PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce(int64_t a) {
     int32_t t;
 

@@ -8,7 +8,7 @@ test_reduce.out: test_reduce
 	./$<
 
 test_reduce:
-	$(MAKE) -C ../../ default
+	$(MAKE) -C ../../ small-testing
 	$(ARMCC) -o $@ $(ARMCFLAGS) -static test_reduce.c -I../common -L../../ -ldilithium5_clean
 
 clean:
