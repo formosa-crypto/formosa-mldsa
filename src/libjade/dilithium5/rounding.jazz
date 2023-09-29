@@ -1,0 +1,21 @@
+require "rounding.jinc"
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_power2round_jazz(reg u32 pa0, reg u32 a) -> reg u32 
+{
+  reg u32 a0 a1;
+  a0, a1 = __power2round_a0a1(a);
+  (u32)[pa0] = a0;
+  a1 = a1;
+  return a1;
+}
+
+// precondition q = Q
+export fn PQCLEAN_DILITHIUM5_CLEAN_decompose_jazz(reg u32 pa0, reg u32 a) -> reg u32
+{
+  reg u32 a0 a1 q;
+  q = Q;
+  a0, a1 = __decompose_a0a1(a, q);
+  (u32)[pa0] = a0;
+  a1 = a1;
+  return a1;
+}
