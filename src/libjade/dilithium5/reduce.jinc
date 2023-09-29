@@ -17,14 +17,14 @@ inline fn __montgomery_reduce_8380417(reg u32 a_low a_high) -> reg u32
   reg u32 minus_q;
   reg u32 res;
 
-	a_low_x7 = #RSB(a_low, (a_low << 3));
-	a_low_x7169 = a_low + (a_low_x7 << 10);
+  a_low_x7 = #RSB(a_low, (a_low << 3));
+  a_low_x7169 = a_low + (a_low_x7 << 10);
 
   minus_q = MINUS_Q;
 
   a_low_x58728449 = a_low + (a_low_x7169 << 13);
 
-	// (a_low_x58728449 * minus_q) + (a_low + a_high * 2**32); 
+  // (a_low_x58728449 * minus_q) + (a_low + a_high * 2**32); 
   _, res = #SMLAL(a_low, a_high, a_low_x58728449, minus_q);
 
   res = res;
@@ -72,4 +72,55 @@ fn _reduce32_8380417(reg u32 a) -> reg u32
   reg u32 res;
   res = __reduce32_8380417(a);
   return res;
+}
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_caddq
+*
+* Description: Add Q if input coefficient is negative.
+*
+* Arguments:   - int32_t: finite field element a
+*
+* Returns r.
+**************************************************/
+
+inline fn __caddq(reg u32 a) -> reg u32
+{
+  reg u32 q res;
+
+  q = Q;
+  res = q & (a >>s 31);
+  res += a;
+
+  return res;
+}
+
+fn _caddq(reg u32 a) -> reg u32
+{
+  a = __caddq(a);
+  return a;
+}
+
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_freeze
+*
+* Description: For finite field element a, compute standard
+*              representative r = a mod^+ Q.
+*
+* Arguments:   - int32_t: finite field element a
+*
+* Returns r.
+**************************************************/
+inline fn __freeze(reg u32 a) -> reg u32
+{
+  a = __reduce32_8380417(a);
+  a = __caddq(a);
+  return a;
+}
+
+fn _freeze(reg u32 a) -> reg u32
+{
+  a = __freeze(a);
+  return a;
 }

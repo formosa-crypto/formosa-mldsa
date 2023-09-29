@@ -42,6 +42,7 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_reduce32(int32_t a) {
     return t;
 }
 #endif
+
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_caddq
 *
@@ -51,10 +52,12 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_reduce32(int32_t a) {
 *
 * Returns r.
 **************************************************/
+#ifndef caddq_jazz
 int32_t PQCLEAN_DILITHIUM5_CLEAN_caddq(int32_t a) {
     a += (a >> 31) & Q;
     return a;
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_freeze
@@ -66,8 +69,10 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_caddq(int32_t a) {
 *
 * Returns r.
 **************************************************/
+#ifndef freeze_jazz
 int32_t PQCLEAN_DILITHIUM5_CLEAN_freeze(int32_t a) {
     a = PQCLEAN_DILITHIUM5_CLEAN_reduce32(a);
     a = PQCLEAN_DILITHIUM5_CLEAN_caddq(a);
     return a;
 }
+#endif

@@ -1,6 +1,13 @@
 #ifndef JASMIN_FUNCTIONS_IMPLEMENTED_H
 #define JASMIN_FUNCTIONS_IMPLEMENTED_H
 
+
+/*
+#define XXX_jazz
+#define PQCLEAN_DILITHIUM5_CLEAN_XXX PQCLEAN_DILITHIUM5_CLEAN_XXX_jazz
+*/
+
+
 #ifdef JAZZ
 // if JAZZ compilation is defined then the 'full compilation' mode is active,
 // which means that in the libdilithium5_clean.a the C versions of the functions
@@ -13,8 +20,11 @@
 #define reduce32_jazz 
 #define PQCLEAN_DILITHIUM5_CLEAN_reduce32 PQCLEAN_DILITHIUM5_CLEAN_reduce32_jazz
 
-//int32_t PQCLEAN_DILITHIUM5_CLEAN_caddq(int32_t a) {
-//int32_t PQCLEAN_DILITHIUM5_CLEAN_freeze(int32_t a) {
+#define caddq_jazz
+#define PQCLEAN_DILITHIUM5_CLEAN_caddq PQCLEAN_DILITHIUM5_CLEAN_caddq_jazz
+
+#define freeze_jazz
+#define PQCLEAN_DILITHIUM5_CLEAN_freeze PQCLEAN_DILITHIUM5_CLEAN_freeze_jazz
 
 // ntt  
 #define ntt_jazz

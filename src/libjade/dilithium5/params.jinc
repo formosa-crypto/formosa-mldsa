@@ -1,4 +1,4 @@
-
+u32 Q = 8380417;
 u32 MINUS_Q = -8380417; // this should be -Q
 
 param int N = 256;

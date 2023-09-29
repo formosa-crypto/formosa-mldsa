@@ -62,11 +62,66 @@ int test_reduce32()
   return 0;
 }
 
+int32_t PQCLEAN_DILITHIUM5_CLEAN_caddq(int32_t a);
+int32_t PQCLEAN_DILITHIUM5_CLEAN_caddq_jazz(int32_t a);
+
+int test_caddq()
+{
+  int32_t arg;
+
+  for(int t=0; t<TESTS; t++)
+  {
+    // initialize 8 bytes of randomness
+    randombytes((uint8_t*)(&arg), sizeof(int32_t));
+
+    int32_t res_c = PQCLEAN_DILITHIUM5_CLEAN_caddq(arg);
+    int32_t res_jazz = PQCLEAN_DILITHIUM5_CLEAN_caddq_jazz(arg);
+
+    if (res_c != res_jazz) {
+      printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", arg, res_c, res_jazz);
+      printf("FAIL: caddq\n");
+      exit(1);
+    }
+  }
+
+  printf("PASS: caddq\n");
+
+  return 0;
+}
+
+int32_t PQCLEAN_DILITHIUM5_CLEAN_freeze(int32_t a);
+int32_t PQCLEAN_DILITHIUM5_CLEAN_freeze_jazz(int32_t a);
+
+int test_freeze()
+{
+  int32_t arg;
+
+  for(int t=0; t<TESTS; t++)
+  {
+    // initialize 8 bytes of randomness
+    randombytes((uint8_t*)(&arg), sizeof(int32_t));
+
+    int32_t res_c = PQCLEAN_DILITHIUM5_CLEAN_freeze(arg);
+    int32_t res_jazz = PQCLEAN_DILITHIUM5_CLEAN_freeze_jazz(arg);
+
+    if (res_c != res_jazz) {
+      printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", arg, res_c, res_jazz);
+      printf("FAIL: freeze\n");
+      exit(1);
+    }
+  }
+
+  printf("PASS: freeze\n");
+
+  return 0;
+}
 
 int main ()
 {
   test_montgomery_reduce();
   test_reduce32();
+  test_caddq();
+  test_freeze();
   return 0;
 }
 
