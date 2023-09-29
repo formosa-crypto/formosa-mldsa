@@ -1,6 +1,5 @@
-require "../montgomery_reduce/montgomery_reduce_8380417.jazz"
-
-param int N = 256;
+require "params.jinc"
+require "reduce.jinc"
 
 u32[N] ZETAS = {
     0,    25847, -2608894,  -518909,   237124,  -777960,  -876248,   466468,
@@ -64,7 +63,13 @@ void PQCLEAN_DILITHIUM5_CLEAN_ntt(int32_t a[N]) {
 }
 */
 
+inline fn __mul_montgomery_reduce_8380417(reg u32 x, reg u32 y) -> reg u32 {
+  reg u32 aux_hi aux_lo t;
+  aux_hi, aux_lo = #SMULL(x, y);
+  t = __montgomery_reduce_8380417(aux_lo, aux_hi);
+  return t;
 
+}
 
 inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
 
@@ -72,7 +77,7 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
   reg u32 zeta t;
 
   reg ptr u32[N] zetas;  
-  reg u32 start_len j_len zeta aux_hi aux_lo aux aux1;
+  reg u32 start_len j_len zeta aj aj_len;
   reg bool zf;
 
   k = 0;
@@ -80,10 +85,8 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
   len = 128;
   while {
     start = 0;
-    start_len = start + len;
-  
     /* for (start = 0; start < N; start = j + len) */
-    while (start < N) {
+    while {
       /* zeta = zetas[++k]; */
       zetas = ZETAS; // can we move this up ?
       k += 1;
@@ -93,23 +96,22 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
       start_len = start + len;
       j_len = start_len;  
       /* invariant j_len = j + len */
-      while (j < start_len) {
+      while {
         /* t = PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce((int64_t)zeta * a[j + len]); */
-        aux = a[(int) j_len];
-        aux_hi, aux_lo = #SMULL(zeta, aux);
-        t = __montgomery_reduce_8380417(aux_lo, aux_hi);
+        aj_len = a[(int) j_len];
+        t = __mul_montgomery_reduce_8380417(zeta, aj_len);
         /* a[j + len] = a[j] - t; */
-        aux = a[(int) j];
-        aux1 = aux - t;
-        a[(int) j_len] = aux;
+        aj = a[(int) j];
+        aj_len = aj - t;
+        a[(int) j_len] = aj_len;
         /* a[j] = a[j] + t; */
-        aux1 = aux + t;
-        a[(int) j] = aux1;
+        aj = aj + t;
+        a[(int) j] = aj;
         j += 1;
         j_len += 1;
-      }
+      } (j < start_len)
       start = j_len;  // start = start + 2 * len
-    } 
+    } (start < N) 
 
     ?{zf}, len = #LSRS(len, 1);
   } (!zf)        
@@ -117,22 +119,104 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
   return a;
 }
 
-export fn ntt(reg u32 p) -> reg u32 {
-  stack u32[N] a;
-  reg u32 aux;
-  inline int i;
-
-  for i = 0 to N {
-    aux = (u32)[p + 4 * i];
-    a[i] = aux;
-  } 
-
+fn _ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
   a = __ntt(a);
+  return a;
+} 
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont
+*
+* Description: Inverse NTT and multiplication by Montgomery factor 2^32.
+*              In-place. No modular reductions after additions or
+*              subtractions; input coefficients need to be smaller than
+*              Q in absolute value. Output coefficient are smaller than Q in
+*              absolute value.
+*
+* Arguments:   - uint32_t p[N]: input/output coefficient array
+**************************************************/
+/*
+void PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont(int32_t a[N]) {
+    unsigned int start, len, j, k;
+    int32_t t, zeta;
+    const int32_t f = 41978; // mont^2/256
+
+    k = 256;
+    for (len = 1; len < N; len <<= 1) {
+        for (start = 0; start < N; start = j + len) {
+            zeta = -zetas[--k];
+            for (j = start; j < start + len; ++j) {
+                t = a[j];
+                a[j] = t + a[j + len];
+                a[j + len] = t - a[j + len];
+                a[j + len] = PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce((int64_t)zeta * a[j + len]);
+            }
+        }
+    }
+
+    for (j = 0; j < N; ++j) {
+        a[j] = PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce((int64_t)f * a[j]);
+    }
+}
+*/
+
+inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
+
+  reg u32 len start j k;
+  reg u32 zeta t;
+
+  reg ptr u32[N] zetas;  
+  reg u32 start_len j_len zeta aux aj aj_len;
+  reg bool zf;
+
+  k = 256;
+  /* for (len = 1; len < N; len <<= 1) */
+  len = 128;
+  while {
+    /* for (start = 0; start < N; start = j + len) */
+    start = 0;
+    while {
+      /* zeta = -zetas[--k]; */
+      zetas = ZETAS; // can we move this up ?
+      k -= 1;
+      zeta = zetas[(int)k]; zeta = -zeta;
+
+      /* for (j = start; j < start + len; ++j)  */
+      j = start;
+      start_len = start + len;
+      j_len = start_len;  
+      /* invariant j_len = j + len */
+      while {
+        /* t = a[j]; */
+        t = a[(int) j];
+        /* a[j] = t + a[j + len]; */
+        aj_len = a[(int) j_len]; aj = t + aj_len; a[(int) j] = aj;
+        /* a[j + len] = t - a[j + len]; */
+        aj_len = t - aj_len;
+        /* a[j + len] = PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce((int64_t)zeta * a[j + len]); */
+        aj_len = __mul_montgomery_reduce_8380417(zeta, aj_len);
+        a[(int) j_len] = aj_len;
+        j += 1;
+        j_len += 1;
+      } (j < start_len)
+      start = j_len;  // start = start + 2 * len
+    }  (start < N)
+    len <<= 1;
+  } (len < N)        
+
+  reg u32 f; 
+  f = 41978; // mont^2/256
   
-  for i = 0 to N {
-    aux = a[i];
-    (u32)[p + 4 * i] = aux;
-  }
-  aux = 0;
-  return aux;
+  /* for (j = 0; j < N; ++j) */
+  j = 0;
+  while {
+    /*   a[j] = PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce((int64_t)f * a[j]); */
+    aj = a[(int) j];
+    aj = __mul_montgomery_reduce_8380417(f, aj);
+    a[(int) j] = aj;
+  
+    j+=1;
+  } (j < N)
+
+  return a;
 }

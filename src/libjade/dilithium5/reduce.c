@@ -33,6 +33,7 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce(int64_t a) {
 *
 * Returns r.
 **************************************************/
+#ifndef reduce32_jazz
 int32_t PQCLEAN_DILITHIUM5_CLEAN_reduce32(int32_t a) {
     int32_t t;
 
@@ -40,7 +41,7 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_reduce32(int32_t a) {
     t = a - t * Q;
     return t;
 }
-
+#endif
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_caddq
 *

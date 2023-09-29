@@ -6,9 +6,17 @@
 // which means that in the libdilithium5_clean.a the C versions of the functions
 // will not be present
 
+// reduce 
 #define montgomery_reduce_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce_jazz
 
+#define reduce32_jazz 
+#define PQCLEAN_DILITHIUM5_CLEAN_reduce32 PQCLEAN_DILITHIUM5_CLEAN_reduce32_jazz
+
+//int32_t PQCLEAN_DILITHIUM5_CLEAN_caddq(int32_t a) {
+//int32_t PQCLEAN_DILITHIUM5_CLEAN_freeze(int32_t a) {
+
+// ntt  
 #define ntt_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_ntt PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz
 
