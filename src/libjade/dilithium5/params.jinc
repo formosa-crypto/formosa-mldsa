@@ -1,8 +1,11 @@
-u32 Q = 8380417;
-u32 MINUS_Q = -8380417; // this should be -Q
-
 param int N = 256;
+u32 Q = 8380417;
+param int D = 13;
 
+
+
+
+u32 MINUS_Q = -8380417; // this should be -Q
 
 /* ********************************************************************** */
 /* Helper functions for the test and export function                      */

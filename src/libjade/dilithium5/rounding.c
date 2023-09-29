@@ -14,6 +14,7 @@
 *
 * Returns a1.
 **************************************************/
+#ifndef power2round_jazz
 int32_t PQCLEAN_DILITHIUM5_CLEAN_power2round(int32_t *a0, int32_t a)  {
     int32_t a1;
 
@@ -21,7 +22,7 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_power2round(int32_t *a0, int32_t a)  {
     *a0 = a - (a1 << D);
     return a1;
 }
-
+#endif
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_decompose
 *
@@ -36,6 +37,7 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_power2round(int32_t *a0, int32_t a)  {
 *
 * Returns a1.
 **************************************************/
+#ifndef decompose_jazz
 int32_t PQCLEAN_DILITHIUM5_CLEAN_decompose(int32_t *a0, int32_t a) {
     int32_t a1;
 
@@ -47,7 +49,7 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_decompose(int32_t *a0, int32_t a) {
     *a0 -= (((Q - 1) / 2 - *a0) >> 31) & Q;
     return a1;
 }
-
+#endif
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_make_hint
 *
