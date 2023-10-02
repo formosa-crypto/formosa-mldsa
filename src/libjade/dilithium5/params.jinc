@@ -1,11 +1,15 @@
 param int N = 256;
-u32 Q = 8380417;
+param int iQ = 8380417;
+u32 Q = iQ;
+
 param int D = 13;
 
+param int iGAMMA2 = ((iQ-1)/32);
+u32 GAMMA2 = iGAMMA2;
 
 
-
-u32 MINUS_Q = -8380417; // this should be -Q
+u32 MINUS_Q = -iQ; // this should be -Q
+u32 MINUS_GAMMA2 = -iGAMMA2;
 
 /* ********************************************************************** */
 /* Helper functions for the test and export function                      */

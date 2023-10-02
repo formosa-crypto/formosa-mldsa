@@ -9,7 +9,6 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_power2round_jazz(reg u32 pa0, reg u32 a) -> r
   return a1;
 }
 
-// precondition q = Q
 export fn PQCLEAN_DILITHIUM5_CLEAN_decompose_jazz(reg u32 pa0, reg u32 a) -> reg u32
 {
   reg u32 a0 a1 q;
@@ -19,3 +18,12 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_decompose_jazz(reg u32 pa0, reg u32 a) -> reg
   a1 = a1;
   return a1;
 }
+/*
+export fn PQCLEAN_DILITHIUM5_CLEAN_make_hint_jazz(reg u32 a0, reg u32 a1) -> reg u32
+{
+  reg u32 res gamma2;
+  gamma2 = GAMMA2;
+  res = __make_hint(a0, a1, gamma2);
+  return res;
+}
+*/
