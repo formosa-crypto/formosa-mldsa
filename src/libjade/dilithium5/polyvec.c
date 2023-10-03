@@ -14,6 +14,7 @@
 * Arguments:   - polyvecl mat[K]: output matrix
 *              - const uint8_t rho[]: byte array containing seed rho
 **************************************************/
+#ifndef polyvec_matrix_expand_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_expand(polyvecl mat[K], const uint8_t rho[SEEDBYTES]) {
     unsigned int i, j;
 
@@ -23,7 +24,9 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_expand(polyvecl mat[K], const uint8
         }
     }
 }
+#endif
 
+#ifndef polyvec_matrix_pointwise_montgomery_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_pointwise_montgomery(polyveck *t, const polyvecl mat[K], const polyvecl *v) {
     unsigned int i;
 
@@ -31,11 +34,13 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_pointwise_montgomery(polyveck *t, c
         PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_acc_montgomery(&t->vec[i], &mat[i], v);
     }
 }
+#endif
 
 /**************************************************************/
 /************ Vectors of polynomials of length L **************/
 /**************************************************************/
 
+#ifndef polyvecl_uniform_eta_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_eta(polyvecl *v, const uint8_t seed[CRHBYTES], uint16_t nonce) {
     unsigned int i;
 
@@ -43,7 +48,9 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_eta(polyvecl *v, const uint8_t se
         PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta(&v->vec[i], seed, nonce++);
     }
 }
+#endif
 
+#ifndef polyvecl_uniform_gamma1_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_gamma1(polyvecl *v, const uint8_t seed[CRHBYTES], uint16_t nonce) {
     unsigned int i;
 
@@ -51,7 +58,9 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_gamma1(polyvecl *v, const uint8_t
         PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_gamma1(&v->vec[i], seed, (uint16_t) (L * nonce + i));
     }
 }
+#endif
 
+#ifndef polyvecl_reduce_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_reduce(polyvecl *v) {
     unsigned int i;
 
@@ -59,6 +68,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_reduce(polyvecl *v) {
         PQCLEAN_DILITHIUM5_CLEAN_poly_reduce(&v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyvecl_add
@@ -70,6 +80,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_reduce(polyvecl *v) {
 *              - const polyvecl *u: pointer to first summand
 *              - const polyvecl *v: pointer to second summand
 **************************************************/
+#ifndef polyvecl_add_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_add(polyvecl *w, const polyvecl *u, const polyvecl *v) {
     unsigned int i;
 
@@ -77,6 +88,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_add(polyvecl *w, const polyvecl *u, const
         PQCLEAN_DILITHIUM5_CLEAN_poly_add(&w->vec[i], &u->vec[i], &v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyvecl_ntt
@@ -86,6 +98,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_add(polyvecl *w, const polyvecl *u, const
 *
 * Arguments:   - polyvecl *v: pointer to input/output vector
 **************************************************/
+#ifndef polyvecl_ntt_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_ntt(polyvecl *v) {
     unsigned int i;
 
@@ -93,7 +106,9 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_ntt(polyvecl *v) {
         PQCLEAN_DILITHIUM5_CLEAN_poly_ntt(&v->vec[i]);
     }
 }
+#endif
 
+#ifndef polyvecl_invntt_tomont_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_invntt_tomont(polyvecl *v) {
     unsigned int i;
 
@@ -101,7 +116,9 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_invntt_tomont(polyvecl *v) {
         PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont(&v->vec[i]);
     }
 }
+#endif
 
+#ifndef polyvecl_pointwise_poly_montgomery_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_poly_montgomery(polyvecl *r, const poly *a, const polyvecl *v) {
     unsigned int i;
 
@@ -109,6 +126,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_poly_montgomery(polyvecl *r, co
         PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery(&r->vec[i], a, &v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_acc_montgomery
@@ -121,6 +139,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_poly_montgomery(polyvecl *r, co
 *              - const polyvecl *u: pointer to first input vector
 *              - const polyvecl *v: pointer to second input vector
 **************************************************/
+#ifndef polyvecl_pointwise_acc_montgomery_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_acc_montgomery(poly *w,
         const polyvecl *u,
         const polyvecl *v) {
@@ -133,6 +152,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_acc_montgomery(poly *w,
         PQCLEAN_DILITHIUM5_CLEAN_poly_add(w, w, &t);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyvecl_chknorm
@@ -146,6 +166,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_acc_montgomery(poly *w,
 * Returns 0 if norm of all polynomials is strictly smaller than B <= (Q-1)/8
 * and 1 otherwise.
 **************************************************/
+#ifndef polyvecl_chknorm_jazz
 int PQCLEAN_DILITHIUM5_CLEAN_polyvecl_chknorm(const polyvecl *v, int32_t bound)  {
     unsigned int i;
 
@@ -157,11 +178,13 @@ int PQCLEAN_DILITHIUM5_CLEAN_polyvecl_chknorm(const polyvecl *v, int32_t bound) 
 
     return 0;
 }
+#endif
 
 /**************************************************************/
 /************ Vectors of polynomials of length K **************/
 /**************************************************************/
 
+#ifndef polyveck_uniform_eta_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_uniform_eta(polyveck *v, const uint8_t seed[CRHBYTES], uint16_t nonce) {
     unsigned int i;
 
@@ -169,6 +192,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_uniform_eta(polyveck *v, const uint8_t se
         PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta(&v->vec[i], seed, nonce++);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_reduce
@@ -178,6 +202,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_uniform_eta(polyveck *v, const uint8_t se
 *
 * Arguments:   - polyveck *v: pointer to input/output vector
 **************************************************/
+#ifndef polyveck_reduce_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_reduce(polyveck *v) {
     unsigned int i;
 
@@ -185,6 +210,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_reduce(polyveck *v) {
         PQCLEAN_DILITHIUM5_CLEAN_poly_reduce(&v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_caddq
@@ -194,6 +220,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_reduce(polyveck *v) {
 *
 * Arguments:   - polyveck *v: pointer to input/output vector
 **************************************************/
+#ifndef polyveck_caddq_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_caddq(polyveck *v) {
     unsigned int i;
 
@@ -201,6 +228,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_caddq(polyveck *v) {
         PQCLEAN_DILITHIUM5_CLEAN_poly_caddq(&v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_add
@@ -212,6 +240,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_caddq(polyveck *v) {
 *              - const polyveck *u: pointer to first summand
 *              - const polyveck *v: pointer to second summand
 **************************************************/
+#ifndef polyveck_add_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_add(polyveck *w, const polyveck *u, const polyveck *v) {
     unsigned int i;
 
@@ -219,6 +248,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_add(polyveck *w, const polyveck *u, const
         PQCLEAN_DILITHIUM5_CLEAN_poly_add(&w->vec[i], &u->vec[i], &v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_sub
@@ -231,6 +261,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_add(polyveck *w, const polyveck *u, const
 *              - const polyveck *v: pointer to second input vector to be
 *                                   subtracted from first input vector
 **************************************************/
+#ifndef polyveck_sub_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_sub(polyveck *w, const polyveck *u, const polyveck *v) {
     unsigned int i;
 
@@ -238,6 +269,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_sub(polyveck *w, const polyveck *u, const
         PQCLEAN_DILITHIUM5_CLEAN_poly_sub(&w->vec[i], &u->vec[i], &v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_shiftl
@@ -247,6 +279,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_sub(polyveck *w, const polyveck *u, const
 *
 * Arguments:   - polyveck *v: pointer to input/output vector
 **************************************************/
+#ifndef polyveck_shiftl_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_shiftl(polyveck *v) {
     unsigned int i;
 
@@ -254,6 +287,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_shiftl(polyveck *v) {
         PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl(&v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_ntt
@@ -263,6 +297,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_shiftl(polyveck *v) {
 *
 * Arguments:   - polyveck *v: pointer to input/output vector
 **************************************************/
+#ifndef polyveck_ntt_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_ntt(polyveck *v) {
     unsigned int i;
 
@@ -270,6 +305,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_ntt(polyveck *v) {
         PQCLEAN_DILITHIUM5_CLEAN_poly_ntt(&v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_invntt_tomont
@@ -280,6 +316,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_ntt(polyveck *v) {
 *
 * Arguments:   - polyveck *v: pointer to input/output vector
 **************************************************/
+#ifndef polyveck_invntt_tomont_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_invntt_tomont(polyveck *v) {
     unsigned int i;
 
@@ -287,7 +324,9 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_invntt_tomont(polyveck *v) {
         PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont(&v->vec[i]);
     }
 }
+#endif
 
+#ifndef polyveck_pointwise_poly_montgomery_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_pointwise_poly_montgomery(polyveck *r, const poly *a, const polyveck *v) {
     unsigned int i;
 
@@ -295,6 +334,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_pointwise_poly_montgomery(polyveck *r, co
         PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery(&r->vec[i], a, &v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_chknorm
@@ -308,6 +348,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_pointwise_poly_montgomery(polyveck *r, co
 * Returns 0 if norm of all polynomials are strictly smaller than B <= (Q-1)/8
 * and 1 otherwise.
 **************************************************/
+#ifndef polyveck_chknorm_jazz
 int PQCLEAN_DILITHIUM5_CLEAN_polyveck_chknorm(const polyveck *v, int32_t bound) {
     unsigned int i;
 
@@ -319,6 +360,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_polyveck_chknorm(const polyveck *v, int32_t bound) 
 
     return 0;
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_power2round
@@ -334,6 +376,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_polyveck_chknorm(const polyveck *v, int32_t bound) 
 *                              coefficients a0
 *              - const polyveck *v: pointer to input vector
 **************************************************/
+#ifndef polyveck_power2round_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_power2round(polyveck *v1, polyveck *v0, const polyveck *v) {
     unsigned int i;
 
@@ -341,6 +384,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_power2round(polyveck *v1, polyveck *v0, c
         PQCLEAN_DILITHIUM5_CLEAN_poly_power2round(&v1->vec[i], &v0->vec[i], &v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_decompose
@@ -357,6 +401,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_power2round(polyveck *v1, polyveck *v0, c
 *                              coefficients a0
 *              - const polyveck *v: pointer to input vector
 **************************************************/
+#ifndef polyveck_decompose_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_decompose(polyveck *v1, polyveck *v0, const polyveck *v) {
     unsigned int i;
 
@@ -364,6 +409,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_decompose(polyveck *v1, polyveck *v0, con
         PQCLEAN_DILITHIUM5_CLEAN_poly_decompose(&v1->vec[i], &v0->vec[i], &v->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_make_hint
@@ -376,6 +422,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_decompose(polyveck *v1, polyveck *v0, con
 *
 * Returns number of 1 bits.
 **************************************************/
+#ifndef polyveck_make_hint_jazz
 unsigned int PQCLEAN_DILITHIUM5_CLEAN_polyveck_make_hint(polyveck *h,
         const polyveck *v0,
         const polyveck *v1) {
@@ -387,6 +434,7 @@ unsigned int PQCLEAN_DILITHIUM5_CLEAN_polyveck_make_hint(polyveck *h,
 
     return s;
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyveck_use_hint
@@ -398,6 +446,7 @@ unsigned int PQCLEAN_DILITHIUM5_CLEAN_polyveck_make_hint(polyveck *h,
 *              - const polyveck *u: pointer to input vector
 *              - const polyveck *h: pointer to input hint vector
 **************************************************/
+#ifndef polyveck_use_hint_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_use_hint(polyveck *w, const polyveck *u, const polyveck *h) {
     unsigned int i;
 
@@ -405,7 +454,9 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_use_hint(polyveck *w, const polyveck *u, 
         PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint(&w->vec[i], &u->vec[i], &h->vec[i]);
     }
 }
+#endif
 
+#ifndef polyveck_pack_w1_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyveck_pack_w1(uint8_t r[K * POLYW1_PACKEDBYTES], const polyveck *w1) {
     unsigned int i;
 
@@ -413,3 +464,4 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_pack_w1(uint8_t r[K * POLYW1_PACKEDBYTES]
         PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack(&r[i * POLYW1_PACKEDBYTES], &w1->vec[i]);
     }
 }
+#endif

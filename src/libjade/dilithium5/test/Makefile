@@ -10,7 +10,10 @@ TESTS_BIN := $(subst .c,, $(TESTS_C))
 TESTS_OUT := $(addsuffix .out, $(TESTS_BIN))
 
 #-- 
-default: $(TESTS_OUT)
+default:
+	$(MAKE) compile
+	$(MAKE) run
+
 compile: $(TESTS_BIN)
 run: $(TESTS_OUT)
 

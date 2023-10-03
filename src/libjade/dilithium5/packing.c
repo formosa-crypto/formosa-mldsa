@@ -12,6 +12,7 @@
 *              - const uint8_t rho[]: byte array containing rho
 *              - const polyveck *t1: pointer to vector t1
 **************************************************/
+#ifndef pack_pk_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_pack_pk(uint8_t pk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES],
                                       const uint8_t rho[SEEDBYTES],
                                       const polyveck *t1) {
@@ -26,6 +27,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_pack_pk(uint8_t pk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO
         PQCLEAN_DILITHIUM5_CLEAN_polyt1_pack(pk + i * POLYT1_PACKEDBYTES, &t1->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_unpack_pk
@@ -36,6 +38,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_pack_pk(uint8_t pk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO
 *              - const polyveck *t1: pointer to output vector t1
 *              - uint8_t pk[]: byte array containing bit-packed pk
 **************************************************/
+#ifndef unpack_pk_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_unpack_pk(uint8_t rho[SEEDBYTES],
                                         polyveck *t1,
                                         const uint8_t pk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES]) {
@@ -50,6 +53,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_unpack_pk(uint8_t rho[SEEDBYTES],
         PQCLEAN_DILITHIUM5_CLEAN_polyt1_unpack(&t1->vec[i], pk + i * POLYT1_PACKEDBYTES);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_pack_sk
@@ -64,6 +68,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_unpack_pk(uint8_t rho[SEEDBYTES],
 *              - const polyvecl *s1: pointer to vector s1
 *              - const polyveck *s2: pointer to vector s2
 **************************************************/
+#ifndef pack_sk_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_pack_sk(uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES],
                                       const uint8_t rho[SEEDBYTES],
                                       const uint8_t tr[SEEDBYTES],
@@ -102,6 +107,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_pack_sk(uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO
         PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack(sk + i * POLYT0_PACKEDBYTES, &t0->vec[i]);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_unpack_sk
@@ -116,6 +122,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_pack_sk(uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO
 *              - const polyveck *s2: pointer to output vector s2
 *              - uint8_t sk[]: byte array containing bit-packed sk
 **************************************************/
+#ifndef unpack_sk_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_unpack_sk(uint8_t rho[SEEDBYTES],
                                         uint8_t tr[SEEDBYTES],
                                         uint8_t key[SEEDBYTES],
@@ -154,6 +161,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_unpack_sk(uint8_t rho[SEEDBYTES],
         PQCLEAN_DILITHIUM5_CLEAN_polyt0_unpack(&t0->vec[i], sk + i * POLYT0_PACKEDBYTES);
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_pack_sig
@@ -165,6 +173,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_unpack_sk(uint8_t rho[SEEDBYTES],
 *              - const polyvecl *z: pointer to vector z
 *              - const polyveck *h: pointer to hint vector h
 **************************************************/
+#ifndef pack_sig_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_pack_sig(uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES],
                                        const uint8_t c[SEEDBYTES],
                                        const polyvecl *z,
@@ -197,6 +206,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_pack_sig(uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYP
         sig[OMEGA + i] = (uint8_t) k;
     }
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_unpack_sig
@@ -211,6 +221,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_pack_sig(uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYP
 *
 * Returns 1 in case of malformed signature; otherwise 0.
 **************************************************/
+#ifndef unpack_sig_jazz
 int PQCLEAN_DILITHIUM5_CLEAN_unpack_sig(uint8_t c[SEEDBYTES],
                                         polyvecl *z,
                                         polyveck *h,
@@ -258,3 +269,4 @@ int PQCLEAN_DILITHIUM5_CLEAN_unpack_sig(uint8_t c[SEEDBYTES],
 
     return 0;
 }
+#endif

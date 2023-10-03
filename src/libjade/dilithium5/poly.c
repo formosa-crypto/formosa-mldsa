@@ -17,6 +17,7 @@
 *
 * Arguments:   - poly *a: pointer to input/output polynomial
 **************************************************/
+#ifndef poly_reduce_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_reduce(poly *a) {
     unsigned int i;
     DBENCH_START();
@@ -27,6 +28,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_reduce(poly *a) {
 
     DBENCH_STOP(*tred);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_caddq
@@ -36,6 +38,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_reduce(poly *a) {
 *
 * Arguments:   - poly *a: pointer to input/output polynomial
 **************************************************/
+#ifndef poly_caddq_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_caddq(poly *a) {
     unsigned int i;
     DBENCH_START();
@@ -46,6 +49,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_caddq(poly *a) {
 
     DBENCH_STOP(*tred);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_add
@@ -56,6 +60,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_caddq(poly *a) {
 *              - const poly *a: pointer to first summand
 *              - const poly *b: pointer to second summand
 **************************************************/
+#ifndef poly_add_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_add(poly *c, const poly *a, const poly *b)  {
     unsigned int i;
     DBENCH_START();
@@ -66,6 +71,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_add(poly *c, const poly *a, const poly *b)  {
 
     DBENCH_STOP(*tadd);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_sub
@@ -78,6 +84,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_add(poly *c, const poly *a, const poly *b)  {
 *              - const poly *b: pointer to second input polynomial to be
 *                               subtraced from first input polynomial
 **************************************************/
+#ifndef poly_sub_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_sub(poly *c, const poly *a, const poly *b) {
     unsigned int i;
     DBENCH_START();
@@ -88,6 +95,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_sub(poly *c, const poly *a, const poly *b) {
 
     DBENCH_STOP(*tadd);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl
@@ -97,6 +105,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_sub(poly *c, const poly *a, const poly *b) {
 *
 * Arguments:   - poly *a: pointer to input/output polynomial
 **************************************************/
+#ifndef poly_shiftl_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl(poly *a) {
     unsigned int i;
     DBENCH_START();
@@ -107,6 +116,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl(poly *a) {
 
     DBENCH_STOP(*tmul);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_ntt
@@ -116,6 +126,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl(poly *a) {
 *
 * Arguments:   - poly *a: pointer to input/output polynomial
 **************************************************/
+#ifndef poly_ntt_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_ntt(poly *a) {
     DBENCH_START();
 
@@ -123,6 +134,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_ntt(poly *a) {
 
     DBENCH_STOP(*tmul);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont
@@ -133,6 +145,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_ntt(poly *a) {
 *
 * Arguments:   - poly *a: pointer to input/output polynomial
 **************************************************/
+#ifndef poly_invntt_tomont_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont(poly *a) {
     DBENCH_START();
 
@@ -140,6 +153,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont(poly *a) {
 
     DBENCH_STOP(*tmul);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery
@@ -152,6 +166,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont(poly *a) {
 *              - const poly *a: pointer to first input polynomial
 *              - const poly *b: pointer to second input polynomial
 **************************************************/
+#ifndef poly_pointwise_montgomery_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery(poly *c, const poly *a, const poly *b) {
     unsigned int i;
     DBENCH_START();
@@ -162,6 +177,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery(poly *c, const poly *a, 
 
     DBENCH_STOP(*tmul);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_power2round
@@ -175,6 +191,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery(poly *c, const poly *a, 
 *              - poly *a0: pointer to output polynomial with coefficients c0
 *              - const poly *a: pointer to input polynomial
 **************************************************/
+#ifndef poly_power2round_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_power2round(poly *a1, poly *a0, const poly *a) {
     unsigned int i;
     DBENCH_START();
@@ -185,6 +202,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_power2round(poly *a1, poly *a0, const poly *a
 
     DBENCH_STOP(*tround);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_decompose
@@ -199,6 +217,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_power2round(poly *a1, poly *a0, const poly *a
 *              - poly *a0: pointer to output polynomial with coefficients c0
 *              - const poly *a: pointer to input polynomial
 **************************************************/
+#ifndef poly_decompose_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_decompose(poly *a1, poly *a0, const poly *a) {
     unsigned int i;
     DBENCH_START();
@@ -209,6 +228,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_decompose(poly *a1, poly *a0, const poly *a) 
 
     DBENCH_STOP(*tround);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint
@@ -223,6 +243,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_decompose(poly *a1, poly *a0, const poly *a) 
 *
 * Returns number of 1 bits.
 **************************************************/
+#ifndef poly_make_hint_jazz
 unsigned int PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint(poly *h, const poly *a0, const poly *a1) {
     unsigned int i, s = 0;
     DBENCH_START();
@@ -235,6 +256,7 @@ unsigned int PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint(poly *h, const poly *a0, co
     DBENCH_STOP(*tround);
     return s;
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint
@@ -245,6 +267,7 @@ unsigned int PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint(poly *h, const poly *a0, co
 *              - const poly *a: pointer to input polynomial
 *              - const poly *h: pointer to input hint polynomial
 **************************************************/
+#ifndef poly_use_hint_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint(poly *b, const poly *a, const poly *h) {
     unsigned int i;
     DBENCH_START();
@@ -255,6 +278,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint(poly *b, const poly *a, const poly *
 
     DBENCH_STOP(*tround);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm
@@ -267,6 +291,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint(poly *b, const poly *a, const poly *
 *
 * Returns 0 if norm is strictly smaller than B <= (Q-1)/8 and 1 otherwise.
 **************************************************/
+#ifndef poly_chknorm_jazz
 int PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm(const poly *a, int32_t B) {
     unsigned int i;
     int32_t t;
@@ -293,6 +318,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm(const poly *a, int32_t B) {
     DBENCH_STOP(*tsample);
     return 0;
 }
+#endif
 
 /*************************************************
 * Name:        rej_uniform
@@ -308,7 +334,9 @@ int PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm(const poly *a, int32_t B) {
 * Returns number of sampled coefficients. Can be smaller than len if not enough
 * random bytes were given.
 **************************************************/
-static unsigned int rej_uniform(int32_t *a,
+#ifndef rej_uniform_jazz
+/*static*/
+unsigned int rej_uniform(int32_t *a,
                                 unsigned int len,
                                 const uint8_t *buf,
                                 unsigned int buflen) {
@@ -331,6 +359,7 @@ static unsigned int rej_uniform(int32_t *a,
     DBENCH_STOP(*tsample);
     return ctr;
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_uniform
@@ -344,6 +373,7 @@ static unsigned int rej_uniform(int32_t *a,
 *              - uint16_t nonce: 2-byte nonce
 **************************************************/
 #define POLY_UNIFORM_NBLOCKS ((768 + STREAM128_BLOCKBYTES - 1)/STREAM128_BLOCKBYTES)
+#ifndef poly_uniform_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_uniform(poly *a,
         const uint8_t seed[SEEDBYTES],
         uint16_t nonce) {
@@ -369,6 +399,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_uniform(poly *a,
     }
     stream128_release(&state);
 }
+#endif
 
 /*************************************************
 * Name:        rej_eta
@@ -384,7 +415,9 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_uniform(poly *a,
 * Returns number of sampled coefficients. Can be smaller than len if not enough
 * random bytes were given.
 **************************************************/
-static unsigned int rej_eta(int32_t *a,
+#ifndef rej_eta_jazz
+/*static*/
+unsigned int rej_eta(int32_t *a,
                             unsigned int len,
                             const uint8_t *buf,
                             unsigned int buflen) {
@@ -410,6 +443,7 @@ static unsigned int rej_eta(int32_t *a,
     DBENCH_STOP(*tsample);
     return ctr;
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta
@@ -423,6 +457,7 @@ static unsigned int rej_eta(int32_t *a,
 *              - uint16_t nonce: 2-byte nonce
 **************************************************/
 #define POLY_UNIFORM_ETA_NBLOCKS ((136 + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)
+#ifndef poly_uniform_eta_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta(poly *a,
         const uint8_t seed[CRHBYTES],
         uint16_t nonce) {
@@ -442,6 +477,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta(poly *a,
     }
     stream256_release(&state);
 }
+#endif
 
 /*************************************************
 * Name:        poly_uniform_gamma1m1
@@ -455,6 +491,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta(poly *a,
 *              - uint16_t nonce: 16-bit nonce
 **************************************************/
 #define POLY_UNIFORM_GAMMA1_NBLOCKS ((POLYZ_PACKEDBYTES + STREAM256_BLOCKBYTES - 1)/STREAM256_BLOCKBYTES)
+#ifndef poly_uniform_gamma1_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_gamma1(poly *a,
         const uint8_t seed[CRHBYTES],
         uint16_t nonce) {
@@ -466,6 +503,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_gamma1(poly *a,
     stream256_release(&state);
     PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack(a, buf);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_challenge
@@ -477,6 +515,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_gamma1(poly *a,
 * Arguments:   - poly *c: pointer to output polynomial
 *              - const uint8_t mu[]: byte array containing seed of length SEEDBYTES
 **************************************************/
+#ifndef poly_challenge_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_poly_challenge(poly *c, const uint8_t seed[SEEDBYTES]) {
     unsigned int i, b, pos;
     uint64_t signs;
@@ -513,6 +552,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_challenge(poly *c, const uint8_t seed[SEEDBYT
     }
     shake256_inc_ctx_release(&state);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyeta_pack
@@ -523,6 +563,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_challenge(poly *c, const uint8_t seed[SEEDBYT
 *                            POLYETA_PACKEDBYTES bytes
 *              - const poly *a: pointer to input polynomial
 **************************************************/
+#ifndef polyeta_pack_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyeta_pack(uint8_t *r, const poly *a) {
     unsigned int i;
     uint8_t t[8];
@@ -545,6 +586,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyeta_pack(uint8_t *r, const poly *a) {
 
     DBENCH_STOP(*tpack);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyeta_unpack
@@ -554,6 +596,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyeta_pack(uint8_t *r, const poly *a) {
 * Arguments:   - poly *r: pointer to output polynomial
 *              - const uint8_t *a: byte array with bit-packed polynomial
 **************************************************/
+#ifndef polyeta_unpack_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyeta_unpack(poly *r, const uint8_t *a) {
     unsigned int i;
     DBENCH_START();
@@ -580,6 +623,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyeta_unpack(poly *r, const uint8_t *a) {
 
     DBENCH_STOP(*tpack);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyt1_pack
@@ -591,6 +635,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyeta_unpack(poly *r, const uint8_t *a) {
 *                            POLYT1_PACKEDBYTES bytes
 *              - const poly *a: pointer to input polynomial
 **************************************************/
+#ifndef polyt1_pack_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyt1_pack(uint8_t *r, const poly *a) {
     unsigned int i;
     DBENCH_START();
@@ -605,6 +650,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyt1_pack(uint8_t *r, const poly *a) {
 
     DBENCH_STOP(*tpack);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyt1_unpack
@@ -615,6 +661,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyt1_pack(uint8_t *r, const poly *a) {
 * Arguments:   - poly *r: pointer to output polynomial
 *              - const uint8_t *a: byte array with bit-packed polynomial
 **************************************************/
+#ifndef polyt1_unpack_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyt1_unpack(poly *r, const uint8_t *a) {
     unsigned int i;
     DBENCH_START();
@@ -628,6 +675,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyt1_unpack(poly *r, const uint8_t *a) {
 
     DBENCH_STOP(*tpack);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack
@@ -638,6 +686,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyt1_unpack(poly *r, const uint8_t *a) {
 *                            POLYT0_PACKEDBYTES bytes
 *              - const poly *a: pointer to input polynomial
 **************************************************/
+#ifndef polyt0_pack_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack(uint8_t *r, const poly *a) {
     unsigned int i;
     uint32_t t[8];
@@ -677,6 +726,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack(uint8_t *r, const poly *a) {
 
     DBENCH_STOP(*tpack);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyt0_unpack
@@ -686,6 +736,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack(uint8_t *r, const poly *a) {
 * Arguments:   - poly *r: pointer to output polynomial
 *              - const uint8_t *a: byte array with bit-packed polynomial
 **************************************************/
+#ifndef polyt0_unpack_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyt0_unpack(poly *r, const uint8_t *a) {
     unsigned int i;
     DBENCH_START();
@@ -739,6 +790,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyt0_unpack(poly *r, const uint8_t *a) {
 
     DBENCH_STOP(*tpack);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyz_pack
@@ -750,6 +802,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyt0_unpack(poly *r, const uint8_t *a) {
 *                            POLYZ_PACKEDBYTES bytes
 *              - const poly *a: pointer to input polynomial
 **************************************************/
+#ifndef polyz_pack_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyz_pack(uint8_t *r, const poly *a) {
     unsigned int i;
     uint32_t t[4];
@@ -769,6 +822,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyz_pack(uint8_t *r, const poly *a) {
 
     DBENCH_STOP(*tpack);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack
@@ -779,6 +833,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyz_pack(uint8_t *r, const poly *a) {
 * Arguments:   - poly *r: pointer to output polynomial
 *              - const uint8_t *a: byte array with bit-packed polynomial
 **************************************************/
+#ifndef polyz_unpack_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack(poly *r, const uint8_t *a) {
     unsigned int i;
     DBENCH_START();
@@ -800,6 +855,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack(poly *r, const uint8_t *a) {
 
     DBENCH_STOP(*tpack);
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack
@@ -811,6 +867,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack(poly *r, const uint8_t *a) {
 *                            POLYW1_PACKEDBYTES bytes
 *              - const poly *a: pointer to input polynomial
 **************************************************/
+#ifndef polyw1_pack_jazz
 void PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack(uint8_t *r, const poly *a) {
     unsigned int i;
     DBENCH_START();
@@ -821,3 +878,4 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack(uint8_t *r, const poly *a) {
 
     DBENCH_STOP(*tpack);
 }
+#endif

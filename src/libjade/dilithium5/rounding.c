@@ -61,6 +61,7 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_decompose(int32_t *a0, int32_t a) {
 *
 * Returns 1 if overflow.
 **************************************************/
+#ifndef make_hint_jazz
 unsigned int PQCLEAN_DILITHIUM5_CLEAN_make_hint(int32_t a0, int32_t a1) {
     if (a0 > GAMMA2 || a0 < -GAMMA2 || (a0 == -GAMMA2 && a1 != 0)) {
         return 1;
@@ -68,6 +69,7 @@ unsigned int PQCLEAN_DILITHIUM5_CLEAN_make_hint(int32_t a0, int32_t a1) {
 
     return 0;
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_use_hint
@@ -79,6 +81,7 @@ unsigned int PQCLEAN_DILITHIUM5_CLEAN_make_hint(int32_t a0, int32_t a1) {
 *
 * Returns corrected high bits.
 **************************************************/
+#ifndef use_hint_jazz
 int32_t PQCLEAN_DILITHIUM5_CLEAN_use_hint(int32_t a, unsigned int hint) {
     int32_t a0, a1;
 
@@ -92,3 +95,5 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_use_hint(int32_t a, unsigned int hint) {
     }
     return (a1 - 1) & 15;
 }
+#endif
+

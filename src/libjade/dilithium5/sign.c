@@ -20,6 +20,7 @@
 *
 * Returns 0 (success)
 **************************************************/
+#ifndef crypto_sign_keypair_jazz
 int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
     uint8_t seedbuf[2 * SEEDBYTES + CRHBYTES];
     uint8_t tr[SEEDBYTES];
@@ -63,6 +64,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
 
     return 0;
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature
@@ -77,6 +79,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
 *
 * Returns 0 (success)
 **************************************************/
+#ifndef crypto_sign_signature_jazz
 int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature(uint8_t *sig,
         size_t *siglen,
         const uint8_t *m,
@@ -177,6 +180,7 @@ rej:
     *siglen = PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES;
     return 0;
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign
@@ -194,6 +198,7 @@ rej:
 *
 * Returns 0 (success)
 **************************************************/
+#ifndef crypto_sign_jazz
 int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign(uint8_t *sm,
         size_t *smlen,
         const uint8_t *m,
@@ -208,6 +213,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign(uint8_t *sm,
     *smlen += mlen;
     return 0;
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify
@@ -222,6 +228,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign(uint8_t *sm,
 *
 * Returns 0 if signature could be verified correctly and -1 otherwise
 **************************************************/
+#ifndef crypto_sign_verify_jazz
 int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify(const uint8_t *sig,
         size_t siglen,
         const uint8_t *m,
@@ -295,6 +302,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify(const uint8_t *sig,
 
     return 0;
 }
+#endif
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_open
@@ -310,6 +318,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify(const uint8_t *sig,
 *
 * Returns 0 if signed message could be verified correctly and -1 otherwise
 **************************************************/
+#ifndef crypto_sign_open_jazz
 int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_open(uint8_t *m,
         size_t *mlen,
         const uint8_t *sm,
@@ -341,3 +350,4 @@ badsig:
 
     return -1;
 }
+#endif
