@@ -1,5 +1,12 @@
 require "ntt.jinc"
 
+export fn PQCLEAN_DILITHIUM5_CLEAN_mul_montgomery_reduce_jazz(reg u32 x y) -> reg u32
+{
+  reg u32 r;
+  r = __mul_montgomery_reduce_8380417(x, y);
+  return r;
+}
+
 export fn PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz(reg u32 p) {
   stack u32[N] a;
   reg ptr u32[N] pa;

@@ -21,6 +21,24 @@
   printf("PASS: %s\n", function_name); \
   }
 
+// int32 x int32 -> int32
+#define check3232to32(FUNCTION_C, FUNCTION_JASMIN, function_name)	\
+  { \
+  int32_t arg1, arg2; \
+  for (int t = 0; t < TESTS; ++t) { \
+    randombytes((uint8_t*)(&arg1), sizeof(int32_t)); \
+    randombytes((uint8_t*)(&arg2), sizeof(int32_t)); \
+    int32_t res_c = FUNCTION_C(arg1, arg2); \
+    int32_t res_jazz = FUNCTION_JASMIN(arg1, arg2); \
+    if (res_c != res_jazz) { \
+      printf("%" PRId32 ", %" PRId32 " -> %" PRId32 " != %" PRId32 "\n", arg1, arg2, res_c, res_jazz); \
+      printf("FAIL: %s\n", function_name); \
+      exit(1); \
+    } \
+  } \
+  printf("PASS: %s\n", function_name); \
+  }
+
   
 #define check64to32(FUNCTION_C, FUNCTION_JASMIN, function_name) \
   { \
