@@ -2,12 +2,12 @@
 
 ARMCC ?= arm-linux-gnueabi-gcc
 ARMCFLAGS ?= -Wall -O3 -march=armv7 -fPIC
-#-mcpu=cortex-m4 # not working
 ARMAR ?= arm-linux-gnueabi-ar
 
-#-------------------------------------------------------------------------------
-# This Makefile can be used with GNU Make or BSD Make
+#-mcpu=cortex-m4 # not working - TODO: check why (same for test/)
 
+
+#-------------------------------------------------------------------------------
 LIB=libdilithium5_clean.a
 HEADERS=api.h ntt.h packing.h params.h poly.h polyvec.h reduce.h rounding.h sign.h symmetric.h 
 OBJECTS=ntt.o packing.o poly.o polyvec.o reduce.o rounding.o sign.o symmetric-shake.o fips202.o library.o

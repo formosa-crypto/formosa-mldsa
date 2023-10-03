@@ -1,3 +1,6 @@
+#ifndef TEST_MACROS_H
+#define TEST_MACROS_H
+
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,3 +37,5 @@
   } \
   printf("PASS: %s\n", function_name); \
   } 
+
+#endif

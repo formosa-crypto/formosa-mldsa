@@ -1,0 +1,4 @@
+*.out
+test_reduce
+test_rounding
+test_ntt

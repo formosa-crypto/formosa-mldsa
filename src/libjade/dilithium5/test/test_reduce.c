@@ -4,7 +4,7 @@
 
 #include "notrandombytes.c"
 
-#include "../test_macros.h"
+#include "test_macros.h"
 
 #ifndef TESTS
 #define TESTS 1000

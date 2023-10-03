@@ -12,6 +12,9 @@
 void PQCLEAN_DILITHIUM5_CLEAN_ntt(int32_t a[N]);
 void PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz(int32_t a[N]);
 
+void PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont(int32_t a[N]);
+void PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz(int32_t a[N]);
+
 int test_ntt()
 {
   int32_t arg;
