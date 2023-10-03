@@ -80,6 +80,8 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
   reg u32 start_len j_len zeta aj aj_len;
   reg bool zf;
 
+  zetas = ZETAS;
+
   k = 0;
   /* for (len = 128; len > 0; len >>= 1) { */
   len = 128;
@@ -88,7 +90,6 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
     /* for (start = 0; start < N; start = j + len) */
     while {
       /* zeta = zetas[++k]; */
-      zetas = ZETAS; // can we move this up ?
       k += 1;
       zeta = zetas[(int)k];
       /* for (j = start; j < start + len; ++j)  */
@@ -169,6 +170,8 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
   reg u32 start_len j_len zeta aux aj aj_len;
   reg bool zf;
 
+  zetas = ZETAS;
+
   k = 256;
   /* for (len = 1; len < N; len <<= 1) */
   len = 1;
@@ -177,7 +180,6 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
     start = 0;
     while {
       /* zeta = -zetas[--k]; */
-      zetas = ZETAS; // can we move this up ?
       k -= 1;
       zeta = zetas[(int)k]; zeta = -zeta;
 
