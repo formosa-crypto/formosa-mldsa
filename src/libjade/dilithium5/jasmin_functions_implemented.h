@@ -33,7 +33,7 @@
 #define PQCLEAN_DILITHIUM5_CLEAN_ntt PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz
 
 #define invntt_tomont_jazz
-#define PQCLEAN_DILITHIUM5_CLEAN_ntt PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz
+#define PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz
 
 // /////////////////////////////////////////////////////////////////////////////
 // the following macros were generated using
