@@ -26,7 +26,28 @@ test_%:
 	$(MAKE) -C ../ small-testing
 	$(ARMCC) -o $@ $(ARMCFLAGS) -static test_$*.c -I./common -I../ -L../ -ldilithium5_clean
 
+#--
+TEST_NAMESPACE := -DJADE_NAMESPACE=JADE_SIGN_dilithium_dilithium5_armv7m_clean -DJADE_NAMESPACE_LC=jade_sign_dilithium_dilithium5_armv7m_clean
+TEST_SRC := common/dilithium5_api.c common/notrandombytes.c common/print.c
+TEST_INCLUDE := -I./common -I../
+TEST_LINKER := -L../ -ldilithium5_clean
+
+.PHONY: checksumbig checksumsmall functest
+
+checksumbig:
+	$(MAKE) -C ../ small-testing # temp
+	$(ARMCC) $(ARMCFLAGS) -static -o $@ $(TEST_NAMESPACE) common/checksumbig.c $(TEST_SRC) $(TEST_INCLUDE) $(TEST_LINKER)
+
+checksumsmall:
+	$(MAKE) -C ../ small-testing #temp
+	$(ARMCC) $(ARMCFLAGS) -static -o $@ $(TEST_NAMESPACE) common/checksumsmall.c $(TEST_SRC) $(TEST_INCLUDE) $(TEST_LINKER)
+
+functest:
+	$(MAKE) -C ../ small-testing # temp
+	$(ARMCC) $(ARMCFLAGS) -static -o $@ $(TEST_NAMESPACE) common/functest.c $(TEST_SRC) $(TEST_INCLUDE) $(TEST_LINKER)
+
+#--
 .PHONY: clean
 clean:
-	rm -f $(TESTS_BIN) $(TESTS_OUT)
+	rm -f $(TESTS_BIN) $(TESTS_OUT) checksumbig checksumsmall functest
 
