@@ -28,7 +28,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_make_hint_jazz(reg u32 a0, reg u32 a1) -> reg
   return res;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_use_hint(reg u32 a, reg u32 hint) -> reg u32 {
+export fn PQCLEAN_DILITHIUM5_CLEAN_use_hint_jazz(reg u32 a, reg u32 hint) -> reg u32 {
   reg u32 res q;
   q = Q;
   res = __use_hint(a, hint, q);
