@@ -38,7 +38,7 @@ inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32
 // precondition q = Q
 inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
 {
-  reg u32 a0 a1 aux q;
+  reg u32 a0 a1 aux;
   
   /* a1  = (a + 127) >> 7; */
   a1 =  a + 127;
