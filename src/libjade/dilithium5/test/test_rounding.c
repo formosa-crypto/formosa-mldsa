@@ -76,8 +76,17 @@ int test_decompose()
   return 0;
 }
 
+int32_t PQCLEAN_DILITHIUM5_CLEAN_make_hint(int32_t a0, int32_t a1)
+int32_t PQCLEAN_DILITHIUM5_CLEAN_make_hint_jazz(int32_t a0, int32_t a1)
+
+int32_t PQCLEAN_DILITHIUM5_CLEAN_use_hint(int32_t a0, unsigned int hint)
+int32_t PQCLEAN_DILITHIUM5_CLEAN_use_hint_jazz(int32_t a0, unsigned int hint)
+
+
 int main ()
 {
+  check3232to32(PQCLEAN_DILITHIUM5_CLEAN_make_hint, PQCLEAN_DILITHIUM5_CLEAN_make_hint_jazz, "make_hint");
+  check3232to32(PQCLEAN_DILITHIUM5_CLEAN_use_hint, PQCLEAN_DILITHIUM5_CLEAN_use_hint_jazz, "use_hint");
   test_power2round();
   test_decompose();
   return 0;

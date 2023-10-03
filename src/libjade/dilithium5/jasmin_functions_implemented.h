@@ -47,13 +47,11 @@
 #define power2round_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_power2round PQCLEAN_DILITHIUM5_CLEAN_power2round_jazz
 
-#if 0
 #define make_hint_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_make_hint PQCLEAN_DILITHIUM5_CLEAN_make_hint_jazz
 
 #define use_hint_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_use_hint PQCLEAN_DILITHIUM5_CLEAN_use_hint_jazz
-#endif
 
 // /////////////////////////////////////////////////////////////////////////////
 // poly.o

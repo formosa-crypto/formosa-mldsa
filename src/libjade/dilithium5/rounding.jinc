@@ -87,30 +87,24 @@ unsigned int PQCLEAN_DILITHIUM5_CLEAN_make_hint(int32_t a0, int32_t a1) {
 }
 */
 
-/*
 // gamma2 = GAMMA2
 inline fn __make_hint(reg u32 a0, reg u32 a1, reg u32 gamma2) -> reg u32
 {
    reg u32 mgamma2 res;
-   reg bool nf zf cf vf;
    inline bool lt eq;
    
-   if (a0 >s gamma2) {
-     res = 1;
-   } else {
+   res = 1;
+   if (a0 <=s gamma2) {
      mgamma2 = -gamma2;
-     ?{nf,zf,cf,vf, "==" = eq, "<s" = lt} = #CMP(a0,mgamma2);
-     if (lt) {
-       res = 1;
-     } else {
-       res = 1;
-       res = 0 if !lt;
-       res = 0 if a1 != 0;
-     }    
+     ?{"==" = eq, "<s" = lt} = #CMP(a0,mgamma2);
+     if (!lt) {
+       res = 0 if !eq;
+       res = 0 if a1 == 0;
+     }
    }
    return res;
 }          
-*/
+
 
 
 
@@ -139,3 +133,19 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_use_hint(int32_t a, unsigned int hint) {
     return (a1 - 1) & 15;
 }
 */
+
+// Precondition q = Q
+inline fn __use_hint(reg u32 a, reg u32 hint, reg u32 q) -> reg u32 {
+  reg u32 a0 a1;
+  inline bool gt le;
+  a0, a1 = __decompose_a0a1(a, q);
+  // FIXME this can be optimize if hint = 0 then no need to compute a0
+  // We can split decompose in two parts
+  if (hint != 0) {
+    ?{">s" = gt, "<=s" = le} = #CMP(a0, 0);
+    a1 += 1 if gt; 
+    a1 -= 1 if le;
+    a1 &= 15;
+  }
+  return a1;
+}
