@@ -42,7 +42,7 @@ int test_ntt()
     }
 
     PQCLEAN_DILITHIUM5_CLEAN_ntt(a);
-    PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz(a);
+    PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz(a_jazz);
 
     for (int i = 0; i < N; i++) {
       if (a[i] != a_jazz[i]) {
@@ -74,12 +74,12 @@ int test_invntt_tomont()
     }
 
     PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont(a);
-    PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz(a);
+    PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz(a_jazz);
 
     for (int i = 0; i < N; i++) {
       if (a[i] != a_jazz[i]) {
         printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", (int32_t)arg, a[i], a_jazz[i]);
-        printf("FAIL: ntt\n");
+        printf("FAIL: invntt_tomont\n");
         exit(1);
       }
     }

@@ -171,7 +171,7 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
 
   k = 256;
   /* for (len = 1; len < N; len <<= 1) */
-  len = 128;
+  len = 1;
   while {
     /* for (start = 0; start < N; start = j + len) */
     start = 0;
