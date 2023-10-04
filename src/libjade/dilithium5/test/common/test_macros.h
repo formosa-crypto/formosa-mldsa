@@ -81,7 +81,6 @@
     } \
   } \
   printf("PASS: %s\n", function_name); \
-  return 0; \
   }
 
 #define checkpoly(FUNCTION_C, FUNCTION_JASMIN, function_name) \
@@ -107,5 +106,4 @@
     } \
   } \
   printf("PASS: %s\n", function_name); \
-  return 0; \
   }

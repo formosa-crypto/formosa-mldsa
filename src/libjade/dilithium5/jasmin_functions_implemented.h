@@ -58,10 +58,12 @@
 #if 0
 #define poly_add_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_add PQCLEAN_DILITHIUM5_CLEAN_poly_add_jazz
+#endif
 
 #define poly_caddq_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_caddq PQCLEAN_DILITHIUM5_CLEAN_poly_caddq_jazz
 
+#if 0
 #define poly_challenge_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_challenge PQCLEAN_DILITHIUM5_CLEAN_poly_challenge_jazz
 
