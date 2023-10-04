@@ -2,8 +2,10 @@ require "poly.jinc"
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_poly_reduce_jazz(reg u32 pa) {
   stack u32[N] a;
+  reg ptr u32[N] rpa; 
   a = __mem_to_poly(pa);
-  a = __poly_reduce(a);
+  rpa = a;
+  a = __poly_reduce(rpa);
   __poly_to_mem(a, pa);
 }     
 

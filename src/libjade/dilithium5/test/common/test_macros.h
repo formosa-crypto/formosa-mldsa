@@ -58,34 +58,54 @@
 
 #endif
 
-#define checkpoly(FUNCTION_C, FUNCTION_JASMIN, function_name) \
-  {
-  int32_t arg;
-  int32_t a[N];
-  int32_t a_jazz[N];
-
-  for(int t=0; t<TESTS; t++)
-  {
-    // initialize 8 bytes of randomness
-    for (int i = 0; i < N; i++) {
-      randombytes((uint8_t*)(&arg), sizeof(int32_t));
-      a[i] = arg;
-      a_jazz[i] = arg;
-    }
-
-    FUNCTION_C(a);
-    FUNCTION_JASMIN(a_jazz);
-
-    for (int i = 0; i < N; i++) {
-      if (a[i] != a_jazz[i]) {
-        printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", (int32_t)arg, a[i], a_jazz[i]);
-        printf("FAIL: %s\n", function_name);
-        exit(1);
-      }
-    }
+#define checkarrN(FUNCTION_C, FUNCTION_JASMIN, function_name) \
+  { \
+  int32_t arg; \
+  int32_t a[N]; \
+  int32_t a_jazz[N]; \
+  for(int t=0; t<TESTS; t++) \
+  { \
+    for (int i = 0; i < N; i++) { \
+      randombytes((uint8_t*)(&arg), sizeof(int32_t)); \
+      a[i] = arg; \
+      a_jazz[i] = arg; \
+    } \
+    FUNCTION_C(a);	     \
+    FUNCTION_JASMIN(a_jazz); \
+    for (int i = 0; i < N; i++) { \
+      if (a[i] != a_jazz[i]) { \
+        printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", (int32_t)arg, a[i], a_jazz[i]); \
+        printf("FAIL: %s\n", function_name); \
+        exit(1); \
+      } \
+    } \
+  } \
+  printf("PASS: %s\n", function_name); \
+  return 0; \
   }
 
-  printf("PASS: %s\n", function_name);
-
-  return 0;
-}
+#define checkpoly(FUNCTION_C, FUNCTION_JASMIN, function_name) \
+  { \
+  int32_t arg; \
+  int32_t a[N]; \
+  int32_t a_jazz[N]; \
+  for(int t=0; t<TESTS; t++) \
+  { \
+    for (int i = 0; i < N; i++) { \
+      randombytes((uint8_t*)(&arg), sizeof(int32_t)); \
+      a[i] = arg; \
+      a_jazz[i] = arg; \
+    } \
+    FUNCTION_C((poly *)a);   \
+    FUNCTION_JASMIN((poly *)a_jazz);		\
+    for (int i = 0; i < N; i++) { \
+      if (a[i] != a_jazz[i]) { \
+        printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", (int32_t)arg, a[i], a_jazz[i]); \
+        printf("FAIL: %s\n", function_name); \
+        exit(1); \
+      } \
+    } \
+  } \
+  printf("PASS: %s\n", function_name); \
+  return 0; \
+  }

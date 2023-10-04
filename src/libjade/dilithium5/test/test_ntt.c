@@ -28,7 +28,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz(int32_t a[N]);
 int main ()
 {
   check3232to32(PQCLEAN_DILITHIUM5_CLEAN_mul_montgomery_reduce_8380417, PQCLEAN_DILITHIUM5_CLEAN_mul_montgomery_reduce_jazz, "PQCLEAN_DILITHIUM5_CLEAN_mul_montgomery_reduce_8380417");
-  checkpoly(PQCLEAN_DILITHIUM5_CLEAN_ntt, PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz, "ntt"); 
-  checkpoly(PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont, PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz, "invntt_tomont"); 
+  checkarrN(PQCLEAN_DILITHIUM5_CLEAN_ntt, PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz, "ntt"); 
+  checkarrN(PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont, PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz, "invntt_tomont"); 
   return 0;
 }

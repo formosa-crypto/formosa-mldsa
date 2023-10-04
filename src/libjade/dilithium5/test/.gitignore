@@ -2,6 +2,7 @@
 test_reduce
 test_rounding
 test_ntt
+test_poly
 checksumbig
 checksumsmall
 functest

@@ -42,6 +42,7 @@ fn _poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N] {
 *
 * Arguments:   - poly *a: pointer to input/output polynomial
 **************************************************/
+/*
 inline fn __poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
 {
   reg u32 i coeff;
@@ -64,6 +65,6 @@ fn _poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
   a = __poly_caddq(a);
   return a;
 }
-
+*/
 
 
