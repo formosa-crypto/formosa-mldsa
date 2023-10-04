@@ -66,5 +66,56 @@ fn _poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
   return a;
 }
 
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_add
+*
+* Description: Add polynomials. No modular reduction is performed.
+*
+* Arguments:   - poly *c: pointer to output polynomial
+*              - const poly *a: pointer to first summand
+*              - const poly *b: pointer to second summand
+**************************************************/
+
+inline fn __poly_add_body(reg u32 coeff_a, reg u32 coeff_b) -> reg u32
+{
+  coeff_a = coeff_a + coeff_b;
+  return coeff_a;
+}
+
+inline fn __poly_add_inplace(reg ptr u32[N] a b) -> reg ptr u32[N]
+{
+  reg u32 i coeff_a coeff_b;
+
+  i = 0;
+  while(i < N)
+  {
+    coeff_a = a[(int) i];
+    coeff_b = b[(int) i];
+    coeff_a = __poly_add_body(coeff_a, coeff_b);
+    a[(int) i] = coeff_a;
+
+    i += 1;
+  }
+
+  return a;
+}
+
+inline fn __poly_add(reg ptr u32[N] r a b) -> reg ptr u32[N]
+{
+  reg u32 i coeff_r coeff_a coeff_b;
+
+  i = 0;
+  while(i < N)
+  {
+    coeff_a = a[(int) i];
+    coeff_b = b[(int) i];
+    coeff_r = __poly_add_body(coeff_a, coeff_b);
+    r[(int) i] = coeff_r;
+
+    i += 1;
+  }
+
+  return r;
+}
 
 

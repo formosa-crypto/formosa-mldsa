@@ -58,52 +58,70 @@
 
 #endif
 
-#define checkarrN(FUNCTION_C, FUNCTION_JASMIN, function_name) \
+#define fillarrN(a, a_jazz) \
   { \
   int32_t arg; \
+  for (int i = 0; i < N; i++) { \
+    randombytes((uint8_t*)(&arg), sizeof(int32_t)); \
+    a[i] = arg; \
+    a_jazz[i] = arg; \
+  } \
+  }
+
+#define eqarrN(a, a_jazz, function_name)			\
+  { \
+  for (int i = 0; i < N; i++) { \
+    if (a[i] != a_jazz[i]) { \
+      printf(PRId32 " != %" PRId32 "\n", a[i], a_jazz[i]); \
+      printf("FAIL: %s\n", function_name); \
+      exit(1); \
+    } \
+  } \
+  }
+
+#define checkarrN(FUNCTION_C, FUNCTION_JASMIN, function_name) \
+  { \
   int32_t a[N]; \
   int32_t a_jazz[N]; \
   for(int t=0; t<TESTS; t++) \
   { \
-    for (int i = 0; i < N; i++) { \
-      randombytes((uint8_t*)(&arg), sizeof(int32_t)); \
-      a[i] = arg; \
-      a_jazz[i] = arg; \
-    } \
+    fillarrN(a, a_jazz); \
     FUNCTION_C(a);	     \
     FUNCTION_JASMIN(a_jazz); \
-    for (int i = 0; i < N; i++) { \
-      if (a[i] != a_jazz[i]) { \
-        printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", (int32_t)arg, a[i], a_jazz[i]); \
-        printf("FAIL: %s\n", function_name); \
-        exit(1); \
-      } \
-    } \
+    eqarrN(a, a_jazz, function_name); \
   } \
   printf("PASS: %s\n", function_name); \
   }
 
 #define checkpoly(FUNCTION_C, FUNCTION_JASMIN, function_name) \
   { \
-  int32_t arg; \
   int32_t a[N]; \
   int32_t a_jazz[N]; \
   for(int t=0; t<TESTS; t++) \
   { \
-    for (int i = 0; i < N; i++) { \
-      randombytes((uint8_t*)(&arg), sizeof(int32_t)); \
-      a[i] = arg; \
-      a_jazz[i] = arg; \
-    } \
-    FUNCTION_C((poly *)a);   \
-    FUNCTION_JASMIN((poly *)a_jazz);		\
-    for (int i = 0; i < N; i++) { \
-      if (a[i] != a_jazz[i]) { \
-        printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", (int32_t)arg, a[i], a_jazz[i]); \
-        printf("FAIL: %s\n", function_name); \
-        exit(1); \
-      } \
-    } \
+    fillarrN(a, a_jazz); \
+    FUNCTION_C((poly *) a); \
+    FUNCTION_JASMIN((poly *) a_jazz); \
+    eqarrN(a, a_jazz, function_name); \
+  } \
+  printf("PASS: %s\n", function_name); \
+  }
+
+#define checkpoly2(FUNCTION_C, FUNCTION_JASMIN, function_name) \
+  { \
+  int32_t a[N]; \
+  int32_t b[N]; \
+  int32_t c[N];	\
+  int32_t a_jazz[N]; \
+  int32_t b_jazz[N]; \
+  int32_t c_jazz[N]; \
+  for(int t=0; t<TESTS; t++) \
+  { \
+    fillarrN(a, a_jazz); \
+    fillarrN(b, b_jazz); \
+    FUNCTION_C((poly *) c, (poly *) a, (poly *) b); \
+    FUNCTION_JASMIN((poly *) c_jazz, (poly *) a_jazz, (poly *) b_jazz); \
+    eqarrN(c, c_jazz, function_name); \
   } \
   printf("PASS: %s\n", function_name); \
   }

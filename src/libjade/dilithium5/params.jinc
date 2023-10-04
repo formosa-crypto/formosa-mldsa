@@ -16,21 +16,26 @@ u32 MINUS_GAMMA2 = -iGAMMA2;
 
 inline fn __mem_to_poly (reg u32 p) -> stack u32[N] {
   stack u32[N] a;
+  reg ptr u32[N] pa;
   reg u32 ai i;
+  pa = a;
   i = 0;
   while (i < N) { 
     ai = (u32)[p + 4 * i];
-    a[(int) i] = ai;
+    pa[(int) i] = ai;
     i += 1;
-  } 
+  }
+  a = pa;
   return a;
 }
 
 inline fn __poly_to_mem (stack u32[N] a, reg u32 p) {
   reg u32 ai i;
+  reg ptr u32[N] pa;
   i = 0;
+  pa = a;
   while (i < N) { 
-    ai = a[(int) i];
+    ai = pa[(int) i];
     (u32)[p + 4 * i] = ai;
     i += 1;
   } 
