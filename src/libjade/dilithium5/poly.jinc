@@ -1,0 +1,69 @@
+require "params.jinc"
+require "rounding.jinc"
+require "reduce.jinc"
+require "ntt.jinc"
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_reduce
+*
+* Description: Inplace reduction of all coefficients of polynomial to
+*              representative in [-6283009,6283007].
+*
+* Arguments:   - poly *a: pointer to input/output polynomial
+**************************************************/
+inline fn __poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N]
+{
+  reg u32 i coeff;
+
+  i = 0;
+  while(i < N)
+  {
+    coeff = a[(int) i];
+    coeff = __reduce32_8380417(coeff);
+    a[(int) i] = coeff;
+
+    i += 1;
+  }
+
+  return a;
+}
+
+fn _poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N] {
+   a = __poly_reduce(a);
+   return a; 
+}
+
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_caddq
+*
+* Description: For all coefficients of in/out polynomial add Q if
+*              coefficient is negative.
+*
+* Arguments:   - poly *a: pointer to input/output polynomial
+**************************************************/
+inline fn __poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
+{
+  reg u32 i coeff;
+
+  i = 0;
+  while(i < N)
+  {
+    coeff = a[(int) i];
+    coeff = caddq(coeff);
+    a[(int) i] = coeff;
+
+    i += 1;
+  }
+
+  return a;
+}
+
+fn _poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
+{
+  a = __poly_caddq(a);
+  return a;
+}
+
+
+

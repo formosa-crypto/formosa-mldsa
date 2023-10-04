@@ -91,10 +91,12 @@
 
 #define poly_power2round_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_power2round PQCLEAN_DILITHIUM5_CLEAN_poly_power2round_jazz
+#endif 
 
 #define poly_reduce_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_reduce PQCLEAN_DILITHIUM5_CLEAN_poly_reduce_jazz
 
+#if 0
 #define poly_shiftl_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl_jazz
 

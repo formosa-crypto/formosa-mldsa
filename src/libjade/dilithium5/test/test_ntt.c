@@ -25,75 +25,10 @@ void PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz(int32_t a[N]);
 void PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont(int32_t a[N]);
 void PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz(int32_t a[N]);
 
-
-int test_ntt()
-{
-  int32_t arg;
-  int32_t a[N];
-  int32_t a_jazz[N];
-
-  for(int t=0; t<TESTS; t++)
-  {
-    // initialize 8 bytes of randomness
-    for (int i = 0; i < N; i++) {
-      randombytes((uint8_t*)(&arg), sizeof(int32_t));
-      a[i] = arg;
-      a_jazz[i] = arg;
-    }
-
-    PQCLEAN_DILITHIUM5_CLEAN_ntt(a);
-    PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz(a_jazz);
-
-    for (int i = 0; i < N; i++) {
-      if (a[i] != a_jazz[i]) {
-        printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", (int32_t)arg, a[i], a_jazz[i]);
-        printf("FAIL: ntt\n");
-        exit(1);
-      }
-    }
-  }
-
-  printf("PASS: ntt\n");
-
-  return 0;
-}
-
-int test_invntt_tomont()
-{
-  int32_t arg;
-  int32_t a[N];
-  int32_t a_jazz[N];
-
-  for(int t=0; t<TESTS; t++)
-  {
-    // initialize 8 bytes of randomness
-    for (int i = 0; i < N; i++) {
-      randombytes((uint8_t*)(&arg), sizeof(int32_t));
-      a[i] = arg;
-      a_jazz[i] = arg;
-    }
-
-    PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont(a);
-    PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz(a_jazz);
-
-    for (int i = 0; i < N; i++) {
-      if (a[i] != a_jazz[i]) {
-        printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", (int32_t)arg, a[i], a_jazz[i]);
-        printf("FAIL: invntt_tomont\n");
-        exit(1);
-      }
-    }
-  }
-
-  printf("PASS: invntt_tomont\n");
-
-  return 0;
-}
-
 int main ()
 {
   check3232to32(PQCLEAN_DILITHIUM5_CLEAN_mul_montgomery_reduce_8380417, PQCLEAN_DILITHIUM5_CLEAN_mul_montgomery_reduce_jazz, "PQCLEAN_DILITHIUM5_CLEAN_mul_montgomery_reduce_8380417");
-  test_ntt();
-  test_invntt_tomont();
+  checkpoly(PQCLEAN_DILITHIUM5_CLEAN_ntt, PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz, "ntt"); 
+  checkpoly(PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont, PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz, "invntt_tomont"); 
   return 0;
 }
