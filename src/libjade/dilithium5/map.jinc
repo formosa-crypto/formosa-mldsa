@@ -1,0 +1,33 @@
+
+// /////////////////////////////////////////////////////////////////////////////
+// maps
+
+inline fn __map1<N, ITER>[F;A](reg ptr A[N] a) -> reg ptr A[N]
+{
+  reg u32 i; // ideally: reg size i; // similar to size_t
+  inline int j;
+  reg A elem;
+
+  i = 0;
+  while(i < (N / ITER) * ITER)
+  {
+    for j=0 to ITER
+    {
+      elem = a[(int) i];
+      elem = F(elem);
+      a[(int) i] = elem;
+      i += 1;
+    }
+  }
+
+  for j=0 to (N % ITER)
+  {
+    elem = a[(int) i];
+    elem = F(elem);
+    a[(int) i] = elem;
+    i += 1;
+  }
+
+  return a;
+}//<>
+

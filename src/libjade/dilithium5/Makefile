@@ -14,7 +14,12 @@ OBJECTS=ntt.o packing.o poly.o polyvec.o reduce.o rounding.o sign.o symmetric-sh
 
 #-------------------------------------------------------------------------------
 JASMIN ?= jasminc
+JPP ?= ../../../ext/jpp
+PREPROCESSOR ?= ../../../ext/jasmin-preprocessor/preprocessor
+
 JASMIN_FILES := $(subst ./,,$(shell find . -name '*.jazz'))
+
+PRE_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%.jpp)
 ASM_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%.s)
 OBJ_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%_jazz.o)
 
@@ -53,7 +58,9 @@ $(JASMIN_LIB).o: $(JASMIN_LIB).s
 
 $(ASM_JASMIN_FILES):
 %.s: %.jazz
-	$(JASMIN) -arch=arm-m4 -o $@ $<
+	$(JPP) -in $< -out $*.jpp
+	$(PREPROCESSOR) --input_file $*.jpp --output_file $*.jpp
+	$(JASMIN) -arch=arm-m4 -o $@ $*.jpp
 
 .PHONY: $(JASMIN_LIB).jazz
 $(JASMIN_LIB).jazz:
@@ -78,6 +85,7 @@ clean:
 	$(RM) $(OBJECTS)
 	$(RM) $(LIB)
 	$(RM) $(ASM_JASMIN_FILES)
+	$(RM) $(PRE_JASMIN_FILES)
 	$(RM) $(JASMIN_LIB).*
 
 

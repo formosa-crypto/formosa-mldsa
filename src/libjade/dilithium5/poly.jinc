@@ -3,6 +3,8 @@ require "rounding.jinc"
 require "reduce.jinc"
 require "ntt.jinc"
 
+require "map.jinc"
+
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_reduce
 *
@@ -13,18 +15,7 @@ require "ntt.jinc"
 **************************************************/
 inline fn __poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N]
 {
-  reg u32 i coeff;
-
-  i = 0;
-  while(i < N)
-  {
-    coeff = a[(int) i];
-    coeff = __reduce32_8380417(coeff);
-    a[(int) i] = coeff;
-
-    i += 1;
-  }
-
+  a = __map1<N,1>[__reduce32_8380417;u32](a);
   return a;
 }
 
@@ -45,18 +36,7 @@ fn _poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N] {
 
 inline fn __poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
 {
-  reg u32 i coeff;
-
-  i = 0;
-  while(i < N)
-  {
-    coeff = a[(int) i];
-    coeff = __caddq(coeff);
-    a[(int) i] = coeff;
-
-    i += 1;
-  }
-
+  a = __map1<N,1>[__caddq;u32](a);
   return a;
 }
 

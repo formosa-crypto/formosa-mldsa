@@ -1,4 +1,5 @@
 *.o
 *.s
+*.jpp
 *.a
 library.jazz
