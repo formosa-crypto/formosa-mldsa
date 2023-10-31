@@ -8,3 +8,7 @@
 [submodule "ext/jasmin-preprocessor"]
 	path = ext/jasmin-preprocessor
 	url = https://github.com/ruipedro16/jasmin-preprocessor.git
+[submodule "ext/libjade"]
+	path = ext/libjade
+	url = https://github.com/formosa-crypto/libjade.git
+	branch = feature/armv7m

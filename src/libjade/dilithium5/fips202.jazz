@@ -1,0 +1,47 @@
+from libjade require "src/common/keccak/keccak1600/armv7m/ref/keccak1600.jinc"
+
+param int PQC_SHAKECTX_BYTES = 25;
+param int PQC_SHAKEINCCTX_BYTES = 26;
+param int SHAKE256_RATE = 136;
+param int SEEDBYTES = 32;
+
+/* Initialize incremental hashing API */
+fn shake256_inc_init_jazz(reg ptr u32[PQC_SHAKEINCCTX_BYTES*2] state)
+{
+/* from keccak1600.jinc armv7m */
+  __keccak_init_ref(state[0:PQC_SHAKECTX_BYTES*2]);
+  state[PQC_SHAKECTX_BYTES] = 0;
+}
+
+// fn shake256_inc_absorb_jazz(reg u32 state, reg u32 input, size_t inlen) 
+// {
+// /* from keccak1600.jinc armv7m */
+// __absorb_ref(
+// reg ptr u32[25*2] state,
+// reg   u32 in inlen,
+// stack u32 s_trail_byte,
+// reg   u32 rate // rate already in bytes -- it is returned bc of spills
+// )
+// }
+
+// /* Prepares for squeeze phase */
+// fn shake256_inc_finalize_jazz(shake256incctx *state)
+// {
+// /* not present in keccak1600.jinc armv7m */
+// }
+
+// /* Squeeze output out of the sponge.
+//  *
+//  * Supports being called multiple times
+//  */
+// fn shake256_inc_squeeze_jazz(uint8_t *output, size_t outlen, shake256incctx *state)
+// {
+// /* from keccak1600.jinc armv7m */
+// inline fn __squeeze_ref(
+//   reg mut ptr u32[25*2] state,
+//   stack   u32 s_out,
+//   reg     u32 outlen,
+//   reg     u32 rate
+// )
+// }
+
