@@ -15,7 +15,7 @@ require "map.jinc"
 **************************************************/
 inline fn __poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N]
 {
-  a = __map1<N,1>[__reduce32_8380417;u32](a);
+  a = __map1__reduce32_8380417(a);
   return a;
 }
 
@@ -36,7 +36,7 @@ fn _poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N] {
 
 inline fn __poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
 {
-  a = __map1<N,1>[__caddq;u32](a);
+  a = __map1__caddq(a);
   return a;
 }
 
