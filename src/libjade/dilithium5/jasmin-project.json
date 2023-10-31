@@ -1,0 +1,7 @@
+{
+  "project_name": "dilithium5",
+  "sources": {
+    "root": ".",
+    "modules": [{"path": "library.jazz", "architecture": "arm-m4"}]
+  }
+}
