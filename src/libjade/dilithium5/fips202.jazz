@@ -6,11 +6,13 @@ param int SHAKE256_RATE = 136;
 param int SEEDBYTES = 32;
 
 /* Initialize incremental hashing API */
-fn shake256_inc_init_jazz(reg ptr u32[PQC_SHAKEINCCTX_BYTES*2] state)
+fn shake256_inc_init_jazz(reg ptr u32[PQC_SHAKEINCCTX_BYTES*2] state) -> reg ptr u32[PQC_SHAKEINCCTX_BYTES*2]
 {
 /* from keccak1600.jinc armv7m */
-  __keccak_init_ref(state[0:PQC_SHAKECTX_BYTES*2]);
-  state[PQC_SHAKECTX_BYTES] = 0;
+  state[0:PQC_SHAKECTX_BYTES*2] = __keccak_init_ref(state[0:PQC_SHAKECTX_BYTES*2]);
+  state[PQC_SHAKECTX_BYTES*2] = 0;
+  state[PQC_SHAKECTX_BYTES*2+1] = 0;
+  return state;
 }
 
 // fn shake256_inc_absorb_jazz(reg u32 state, reg u32 input, size_t inlen) 
