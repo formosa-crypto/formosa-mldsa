@@ -1,3 +1,6 @@
+
+require "fips202.jazz"
+
 param int N = 256;
 param int iQ = 8380417;
 u32 Q = iQ;
@@ -41,6 +44,20 @@ inline fn __poly_to_mem (stack u32[N] a, reg u32 p) {
   } 
 }
 
-
+inline fn __mem_to_array (reg u32 p) -> stack u8[SEEDBYTES] {
+  stack u8[SEEDBYTES] a;
+  reg ptr u8[SEEDBYTES] pa;
+  reg u32 i;
+  reg u8 ai;
+  pa = a;
+  i = 0;
+  while (i < SEEDBYTES) { 
+    ai = (u8)[p + i];
+    pa[(int) i] = ai;
+    i += 1;
+  }
+  a = pa;
+  return a;
+}
 
 
