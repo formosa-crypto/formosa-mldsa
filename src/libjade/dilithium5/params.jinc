@@ -6,6 +6,10 @@ param int TAU = 60;
 param int iQ = 8380417;
 u32 Q = iQ;
 
+
+param int PQC_SHAKECTX_BYTES = 25;
+param int SEEDBYTES = 32;
+
 param int D = 13;
 
 param int iGAMMA2 = ((iQ-1)/32);

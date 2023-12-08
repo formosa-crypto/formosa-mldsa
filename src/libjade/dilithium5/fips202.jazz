@@ -1,4 +1,4 @@
-require "../../../ext/libjade/src/common/keccak/keccak1600/armv7m/ref/keccak1600.jinc"
+/*require "../../../ext/libjade/src/common/keccak/keccak1600/armv7m/ref/keccak1600.jinc"
 
 param int PQC_SHAKECTX_BYTES = 25;
 param int PQC_SHAKEINCCTX_BYTES = 26;
@@ -47,3 +47,4 @@ fn shake256_inc_init_jazz(reg ptr u32[PQC_SHAKEINCCTX_BYTES*2] state) -> reg ptr
 // )
 // }
 
+*/
