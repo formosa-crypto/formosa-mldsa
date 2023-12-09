@@ -77,7 +77,7 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
   reg u32 zeta t;
 
   reg ptr u32[N] zetas;  
-  reg u32 start_len j_len zeta aj aj_len;
+  reg u32 start_len j_len aj aj_len;
   reg bool zf;
 
   zetas = ZETAS;
@@ -167,8 +167,7 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
   reg u32 zeta t;
 
   reg ptr u32[N] zetas;  
-  reg u32 start_len j_len zeta aux aj aj_len;
-  reg bool zf;
+  reg u32 start_len j_len aj aj_len;
 
   zetas = ZETAS;
 
