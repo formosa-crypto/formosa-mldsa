@@ -58,14 +58,19 @@
 
 #endif
 
+#define fillarr(ty, k, a)			\
+  { \
+  ty arg; \
+  for (int i = 0; i < k; i++) { \
+    randombytes((uint8_t*)(&arg), sizeof(ty)); \
+    a[i] = arg; \
+  } \
+  }
+
 #define fillarrN(a, a_jazz) \
   { \
-  int32_t arg; \
-  for (int i = 0; i < N; i++) { \
-    randombytes((uint8_t*)(&arg), sizeof(int32_t)); \
-    a[i] = arg; \
-    a_jazz[i] = arg; \
-  } \
+  fillarr(int32_t, N, a); \
+  memcpy(a_jazz, a, sizeof(int32_t) * N); \
   }
 
 #define eqarrN(a, a_jazz, function_name)			\

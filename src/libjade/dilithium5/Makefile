@@ -59,13 +59,6 @@ $(ASM_JASMIN_FILES):
 %.s: %.jazz
 	$(JASMIN) -arch=arm-m4 -o $@ $< 
 
-.PHONY: $(JASMIN_LIB).jazz
-$(JASMIN_LIB).jazz:
-	echo "" > $@
-	for file in $(filter-out $@, $(JASMIN_FILES)); do \
-		echo "require \"$$file\"" >> $@; \
-	done
-
 #-------------------------------------------------------------------------------
 
 compile: $(LIB)
@@ -83,6 +76,6 @@ clean:
 	$(RM) $(LIB)
 	$(RM) $(ASM_JASMIN_FILES)
 	$(RM) $(PRE_JASMIN_FILES)
-	$(RM) $(JASMIN_LIB).*
+	$(RM) $(JASMIN_LIB).{o,s}
 
 
