@@ -5,7 +5,7 @@
 #include "params.h"
 #include "poly.h"
 #include "notrandombytes.c"
-
+#include "fips202.h"
 #include "test_macros.h"
 
 #ifndef TESTS

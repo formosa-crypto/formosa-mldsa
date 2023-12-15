@@ -10,6 +10,8 @@ u32 Q = iQ;
 param int PQC_SHAKECTX_BYTES = 25;
 param int SEEDBYTES = 32;
 
+param int SHAKE256_RATE = 136;
+
 param int D = 13;
 
 param int iGAMMA2 = ((iQ-1)/32);
@@ -47,6 +49,30 @@ inline fn __poly_to_mem (stack u32[N] a, reg u32 p) {
     (u32)[p + 4 * i] = ai;
     i += 1;
   } 
+}
+
+inline fn __state_to_mem (reg ptr u32[25*2] pa, reg u32 p) {
+  reg u32 ai i;
+
+  i = 0;
+
+  while (i < 25*2) {
+    ai = pa[(int) i];
+    (u32)[p + 4 * i] = ai;
+    i += 1;
+  }
+}
+
+inline fn __buf_to_mem (reg ptr u8[SHAKE256_RATE] pa, reg u32 p) {
+  reg u32 ai i;
+
+  i = 0;
+
+  while (i < SHAKE256_RATE) {
+    ai = (32u) pa[(int) i];
+    (u8)[p + i] = ai;
+    i += 1;
+  }
 }
 
 inline fn __mem_to_array (reg u32 p) -> stack u8[SEEDBYTES] {
