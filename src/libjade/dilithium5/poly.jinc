@@ -163,3 +163,18 @@ inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
   
   return r; 
 }
+
+fn _poly_decompose (reg ptr u32[N] a1, reg ptr u32[N] a0, reg ptr u32[N] a) -> reg ptr u32[N], reg ptr u32[N] {
+  reg u32 i;
+  reg u32 q;
+
+  q = __Q();
+
+  i = 0;
+  while (i < N) {
+    a0[(int) i], a1[(int) i] = __decompose_a0a1(a[(int) i], q);
+    i += 1;
+  }
+
+  return a1, a0;
+}
