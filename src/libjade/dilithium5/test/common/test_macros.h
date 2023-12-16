@@ -77,7 +77,8 @@
   { \
   for (int i = 0; i < N; i++) { \
     if (a[i] != a_jazz[i]) { \
-      printf(PRId32 " != %" PRId32 "\n", a[i], a_jazz[i]); \
+      printf("at %i : ", i); \
+      printf(PRId32 " != %" PRId32 "\n", a[i], a_jazz[i]);	\
       printf("FAIL: %s\n", function_name); \
       exit(1); \
     } \

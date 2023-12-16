@@ -164,6 +164,19 @@ inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
   return r; 
 }
 
+/*************************************************                                                         
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_decompose                                                     
+*                                                                                                          
+* Description: For all coefficients c of the input polynomial,                                             
+*              compute high and low bits c0, c1 such c mod Q = c1*ALPHA + c0                               
+*              with -ALPHA/2 < c0 <= ALPHA/2 except c1 = (Q-1)/ALPHA where we                              
+*              set c1 = 0 and -ALPHA/2 <= c0 = c mod Q - Q < 0.                                            
+*              Assumes coefficients to be standard representatives.                                        
+*                                                                                                          
+* Arguments:   - poly *a1: pointer to output polynomial with coefficients c1                               
+*              - poly *a0: pointer to output polynomial with coefficients c0                               
+*              - const poly *a: pointer to input polynomial                                                
+**************************************************/
 fn _poly_decompose (reg ptr u32[N] a1, reg ptr u32[N] a0, reg ptr u32[N] a) -> reg ptr u32[N], reg ptr u32[N] {
   reg u32 i;
   reg u32 q;
@@ -172,7 +185,11 @@ fn _poly_decompose (reg ptr u32[N] a1, reg ptr u32[N] a0, reg ptr u32[N] a) -> r
 
   i = 0;
   while (i < N) {
-    a0[(int) i], a1[(int) i] = __decompose_a0a1(a[(int) i], q);
+    reg u32 a0_, a1_, a_;
+    a_ = a[(int) i];
+    a0_, a1_ = __decompose_a0a1(a_, q);
+    a0[(int) i] = a0_;
+    a1[(int) i] = a1_;
     i += 1;
   }
 

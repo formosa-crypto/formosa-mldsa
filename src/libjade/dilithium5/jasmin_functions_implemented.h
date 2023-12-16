@@ -68,11 +68,13 @@
 #if 0
 #define poly_chknorm_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm_jazz
+#endif
 
 #if 0
 #define poly_decompose_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_decompose PQCLEAN_DILITHIUM5_CLEAN_poly_decompose_jazz
 
+#if 0
 #define polyeta_pack_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyeta_pack PQCLEAN_DILITHIUM5_CLEAN_polyeta_pack_jazz
 
