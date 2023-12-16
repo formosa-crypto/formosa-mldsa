@@ -1,10 +1,12 @@
 
-require "fips202.jazz"
-
 param int N = 256;
 param int TAU = 60;
 param int iQ = 8380417;
 u32 Q = iQ;
+
+param int ETA = 2;
+
+param int POLYETA_PACKEDBYTES = 96;
 
 
 param int PQC_SHAKECTX_BYTES = 25;
@@ -99,5 +101,15 @@ inline fn __mem_to_array (reg u32 p) -> stack u8[SEEDBYTES] {
   return a;
 }
 
+inline fn __poly_eta_to_mem (reg ptr u8[POLYETA_PACKEDBYTES] pa, reg u32 p) {
+  reg u32 ai i;
 
+  i = 0;
+
+  while (i < POLYETA_PACKEDBYTES) {
+    ai = (32u) pa[(int) i];
+    (u8)[p + i] = ai;
+    i += 1;
+  }
+}
 
