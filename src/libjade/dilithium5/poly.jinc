@@ -261,3 +261,72 @@ fn _polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
    return r;
 }
 
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_polyeta_unpack
+*
+* Description: Unpack polynomial with coefficients in [-ETA,ETA].
+*
+* Arguments:   - poly *r: pointer to output polynomial
+*              - const uint8_t *a: byte array with bit-packed polynomial
+**************************************************/
+
+inline fn __polyeta_unpack(reg ptr u32[N] r, reg ptr u8[POLYETA_PACKEDBYTES] a) -> reg ptr u32[N] {
+
+  reg u32 i, j;
+  reg u32[3] t;
+  inline int k;
+  reg u32 aux;
+  i = 0; j = 0;
+  while(i < N) {
+  
+    for k = 0 to 3 { t[k] = (32u) a[(int) j]; j +=1; }
+    
+    /* r->coeffs[8 * i + 0] =  (a[3 * i + 0] >> 0) & 7;
+       r->coeffs[8 * i + 0] = ETA - r->coeffs[8 * i + 0]; */
+    aux = #UBFX(t[0], 0, 3); aux = ETA - aux;
+    r[(int) i] = aux; i += 1; 
+  
+    /* r->coeffs[8 * i + 1] =  (a[3 * i + 0] >> 3) & 7;
+       r->coeffs[8 * i + 1] = ETA - r->coeffs[8 * i + 1]; */
+    aux = #UBFX(t[0], 3, 3); aux = ETA - aux; 
+    r[(int) i] = aux; i += 1;
+    
+    /* r->coeffs[8 * i + 2] = ((a[3 * i + 0] >> 6) | (a[3 * i + 1] << 2)) & 7;
+       r->coeffs[8 * i + 2] = ETA - r->coeffs[8 * i + 2]; */
+    aux = t[0] >> 6; aux |= t[1] << 2; aux &= 7; aux = ETA - aux;
+    r[(int) i] = aux; i += 1;
+    
+    /* r->coeffs[8 * i + 3] =  (a[3 * i + 1] >> 1) & 7;
+       r->coeffs[8 * i + 3] = ETA - r->coeffs[8 * i + 3]; */
+    aux = #UBFX(t[1], 1, 3); aux = ETA - aux;
+    r[(int) i] = aux; i += 1;
+    
+    /* r->coeffs[8 * i + 4] =  (a[3 * i + 1] >> 4) & 7;
+       r->coeffs[8 * i + 4] = ETA - r->coeffs[8 * i + 4]; */
+    aux = #UBFX(t[1], 4, 3); aux = ETA - aux;	
+    r[(int) i] = aux; i += 1;
+    
+    /* r->coeffs[8 * i + 5] = ((a[3 * i + 1] >> 7) | (a[3 * i + 2] << 1)) & 7;
+       r->coeffs[8 * i + 5] = ETA - r->coeffs[8 * i + 5]; */
+    aux = t[1] >> 7; aux |= t[2] << 1; aux &= 7; aux = ETA - aux;	
+    r[(int) i] = aux; i += 1;
+    
+    /* r->coeffs[8 * i + 6] =  (a[3 * i + 2] >> 2) & 7;
+       r->coeffs[8 * i + 6] = ETA - r->coeffs[8 * i + 6]; */
+    aux = #UBFX(t[2], 2, 3); aux = ETA - aux;	
+    r[(int) i] = aux; i += 1;
+    
+    /* r->coeffs[8 * i + 7] =  (a[3 * i + 2] >> 5) & 7;
+       r->coeffs[8 * i + 7] = ETA - r->coeffs[8 * i + 7]; */
+    aux = #UBFX(t[2],5, 3); aux = ETA - aux;	
+    r[(int) i] = aux; i += 1;
+  }
+  return r;  
+}
+
+fn _polyeta_unpack(reg ptr u32[N] r, reg ptr u8[POLYETA_PACKEDBYTES] a) -> reg ptr u32[N] {
+  r = __polyeta_unpack(r, a);
+  return r;
+} 
+
+

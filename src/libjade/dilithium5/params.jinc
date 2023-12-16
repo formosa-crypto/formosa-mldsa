@@ -101,7 +101,22 @@ inline fn __mem_to_array (reg u32 p) -> stack u8[SEEDBYTES] {
   return a;
 }
 
-inline fn __poly_eta_to_mem (reg ptr u8[POLYETA_PACKEDBYTES] pa, reg u32 p) {
+inline fn __mem_to_polyeta (reg u32 p) -> stack u8[POLYETA_PACKEDBYTES] {
+  stack u8[POLYETA_PACKEDBYTES] a;
+  reg ptr u8[POLYETA_PACKEDBYTES] pa;
+  reg u32 ai i;
+  pa = a;
+  i = 0;
+  while (i < POLYETA_PACKEDBYTES) {
+    ai = (u32)[p + i];
+    pa[(int) i] = ai;
+    i += 1;
+  }
+  a = pa;
+  return a;
+}
+
+inline fn __polyeta_to_mem (reg ptr u8[POLYETA_PACKEDBYTES] pa, reg u32 p) {
   reg u32 ai i;
 
   i = 0;
@@ -112,4 +127,6 @@ inline fn __poly_eta_to_mem (reg ptr u8[POLYETA_PACKEDBYTES] pa, reg u32 p) {
     i += 1;
   }
 }
+
+
 
