@@ -23,6 +23,25 @@ u32 GAMMA2 = iGAMMA2;
 u32 MINUS_Q = -iQ; // this should be -Q
 u32 MINUS_GAMMA2 = -iGAMMA2;
 
+
+inline fn __Q() -> reg u32 {
+ // Q = 8380417 = 11 1111 1111 0000 0000 0000 1
+  reg u32 q;
+  q = 0x3FF;
+  q <<= 13;
+  q |= 1;
+  return q;
+}
+
+inline fn __MINUS_Q() -> reg u32 {
+ // -Q = -8380417 = 1 1111 1111 000 0000 000 1 1111 1111 1111
+  reg u32 mq, q;
+  q = __Q();
+  mq = -q;
+  return mq;
+}
+
+
 /* ********************************************************************** */
 /* Helper functions for the test and export function                      */
 

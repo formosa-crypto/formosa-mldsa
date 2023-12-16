@@ -221,3 +221,8 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
 
   return a;
 }
+
+fn _invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
+  a = __invntt_tomont(a);
+  return a;
+}
