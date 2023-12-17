@@ -143,4 +143,15 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl_jazz(reg u32 pa) {
   __poly_to_mem(a, pa);
 }
 
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_sub_jazz(reg u32 pc, reg u32 pa, reg u32 pb) {
+  stack u32[N] a b c;
+  reg ptr u32[N] rpa rpb rpc;
+  a = __mem_to_poly(pa);
+  b = __mem_to_poly(pb);
+  rpa = a; rpb = b; rpc = c;
+  rpc = _poly_sub(rpc, rpa, rpb);
+  c = rpc;
+  __poly_to_mem(c, pc);
+}
+
 

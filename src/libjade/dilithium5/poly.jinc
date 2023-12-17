@@ -485,3 +485,34 @@ fn _poly_shiftl(reg ptr u32[N] a) -> reg ptr u32[N] {
   a = __poly_shiftl(a);
   return a;
 }
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_sub
+*
+* Description: Subtract polynomials. No modular reduction is
+*              performed.
+*
+* Arguments:   - poly *c: pointer to output polynomial
+*              - const poly *a: pointer to first input polynomial
+*              - const poly *b: pointer to second input polynomial to be
+*                               subtraced from first input polynomial
+**************************************************/
+
+inline fn __poly_sub(reg ptr u32[N]c, reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
+  reg u32 i, a_, b_, c_; 
+
+  i = 0;
+  while(i < N) {
+    a_ = a[(int) i];
+    b_ = b[(int) i];
+    c_ = a_ - b_;
+    c[(int) i] = c_;
+    i += 1;
+  }
+  return c;
+}
+
+fn _poly_sub(reg ptr u32[N]c, reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
+  c = __poly_sub(c, a, b);
+  return c;
+}

@@ -101,10 +101,10 @@
 #define poly_shiftl_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl_jazz
 
-#if 0
 #define poly_sub_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_sub PQCLEAN_DILITHIUM5_CLEAN_poly_sub_jazz
 
+#if 0
 #define polyt0_pack_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack_jazz
 
