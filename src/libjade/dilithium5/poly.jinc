@@ -738,3 +738,93 @@ fn _polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) -> reg ptr
   return r;
 }  
 
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_polyt1_pack
+*
+* Description: Bit-pack polynomial t1 with coefficients fitting in 10 bits.
+*              Input coefficients are assumed to be standard representatives.
+*
+* Arguments:   - uint8_t *r: pointer to output byte array with at least
+*                            POLYT1_PACKEDBYTES bytes
+*              - const poly *a: pointer to input polynomial
+**************************************************/
+inline fn __polyt1_pack(reg ptr u8[POLYT1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYT1_PACKEDBYTES] {
+  reg u32 i, j, aux;
+  reg u32[4] t;
+  inline int k;
+  i = 0; j = 0;
+  while (i < N) {
+    for k = 0 to 4 {
+      t[k] = a[(int) i]; i += 1;
+    }
+    /* r[5 * i + 0] = (uint8_t) (a->coeffs[4 * i + 0] >> 0); */
+    r[(int) j] = t[0]; j += 1;
+    
+    /* r[5 * i + 1] = (uint8_t) ((a->coeffs[4 * i + 0] >> 8) | (a->coeffs[4 * i + 1] << 2)); */
+    aux = t[0] >> 8; aux |= t[1] << 2;
+    r[(int) j] = aux; j += 1;
+
+    /* r[5 * i + 2] = (uint8_t) ((a->coeffs[4 * i + 1] >> 6) | (a->coeffs[4 * i + 2] << 4)); */
+    aux = t[1] >> 6; aux |= t[2] << 4;
+    r[(int) j] = aux; j += 1;
+
+    /* r[5 * i + 3] = (uint8_t) ((a->coeffs[4 * i + 2] >> 4) | (a->coeffs[4 * i + 3] << 6)); */
+    aux = t[2] >> 4; aux |= t[3] << 6;
+    r[(int) j] = aux; j += 1;
+    
+    /* r[5 * i + 4] = (uint8_t) (a->coeffs[4 * i + 3] >> 2);                                 */
+    aux = t[3] >> 2;
+    r[(int) j] = aux; j += 1;
+  }
+  return r;
+}
+
+fn _polyt1_pack(reg ptr u8[POLYT1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYT1_PACKEDBYTES] {
+  r = __polyt1_pack(r, a);
+  return r;
+}	 
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_polyt1_unpack
+*
+* Description: Unpack polynomial t1 with 10-bit coefficients.
+*              Output coefficients are standard representatives.
+*
+* Arguments:   - poly *r: pointer to output polynomial
+*              - const uint8_t *a: byte array with bit-packed polynomial
+**************************************************/
+inline fn __polyt1_unpack(reg ptr u32[N] r, reg ptr u8[POLYT1_PACKEDBYTES] a) -> reg ptr u32[N] {
+  reg u32 i, j, aux;
+  reg u32[5] t;
+  inline int k;
+  i = 0; j = 0;
+  while (i < N) {
+    for k = 0 to 5 {
+      t[k] = (32u) a[(int) j]; j += 1;
+    }	
+  
+    /* r->coeffs[4 * i + 0] = ((a[5 * i + 0] >> 0) | ((uint32_t)a[5 * i + 1] << 8)) & 0x3FF; */
+    aux = t[0] | (t[1] << 8); aux = #UBFX(aux, 0, 10);
+    r[(int) i] = aux; i += 1;
+  
+    /* r->coeffs[4 * i + 1] = ((a[5 * i + 1] >> 2) | ((uint32_t)a[5 * i + 2] << 6)) & 0x3FF; */
+    aux = t[1] >> 2; aux |= t[2] << 6; aux = #UBFX(aux, 0, 10);
+    r[(int) i] = aux;	i += 1;
+  
+    /* r->coeffs[4 * i + 2] = ((a[5 * i + 2] >> 4) | ((uint32_t)a[5 * i + 3] << 4)) & 0x3FF; */
+    aux = t[2] >> 4; aux |= t[3] << 4; aux = #UBFX(aux, 0, 10);
+    r[(int) i] = aux; i += 1;
+  
+    /* r->coeffs[4 * i + 3] = ((a[5 * i + 3] >> 6) | ((uint32_t)a[5 * i + 4] << 2)) & 0x3FF; */
+    aux = t[3] >> 6; aux |= t[4] << 2; aux = #UBFX(aux, 0, 10);
+    r[(int) i] = aux; i += 1;
+    
+  }
+  return r;
+}
+
+fn _polyt1_unpack(reg ptr u32[N] r, reg ptr u8[POLYT1_PACKEDBYTES] a) -> reg ptr u32[N] {
+  r = __polyt1_unpack(r, a);
+  return r;
+}
+

@@ -30,6 +30,8 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_sub_jazz(poly *c, poly *a, poly *b);
 
 void PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack_jazz(uint8_t *r, const poly *a);
 void PQCLEAN_DILITHIUM5_CLEAN_polyt0_unpack_jazz(poly *r, const uint8_t *a);
+void PQCLEAN_DILITHIUM5_CLEAN_polyt1_pack_jazz(uint8_t *r, const poly *a);
+void PQCLEAN_DILITHIUM5_CLEAN_polyt1_unpack_jazz(poly *r, const uint8_t *a);
 
 int main ()
 {

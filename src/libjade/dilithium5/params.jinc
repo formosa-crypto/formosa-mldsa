@@ -6,8 +6,11 @@ u32 Q = iQ;
 
 param int ETA = 2;
 
-param int POLYETA_PACKEDBYTES = 96; // N/8 * 3
+
+param int POLYT1_PACKEDBYTES  = 320; // N/4 * 5
 param int POLYT0_PACKEDBYTES = 416; // N/8 * 13
+
+param int POLYETA_PACKEDBYTES = 96; // N/8 * 3
 
 param int PQC_SHAKECTX_BYTES = 25;
 param int SEEDBYTES = 32;
@@ -183,6 +186,33 @@ inline fn __polyt0_to_mem (reg ptr u8[POLYT0_PACKEDBYTES] pa, reg u32 p) {
   i = 0;
 
   while (i < POLYT0_PACKEDBYTES) {
+    ai = (32u) pa[(int) i];
+    (u8)[p + i] = ai;
+    i += 1;
+  }
+}
+
+inline fn __mem_to_polyt1 (reg u32 p) -> stack u8[POLYT1_PACKEDBYTES] {
+  stack u8[POLYT1_PACKEDBYTES] a;
+  reg ptr u8[POLYT1_PACKEDBYTES] pa;
+  reg u32 ai i;
+  pa = a;
+  i = 0;
+  while (i < POLYT1_PACKEDBYTES) {
+    ai = (32u) (u8)[p + i];
+    pa[(int) i] = ai;
+    i += 1;
+  }
+  a = pa;
+  return a;
+}
+
+inline fn __polyt1_to_mem (reg ptr u8[POLYT1_PACKEDBYTES] pa, reg u32 p) {
+  reg u32 ai i;
+
+  i = 0;
+
+  while (i < POLYT1_PACKEDBYTES) {
     ai = (32u) pa[(int) i];
     (u8)[p + i] = ai;
     i += 1;
