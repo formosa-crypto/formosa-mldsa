@@ -222,7 +222,26 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack_jazz(reg u32 pr, reg u32 pa) {
   __polyw1_to_mem(rpr, pr);
 }
 
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyz_pack_jazz(reg u32 pr, reg u32 pa) {
+  stack u32[N] a;
+  stack u8[POLYZ_PACKEDBYTES] r;
+  reg ptr u32[N] rpa;
+  reg ptr u8[POLYZ_PACKEDBYTES] rpr;
+  a = __mem_to_poly(pa);
+  rpa = a; rpr = r;
+  rpr = _polyz_pack(rpr, rpa);
+  __polyz_to_mem(rpr, pr);
+}
 
-
-
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack_jazz(reg u32 pr, reg u32 pa) {
+  stack u32[N] r;
+  stack u8[POLYZ_PACKEDBYTES] a;
+  reg ptr u32[N] rpr;
+  reg ptr u8[POLYZ_PACKEDBYTES] rpa;
+  a = __mem_to_polyz(pa);
+  rpa = a; rpr = r;
+  rpr = _polyz_unpack(rpr, rpa);
+  r = rpr;
+  __poly_to_mem(r, pr);
+}
 

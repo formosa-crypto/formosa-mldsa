@@ -10,6 +10,8 @@ param int ETA = 2;
 param int POLYT1_PACKEDBYTES  = 320; // N/4 * 5
 param int POLYT0_PACKEDBYTES = 416; // N/8 * 13
 
+param int POLYZ_PACKEDBYTES = 640; // N/2 * 5
+
 param int POLYW1_PACKEDBYTES = 128; // N/2
 
 param int POLYETA_PACKEDBYTES = 96; // N/8 * 3
@@ -20,6 +22,9 @@ param int SEEDBYTES = 32;
 param int SHAKE256_RATE = 136;
 
 param int D = 13;
+
+param int iGAMMA1 = (1 << 19);
+u32 GAMMA1 = iGAMMA1;
 
 param int iGAMMA2 = ((iQ-1)/32);
 u32 GAMMA2 = iGAMMA2;
@@ -61,9 +66,18 @@ inline fn __MINUS_GAMMA2 () -> reg u32 {
  return	mgamma2;
 }
 
+inline fn __GAMMA1 () -> reg u32 {
+ // GAMMA1 = 1 << 19
+ reg u32 gamma1;
+ gamma1 = 1;
+ gamma1 = gamma1 << 19;
+ return gamma1;
+}
 
 /* ********************************************************************** */
 /* Helper functions for the test and export function                      */
+
+/* FIXME move those functions elsewere */
 
 inline fn __mem_to_poly (reg u32 p) -> stack u32[N] {
   stack u32[N] a;
@@ -215,6 +229,33 @@ inline fn __polyt1_to_mem (reg ptr u8[POLYT1_PACKEDBYTES] pa, reg u32 p) {
   i = 0;
 
   while (i < POLYT1_PACKEDBYTES) {
+    ai = (32u) pa[(int) i];
+    (u8)[p + i] = ai;
+    i += 1;
+  }
+}
+
+inline fn __mem_to_polyz (reg u32 p) -> stack u8[POLYZ_PACKEDBYTES] {
+  stack u8[POLYZ_PACKEDBYTES] a;
+  reg ptr u8[POLYZ_PACKEDBYTES] pa;
+  reg u32 ai i;
+  pa = a;
+  i = 0;
+  while (i < POLYZ_PACKEDBYTES) {
+    ai = (32u) (u8)[p + i];
+    pa[(int) i] = ai;
+    i += 1;
+  }
+  a = pa;
+  return a;
+}
+
+inline fn __polyz_to_mem (reg ptr u8[POLYZ_PACKEDBYTES] pa, reg u32 p) {
+  reg u32 ai i;
+
+  i = 0;
+
+  while (i < POLYZ_PACKEDBYTES) {
     ai = (32u) pa[(int) i];
     (u8)[p + i] = ai;
     i += 1;

@@ -133,13 +133,11 @@
 #define polyw1_pack_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack_jazz
 
-#if 0
 #define polyz_pack_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyz_pack PQCLEAN_DILITHIUM5_CLEAN_polyz_pack_jazz
 
 #define polyz_unpack_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack_jazz
-#endif
 
 // /////////////////////////////////////////////////////////////////////////////
 // polyvec.o

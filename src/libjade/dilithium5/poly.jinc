@@ -885,3 +885,110 @@ fn _polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u
   r = __polyw1_pack(r, a);
   return r;
 }
+
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_polyz_pack
+*
+* Description: Bit-pack polynomial with coefficients
+*              in [-(GAMMA1 - 1), GAMMA1].
+*
+* Arguments:   - uint8_t *r: pointer to output byte array with at least
+*                            POLYZ_PACKEDBYTES bytes
+*              - const poly *a: pointer to input polynomial
+**************************************************/
+inline fn __polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYZ_PACKEDBYTES] {
+  reg u32 i, j, aux, gamma1;
+  reg u32[2] t;
+  inline int k;
+
+  gamma1 = __GAMMA1();
+
+  i = 0; j = 0;
+  while (i < N) {
+    for k = 0 to 2 {
+       t[k] = a[(int) i]; t[k] = gamma1 - t[k];
+       i += 1;
+    }
+
+    /* r[5 * i + 0]  = (uint8_t) t[0]; */
+    r[(int) j] = t[0]; j += 1;
+    
+    /* r[5 * i + 1]  = (uint8_t) (t[0] >> 8); */
+    aux = t[0] >> 8;
+    r[(int) j] = aux; j += 1;
+    
+    /* r[5 * i + 2]  = (uint8_t) (t[0] >> 16); */
+    /* r[5 * i + 2] |= (uint8_t) (t[1] << 4); */
+    aux = t[0] >> 16; aux |= t[1] << 4;
+    r[(int) j] = aux; j += 1;
+
+    /* r[5 * i + 3]  = (uint8_t) (t[1] >> 4); */
+    aux = t[1] >> 4;
+    r[(int) j] = aux; j += 1;
+
+    /* r[5 * i + 4]  = (uint8_t) (t[1] >> 12); */
+    aux = t[1] >> 12;
+    r[(int) j] = aux; j += 1;
+
+  }
+  return r;
+}
+
+fn _polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYZ_PACKEDBYTES] {
+  r = __polyz_pack(r, a);
+  return r;
+}
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack
+*
+* Description: Unpack polynomial z with coefficients
+*              in [-(GAMMA1 - 1), GAMMA1].
+*
+* Arguments:   - poly *r: pointer to output polynomial
+*              - const uint8_t *a: byte array with bit-packed polynomial
+**************************************************/
+
+inline fn __polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> reg ptr u32[N] {
+  reg u32 i, j, gamma1, aux;
+  reg u32[5] t;
+  inline int k;
+  
+  gamma1 = __GAMMA1();
+  i = 0; j = 0;
+  while(i < N) {
+    for k = 0 to 5 { t[k] = (32u) a[(int) j]; j += 1; }
+    
+    /* r->coeffs[2 * i + 0]  = a[5 * i + 0];  
+       r->coeffs[2 * i + 0] |= (uint32_t)a[5 * i + 1] << 8; 
+       r->coeffs[2 * i + 0] |= (uint32_t)a[5 * i + 2] << 16; 
+       r->coeffs[2 * i + 0] &= 0xFFFFF; */
+    aux = t[0] | (t[1] << 8);
+    aux |= t[2] << 16;
+    aux = #UBFX(aux, 0, 20);
+    aux = gamma1 - aux;
+    r[(int) i] = aux; i += 1;
+    
+    /* r->coeffs[2 * i + 1]  = a[5 * i + 2] >> 4; */
+    /* r->coeffs[2 * i + 1] |= (uint32_t)a[5 * i + 3] << 4; */
+    /* r->coeffs[2 * i + 1] |= (uint32_t)a[5 * i + 4] << 12; */
+    /* r->coeffs[2 * i + 0] &= 0xFFFFF; */  // this look like a lucky bug
+    aux = t[2] >> 4;
+    aux |= t[3] << 4;
+    aux |= t[4] << 12;
+    aux = gamma1 - aux;
+    r[(int) i] = aux; i += 1;
+
+    // Moved up
+    /* r->coeffs[2 * i + 0] = GAMMA1 - r->coeffs[2 * i + 0]; */
+    /* r->coeffs[2 * i + 1] = GAMMA1 - r->coeffs[2 * i + 1]; */
+  }
+  return r;
+}
+
+fn _polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> reg ptr u32[N] {
+  r = __polyz_unpack(r, a);
+  return r;
+}
+

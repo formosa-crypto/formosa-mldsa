@@ -73,19 +73,19 @@
     memcpy(a_jazz, a, sizeof(int32_t) * N);	\
   }
 
-#define eqarr(size, a, a_jazz, function_name)			\
+#define eqarr(size, PRI, a, a_jazz, function_name)		\
   {								\
     for (int i = 0; i < size; i++) {				\
       if (a[i] != a_jazz[i]) {					\
 	printf("at %i : ", i);					\
-	printf(PRId32 " != %" PRId32 "\n", a[i], a_jazz[i]);	\
+	printf("%" PRI " != %" PRI "\n", a[i], a_jazz[i]);	\
 	printf("FAIL: %s\n", function_name);			\
 	exit(1);						\
       }								\
     }								\
   }
 
-#define eqarrN(a, a_jazz, function_name) eqarr(N, a, a_jazz, function_name)
+#define eqarrN(a, a_jazz, function_name) eqarr(N, PRIx32, a, a_jazz, function_name)
 
 #define checkarrN(FUNCTION_C, FUNCTION_JASMIN, function_name)	\
   {								\
@@ -161,8 +161,8 @@
       memcpy(r_jazz, r, POLYETA_PACKEDBYTES);			     \
       FUNCTION_C(r, (poly *) a);				     \
       FUNCTION_JASMIN(r_jazz, (poly *) a_jazz);			     \
-      eqarr(N, a, a_jazz, function_name);			     \
-      eqarr(POLYETA_PACKEDBYTES, r, r_jazz, function_name);	     \
+      eqarrN(a, a_jazz, function_name);			     \
+      eqarr(POLYETA_PACKEDBYTES, PRIx8, r, r_jazz, function_name);   \
     }								     \
     printf("PASS: %s\n", function_name);			     \
   }
@@ -179,8 +179,8 @@
       memcpy(r_jazz, r, POLYETA_PACKEDBYTES);                        \
       FUNCTION_C((poly *) a, r);				     \
       FUNCTION_JASMIN((poly *) a_jazz, r_jazz);			     \
-      eqarr(N, a, a_jazz, function_name);			     \
-      eqarr(POLYETA_PACKEDBYTES, r, r_jazz, function_name);          \
+      eqarrN(a, a_jazz, function_name);				     \
+      eqarr(POLYETA_PACKEDBYTES, PRIx8, r, r_jazz, function_name);   \
     }                                                                \
     printf("PASS: %s\n", function_name);                             \
   }
@@ -197,8 +197,8 @@
       memcpy(r_jazz, r, POLYT0_PACKEDBYTES);			     \
       FUNCTION_C(r, (poly *) a);                                     \
       FUNCTION_JASMIN(r_jazz, (poly *) a_jazz);                      \
-      eqarr(N, a, a_jazz, function_name);			     \
-      eqarr(POLYT0_PACKEDBYTES, r, r_jazz, function_name);	     \
+      eqarrN(a, a_jazz, function_name);				     \
+      eqarr(POLYT0_PACKEDBYTES, PRIx8, r, r_jazz, function_name);    \
     }                                                                \
     printf("PASS: %s\n", function_name);                             \
   }
@@ -215,8 +215,8 @@
       memcpy(r_jazz, r, POLYT0_PACKEDBYTES);			      \
       FUNCTION_C((poly *) a, r);				      \
       FUNCTION_JASMIN((poly *) a_jazz, r_jazz);			      \
-      eqarr(N, a, a_jazz, function_name);			      \
-      eqarr(POLYT0_PACKEDBYTES, r, r_jazz, function_name);	      \
+      eqarrN(a, a_jazz, function_name);				      \
+      eqarr(POLYT0_PACKEDBYTES, PRIx8, r, r_jazz, function_name);     \
     }								      \
     printf("PASS: %s\n", function_name);			      \
   }
@@ -233,8 +233,8 @@
       memcpy(r_jazz, r, POLYT1_PACKEDBYTES);                         \
       FUNCTION_C(r, (poly *) a);                                     \
       FUNCTION_JASMIN(r_jazz, (poly *) a_jazz);                      \
-      eqarr(N, a, a_jazz, function_name);                            \
-      eqarr(POLYT1_PACKEDBYTES, r, r_jazz, function_name);           \
+      eqarrN(a, a_jazz, function_name);				     \
+      eqarr(POLYT1_PACKEDBYTES, PRIx8, r, r_jazz, function_name);    \
     }                                                                \
     printf("PASS: %s\n", function_name);                             \
   }
@@ -251,8 +251,44 @@
       memcpy(r_jazz, r, POLYT1_PACKEDBYTES);                          \
       FUNCTION_C((poly *) a, r);                                      \
       FUNCTION_JASMIN((poly *) a_jazz, r_jazz);                       \
-      eqarr(N, a, a_jazz, function_name);                             \
-      eqarr(POLYT1_PACKEDBYTES, r, r_jazz, function_name);            \
+      eqarrN(a, a_jazz, function_name);				      \
+      eqarr(POLYT1_PACKEDBYTES, PRIx8, r, r_jazz, function_name);     \
+    }                                                                 \
+    printf("PASS: %s\n", function_name);                              \
+  }
+
+#define checkpolyzpack(FUNCTION_C, FUNCTION_JASMIN, function_name)   \
+  {                                                                  \
+    int32_t a[N];                                                    \
+    uint8_t r[POLYZ_PACKEDBYTES];				     \
+    int32_t a_jazz[N];                                               \
+    uint8_t r_jazz[POLYZ_PACKEDBYTES];				     \
+    for(int t=0; t<TESTS; t++) {                                     \
+      fillarrN(a, a_jazz);                                           \
+      fillarr(uint8_t, POLYZ_PACKEDBYTES, r);			     \
+      memcpy(r_jazz, r, POLYZ_PACKEDBYTES);			     \
+      FUNCTION_C(r, (poly *) a);                                     \
+      FUNCTION_JASMIN(r_jazz, (poly *) a_jazz);                      \
+      eqarrN(a, a_jazz, function_name);				     \
+      eqarr(POLYZ_PACKEDBYTES, PRIx8, r, r_jazz, function_name);     \
+    }                                                                \
+    printf("PASS: %s\n", function_name);                             \
+  }
+
+#define checkpolyzunpack(FUNCTION_C, FUNCTION_JASMIN, function_name)  \
+  {                                                                   \
+    int32_t a[N];                                                     \
+    uint8_t r[POLYZ_PACKEDBYTES];				      \
+    int32_t a_jazz[N];                                                \
+    uint8_t r_jazz[POLYZ_PACKEDBYTES];				      \
+    for(int t=0; t<TESTS; t++) {                                      \
+      fillarrN(a, a_jazz);                                            \
+      fillarr(uint8_t, POLYZ_PACKEDBYTES, r);			      \
+      memcpy(r_jazz, r, POLYZ_PACKEDBYTES);			      \
+      FUNCTION_C((poly *) a, r);                                      \
+      FUNCTION_JASMIN((poly *) a_jazz, r_jazz);                       \
+      eqarrN(a, a_jazz, function_name);				      \
+      eqarr(POLYZ_PACKEDBYTES, PRIx8, r, r_jazz, function_name);      \
     }                                                                 \
     printf("PASS: %s\n", function_name);                              \
   }
@@ -269,8 +305,8 @@
       memcpy(r_jazz, r, POLYW1_PACKEDBYTES);                         \
       FUNCTION_C(r, (poly *) a);                                     \
       FUNCTION_JASMIN(r_jazz, (poly *) a_jazz);                      \
-      eqarr(N, a, a_jazz, function_name);                            \
-      eqarr(POLYW1_PACKEDBYTES, r, r_jazz, function_name);           \
+      eqarrN(a, a_jazz, function_name);				     \
+      eqarr(POLYW1_PACKEDBYTES, PRIx8, r, r_jazz, function_name);    \
     }                                                                \
     printf("PASS: %s\n", function_name);                             \
   }
