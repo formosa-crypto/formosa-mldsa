@@ -104,13 +104,13 @@
 #define poly_sub_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_sub PQCLEAN_DILITHIUM5_CLEAN_poly_sub_jazz
 
-#if 0
 #define polyt0_pack_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack_jazz
 
 #define polyt0_unpack_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyt0_unpack PQCLEAN_DILITHIUM5_CLEAN_polyt0_unpack_jazz
 
+#if 0
 #define polyt1_pack_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyt1_pack PQCLEAN_DILITHIUM5_CLEAN_polyt1_pack_jazz
 
