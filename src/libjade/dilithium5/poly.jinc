@@ -857,3 +857,31 @@ fn _poly_use_hint(reg ptr u32[N] b, reg ptr u32[N] a, reg ptr u32[N] h) -> reg p
   return b;
 }
 
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack
+*
+* Description: Bit-pack polynomial w1 with coefficients in [0,15] or [0,43].
+*              Input coefficients are assumed to be standard representatives.
+*
+* Arguments:   - uint8_t *r: pointer to output byte array with at least
+*                            POLYW1_PACKEDBYTES bytes
+*              - const poly *a: pointer to input polynomial
+**************************************************/
+
+inline fn __polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYW1_PACKEDBYTES] {
+  reg u32 i, j, aux;
+  reg u32[2] t;
+  inline int k;
+  i = 0; j = 0;
+  while (i < N) {
+    for k = 0 to 2 { t[k] = a[(int) i]; i += 1; }
+    aux = t[0] | t[1] << 4;
+    r[(int) j] = aux; j += 1;
+  }
+  return r;
+}
+
+fn _polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYW1_PACKEDBYTES] {
+  r = __polyw1_pack(r, a);
+  return r;
+}

@@ -257,3 +257,20 @@
     printf("PASS: %s\n", function_name);                              \
   }
 
+#define checkpolyw1pack(FUNCTION_C, FUNCTION_JASMIN, function_name)  \
+  {                                                                  \
+    int32_t a[N];                                                    \
+    uint8_t r[POLYW1_PACKEDBYTES];                                   \
+    int32_t a_jazz[N];                                               \
+    uint8_t r_jazz[POLYW1_PACKEDBYTES];                              \
+    for(int t=0; t<TESTS; t++) {                                     \
+      fillarrN(a, a_jazz);                                           \
+      fillarr(uint8_t, POLYW1_PACKEDBYTES, r);                       \
+      memcpy(r_jazz, r, POLYW1_PACKEDBYTES);                         \
+      FUNCTION_C(r, (poly *) a);                                     \
+      FUNCTION_JASMIN(r_jazz, (poly *) a_jazz);                      \
+      eqarr(N, a, a_jazz, function_name);                            \
+      eqarr(POLYW1_PACKEDBYTES, r, r_jazz, function_name);           \
+    }                                                                \
+    printf("PASS: %s\n", function_name);                             \
+  }

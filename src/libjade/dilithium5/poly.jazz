@@ -211,6 +211,17 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint_jazz(reg u32 pb, reg u32 pa, re
   __poly_to_mem(b, pb);
 }
 
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack_jazz(reg u32 pr, reg u32 pa) {
+  stack u32[N] a;
+  stack u8[POLYW1_PACKEDBYTES] r;
+  reg ptr u32[N] rpa;
+  reg ptr u8[POLYW1_PACKEDBYTES] rpr;
+  a = __mem_to_poly(pa);
+  rpa = a; rpr = r;
+  rpr = _polyw1_pack(rpr, rpa);
+  __polyw1_to_mem(rpr, pr);
+}
+
 
 
 
