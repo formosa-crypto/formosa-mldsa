@@ -125,10 +125,12 @@
 
 #define poly_uniform_gamma1_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_gamma1 PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_gamma1_jazz
+#endif
 
 #define poly_use_hint_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint_jazz
 
+#if 0
 #define polyw1_pack_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack_jazz
 

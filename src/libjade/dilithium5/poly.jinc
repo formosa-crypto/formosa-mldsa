@@ -828,3 +828,32 @@ fn _polyt1_unpack(reg ptr u32[N] r, reg ptr u8[POLYT1_PACKEDBYTES] a) -> reg ptr
   return r;
 }
 
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint
+*
+* Description: Use hint polynomial to correct the high bits of a polynomial.
+*
+* Arguments:   - poly *b: pointer to output polynomial with corrected high bits
+*              - const poly *a: pointer to input polynomial
+*              - const poly *h: pointer to input hint polynomial
+**************************************************/
+inline fn __poly_use_hint(reg ptr u32[N] b, reg ptr u32[N] a, reg ptr u32[N] h) -> reg ptr u32[N] {
+  reg u32 i, b_, a_, h_, q;       
+
+  q = __Q();
+  i = 0;
+  while(i < N) {
+    a_ = a[(int) i];
+    h_ = h[(int) i];
+    b_ = __use_hint(a_, h_, q);
+    b[(int) i] = b_;
+    i += 1;
+  }
+  return b;
+}
+
+fn _poly_use_hint(reg ptr u32[N] b, reg ptr u32[N] a, reg ptr u32[N] h) -> reg ptr u32[N] {
+  b = __poly_use_hint(b, a, h);
+  return b;
+}
+
