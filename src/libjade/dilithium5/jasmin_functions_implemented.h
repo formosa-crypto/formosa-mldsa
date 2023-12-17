@@ -98,10 +98,10 @@
 #define poly_reduce_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_reduce PQCLEAN_DILITHIUM5_CLEAN_poly_reduce_jazz
 
-#if 0
 #define poly_shiftl_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl_jazz
 
+#if 0
 #define poly_sub_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_sub PQCLEAN_DILITHIUM5_CLEAN_poly_sub_jazz
 

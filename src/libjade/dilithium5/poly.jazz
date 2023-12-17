@@ -134,6 +134,13 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_poly_power2round_jazz(reg u32 pa1, reg u32 pa
   __poly_to_mem(a1, pa1);
 }
 
-
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl_jazz(reg u32 pa) {
+  stack u32[N] a;
+  reg ptr u32[N] rpa;
+  a = __mem_to_poly(pa);
+  rpa = a;
+  a = _poly_shiftl(rpa);
+  __poly_to_mem(a, pa);
+}
 
 

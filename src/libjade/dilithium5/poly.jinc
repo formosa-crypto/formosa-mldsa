@@ -459,4 +459,29 @@ fn _poly_power2round(reg ptr u32[N] a1, reg ptr u32[N] a0, reg ptr u32[N] a) -> 
   a1, a0 = __poly_power2round(a1, a0, a);
   return (a1, a0);
 }
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl
+*
+* Description: Multiply polynomial by 2^D without modular reduction. Assumes
+*              input coefficients to be less than 2^{31-D} in absolute value.
+*
+* Arguments:   - poly *a: pointer to input/output polynomial
+**************************************************/
+inline fn __poly_shiftl(reg ptr u32[N] a) -> reg ptr u32[N] {
+  reg u32 i, a_;
   
+  i = 0;
+  while (i < N) {
+    a_ = a[(int) i];
+    a_ <<= D;
+    a[(int) i] = a_;
+    i += 1;    
+  }
+  return a;
+}
+
+fn _poly_shiftl(reg ptr u32[N] a) -> reg ptr u32[N] {
+  a = __poly_shiftl(a);
+  return a;
+}

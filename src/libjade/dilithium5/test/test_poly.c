@@ -25,6 +25,8 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery_jazz(poly *c, poly *a, p
 uint32_t PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint_jazz(poly *h, poly *a0, poly *a1);
 void PQCLEAN_DILITHIUM5_CLEAN_poly_power2round_jazz(poly *a1, poly *a0, poly *a);
 
+void PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl_jazz(poly *a);
+
 int main ()
 {
   checkpoly(PQCLEAN_DILITHIUM5_CLEAN_poly_reduce, PQCLEAN_DILITHIUM5_CLEAN_poly_reduce_jazz, "poly_reduce");
