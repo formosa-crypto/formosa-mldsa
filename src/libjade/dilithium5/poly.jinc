@@ -394,3 +394,69 @@ fn _poly_pointwise_montgomery(reg ptr u32[N] c, reg ptr u32[N] a, reg ptr u32[N]
   c = __poly_pointwise_montgomery(c, a, b);
   return c;
 }
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint
+*
+* Description: Compute hint polynomial. The coefficients of which indicate
+*              whether the low bits of the corresponding coefficient of
+*              the input polynomial overflow into the high bits.
+*
+* Arguments:   - poly *h: pointer to output hint polynomial
+*              - const poly *a0: pointer to low part of input polynomial
+*              - const poly *a1: pointer to high part of input polynomial
+*
+* Returns number of 1 bits.
+**************************************************/
+/* FIXME: is it constant time? Check __make_hint */
+inline fn __poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> reg u32, reg ptr u32[N]{
+  reg u32 i, s, a0_, a1_, h_, gamma2;
+  gamma2 = __GAMMA2();
+  i = 0; s = 0;
+  while (i < N) {
+    a0_ = a0[(int) i];
+    a1_ = a1[(int) i];
+    h_ = __make_hint(a0_, a1_, gamma2);
+    h[(int) i] = h_; 
+    s += h_;
+    i += 1;	 
+  }
+  return s, h;
+}
+
+fn _poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> reg u32, reg ptr u32[N] {
+  reg u32 s;
+  s, h = __poly_make_hint(h, a0, a1);
+  return s, h;
+}
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_power2round
+*
+* Description: For all coefficients c of the input polynomial,
+*              compute c0, c1 such that c mod Q = c1*2^D + c0
+*              with -2^{D-1} < c0 <= 2^{D-1}. Assumes coefficients to be
+*              standard representatives.
+*
+* Arguments:   - poly *a1: pointer to output polynomial with coefficients c1
+*              - poly *a0: pointer to output polynomial with coefficients c0
+*              - const poly *a: pointer to input polynomial
+**************************************************/
+inline fn __poly_power2round(reg ptr u32[N] a1, reg ptr u32[N] a0, reg ptr u32[N] a) -> reg ptr u32[N], reg ptr u32[N] {
+  reg u32 i, a_, a0_, a1_;
+    
+  i = 0;
+  while (i < N) {
+    a_ = a[(int) i];
+    a0_, a1_ = __power2round_a0a1(a_);
+    a0[(int) i] = a0_; a1[(int) i] = a1_;
+    i += 1;	
+  }
+  return (a1, a0);
+}
+
+fn _poly_power2round(reg ptr u32[N] a1, reg ptr u32[N] a0, reg ptr u32[N] a) -> reg ptr u32[N], reg ptr u32[N] {
+  a1, a0 = __poly_power2round(a1, a0, a);
+  return (a1, a0);
+}
+  

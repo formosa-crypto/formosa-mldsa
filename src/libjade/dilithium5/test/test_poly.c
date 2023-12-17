@@ -22,6 +22,8 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm(poly *a, int32_t B);
 void PQCLEAN_DILITHIUM5_CLEAN_poly_ntt_jazz(poly *a);
 void PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont_jazz(poly *a);
 void PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery_jazz(poly *c, poly *a, poly *b);
+uint32_t PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint_jazz(poly *h, poly *a0, poly *a1);
+void PQCLEAN_DILITHIUM5_CLEAN_poly_power2round_jazz(poly *a1, poly *a0, poly *a);
 
 int main ()
 {

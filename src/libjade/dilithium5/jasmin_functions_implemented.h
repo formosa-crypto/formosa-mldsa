@@ -83,10 +83,8 @@
 #define poly_invntt_tomont_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont_jazz
 
-#if 0
 #define poly_make_hint_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint_jazz
-#endif
 
 #define poly_ntt_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_ntt PQCLEAN_DILITHIUM5_CLEAN_poly_ntt_jazz
@@ -94,10 +92,8 @@
 #define poly_pointwise_montgomery_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery_jazz
 
-#if 0
 #define poly_power2round_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_power2round PQCLEAN_DILITHIUM5_CLEAN_poly_power2round_jazz
-#endif 
 
 #define poly_reduce_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_reduce PQCLEAN_DILITHIUM5_CLEAN_poly_reduce_jazz
