@@ -98,11 +98,67 @@ inline fn __poly_add(reg ptr u32[N] r a b) -> reg ptr u32[N]
   return r;
 }
 
-inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32
-{
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm
+*
+* Description: Check infinity norm of polynomial against given bound.
+*              Assumes input coefficients were reduced by PQCLEAN_DILITHIUM5_CLEAN_reduce32().
+*
+* Arguments:   - const poly *a: pointer to polynomial
+*              - int32_t B: norm bound
+*
+* Returns 0 if norm is strictly smaller than B <= (Q-1)/8 and 1 otherwise.
+**************************************************/
+
+inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
+
+  // TODO: to finish implementing
+  
   reg u32 r;
+  r = 0;
+  
+  // / 8 is a division by an immediate (should not be possible within the arm v7 ISA)
+  reg u32 f;
+  reg u32 div;
 
-  //To implement
+  f = Q;
+  f -= 1;
+  
+  div = 8;
+  reg u32 g;
+  
+  // TODO: division to handle
+  //g = f / div;
+ 
+  if (B > g) {
+    r = 1;
+  } else {
+    reg u32 ai;
+    reg u32 q s t u;
+    reg u32 j;
+    j = 2;
+    reg u32 i;
+    reg bool cond;
+    cond = false;	
 
-  return r;
+    i = 0;
+    // TODO: add stop for r = 1
+    while {
+      ai = a[(int) i];
+      q = j * ai;
+      s = ai >> 31;
+      u = s & q;
+      t = ai - u;
+
+      if (t >= B) {
+         r = 1;
+      }
+      
+      i += 1;
+      
+      // cond = (i < N && r != 1);
+    } (i < N && r != 1);
+  }
+  
+  return r; 
 }
