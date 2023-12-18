@@ -125,3 +125,19 @@
   } \
   printf("PASS: %s\n", function_name); \
   }
+
+#define checkpolyint(FUNCTION_C, FUNCTION_JASMIN, function_name) \
+  { \
+  int r; \
+  int r_jazz; \
+  int32_t a[N]; \
+  int32_t a_jazz[N]; \
+  for(int t=0; t<TESTS; t++) \
+  { \
+    fillarrN(a, a_jazz); \
+    FUNCTION_C((poly *) a, 3); \
+    FUNCTION_JASMIN((poly *) a_jazz, 3); \
+    eqarrN(a, a_jazz, function_name); \
+  } \
+  printf("PASS: %s\n", function_name); \
+  }

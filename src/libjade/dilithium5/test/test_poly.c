@@ -17,6 +17,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_poly_reduce_jazz(poly *a);
 void PQCLEAN_DILITHIUM5_CLEAN_poly_caddq_jazz(poly *a);
 void PQCLEAN_DILITHIUM5_CLEAN_poly_add_jazz(poly *c, poly *a, poly *b);
 void PQCLEAN_DILITHIUM5_CLEAN_poly_add_inplace_jazz(poly *c, poly *a, poly *b);
+void PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm(poly *a, int32_t B);
 
 int main ()
 {
@@ -24,5 +25,6 @@ int main ()
   checkpoly(PQCLEAN_DILITHIUM5_CLEAN_poly_caddq, PQCLEAN_DILITHIUM5_CLEAN_poly_caddq_jazz, "poly_caddq");
   checkpoly2(PQCLEAN_DILITHIUM5_CLEAN_poly_add, PQCLEAN_DILITHIUM5_CLEAN_poly_add_jazz, "poly_add");
   checkpoly2(PQCLEAN_DILITHIUM5_CLEAN_poly_add, PQCLEAN_DILITHIUM5_CLEAN_poly_add_inplace_jazz, "poly_add_inplace");
+  checkpolyint(PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm, PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm, "poly_chknorm");
   return 0;
 }

@@ -98,4 +98,11 @@ inline fn __poly_add(reg ptr u32[N] r a b) -> reg ptr u32[N]
   return r;
 }
 
+inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32
+{
+  reg u32 r;
 
+  //To implement
+
+  return r;
+}

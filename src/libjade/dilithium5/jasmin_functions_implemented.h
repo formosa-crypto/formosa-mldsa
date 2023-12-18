@@ -64,10 +64,12 @@
 #if 0
 #define poly_challenge_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_challenge PQCLEAN_DILITHIUM5_CLEAN_poly_challenge_jazz
+#endif
 
 #define poly_chknorm_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm PQCLEAN_DILITHIUM5_CLEAN_poly_chknorm_jazz
 
+#if 0
 #define poly_decompose_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_decompose PQCLEAN_DILITHIUM5_CLEAN_poly_decompose_jazz
 
