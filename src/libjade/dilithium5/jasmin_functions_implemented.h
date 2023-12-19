@@ -116,13 +116,13 @@
 #define polyt1_unpack_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyt1_unpack PQCLEAN_DILITHIUM5_CLEAN_polyt1_unpack_jazz
 
-#if 0
 #define poly_uniform_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_uniform PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_jazz
 
 #define poly_uniform_eta_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta_jazz
 
+#if 0
 #define poly_uniform_gamma1_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_gamma1 PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_gamma1_jazz
 #endif
