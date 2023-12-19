@@ -97,11 +97,11 @@ inline fn __add_zero_after_add(reg ptr u32[25*2] state, inline int nbbytes) -> r
   }
   nbbytes = nbbytes + ((nbbytes % 4 == 2) ? 2 : 0);
 
-  i = (25*2) - (nbbytes / 4) - 1;
-  while {
+  i = (nbbytes / 4);
+  while (i < 25*2) {
     state[(int) i] = zero;
-    ?{"<=s"=le}, i = #SUBS(i, 1);
-  } (le)
+    i += 1;
+  } 
   return state;     
 }
 
