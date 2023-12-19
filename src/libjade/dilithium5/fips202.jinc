@@ -80,7 +80,7 @@ inline fn __add_zero_after_add(reg ptr u32[25*2] state, inline int nbbytes) -> r
   }
   nbbytes = nbbytes + ((nbbytes % 2 == 1) ? 1 : 0);
   if (nbbytes % 4 == 2) { 
-    state[u16 (int) nbbytes] = zero;
+    state[u16 (int) (nbbytes / 2)] = zero;
   }
   nbbytes = nbbytes + ((nbbytes % 4 == 2) ? 2 : 0);
 

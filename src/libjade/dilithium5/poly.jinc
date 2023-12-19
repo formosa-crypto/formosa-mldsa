@@ -1069,7 +1069,7 @@ inline fn __rej_sample(
 ) -> reg ptr u32[N], reg u32 
 {
   inline bool b;
-  ?{"<s" = b} = #CMP(t, q);
+  ?{"<u" = b} = #CMP(t, q);
   a[(int) ctr] = t if (b);
   ctr = ctr + 1 if (b);
   return a, ctr;
