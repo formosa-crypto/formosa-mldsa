@@ -179,7 +179,7 @@ fn _stream256_refill_buffer(
   reg u32 n205
 ) -> reg ptr u32[25*2], reg ptr u32[N], reg u32, reg u32, reg u32, reg u32
 {
-  if (pos == SHAKE256_RATE) {
+  if (pos == SHAKE256_RATE >> 2) {
     stack u32 sctr;
     stack ptr u32[N] sa;
     sctr = ctr; sa = a;
