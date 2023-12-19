@@ -1178,7 +1178,7 @@ inline fn rej_eta(
 }
 
 fn _poly_uniform_eta(reg ptr u32[N] a,
-                 reg ptr u8[SEEDBYTES] seed,
+                 reg ptr u8[CRHBYTES] seed,
                  reg u32 nonce
 ) -> reg ptr u32[N]
 {

@@ -18,6 +18,7 @@ param int POLYETA_PACKEDBYTES = 96; // N/8 * 3
 
 param int PQC_SHAKECTX_BYTES = 25;
 param int SEEDBYTES = 32;
+param int CRHBYTES = 64;
 
 param int SHAKE256_RATE = 136;
 param int SHAKE128_RATE = 168;
@@ -130,7 +131,7 @@ inline fn __buf_to_mem (reg ptr u8[SHAKE256_RATE] pa, reg u32 p) {
   }
 }
 
-inline fn __mem_to_array (reg u32 p) -> stack u8[SEEDBYTES] {
+inline fn __mem_to_seed (reg u32 p) -> stack u8[SEEDBYTES] {
   stack u8[SEEDBYTES] a;
   reg ptr u8[SEEDBYTES] pa;
   reg u32 i;
@@ -147,6 +148,30 @@ inline fn __mem_to_array (reg u32 p) -> stack u8[SEEDBYTES] {
   reg u8 ai8;
   p = p + (i << 2);
   for j = 0 to SEEDBYTES %4 {
+    ai8 = [p + i];
+    pa[(int) i] = ai8;
+  } 
+  a = pa;
+  return a;
+}
+
+inline fn __mem_to_crhseed (reg u32 p) -> stack u8[CRHBYTES] {
+  stack u8[CRHBYTES] a;
+  reg ptr u8[CRHBYTES] pa;
+  reg u32 i;
+  reg u32 ai;
+
+  pa = a;
+  i = 0;
+  while (i < CRHBYTES  / 4) { 
+    ai = [p + 4*i];
+    pa[u32 (int) i] = ai;
+    i += 1;
+  }
+  inline int j;
+  reg u8 ai8;
+  p = p + (i << 2);
+  for j = 0 to CRHBYTES %4 {
     ai8 = [p + i];
     pa[(int) i] = ai8;
   } 
