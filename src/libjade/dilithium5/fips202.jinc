@@ -21,7 +21,7 @@ inline fn __add_seed_ref(reg ptr u32[25*2] state,
                          reg ptr u8[SEEDBYTES] in) 
                       -> reg ptr u32[25*2] 
 {
-  reg u32 i t0 t1 inlen4;
+  reg u32 i t0 inlen4;
 
   inlen4 = SEEDBYTES >> 2;
 
@@ -29,14 +29,11 @@ inline fn __add_seed_ref(reg ptr u32[25*2] state,
   while ( i < inlen4 )
   {
     t0 = in[u32 (int)i];
-    t1 = state[(int)i];
-    t0 ^= t1;
     state[(int)i] = t0;
     i += 1;
   }
   return state;
 }
-
 
 inline fn __add_nonce_ref(
   reg ptr u32[25*2] state, 
@@ -44,10 +41,7 @@ inline fn __add_nonce_ref(
   reg u32 nonce) 
 -> reg ptr u32[25*2] 
 {
-  reg u32 t0 t1;
-  t1 = (32u) state[u16 (int)i];
-  t0 = nonce ^ t1;
-  state[u16 (int)i] = t0;
+  state[u16 (int)i] = nonce;
   return state;
 }
 
@@ -118,13 +112,10 @@ inline fn __SHAKE256_init_seed_ref(
 {
   state = __add_seed_ref(state, seed);
   state = __add_zero_after_add(state, SEEDBYTES);
-
   state = __add_block_end(state, SEEDBYTES, SHAKE256_RATE);
+  state = _keccakf1600_ref(state);
   return state;
 }
-
-
-
 
 inline fn __SHAKE256_xtr_bytes_ref(
   reg ptr u32[25*2] state,
@@ -225,7 +216,7 @@ fn __SHAKE128_stream_init
 {
   state = __keccak_init_ref(state);
   state = __add_seed_ref(state, seed);
-  state = __add_nonce_ref(state, SEEDBYTES, nonce);
+  state = __add_nonce_ref(state, SEEDBYTES >> 1, nonce);
   state = __add_block_end(state, SEEDBYTES + 2, SHAKE128_RATE);
   state = _keccakf1600_ref(state);
   return state;
