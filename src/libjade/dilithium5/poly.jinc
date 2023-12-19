@@ -1050,3 +1050,170 @@ fn _polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> reg ptr u
   return r;
 }
 
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_uniform
+*
+* Description: Sample polynomial with uniformly random coefficients
+*              in [0,Q-1] by performing rejection sampling on the
+*              output stream of SHAKE256(seed|nonce) or AES256CTR(seed,nonce).
+*
+* Arguments:   - poly *a: pointer to output polynomial
+*              - const uint8_t seed[]: byte array with seed of length SEEDBYTES
+*              - uint16_t nonce: 2-byte nonce
+**************************************************/
+inline fn __rej_sample(
+  reg ptr u32[N] a, 
+  reg u32 ctr, 
+  reg u32 t, 
+  reg u32 q
+) -> reg ptr u32[N], reg u32 
+{
+  inline bool b;
+  ?{"<s" = b} = #CMP(t, q);
+  a[(int) ctr] = t if (b);
+  ctr = ctr + 1 if (b);
+  return a, ctr;
+}
+
+inline fn __extr_rej_sample(
+  reg ptr u32[N] a, 
+  reg u32 ctr, 
+  reg u32 t, 
+  reg u32 q
+) -> reg ptr u32[N], reg u32 
+{
+  t = #UBFX(t,0, 23);
+  a, ctr = __rej_sample(a, ctr, t, q);
+  return a, ctr;
+}
+
+fn _poly_uniform(reg ptr u32[N] a,
+                 reg ptr u8[SEEDBYTES] seed,
+                 reg u32 nonce
+) -> reg ptr u32[N]
+{
+  stack u32[25*2] state_;
+  reg ptr u32[25*2] state;
+  stack ptr u32[N] sa;
+  sa = a; state = state_;
+  state = _stream128_init(state, seed, nonce);
+  a = sa;
+  
+  reg u32 ctr, ctr4, pos, q, t;
+  reg u32[3] buf;
+
+  ctr = 0; pos = 0; q = __Q();
+
+  
+  while { ctr4 = ctr + 4; } (ctr4 < N) {
+
+    state, a, pos, ctr, q, buf = _stream128_refill_buffer(state, a, pos, ctr, q);
+
+    a, ctr = __extr_rej_sample(a, ctr, buf[0], q);  // 3 bytes in buf[0]
+
+    t = buf[0] >>u 24; t |= buf[1] << 8;    // 1 byte in buf[0] U 2 bytes in buf[1]
+    a, ctr = __extr_rej_sample(a, ctr, t, q);
+
+    t = buf[1] >>u 16; t |= buf[2] << 16;  // 2 byte in buf[1] U 1 bytes in buf[2]
+    a, ctr = __extr_rej_sample(a, ctr, t, q);
+
+    t = #UBFX(buf[2], 8, 23);
+    a, ctr = __rej_sample(a, ctr, t, q);
+
+  }
+
+  while (ctr < N) {
+    state, a, pos, ctr, q, buf = _stream128_refill_buffer(state, a, pos, ctr, q);
+
+    a, ctr = __extr_rej_sample(a, ctr, buf[0], q);  // 3 bytes in buf[0]
+
+    if (ctr < N) {
+      t = buf[0] >>u 24; t |= buf[1] << 8;    // 1 byte in buf[0] U 2 bytes in buf[1]
+      a, ctr = __extr_rej_sample(a, ctr, t, q);
+    }
+
+    if (ctr < N) {
+      t = buf[1] >>u 16; t |= buf[2] << 16;  // 2 byte in buf[1] U 1 bytes in buf[2]
+      a, ctr = __extr_rej_sample(a, ctr, t, q);
+    }
+
+    if (ctr < N) {
+      t = #UBFX(buf[2], 8, 23);
+      a, ctr = __rej_sample(a, ctr, t, q);
+    }
+  }
+  return a;
+} 
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta
+*
+* Description: Sample polynomial with uniformly random coefficients
+*              in [-ETA,ETA] by performing rejection sampling on the
+*              output stream from SHAKE256(seed|nonce) or AES256CTR(seed,nonce).
+*
+* Arguments:   - poly *a: pointer to output polynomial
+*              - const uint8_t seed[]: byte array with seed of length CRHBYTES
+*              - uint16_t nonce: 2-byte nonce
+**************************************************/
+
+inline fn rej_eta(
+  reg ptr u32[N] a, 
+  reg u32 ctr, 
+  reg u32 t,
+  reg u32 n205
+) -> reg ptr u32[N], reg u32 
+{
+  if (t < 15) {
+    reg u32 aux;
+    aux = t * n205;
+    aux = aux >> 10;
+    aux = aux + aux << 2;  /* aux *= 5 */
+    aux = t - aux;
+    aux = 2 - t;
+    a[(int) ctr] = aux;
+    ctr += 1;
+  }
+  return a, ctr;
+}
+
+fn _poly_uniform_eta(reg ptr u32[N] a,
+                 reg ptr u8[SEEDBYTES] seed,
+                 reg u32 nonce
+) -> reg ptr u32[N]
+{
+  stack u32[25*2] state_;
+  reg ptr u32[25*2] state;
+  stack ptr u32[N] sa;
+  sa = a; state = state_;
+  state = _stream256_init(state, seed, nonce);
+  a = sa;
+  
+  reg u32 ctr, ctr8, pos, n205, t;
+  reg u32 buf;
+
+  ctr = 0; pos = 0; n205 = 205;
+
+  while { ctr8 = ctr + 8; } (ctr8 < N) {
+
+    state, a, pos, ctr, n205, buf = _stream256_refill_buffer(state, a, pos, ctr, n205);
+    inline int i;
+    for i = 0 to 8 {
+      t = #UBFX(buf, 4*i, 4);
+      a, ctr = rej_eta(a, ctr, t, n205);
+    }     
+  }
+
+  while (ctr < N) {
+    state, a, pos, ctr, n205, buf = _stream256_refill_buffer(state, a, pos, ctr, n205);
+    inline int i;
+    for i = 0 to 8 {
+      if ((i == 0) || (ctr < N)) { 
+        t = #UBFX(buf, 4*i, 4);
+        a, ctr = rej_eta(a, ctr, t, n205);
+      }
+    }       
+  } 
+  return a;
+} 
+
