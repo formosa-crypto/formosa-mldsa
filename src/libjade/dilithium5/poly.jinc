@@ -1168,9 +1168,9 @@ inline fn rej_eta(
     reg u32 aux;
     aux = t * n205;
     aux = aux >> 10;
-    aux = aux + aux << 2;  /* aux *= 5 */
+    aux = aux + (aux << 2);  /* aux *= 5 */
     aux = t - aux;
-    aux = 2 - t;
+    aux = 2 - aux;
     a[(int) ctr] = aux;
     ctr += 1;
   }

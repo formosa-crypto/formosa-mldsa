@@ -311,21 +311,21 @@
     printf("PASS: %s\n", function_name);                             \
   }
 
-#define checkpolyuniform(FUNCTION_C, FUNCTION_JASMIN, function_name)  \
-  {								      \
-    int32_t a[N];						      \
-    int32_t a_jazz[N];						      \
-    uint8_t seed[SEEDBYTES];					      \
-    uint8_t tnonce[2];						      \
-    for(int t=0; t<TESTS; t++) {				      \
-      fillarrN(a, a_jazz);					      \
-      fillarr(uint8_t, SEEDBYTES, seed);			      \
-      fillarr(uint8_t, 2, tnonce);				      \
-      uint16_t nonce = tnonce[0] | (tnonce[1]<<8);		      \
-      FUNCTION_C((poly *) a, seed, nonce);			      \
-      FUNCTION_JASMIN((poly *)a_jazz, seed, nonce);		      \
-      eqarrN(a, a_jazz, function_name);				      \
-    }								      \
-    printf("PASS: %s\n", function_name);			      \
+#define checkpolyuniform(SIZE, FUNCTION_C, FUNCTION_JASMIN, function_name) \
+  {									\
+    int32_t a[N];							\
+    int32_t a_jazz[N];							\
+    uint8_t seed[SIZE];							\
+    uint8_t tnonce[2];							\
+    for(int t=0; t<TESTS; t++) {					\
+      fillarrN(a, a_jazz);						\
+      fillarr(uint8_t, SIZE, seed);					\
+      fillarr(uint8_t, 2, tnonce);					\
+      uint16_t nonce = tnonce[0] | (tnonce[1]<<8);			\
+      FUNCTION_C((poly *) a, seed, nonce);				\
+      FUNCTION_JASMIN((poly *)a_jazz, seed, nonce);			\
+      eqarrN(a, a_jazz, function_name);					\
+    }									\
+    printf("PASS: %s\n", function_name);				\
   }
 
