@@ -88,6 +88,44 @@ inline fn __SHAKE256_add_final_block_ref(
 }
 
 
+inline fn __add_zero_after_add(reg ptr u32[25*2] state, inline int nbbytes) -> reg ptr u32[25*2]
+{
+  reg u32 i, zero;
+  reg bool le;
+  zero = 0;
+
+  if (nbbytes % 2 == 1) { 
+    state[u8 (int) nbbytes] = zero;
+  }
+  nbbytes = nbbytes + ((nbbytes % 2 == 1) ? 1 : 0);
+  if (nbbytes % 4 == 2) { 
+    state[u16 (int) nbbytes] = zero;
+  }
+  nbbytes = nbbytes + ((nbbytes % 4 == 2) ? 2 : 0);
+
+  i = (25*2) - (nbbytes / 4) - 1;
+  while {
+    state[(int) i] = zero;
+    ?{"<=s"=le}, i = #SUBS(i, 1);
+  } (le)
+  return state;     
+}
+
+inline fn __SHAKE256_init_seed_ref(
+  reg ptr u32[25*2] state,
+  reg ptr u8[SEEDBYTES] seed
+) -> reg ptr u32[25*2]
+{
+  state = __add_seed_ref(state, seed);
+  state = __add_zero_after_add(state, SEEDBYTES);
+
+  state = __add_block_end(state, SEEDBYTES, SHAKE256_RATE);
+  return state;
+}
+
+
+
+
 inline fn __SHAKE256_xtr_bytes_ref(
   reg ptr u32[25*2] state,
   reg ptr u8[SHAKE256_RATE] out
