@@ -20,7 +20,7 @@ param int PQC_SHAKECTX_BYTES = 25;
 param int SEEDBYTES = 32;
 
 param int SHAKE256_RATE = 136;
-
+param int SHAKE128_RATE = 168;
 param int D = 13;
 
 param int iGAMMA1 = (1 << 19);
