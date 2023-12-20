@@ -200,6 +200,7 @@ fn _stream256_full_squeeze (
   while (i < SHAKE256_RATE / 4) {
     t = state[(int) i];
     buf[u32 (int) i] = t;
+    i += 1;
   }
   return buf;
 }

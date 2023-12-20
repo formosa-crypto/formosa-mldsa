@@ -1251,6 +1251,7 @@ fn _poly_uniform_gamma1(reg ptr u32[N] a,
   while (i < polyz_last_sz / 4) {
     t = state[(int) i];
     bufc[u32 (int) i] = t;
+    i += 1;
   }
   buf_[ polyz_last : polyz_last_sz] = bufc;
 
