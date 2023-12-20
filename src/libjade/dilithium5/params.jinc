@@ -4,8 +4,9 @@ param int TAU = 60;
 param int iQ = 8380417;
 u32 Q = iQ;
 
+param int K = 8;
+param int L = 7;
 param int ETA = 2;
-
 
 param int POLYT1_PACKEDBYTES  = 320; // N/4 * 5
 param int POLYT0_PACKEDBYTES = 416; // N/8 * 13

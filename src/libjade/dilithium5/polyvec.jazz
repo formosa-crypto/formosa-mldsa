@@ -1,0 +1,47 @@
+require "polyvec.jinc"
+
+fn _polyvecl_to_mem(reg ptr u32[polyvecl] v, reg u32 p) {
+  reg u32 i, t;
+  i = 0;
+  while (i < polyvecl) { 
+    t = v[(int) i];
+    (u32)[p + 4 * i] = t;
+    i += 1;
+  }     
+}
+
+fn _polyvecl_uniform_eta_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
+  stack u32[polyvecl] v;
+  reg ptr u32[polyvecl] rpv;
+  stack u8[CRHBYTES] seed;
+  reg ptr u8[CRHBYTES] rpseed;
+  stack u32 spv;
+  seed = __mem_to_crhseed(pseed);
+  rpseed = seed; rpv = v;
+  spv = pv;
+  rpv = _polyvecl_uniform_eta(rpv, rpseed, nonce);
+  pv = spv;
+  _polyvecl_to_mem(rpv, pv);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_eta_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
+  _polyvecl_uniform_eta_jazz(pv, pseed, nonce);
+}
+
+fn _polyvecl_uniform_gamma1_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
+  stack u32[polyvecl] v;
+  reg ptr u32[polyvecl] rpv;
+  stack u8[CRHBYTES] seed;
+  reg ptr u8[CRHBYTES] rpseed;
+  stack u32 spv;
+  seed = __mem_to_crhseed(pseed);
+  rpseed = seed; rpv = v;
+  spv = pv;
+  rpv = _polyvecl_uniform_gamma1(rpv, rpseed, nonce);
+  pv = spv;
+  _polyvecl_to_mem(rpv, pv);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_gamma1_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
+  _polyvecl_uniform_gamma1_jazz(pv, pseed, nonce);
+}

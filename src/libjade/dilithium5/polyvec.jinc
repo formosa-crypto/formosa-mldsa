@@ -1,0 +1,59 @@
+require "poly.jinc"
+
+param int polyvecl = N * L;
+param int polyveck = N * K;
+param int matKL = polyvecl * K;
+
+/**************************************************************/
+/************ Vectors of polynomials of length L **************/
+/**************************************************************/
+
+fn _polyvecl_uniform_eta(
+  reg ptr u32[polyvecl] v, 
+  reg ptr u8[CRHBYTES] seed, 
+  reg u32 nonce
+) -> reg ptr u32[polyvecl]
+{
+  inline int i;
+  stack ptr u8[CRHBYTES] s_seed;
+  stack ptr u32[polyvecl] s_v;
+  stack u32 s_nonce;
+  reg ptr u32[N] p;
+
+  for i = 0 to L {
+    p = v[i * N : N]; 
+    s_v = v; s_nonce = nonce; s_seed = seed;
+    p = _poly_uniform_eta(p, seed, nonce);
+    s_v[i * N : N] = p; v = s_v;  nonce = s_nonce; seed = s_seed; 
+    nonce += 1;
+
+  }
+  return v;
+}
+
+fn _polyvecl_uniform_gamma1(
+  reg ptr u32[polyvecl] v, 
+  reg ptr u8[CRHBYTES] seed, 
+  reg u32 nonce
+) -> reg ptr u32[polyvecl]
+{
+  inline int i;
+  stack ptr u8[CRHBYTES] s_seed;
+  stack ptr u32[polyvecl] s_v;
+  stack u32 s_nonce;
+  reg ptr u32[N] p;
+
+  reg u32 l;
+  l = L;
+  nonce = l * nonce;
+  nonce = #UBFX(nonce, 0, 16);
+  for i = 0 to L {
+    p = v[i * N : N]; 
+    s_v = v; s_nonce = nonce; s_seed = seed;
+    p = _poly_uniform_gamma1(p, seed, nonce);
+    s_v[i * N : N] = p; v = s_v;  nonce = s_nonce; seed = s_seed;
+    nonce += 1; nonce = #UBFX(nonce, 0, 16);
+
+  }
+  return v;
+}
