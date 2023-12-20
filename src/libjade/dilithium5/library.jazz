@@ -3,4 +3,3 @@ require "reduce.jazz"
 require "rounding.jazz"
 require "poly.jazz"
 require "polyvec.jazz"
-
