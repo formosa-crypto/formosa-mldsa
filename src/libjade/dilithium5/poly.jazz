@@ -274,3 +274,17 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta_jazz(reg u32 pa, reg u32 pse
    a = rpa; pa = spa;
    __poly_to_mem(a, pa);
 }
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_gamma1_jazz(reg u32 pa, reg u32 pseed, reg u32 nonce) {
+   stack u32[N] a;
+   reg ptr u32[N] rpa;
+   stack u8[CRHBYTES] seed;
+   reg ptr u8[CRHBYTES] rpseed;
+   stack u32 spa;
+   seed = __mem_to_crhseed(pseed);
+   rpseed = seed; rpa = a;
+   spa = pa;
+   rpa = _poly_uniform_gamma1(rpa, rpseed, nonce);
+   a = rpa; pa = spa;
+   __poly_to_mem(a, pa);
+}

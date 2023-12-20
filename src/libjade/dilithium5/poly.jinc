@@ -1217,3 +1217,44 @@ fn _poly_uniform_eta(reg ptr u32[N] a,
   return a;
 } 
 
+param int polyz_last = POLYZ_PACKEDBYTES / SHAKE256_RATE * SHAKE256_RATE;
+param int polyz_last_sz = POLYZ_PACKEDBYTES % SHAKE256_RATE;
+
+
+fn _poly_uniform_gamma1(reg ptr u32[N] a,
+                 reg ptr u8[CRHBYTES] seed,
+                 reg u32 nonce
+) -> reg ptr u32[N]
+{
+  stack u8[POLYZ_PACKEDBYTES] buf_;
+  reg ptr u8[POLYZ_PACKEDBYTES] buf;
+  reg ptr u8[SHAKE256_RATE] bufb;
+  stack u32[25*2] state_;
+  reg ptr u32[25*2] state;
+  stack ptr u32[N] sa;
+  sa = a; state = state_;
+  state = _stream256_init(state, seed, nonce);
+  
+  inline int k;
+  for k = 0 to POLYZ_PACKEDBYTES / SHAKE256_RATE {
+    bufb = buf_[SHAKE256_RATE * k : SHAKE256_RATE];
+    bufb = _stream256_full_squeeze(bufb, state);
+    buf_[SHAKE256_RATE * k : SHAKE256_RATE] = bufb;
+    state = _keccakf1600_ref(state);
+  }
+
+  reg ptr u8[polyz_last_sz] bufc;
+  bufc = buf_[ polyz_last : polyz_last_sz]; 
+
+  reg u32 i, t;
+  i = 0;
+  while (i < polyz_last_sz / 4) {
+    t = state[(int) i];
+    bufc[u32 (int) i] = t;
+  }
+  buf_[ polyz_last : polyz_last_sz] = bufc;
+
+  buf = buf_; a = sa;
+  a = _polyz_unpack(a, buf);
+  return a;
+}

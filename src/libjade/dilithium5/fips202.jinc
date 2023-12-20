@@ -191,6 +191,25 @@ fn _stream256_refill_buffer(
   return state, a, pos, ctr, n205, buf;
 }
 
+fn _stream256_full_squeeze (
+  reg ptr u8[SHAKE256_RATE] buf, 
+  reg ptr u32[25*2] state
+) -> reg ptr u8[SHAKE256_RATE] {
+  reg u32 i, t;
+  i = 0;
+  while (i < SHAKE256_RATE / 4) {
+    t = state[(int) i];
+    buf[u32 (int) i] = t;
+  }
+  return buf;
+}
+         
+   
+
+
+
+
+
 
 
 
