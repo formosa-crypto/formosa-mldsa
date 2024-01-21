@@ -1,6 +1,6 @@
 require "polyvec.jinc"
 
-fn _polyvecl_to_mem(reg ptr u32[polyvecl] v, reg u32 p) {
+inline fn __polyvecl_to_mem(reg u32 p, reg ptr u32[polyvecl] v) {
   reg u32 i, t;
   i = 0;
   while (i < polyvecl) { 
@@ -8,6 +8,36 @@ fn _polyvecl_to_mem(reg ptr u32[polyvecl] v, reg u32 p) {
     (u32)[p + 4 * i] = t;
     i += 1;
   }     
+}
+
+fn _polyvecl_to_mem(reg u32 p, reg ptr u32[polyvecl] v) { 
+  __polyvecl_to_mem(p, v);
+}
+
+inline fn __mem_to_polyvecl(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
+  reg u32 i, t;
+  i = 0;
+  while (i < polyvecl) { 
+    t = (u32)[p + 4 * i];
+    v[(int) i] = t;
+    i += 1;
+  }
+  return v;
+}
+
+fn _mem_to_polyvecl(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
+  v = __mem_to_polyvecl(v, p);
+  return v;
+}
+
+fn _mem_to_polyvecl1(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
+  v = __mem_to_polyvecl(v, p);
+  return v;
+}
+
+fn _mem_to_polyvecl2(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
+  v = __mem_to_polyvecl(v, p);
+  return v;
 }
 
 fn _polyvecl_uniform_eta_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
@@ -21,7 +51,7 @@ fn _polyvecl_uniform_eta_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
   spv = pv;
   rpv = _polyvecl_uniform_eta(rpv, rpseed, nonce);
   pv = spv;
-  _polyvecl_to_mem(rpv, pv);
+  _polyvecl_to_mem(pv, rpv);
 }
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_eta_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
@@ -39,9 +69,419 @@ fn _polyvecl_uniform_gamma1_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
   spv = pv;
   rpv = _polyvecl_uniform_gamma1(rpv, rpseed, nonce);
   pv = spv;
-  _polyvecl_to_mem(rpv, pv);
+  _polyvecl_to_mem(pv, rpv);
 }
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_gamma1_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
   _polyvecl_uniform_gamma1_jazz(pv, pseed, nonce);
 }
+
+fn _polyvecl_reduce_jazz (reg u32 pv) { 
+   stack u32[polyvecl] v;
+   reg ptr u32[polyvecl] rpv;
+   rpv = v;
+   rpv = _mem_to_polyvecl(rpv, pv);
+   rpv = _polyvecl_reduce(rpv);
+   _polyvecl_to_mem(pv, rpv);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_reduce_jazz(reg u32 pv) {
+   _polyvecl_reduce_jazz(pv);
+}
+
+fn _polyvecl_add_jazz(reg u32 pw, reg u32 pu, reg u32 pv) 
+{
+   stack u32[polyvecl] w u v;
+   reg ptr u32[polyvecl] rpw rpu rpv;
+   rpw = w; rpu = u; rpv = v;
+
+   rpu = _mem_to_polyvecl1(rpu, pu);
+   rpv = _mem_to_polyvecl2(rpv, pv);
+   rpw = _polyvecl_add(rpw, rpu, rpv);
+   _polyvecl_to_mem(pw, rpw);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_add_jazz(reg u32 pw, reg u32 pu, reg u32 pv) 
+{
+  _polyvecl_add_jazz(pw, pu, pv);
+}
+
+fn _polyvecl_ntt_jazz (reg u32 pv) { 
+   stack u32[polyvecl] v;
+   stack u32 spv;
+   reg ptr u32[polyvecl] rpv;
+   rpv = v;
+   rpv = _mem_to_polyvecl(rpv, pv);
+   spv = pv;
+   rpv = _polyvecl_ntt(rpv);
+   pv = spv;
+   _polyvecl_to_mem(pv, rpv);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_ntt_jazz(reg u32 pv) {
+   _polyvecl_ntt_jazz(pv);
+}
+
+fn _polyvecl_invntt_tomont_jazz (reg u32 pv) { 
+   stack u32[polyvecl] v;
+   stack u32 spv;
+   reg ptr u32[polyvecl] rpv;
+   rpv = v;
+   rpv = _mem_to_polyvecl(rpv, pv);
+   spv = pv;
+   rpv = _polyvecl_invntt_tomont(rpv);
+   pv = spv;
+   _polyvecl_to_mem(pv, rpv);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_invntt_tomont_jazz(reg u32 pv) {
+   _polyvecl_invntt_tomont_jazz(pv);
+}
+
+fn _polyvecl_pointwise_montgomery_jazz (reg u32 pr, reg u32 pa, reg u32 pv) { 
+   stack u32[polyvecl] r v;
+   stack u32[N] a;
+   stack u32 spr;
+   reg ptr u32[polyvecl] rpr rpv;
+   reg ptr u32[N] rpa;
+
+   rpr = r; rpv = v;
+   a = __mem_to_poly(pa); rpa = a;
+   rpv = _mem_to_polyvecl(rpv, pv);
+   spr = pr;
+   rpr = _polyvecl_pointwise_montgomery(rpr, rpa, rpv);
+   pr = spr;
+   rpr = rpr;
+   _polyvecl_to_mem(pr, rpr);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_montgomery_jazz(reg u32 pr, reg u32 pa, reg u32 pv) {
+   pr = pr; pa = pa; pv = pv;    
+   _polyvecl_pointwise_montgomery_jazz(pr, pa, pv);
+}
+ 
+fn _polyvecl_pointwise_acc_montgomery_jazz(reg u32 pw, reg u32 pu, reg u32 pv) 
+{
+   stack u32[polyvecl] u v;
+   stack u32[N] w;
+   stack u32 spw;
+   reg ptr u32[polyvecl] rpu rpv;
+   reg ptr u32[N] rpw;
+   rpw = w; rpu = u; rpv = v;
+   rpu = _mem_to_polyvecl1(rpu, pu); rpv = _mem_to_polyvecl2(rpv, pv);
+   spw = pw;
+   rpw = _polyvecl_pointwise_acc_montgomery(rpw, rpu, rpv);
+   pw = spw;
+   __poly_to_mem(rpw, pw);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_acc_montgomery_jazz(reg u32 pw, reg u32 pu, reg u32 pv) {
+ _polyvecl_pointwise_acc_montgomery_jazz(pw, pu, pv);
+}
+
+fn _polyvecl_chknorm_jazz(reg u32 pv, reg u32 bound) -> reg u32 {
+   stack u32[polyvecl] v;
+   reg ptr u32[polyvecl] rpv;
+   reg u32 r;
+   rpv = v;
+   rpv = _mem_to_polyvecl(rpv, pv);
+   r = _polyvecl_chknorm(rpv, bound);
+   return r;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_chknorm_jazz(reg u32 pv, reg u32 bound) -> reg u32{
+  reg u32 r;
+  r = _polyvecl_chknorm_jazz(pv, bound);
+  r = r;
+  return r;
+}
+
+/**************************************************************/
+/************ Vectors of polynomials of length K **************/
+/**************************************************************/
+
+inline fn __polyveck_to_mem(reg u32 p, reg ptr u32[polyveck] v) {
+  reg u32 i, t;
+  i = 0;
+  while (i < polyveck) { 
+    t = v[(int) i];
+    (u32)[p + 4 * i] = t;
+    i += 1;
+  }     
+}
+
+fn _polyveck_to_mem(reg u32 p, reg ptr u32[polyveck] v) { 
+  __polyveck_to_mem(p, v);
+}
+
+inline fn __mem_to_polyveck(reg ptr u32[polyveck] v, reg u32 p) -> reg ptr u32[polyveck] {
+  reg u32 i, t;
+  i = 0;
+  while (i < polyveck) { 
+    t = (u32)[p + 4 * i];
+    v[(int) i] = t;
+    i += 1;
+  }
+  return v;
+}
+
+fn _mem_to_polyveck(reg ptr u32[polyveck] v, reg u32 p) -> reg ptr u32[polyveck] {
+  v = __mem_to_polyveck(v, p);
+  return v;
+}
+
+fn _mem_to_polyveck1(reg ptr u32[polyveck] v, reg u32 p) -> reg ptr u32[polyveck] {
+  v = __mem_to_polyveck(v, p);
+  return v;
+}
+
+fn _mem_to_polyveck2(reg ptr u32[polyveck] v, reg u32 p) -> reg ptr u32[polyveck] {
+  v = __mem_to_polyveck(v, p);
+  return v;
+}
+
+fn _polyveck_uniform_eta_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
+  stack u32[polyveck] v;
+  reg ptr u32[polyveck] rpv;
+  stack u8[CRHBYTES] seed;
+  reg ptr u8[CRHBYTES] rpseed;
+  stack u32 spv;
+  seed = __mem_to_crhseed(pseed);
+  rpseed = seed; rpv = v;
+  spv = pv;
+  rpv = _polyveck_uniform_eta(rpv, rpseed, nonce);
+  pv = spv;
+  _polyveck_to_mem(pv, rpv);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_uniform_eta_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
+  _polyveck_uniform_eta_jazz(pv, pseed, nonce);
+}
+
+fn _polyveck_reduce_jazz (reg u32 pv) { 
+   stack u32[polyveck] v;
+   reg ptr u32[polyveck] rpv;
+   rpv = v;
+   rpv = _mem_to_polyveck(rpv, pv);
+   rpv = _polyveck_reduce(rpv);
+   _polyveck_to_mem(pv, rpv);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_reduce_jazz(reg u32 pv) {
+   _polyveck_reduce_jazz(pv);
+}
+
+fn _polyveck_caddq_jazz (reg u32 pv) { 
+   stack u32[polyveck] v;
+   reg ptr u32[polyveck] rpv;
+   rpv = v;
+   rpv = _mem_to_polyveck(rpv, pv);
+   rpv = _polyveck_caddq(rpv);
+   _polyveck_to_mem(pv, rpv);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_caddq_jazz(reg u32 pv) {
+   _polyveck_caddq_jazz(pv);
+}
+
+fn _polyveck_add_jazz(reg u32 pw, reg u32 pu, reg u32 pv) 
+{
+   stack u32[polyveck] w u v;
+   reg ptr u32[polyveck] rpw rpu rpv;
+   rpw = w; rpu = u; rpv = v;
+
+   rpu = _mem_to_polyveck1(rpu, pu);
+   rpv = _mem_to_polyveck2(rpv, pv);
+   rpw = _polyveck_add(rpw, rpu, rpv);
+   _polyveck_to_mem(pw, rpw);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_add_jazz(reg u32 pw, reg u32 pu, reg u32 pv) 
+{
+  _polyveck_add_jazz(pw, pu, pv);
+}
+
+fn _polyveck_sub_jazz(reg u32 pw, reg u32 pu, reg u32 pv) 
+{
+   stack u32[polyveck] w u v;
+   reg ptr u32[polyveck] rpw rpu rpv;
+   rpw = w; rpu = u; rpv = v;
+
+   rpu = _mem_to_polyveck1(rpu, pu);
+   rpv = _mem_to_polyveck2(rpv, pv);
+   rpw = _polyveck_sub(rpw, rpu, rpv);
+   _polyveck_to_mem(pw, rpw);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_sub_jazz(reg u32 pw, reg u32 pu, reg u32 pv) 
+{
+  _polyveck_sub_jazz(pw, pu, pv);
+}
+
+fn _polyveck_shiftl_jazz (reg u32 pv) { 
+   stack u32[polyveck] v;
+   reg ptr u32[polyveck] rpv;
+   rpv = v;
+   rpv = _mem_to_polyveck(rpv, pv);
+   rpv = _polyveck_shiftl(rpv);
+   _polyveck_to_mem(pv, rpv);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_shiftl_jazz(reg u32 pv) {
+   _polyveck_shiftl_jazz(pv);
+}
+
+fn _polyveck_ntt_jazz (reg u32 pv) { 
+   stack u32[polyveck] v;
+   stack u32 spv;
+   reg ptr u32[polyveck] rpv;
+   rpv = v;
+   rpv = _mem_to_polyveck(rpv, pv);
+   spv = pv;
+   rpv = _polyveck_ntt(rpv);
+   pv = spv;
+   _polyveck_to_mem(pv, rpv);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_ntt_jazz(reg u32 pv) {
+   _polyveck_ntt_jazz(pv);
+}
+
+
+fn _polyveck_invntt_tomont_jazz (reg u32 pv) { 
+   stack u32[polyveck] v;
+   stack u32 spv;
+   reg ptr u32[polyveck] rpv;
+   rpv = v;
+   rpv = _mem_to_polyveck(rpv, pv);
+   spv = pv;
+   rpv = _polyveck_invntt_tomont(rpv);
+   pv = spv;
+   _polyveck_to_mem(pv, rpv);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_invntt_tomont_jazz(reg u32 pv) {
+   _polyveck_invntt_tomont_jazz(pv);
+}
+
+
+fn _polyveck_pointwise_montgomery_jazz (reg u32 pr, reg u32 pa, reg u32 pv) { 
+   stack u32[polyveck] r v;
+   stack u32[N] a;
+   stack u32 spr;
+   reg ptr u32[polyveck] rpr rpv;
+   reg ptr u32[N] rpa;
+
+   rpr = r; rpv = v;
+   a = __mem_to_poly(pa); rpa = a;
+   rpv = _mem_to_polyveck(rpv, pv);
+   spr = pr;
+   rpr = _polyveck_pointwise_montgomery(rpr, rpa, rpv);
+   pr = spr;
+   rpr = rpr;
+   _polyveck_to_mem(pr, rpr);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_pointwise_montgomery_jazz(reg u32 pr, reg u32 pa, reg u32 pv) {
+   pr = pr; pa = pa; pv = pv;    
+   _polyveck_pointwise_montgomery_jazz(pr, pa, pv);
+}
+
+fn _polyveck_chknorm_jazz(reg u32 pv, reg u32 bound) -> reg u32 {
+   stack u32[polyveck] v;
+   reg ptr u32[polyveck] rpv;
+   reg u32 r;
+   rpv = v;
+   rpv = _mem_to_polyveck(rpv, pv);
+   r = _polyveck_chknorm(rpv, bound);
+   return r;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_chknorm_jazz(reg u32 pv, reg u32 bound) -> reg u32{
+  reg u32 r;
+  r = _polyveck_chknorm_jazz(pv, bound);
+  r = r;
+  return r;
+}
+
+fn _polyveck_power2round_jazz(reg u32 pv1, reg u32 pv0, reg u32 pv) {
+  stack u32[polyveck] v1 v0 v;
+  reg ptr u32[polyveck] rpv1 rpv0 rpv;
+  stack u32 spv1 spv0;
+  rpv1 = v1; rpv0 = v0; rpv = v;
+  rpv  = _mem_to_polyveck2(rpv , pv );
+  spv1 = pv1; spv0 = pv0;
+  rpv1, rpv0 = _polyveck_power2round(rpv1, rpv0, rpv);
+  pv1 = spv1; pv0 = spv0;
+  _polyveck_to_mem(pv1, rpv1);
+  __polyveck_to_mem(pv0, rpv0);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_power2round_jazz
+ (reg u32 pv1, reg u32 pv0, reg u32 pv) {
+  _polyveck_power2round_jazz(pv1, pv0, pv);
+}
+
+fn _polyveck_decompose_jazz(reg u32 pv1, reg u32 pv0, reg u32 pv) {
+  stack u32[polyveck] v1 v0 v;
+  reg ptr u32[polyveck] rpv1 rpv0 rpv;
+  stack u32 spv1 spv0;
+  rpv1 = v1; rpv0 = v0; rpv = v;
+  rpv  = _mem_to_polyveck2(rpv , pv );
+  spv1 = pv1; spv0 = pv0;
+  rpv1, rpv0 = _polyveck_decompose(rpv1, rpv0, rpv);
+  pv1 = spv1; pv0 = spv0;
+  _polyveck_to_mem(pv1, rpv1);
+  __polyveck_to_mem(pv0, rpv0);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_decompose_jazz
+ (reg u32 pv1, reg u32 pv0, reg u32 pv) {
+  _polyveck_decompose_jazz(pv1, pv0, pv);
+}
+
+fn _polyveck_use_hint_jazz(reg u32 pw, reg u32 pu, reg u32 ph) {
+  stack u32[polyveck] w u h;
+  reg ptr u32[polyveck] rpw rpu rph;
+  stack u32 spw;
+  rpw = w; rpu = u; rph = h;
+  rpu  = _mem_to_polyveck1(rpu, pu);
+  rph  = _mem_to_polyveck2(rph, ph);
+  spw = pw;
+  rpw = _polyveck_use_hint(rpw, rpu, rph);
+  pw = spw;
+  _polyveck_to_mem(pw, rpw);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_use_hint_jazz
+ (reg u32 pw, reg u32 pu, reg u32 ph) {
+  _polyveck_use_hint_jazz(pw, pu, ph);
+}
+
+
+inline fn kpoly1packed_to_mem(reg u32 p, reg ptr u32[(K * POLYW1_PACKEDBYTES) / 4] v) {
+  reg u32 i, t;
+  i = 0;
+  while (i < polyvecl) { 
+    t = v[(int) i];
+    (u32)[p + 4 * i] = t;
+    i += 1;
+  }     
+}
+
+fn _polyveck_pack_w1_jazz(reg u32 pr, reg u32 pw1) {
+  stack u8[K * POLYW1_PACKEDBYTES] r;
+  stack u32[polyveck] w1;
+  reg ptr u8[K * POLYW1_PACKEDBYTES] rpr;
+  reg ptr u32[polyveck] rpw1;
+
+  rpr = r; rpw1 = w1;
+  rpw1  = _mem_to_polyveck1(rpw1, pw1);  
+  rpr = _polyveck_pack_w1(rpr, rpw1);
+  kpoly1packed_to_mem(pr, rpr);
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_pack_w1_jazz(reg u32 pr, reg u32 pw1) {
+  _polyveck_pack_w1_jazz(pr, pw1);
+}
+

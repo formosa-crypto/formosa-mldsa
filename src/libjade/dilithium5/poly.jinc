@@ -139,6 +139,11 @@ inline fn __poly_add_inplace(reg ptr u32[N] a b) -> reg ptr u32[N]
   return a;
 }
 
+fn _poly_add_inplace(reg ptr u32[N] a b) -> reg ptr u32[N] {
+  a = __poly_add_inplace(a, b);
+  return a;
+} 
+
 inline fn __poly_add(reg ptr u32[N] r a b) -> reg ptr u32[N]
 {
   reg u32 i coeff_r coeff_a coeff_b;
@@ -463,8 +468,8 @@ inline fn __poly_ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
   return a;
 }
 
-inline fn _poly_ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
-  a = _ntt(a);
+fn _poly_ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
+  a = __poly_ntt(a);
   return a;
 }
 
