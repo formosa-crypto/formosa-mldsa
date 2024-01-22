@@ -256,9 +256,11 @@ fn _polyveck_ntt(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
 {
   inline int i;
   reg ptr u32[N] pv;
+  stack ptr u32[polyveck] sv;
   for i = 0 to K {
-    pv = v[i * N : N];
-    v[i * N : N] = _poly_ntt(pv);
+    pv = v[i * N : N]; sv = v;
+    sv[i * N : N] = _poly_ntt(pv);
+    v = sv;
   }
   return v;
 }
@@ -267,9 +269,11 @@ fn _polyveck_invntt_tomont(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
 {
   inline int i;
   reg ptr u32[N] pv;
+  stack ptr u32[polyveck] sv;
   for i = 0 to K {
-    pv = v[i * N : N];
-    v[i * N : N] = _poly_invntt_tomont(pv);
+    pv = v[i * N : N]; sv = v;
+    sv[i * N : N] = _poly_invntt_tomont(pv);
+    v = sv;
   }
   return v;
 }

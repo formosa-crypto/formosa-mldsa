@@ -166,10 +166,10 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
 
   reg ptr u32[N] zetas;  
   reg u32 start_len j_len aj aj_len;
- 
+
   k = 256;
   /* for (len = 1; len < N; len <<= 1) */
-  len = 1;
+  len = 1; 
   while {
     /* for (start = 0; start < N; start = j + len) */
     start = 0;
@@ -178,7 +178,6 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
       k -= 1;
       zetas = ZETAS;
       zeta = zetas[(int)k]; zeta = -zeta;
-
       /* for (j = start; j < start + len; ++j)  */
       j = start;
       start_len = start + len;
@@ -199,7 +198,8 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
       } (j < start_len)
       start = j_len;  // start = start + 2 * len
     }  (start < N)
-    len <<= 1;
+    len <<= 1; 
+    
   } (len < N)        
 
   reg u32 f; 

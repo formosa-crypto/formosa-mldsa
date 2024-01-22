@@ -331,6 +331,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_shiftl_jazz(reg u32 pv) {
    _polyveck_shiftl_jazz(pv);
 }
 
+
 fn _polyveck_ntt_jazz (reg u32 pv) { 
    stack u32[polyveck] v;
    stack u32 spv;
@@ -347,7 +348,6 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_ntt_jazz(reg u32 pv) {
    _polyveck_ntt_jazz(pv);
 }
 
-
 fn _polyveck_invntt_tomont_jazz (reg u32 pv) { 
    stack u32[polyveck] v;
    stack u32 spv;
@@ -363,7 +363,6 @@ fn _polyveck_invntt_tomont_jazz (reg u32 pv) {
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_invntt_tomont_jazz(reg u32 pv) {
    _polyveck_invntt_tomont_jazz(pv);
 }
-
 
 fn _polyveck_pointwise_montgomery_jazz (reg u32 pr, reg u32 pa, reg u32 pv) { 
    stack u32[polyveck] r v;
