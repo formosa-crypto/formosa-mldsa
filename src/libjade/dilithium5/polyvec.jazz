@@ -443,7 +443,9 @@ fn _polyveck_use_hint_jazz(reg u32 pw, reg u32 pu, reg u32 ph) {
   stack u32[polyveck] w u h;
   reg ptr u32[polyveck] rpw rpu rph;
   stack u32 spw;
-  rpw = w; rpu = u; rph = h;
+  rpw = w; 
+  rpu = u; 
+  rph = h;
   rpu  = _mem_to_polyveck1(rpu, pu);
   rph  = _mem_to_polyveck2(rph, ph);
   spw = pw;
