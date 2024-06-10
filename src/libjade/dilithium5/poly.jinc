@@ -464,7 +464,9 @@ fn _polyeta_unpack(reg ptr u32[N] r, reg ptr u8[POLYETA_PACKEDBYTES] a) -> reg p
 * Arguments:   - poly *a: pointer to input/output polynomial
 **************************************************/
 inline fn __poly_ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
-  a = __ntt(a);
+  // We use _ntt and not __ntt because these functions read global data
+  // and they need to be close to that data
+  a = _ntt(a);
   return a;
 }
 
