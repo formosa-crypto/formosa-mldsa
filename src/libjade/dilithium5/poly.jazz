@@ -1,34 +1,24 @@
 require "poly.jinc"
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_reduce_jazz(reg u32 pa) {
-  stack u32[N] a;
-  reg ptr u32[N] rpa; 
-  a = __mem_to_poly(pa);
-  rpa = a;
-  a = __poly_reduce(rpa);
-  __poly_to_mem(a, pa);
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_reduce_jazz(reg ptr u32[N] rpa) -> reg ptr u32[N] {
+  rpa = rpa;
+  rpa = __poly_reduce(rpa);
+  return rpa;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_caddq_jazz(reg u32 pa) {
-  stack u32[N] a;
-  reg ptr u32[N] rpa; 
-  a = __mem_to_poly(pa);
-  rpa = a;
-  a = __poly_caddq(rpa);
-  __poly_to_mem(a, pa);
-}     
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_caddq_jazz(reg ptr u32[N] rpa) -> reg ptr u32[N]{
+  rpa = rpa;
+  rpa = __poly_caddq(rpa);
+  return rpa;
+  }     
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_add_jazz(reg u32 pc, reg u32 pa, reg u32 pb) {
-  stack u32[N] a b c;
-  reg ptr u32[N] rpa rpb rpc; 
-  a = __mem_to_poly(pa);
-  b = __mem_to_poly(pb);
-  rpa = a; rpb = b; rpc = c;
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_add_jazz(reg ptr u32[N] rpc, reg ptr u32[N] rpa, reg ptr u32[N] rpb) -> reg ptr u32[N] {
+  rpa = rpa; rpb = rpb; rpc = rpc;
   rpc = __poly_add(rpc, rpa, rpb);
-  c = rpc;
-  __poly_to_mem(c, pc);
+  return rpc;
 }
 
+// Refactoring to discuss with B.G.
 export fn PQCLEAN_DILITHIUM5_CLEAN_poly_add_inplace_jazz(reg u32 pc, reg u32 pa, reg u32 pb) {
   stack u32[N] a b;
   reg ptr u32[N] rpa rpb; 
@@ -63,21 +53,14 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyeta_pack_jazz(reg u32 pr, reg u32 pa) {
   a = __mem_to_poly(pa);
   rpa = a;
   rpr = _polyeta_pack(rpr, rpa);
-  pr = spr;
-  __polyeta_to_mem(rpr, pr);
+  return rpr;
 }  
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyeta_unpack_jazz(reg u32 pr, reg u32 pa) {
-  reg ptr u32[N] rpr;
-  reg ptr u8[POLYETA_PACKEDBYTES] rpa;
-  stack u32[N] r;
-  stack u8[POLYETA_PACKEDBYTES] a;
-
-  rpr = r;
-  a = __mem_to_polyeta(pa);
-  rpa = a;
+// Refactoring to discuss with B.G.
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyeta_unpack_jazz(reg ptr u32[N] rpr, reg ptr u8[POLYETA_PACKEDBYTES] rpa) -> reg ptr u32[N] {
+  rpr = rpr; rpa = rpa;
   rpr = _polyeta_unpack(rpr, rpa);
-  __poly_to_mem(rpr, pr);
+  return rpr;
 }
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_poly_ntt_jazz(reg u32 pa) {
@@ -89,202 +72,105 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_poly_ntt_jazz(reg u32 pa) {
   __poly_to_mem(a, pa);
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont_jazz(reg u32 pa) {
-  stack u32[N] a;
-  reg ptr u32[N] rpa;
-  a = __mem_to_poly(pa);
-  rpa = a;
-  a = _invntt_tomont(rpa);
-  __poly_to_mem(a, pa);
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_invntt_tomont_jazz(reg ptr u32[N] rpa) -> reg ptr u32[N] {
+  rpa = rpa;
+  rpa = _invntt_tomont(rpa);
+  return rpa;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery_jazz(reg u32 pc, reg u32 pa, reg u32 pb) {
-  stack u32[N] a b c;
-  reg ptr u32[N] rpa rpb rpc;
-  a = __mem_to_poly(pa);
-  b = __mem_to_poly(pb);
-  rpa = a; rpb = b; rpc = c;
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_pointwise_montgomery_jazz(reg ptr u32[N] rpc, reg ptr u32[N] rpa, reg ptr u32[N] rpb) -> reg ptr u32[N] {
+  rpc = rpc; rpa = rpa; rpb = rpb;
   rpc = _poly_pointwise_montgomery(rpc, rpa, rpb);
-  c = rpc;
-  __poly_to_mem(c, pc);
+  return rpc;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint_jazz(reg u32 ph, reg u32 pa0, reg u32 pa1) -> reg u32 {
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_make_hint_jazz(reg ptr u32[N] rph, reg ptr u32[N] rpa0, reg ptr u32[N] rpa1) -> reg ptr u32[N], reg u32 {
   reg u32 s;
-  stack u32[N] h a0 a1;
-  reg ptr u32[N] rph rpa0 rpa1;
-  a0 = __mem_to_poly(pa0);
-  a1 = __mem_to_poly(pa1);
-  rph = h; rpa0 = a0; rpa1 = a1;
+  rph = rph; rpa0 = rpa0; rpa1 = rpa1;
   s, rph = _poly_make_hint(rph, rpa0, rpa1);
-  h = rph;
-  __poly_to_mem(h, ph);
-  s = s;
-  return s;
+  return rph, s;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_power2round_jazz(reg u32 pa1, reg u32 pa0, reg u32 pa) { 
-  stack u32[N] a a0 a1;
-  reg ptr u32[N] rpa rpa0 rpa1;
-  a = __mem_to_poly(pa);
-  rpa = a; rpa0 = a0; rpa1 = a1;
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_power2round_jazz(reg ptr u32[N] rpa1, reg ptr u32[N] rpa0, reg ptr u32[N] rpa) -> reg ptr u32[N], reg ptr u32[N] { 
+  rpa = rpa; rpa0 = rpa0; rpa1 = rpa1;
   rpa1, rpa0 = _poly_power2round(rpa1, rpa0, rpa);
-  a0 = rpa0; a1 = rpa1;
-  __poly_to_mem(a0, pa0);
-  __poly_to_mem(a1, pa1);
+  return rpa1, rpa0;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl_jazz(reg u32 pa) {
-  stack u32[N] a;
-  reg ptr u32[N] rpa;
-  a = __mem_to_poly(pa);
-  rpa = a;
-  a = _poly_shiftl(rpa);
-  __poly_to_mem(a, pa);
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl_jazz(reg ptr u32[N] rpa) -> reg ptr u32[N] {
+  rpa = rpa;
+  rpa = _poly_shiftl(rpa);
+  return rpa;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_sub_jazz(reg u32 pc, reg u32 pa, reg u32 pb) {
-  stack u32[N] a b c;
-  reg ptr u32[N] rpa rpb rpc;
-  a = __mem_to_poly(pa);
-  b = __mem_to_poly(pb);
-  rpa = a; rpb = b; rpc = c;
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_sub_jazz(reg ptr u32[N] rpc, reg ptr u32[N] rpa, reg ptr u32[N] rpb) -> reg ptr u32[N] {
+  rpa = rpa; rpb = rpb; rpc = rpc;
   rpc = _poly_sub(rpc, rpa, rpb);
-  c = rpc;
-  __poly_to_mem(c, pc);
+  return rpc;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack_jazz(reg u32 pr, reg u32 pa) { 
-  stack u32[N] a;
-  stack u8[POLYT0_PACKEDBYTES] r;
-  reg ptr u32[N] rpa;
-  reg ptr u8[POLYT0_PACKEDBYTES] rpr;
-  a = __mem_to_poly(pa);
-  rpa = a; rpr = r;
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyt0_pack_jazz(reg ptr u8[POLYT0_PACKEDBYTES] rpr, reg ptr u32[N] rpa) -> reg ptr u8[POLYT0_PACKEDBYTES] { 
+  rpa = rpa; rpr = rpr;
   rpr = _polyt0_pack(rpr, rpa);
-  __polyt0_to_mem(rpr, pr);
+  return rpr;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyt0_unpack_jazz(reg u32 pr, reg u32 pa) {
-  stack	u32[N] r;
-  stack	u8[POLYT0_PACKEDBYTES] a;
-  reg ptr u32[N] rpr;
-  reg ptr u8[POLYT0_PACKEDBYTES] rpa;
-  a = __mem_to_polyt0(pa);
-  rpa =	a; rpr = r;
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyt0_unpack_jazz(reg ptr u32[N] rpr, reg ptr u8[POLYT0_PACKEDBYTES] rpa) -> reg ptr u32[N] {
+  rpa =	rpa; rpr = rpr;
   rpr =	_polyt0_unpack(rpr, rpa);
-  r = rpr;
-  __poly_to_mem(r, pr);
+  return rpr;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyt1_pack_jazz(reg u32 pr, reg u32 pa) {
-  stack u32[N] a;
-  stack u8[POLYT1_PACKEDBYTES] r;
-  reg ptr u32[N] rpa;
-  reg ptr u8[POLYT1_PACKEDBYTES] rpr;
-  a = __mem_to_poly(pa);
-  rpa = a; rpr = r;
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyt1_pack_jazz(reg ptr u8[POLYT1_PACKEDBYTES] rpr, reg ptr u32[N] rpa) -> reg ptr u8[POLYT1_PACKEDBYTES] {  
+  rpa = rpa; rpr = rpr;
   rpr = _polyt1_pack(rpr, rpa);
-  __polyt1_to_mem(rpr, pr);
+  return rpr;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyt1_unpack_jazz(reg u32 pr, reg u32 pa) {
-  stack u32[N] r;
-  stack u8[POLYT1_PACKEDBYTES] a;
-  reg ptr u32[N] rpr;
-  reg ptr u8[POLYT1_PACKEDBYTES] rpa;
-  a = __mem_to_polyt1(pa);
-  rpa = a; rpr = r;
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyt1_unpack_jazz(reg ptr u32[N] rpr, reg ptr u8[POLYT1_PACKEDBYTES] rpa) -> reg ptr u32[N] {  
+  rpa = rpa; rpr = rpr;
   rpr = _polyt1_unpack(rpr, rpa);
-  r = rpr;
-  __poly_to_mem(r, pr);
+  return rpr;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint_jazz(reg u32 pb, reg u32 pa, reg u32 ph) {
-  stack u32[N] b a h;
-  reg ptr u32[N] rpb rpa rph;
-  a = __mem_to_poly(pa);
-  h = __mem_to_poly(ph);
-  rpb = b; rpa = a; rph = h;
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_use_hint_jazz(reg ptr u32[N] rpb, reg ptr u32[N] rpa, reg ptr u32[N] rph) -> reg ptr u32[N] {
+  rpb = rpb; rpa = rpa; rph = rph;
   rpb = _poly_use_hint(rpb, rpa, rph);
-  b = rpb;
-  __poly_to_mem(b, pb);
+  return rpb;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack_jazz(reg u32 pr, reg u32 pa) {
-  stack u32[N] a;
-  stack u8[POLYW1_PACKEDBYTES] r;
-  reg ptr u32[N] rpa;
-  reg ptr u8[POLYW1_PACKEDBYTES] rpr;
-  a = __mem_to_poly(pa);
-  rpa = a; rpr = r;
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyw1_pack_jazz(reg ptr u8[POLYW1_PACKEDBYTES] rpr, reg ptr u32[N] rpa) -> reg ptr u8[POLYW1_PACKEDBYTES] {
+  rpa = rpa; rpr = rpr;
   rpr = _polyw1_pack(rpr, rpa);
-  __polyw1_to_mem(rpr, pr);
+  return rpr;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyz_pack_jazz(reg u32 pr, reg u32 pa) {
-  stack u32[N] a;
-  stack u8[POLYZ_PACKEDBYTES] r;
-  reg ptr u32[N] rpa;
-  reg ptr u8[POLYZ_PACKEDBYTES] rpr;
-  a = __mem_to_poly(pa);
-  rpa = a; rpr = r;
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyz_pack_jazz(reg ptr u8[POLYZ_PACKEDBYTES] rpr, reg ptr u32[N] rpa) -> reg ptr u8[POLYZ_PACKEDBYTES] {
+  rpa = rpa; rpr = rpr;
   rpr = _polyz_pack(rpr, rpa);
-  __polyz_to_mem(rpr, pr);
+  return rpr;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack_jazz(reg u32 pr, reg u32 pa) {
-  stack u32[N] r;
-  stack u8[POLYZ_PACKEDBYTES] a;
-  reg ptr u32[N] rpr;
-  reg ptr u8[POLYZ_PACKEDBYTES] rpa;
-  a = __mem_to_polyz(pa);
-  rpa = a; rpr = r;
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack_jazz(reg ptr u32[N] rpr, reg ptr u8[POLYZ_PACKEDBYTES] rpa) -> reg ptr u32[N] {
+  rpa = rpa; rpr = rpr;
   rpr = _polyz_unpack(rpr, rpa);
-  r = rpr;
-  __poly_to_mem(r, pr);
+  return rpr;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_jazz(reg u32 pa, reg u32 pseed, reg u32 nonce) {
-   stack u32[N] a;
-   reg ptr u32[N] rpa;
-   stack u8[SEEDBYTES] seed;
-   reg ptr u8[SEEDBYTES] rpseed;
-   stack u32 spa;
-   seed = __mem_to_seed(pseed);
-   rpseed = seed; rpa = a;
-   spa = pa;
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_jazz(reg ptr u32[N] rpa, reg ptr u8[SEEDBYTES] rpseed, reg u32 nonce) -> reg ptr u32[N] {  
+   rpseed = rpseed; rpa = rpa;
    rpa = _poly_uniform(rpa, rpseed, nonce);
-   a = rpa; pa = spa;
-   __poly_to_mem(a, pa);
-
-
+   return rpa;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta_jazz(reg u32 pa, reg u32 pseed, reg u32 nonce) {
-   stack u32[N] a;
-   reg ptr u32[N] rpa;
-   stack u8[CRHBYTES] seed;
-   reg ptr u8[CRHBYTES] rpseed;
-   stack u32 spa;
-   seed = __mem_to_crhseed(pseed);
-   rpseed = seed; rpa = a;
-   spa = pa;
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_eta_jazz(reg ptr u32[N] rpa, reg ptr u8[CRHBYTES] rpseed, reg u32 nonce) -> reg ptr u32[N] {
+   rpseed = rpseed; rpa = rpa;
    rpa = _poly_uniform_eta(rpa, rpseed, nonce);
-   a = rpa; pa = spa;
-   __poly_to_mem(a, pa);
+   return rpa;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_gamma1_jazz(reg u32 pa, reg u32 pseed, reg u32 nonce) {
-   stack u32[N] a;
-   reg ptr u32[N] rpa;
-   stack u8[CRHBYTES] seed;
-   reg ptr u8[CRHBYTES] rpseed;
-   stack u32 spa;
-   seed = __mem_to_crhseed(pseed);
-   rpseed = seed; rpa = a;
-   spa = pa;
-   rpa = _poly_uniform_gamma1(rpa, rpseed, nonce);
-   a = rpa; pa = spa;
-   __poly_to_mem(a, pa);
+export fn PQCLEAN_DILITHIUM5_CLEAN_poly_uniform_gamma1_jazz(reg ptr u32[N] rpa, reg ptr u8[CRHBYTES] rpseed, reg u32 nonce) -> reg ptr u32[N] {   
+  rpseed = rpseed; rpa = rpa;
+  rpa = _poly_uniform_gamma1(rpa, rpseed, nonce);
+  return rpa;
 }
