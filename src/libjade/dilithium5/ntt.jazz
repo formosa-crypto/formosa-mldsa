@@ -7,24 +7,14 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_mul_montgomery_reduce_jazz(reg u32 x y) -> re
   return r;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz(reg u32 p) {
-  stack u32[N] a;
-  reg ptr u32[N] pa;
-
-  a = __mem_to_poly(p); 
-  pa = a;
-  a = __ntt(pa); 
-  __poly_to_mem(a, p);
-
+export fn PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz(reg ptr u32[N] rpa) -> reg ptr u32[N] {
+  rpa = rpa;
+  rpa = __ntt(rpa);
+  return rpa;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz(reg u32 p) {
-  stack u32[N] a;
-  reg ptr u32[N] pa;
-
-  a = __mem_to_poly(p); 
-  pa = a;
-  a = __invntt_tomont(pa); 
-  __poly_to_mem(a, p);
-
+export fn PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz(reg ptr u32[N] rpa) -> reg ptr u32[N] {
+  rpa = rpa;
+  rpa = __invntt_tomont(rpa);
+  return rpa;
 }
