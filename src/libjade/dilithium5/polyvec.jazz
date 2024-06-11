@@ -40,53 +40,32 @@ fn _mem_to_polyvecl2(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl
   return v;
 }
 
-fn _polyvecl_uniform_eta_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
-  stack u32[polyvecl] v;
-  reg ptr u32[polyvecl] rpv;
-  stack u8[CRHBYTES] seed;
-  reg ptr u8[CRHBYTES] rpseed;
-  stack u32 spv;
-  seed = __mem_to_crhseed(pseed);
-  rpseed = seed; rpv = v;
-  spv = pv;
-  rpv = _polyvecl_uniform_eta(rpv, rpseed, nonce);
-  pv = spv;
-  _polyvecl_to_mem(pv, rpv);
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_eta_jazz(reg ptr u32[polyvecl] v,
+  reg ptr u8[CRHBYTES] seed,
+  reg u32 nonce
+) -> reg ptr u32[polyvecl]
+{
+  v = v;
+  v = _polyvecl_uniform_eta(v, seed, nonce);
+  return v;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_eta_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
-  _polyvecl_uniform_eta_jazz(pv, pseed, nonce);
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_gamma1_jazz(
+  reg ptr u32[polyvecl] v,
+  reg ptr u8[CRHBYTES] seed,
+  reg u32 nonce
+) -> reg ptr u32[polyvecl]
+{
+  v = v;
+  v = _polyvecl_uniform_gamma1(v, seed, nonce);
+  return v;
 }
 
-fn _polyvecl_uniform_gamma1_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
-  stack u32[polyvecl] v;
-  reg ptr u32[polyvecl] rpv;
-  stack u8[CRHBYTES] seed;
-  reg ptr u8[CRHBYTES] rpseed;
-  stack u32 spv;
-  seed = __mem_to_crhseed(pseed);
-  rpseed = seed; rpv = v;
-  spv = pv;
-  rpv = _polyvecl_uniform_gamma1(rpv, rpseed, nonce);
-  pv = spv;
-  _polyvecl_to_mem(pv, rpv);
-}
-
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_gamma1_jazz(reg u32 pv, reg u32 pseed, reg u32 nonce) {
-  _polyvecl_uniform_gamma1_jazz(pv, pseed, nonce);
-}
-
-fn _polyvecl_reduce_jazz (reg u32 pv) { 
-   stack u32[polyvecl] v;
-   reg ptr u32[polyvecl] rpv;
-   rpv = v;
-   rpv = _mem_to_polyvecl(rpv, pv);
-   rpv = _polyvecl_reduce(rpv);
-   _polyvecl_to_mem(pv, rpv);
-}
-
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_reduce_jazz(reg u32 pv) {
-   _polyvecl_reduce_jazz(pv);
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_reduce_jazz(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl]
+{
+  v = v;
+  v = _polyvecl_reduce(v);
+  return v;
 }
 
 fn _polyvecl_add_jazz(reg u32 pw, reg u32 pu, reg u32 pv) 
