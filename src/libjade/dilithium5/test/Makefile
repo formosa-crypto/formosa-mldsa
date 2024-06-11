@@ -12,6 +12,7 @@ TESTS_OUT := $(addsuffix .out, $(TESTS_BIN))
 #-- 
 default:
 	$(MAKE) clean
+	$(MAKE) -C ../ small-testing
 	$(MAKE) compile
 	$(MAKE) run
 
@@ -24,7 +25,6 @@ run: $(TESTS_OUT)
 # TODO: note that the following dependency list is incomplete
 $(TESTS_BIN):
 test_%: test_%.c ../%.jinc ../%.jazz
-	$(MAKE) -C ../ small-testing
 	$(ARMCC) -o $@ $(ARMCFLAGS) -static test_$*.c -I./common -I../ -L../ -ldilithium5_clean
 
 #--
