@@ -3,6 +3,7 @@ test_reduce
 test_rounding
 test_ntt
 test_poly
+test_polyvec
 checksumbig
 checksumsmall
 functest
