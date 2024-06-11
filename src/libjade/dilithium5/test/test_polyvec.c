@@ -19,6 +19,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_gamma1_jazz(polyvecl *v, const ui
  
 void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_reduce_jazz(polyvecl *v);
 void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_add_jazz(polyvecl *w, polyvecl *u, polyvecl *v);
+void PQCLEAN_DILITHIUM5_CLEAN_polyvecl_ntt_jazz(polyvecl *v);
 
 int main ()
 {
@@ -27,6 +28,8 @@ int main ()
 
   checkpolyvecl(PQCLEAN_DILITHIUM5_CLEAN_polyvecl_reduce, PQCLEAN_DILITHIUM5_CLEAN_polyvecl_reduce_jazz, "polyvecl_reduce");
   checkpolyvecl3(PQCLEAN_DILITHIUM5_CLEAN_polyvecl_add, PQCLEAN_DILITHIUM5_CLEAN_polyvecl_add_jazz, "polyvecl_add");
+  checkpolyvecl(PQCLEAN_DILITHIUM5_CLEAN_polyvecl_ntt, PQCLEAN_DILITHIUM5_CLEAN_polyvecl_ntt_jazz, "polyvecl_ntt");
+
 
   return 0;
 }

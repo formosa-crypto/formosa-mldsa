@@ -79,20 +79,10 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_add_jazz(
   return w;
 }
 
-fn _polyvecl_ntt_jazz (reg u32 pv) { 
-   stack u32[polyvecl] v;
-   stack u32 spv;
-   reg ptr u32[polyvecl] rpv;
-   rpv = v;
-   rpv = _mem_to_polyvecl(rpv, pv);
-   spv = pv;
-   rpv = _polyvecl_ntt(rpv);
-   pv = spv;
-   _polyvecl_to_mem(pv, rpv);
-}
-
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_ntt_jazz(reg u32 pv) {
-   _polyvecl_ntt_jazz(pv);
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_ntt_jazz(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl] {
+   v = v;
+   v = _polyvecl_ntt(v);
+   return v;
 }
 
 fn _polyvecl_invntt_tomont_jazz (reg u32 pv) { 
