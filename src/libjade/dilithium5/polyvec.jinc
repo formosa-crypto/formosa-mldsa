@@ -108,7 +108,7 @@ fn _polyvecl_invntt_tomont(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl]
   return v;
 }
 
-fn _polyvecl_pointwise_montgomery(
+fn _polyvecl_pointwise_poly_montgomery(
   reg ptr u32[polyvecl] r,
   reg ptr u32[N] a,
   reg ptr u32[polyvecl] v
@@ -278,7 +278,7 @@ fn _polyveck_invntt_tomont(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
   return v;
 }
 
-fn _polyveck_pointwise_montgomery(
+fn _polyveck_pointwise_poly_montgomery(
   reg ptr u32[polyveck] r,
   reg ptr u32[N] a,
   reg ptr u32[polyveck] v
