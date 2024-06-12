@@ -51,6 +51,8 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_pack_w1_jazz(uint8_t r[K * POLYW1_PACKEDB
 
 void PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_expand_jazz(polyvecl mat[K], const uint8_t rho[SEEDBYTES]);
 
+void PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_pointwise_montgomery_jazz(polyveck *t, const polyvecl mat[K], const polyvecl *v);
+
 int main ()
 {
   checkpolyvecluniform(CRHBYTES, PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_eta, PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_eta_jazz, "polyvecl_uniform_eta");
@@ -85,6 +87,11 @@ int main ()
   checkpolyveck3(PQCLEAN_DILITHIUM5_CLEAN_polyveck_use_hint, PQCLEAN_DILITHIUM5_CLEAN_polyveck_use_hint_jazz, "polyveck_use_hint");
 
   checkpolyveckpackw1(PQCLEAN_DILITHIUM5_CLEAN_polyveck_pack_w1, PQCLEAN_DILITHIUM5_CLEAN_polyveck_pack_w1_jazz, "polyveck_pack_w1");
+
+  checkmat(SEEDBYTES, PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_expand, PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_expand_jazz, "polyvec_matrix_expand");
+
+  checkpolyvecl_mat(PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_pointwise_montgomery, PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_pointwise_montgomery_jazz, "polyvec_matrix_pointwise_montgomery");
+
   return 0;
 }
 

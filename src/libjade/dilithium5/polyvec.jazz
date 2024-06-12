@@ -221,3 +221,13 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_expand_jazz(
   mat = _polyvec_matrix_expand(mat, rho);
   return mat;
 }
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_pointwise_montgomery_jazz(
+  reg ptr u32[polyveck] t,
+  reg ptr u32[matKL] mat,
+  reg ptr u32[polyvecl] v
+) -> reg ptr u32[polyveck] {
+  t = t; mat = mat;
+  t = _polyvec_matrix_pointwise_montgomery(t, mat, v);
+  return t;
+}

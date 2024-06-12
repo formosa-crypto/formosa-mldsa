@@ -406,3 +406,19 @@ fn _polyvec_matrix_expand(
 
   return mat;
 }
+
+fn _polyvec_matrix_pointwise_montgomery(
+  reg ptr u32[polyveck] t,
+  reg ptr u32[matKL] mat,
+  reg ptr u32[polyvecl] v
+) -> reg ptr u32[polyveck] {
+  inline int i;
+  reg ptr u32[N] pt;
+  reg ptr u32[polyvecl] pmat;
+
+  for i = 0 to K {
+    pt = t[i*N:N]; pmat = mat[i*polyvecl:polyvecl];
+    t[i*N:N] = _polyvecl_pointwise_acc_montgomery(pt, pmat, v);
+  }
+  return t;
+}
