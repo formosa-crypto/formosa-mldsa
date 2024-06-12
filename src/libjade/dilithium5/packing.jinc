@@ -1,0 +1,104 @@
+require "polyvec.jinc"
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_pack_pk
+*
+* Description: Bit-pack public key pk = (rho, t1).
+*
+* Arguments:   - uint8_t pk[]: output byte array
+*              - const uint8_t rho[]: byte array containing rho
+*              - const polyveck *t1: pointer to vector t1
+**************************************************/
+fn _pack_pk(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] {
+    pk = pk; rho = rho; t1 = t1;
+    // TODO
+    return pk;
+}
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_pack_sk
+*
+* Description: Bit-pack secret key sk = (rho, tr, key, t0, s1, s2).
+*
+* Arguments:   - uint8_t sk[]: output byte array
+*              - const uint8_t rho[]: byte array containing rho
+*              - const uint8_t tr[]: byte array containing tr
+*              - const uint8_t key[]: byte array containing key
+*              - const polyveck *t0: pointer to vector t0
+*              - const polyvecl *s1: pointer to vector s1
+*              - const polyveck *s2: pointer to vector s2
+**************************************************/
+fn _pack_sk(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] {
+    sk = sk; rho_tr_key = rho_tr_key; pt0_ps1_ps2 = pt0_ps1_ps2;
+    //TODO
+    return sk;
+}
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_pack_sig
+*
+* Description: Bit-pack signature sig = (c, z, h).
+*
+* Arguments:   - uint8_t sig[]: output byte array
+*              - const uint8_t *c: pointer to PQCLEAN_DILITHIUM5_CLEAN_challenge hash length SEEDBYTES
+*              - const polyvecl *z: pointer to vector z
+*              - const polyveck *h: pointer to hint vector h
+**************************************************/
+fn _pack_sig(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] {
+    sig = sig; c = c; z = z; h = h;
+    //TODO
+    return sig; 
+}
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_unpack_pk
+*
+* Description: Unpack public key pk = (rho, t1).
+*
+* Arguments:   - const uint8_t rho[]: output byte array for rho
+*              - const polyveck *t1: pointer to output vector t1
+*              - uint8_t pk[]: byte array containing bit-packed pk
+**************************************************/
+fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
+    pk = pk; rho = rho; t1 = t1;
+    //TODO
+    return rho, t1;
+}
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_unpack_sk
+*
+* Description: Unpack secret key sk = (rho, tr, key, t0, s1, s2).
+*
+* Arguments:   - const uint8_t rho[]: output byte array for rho
+*              - const uint8_t tr[]: output byte array for tr
+*              - const uint8_t key[]: output byte array for key
+*              - const polyveck *t0: pointer to output vector t0
+*              - const polyvecl *s1: pointer to output vector s1
+*              - const polyveck *s2: pointer to output vector s2
+*              - uint8_t sk[]: byte array containing bit-packed sk
+**************************************************/
+fn _unpack_sk(reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u32[3], reg ptr u32[3] {
+    sk = sk; rho_tr_key = rho_tr_key; pt0_ps1_ps2 = pt0_ps1_ps2;
+    //TODO
+    return rho_tr_key, pt0_ps1_ps2;
+}
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_unpack_sig
+*
+* Description: Unpack signature sig = (c, z, h).
+*
+* Arguments:   - uint8_t *c: pointer to output PQCLEAN_DILITHIUM5_CLEAN_challenge hash
+*              - polyvecl *z: pointer to output vector z
+*              - polyveck *h: pointer to output hint vector h
+*              - const uint8_t sig[]: byte array containing
+*                bit-packed signature
+*
+* Returns 1 in case of malformed signature; otherwise 0.
+**************************************************/
+fn _unpack_sig(reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck] {
+    sig = sig; c = c; z = z; h = h;
+    //TODO
+    return c, z, h;
+}

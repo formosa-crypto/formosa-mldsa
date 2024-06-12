@@ -1,0 +1,88 @@
+require "packing.jinc"
+ 
+export fn PQCLEAN_DILITHIUM5_CLEAN_pack_pk_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] {
+    pk = pk; rho = rho; t1 = t1;
+    pk = _pack_pk(pk, rho, t1);
+    return pk;
+}
+inline fn __polyvecl_to_mem(reg u32 p, reg ptr u32[polyvecl] v) {
+  reg u32 i, t;
+  i = 0;
+  while (i < polyvecl) { 
+    t = v[(int) i];
+    (u32)[p + 4 * i] = t;
+    i += 1;
+  }     
+}
+
+fn _polyvecl_to_mem(reg u32 p, reg ptr u32[polyvecl] v) { 
+  __polyvecl_to_mem(p, v);
+}
+
+inline fn __mem_to_polyvecl(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
+  reg u32 i, t;
+  i = 0;
+  while (i < polyvecl) { 
+    t = (u32)[p + 4 * i];
+    v[(int) i] = t;
+    i += 1;
+  }
+  return v;
+}
+
+fn _mem_to_polyvecl(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
+  v = __mem_to_polyvecl(v, p);
+  return v;
+}
+
+fn _mem_to_polyvecl1(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
+  v = __mem_to_polyvecl(v, p);
+  return v;
+}
+
+fn _mem_to_polyvecl2(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
+  v = __mem_to_polyvecl(v, p);
+  return v;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sk_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] {
+    sk = sk; rho_tr_key = rho_tr_key; pt0_ps1_ps2 = pt0_ps1_ps2;
+    //reg ptr u8[SEEDBYTES] rho
+    //reg ptr u8[SEEDBYTES] tr
+    //reg ptr u8[SEEDBYTES] key
+    //reg ptr u32[polyvecl] t0
+    //reg ptr u32[polyvecl] s1
+    //reg ptr u32[polyvecl] s2
+    sk = _pack_sk(sk, rho_tr_key, pt0_ps1_ps2);
+    return sk;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] {
+    sig = sig; c = c; z = z; h = h;
+    sig = _pack_sig(sig, c, z, h);
+    return sig;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_pk_jazz(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
+    pk = pk; rho = rho; t1 = t1;
+    rho, t1 = _unpack_pk(rho, t1, pk);
+    return rho, t1;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_jazz(reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u32[3], reg ptr u32[3] {
+    sk = sk; rho_tr_key = rho_tr_key; pt0_ps1_ps2 = pt0_ps1_ps2;
+    //reg ptr u8[SEEDBYTES] rho
+    //reg ptr u8[SEEDBYTES] tr
+    //reg ptr u8[SEEDBYTES] key
+    //reg ptr u32[polyvecl] t0
+    //reg ptr u32[polyvecl] s1
+    //reg ptr u32[polyvecl] s2
+    rho_tr_key, pt0_ps1_ps2 = _unpack_sk(rho_tr_key, pt0_ps1_ps2, sk);
+    return rho_tr_key, pt0_ps1_ps2;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz(reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck] {
+    sig = sig; c = c; z = z; h = h;
+    c, z, h = _unpack_sig(c, z, h, sig);
+    return c, z, h;
+}

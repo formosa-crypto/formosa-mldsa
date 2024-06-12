@@ -1,7 +1,5 @@
 require "poly.jinc"
 
-param int polyvecl = N * L;
-param int polyveck = N * K;
 param int matKL = polyvecl * K;
 
 /**************************************************************/

@@ -4,6 +4,7 @@ test_rounding
 test_ntt
 test_poly
 test_polyvec
+test_packing
 checksumbig
 checksumsmall
 functest

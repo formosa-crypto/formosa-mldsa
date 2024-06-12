@@ -1,0 +1,44 @@
+require "sign.jinc"
+
+//NO IMPLEMENTATION AVAILABLE in sign.c
+export fn PQCLEAN_DILITHIUM5_CLEAN_challenge_jazz(reg ptr u32[N] c, reg ptr u8[SEEDBYTES] seed) -> reg ptr u32[N] {
+  c = c; seed = seed;
+  //TODO
+  return c;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES], reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], reg u32 {
+  pk = pk; sk = sk;
+  reg u32 status;
+  pk, sk, status = _crypto_sign_keypair_jazz(pk, sk);
+  return pk, sk, status;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg u8 m, reg ptr u32[2] siglen_mlen, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES], reg u32
+{
+  sig = sig; siglen_mlen = siglen_mlen; sk = sk;
+  reg u32 status;
+  sig, status = _crypto_sign_signature(sig, m, siglen_mlen, sk);
+  return sig, status;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sm, reg u8 m, reg ptr u32[2] smlen_mlen, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES], reg u32 {
+  sm = sm; smlen_mlen = smlen_mlen; sk = sk;
+  reg u32 status;
+  sm, status = _crypto_sign(sm, m, smlen_mlen, sk);
+  return sm, status;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg u8 m, reg ptr u32[2] siglen_mlen, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
+    sig = sig; siglen_mlen = siglen_mlen; pk = pk;
+    reg u32 status;
+    status = _crypto_sign_verify(sig, m, siglen_mlen, pk);
+    return status;
+}
+
+export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_open(reg u32 pm, reg u32 sm, reg ptr u32[2] mlen_smlen, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
+  pm = pm; sm = sm; mlen_smlen = mlen_smlen; pk = pk;
+  reg u32 status;    
+  status = _crypto_sign_open(pm, sm, mlen_smlen, pk);
+  return status;
+}
