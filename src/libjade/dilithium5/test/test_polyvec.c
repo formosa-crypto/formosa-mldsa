@@ -40,6 +40,13 @@ void PQCLEAN_DILITHIUM5_CLEAN_polyveck_pointwise_poly_montgomery_jazz(polyveck *
 
 int PQCLEAN_DILITHIUM5_CLEAN_polyveck_chknorm_jazz(const polyveck *v, int32_t B);
 
+void PQCLEAN_DILITHIUM5_CLEAN_polyveck_power2round_jazz(polyveck *v1, polyveck *v0, const polyveck *v);
+void PQCLEAN_DILITHIUM5_CLEAN_polyveck_decompose_jazz(polyveck *v1, polyveck *v0, const polyveck *v);
+unsigned int PQCLEAN_DILITHIUM5_CLEAN_polyveck_make_hint_jazz(polyveck *h,
+        const polyveck *v0,
+        const polyveck *v1);
+void PQCLEAN_DILITHIUM5_CLEAN_polyveck_use_hint_jazz(polyveck *w, const polyveck *u, const polyveck *h);
+
 int main ()
 {
   checkpolyvecluniform(CRHBYTES, PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_eta, PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_eta_jazz, "polyvecl_uniform_eta");
@@ -67,6 +74,11 @@ int main ()
   checkpolyveck_poly(PQCLEAN_DILITHIUM5_CLEAN_polyveck_pointwise_poly_montgomery, PQCLEAN_DILITHIUM5_CLEAN_polyveck_pointwise_poly_montgomery_jazz, "polyveck_pointwise_poly_montgomery");
 
   checkpolyveckint(PQCLEAN_DILITHIUM5_CLEAN_polyveck_chknorm, PQCLEAN_DILITHIUM5_CLEAN_polyveck_chknorm_jazz, "polyveck_chknorm_jazz");
+
+  checkpolyveck3(PQCLEAN_DILITHIUM5_CLEAN_polyveck_power2round, PQCLEAN_DILITHIUM5_CLEAN_polyveck_power2round_jazz, "polyveck_power2round");
+  checkpolyveck3(PQCLEAN_DILITHIUM5_CLEAN_polyveck_decompose, PQCLEAN_DILITHIUM5_CLEAN_polyveck_decompose_jazz, "polyveck_decompose");
+  checkpolyveck3_u32(PQCLEAN_DILITHIUM5_CLEAN_polyveck_make_hint, PQCLEAN_DILITHIUM5_CLEAN_polyveck_make_hint_jazz, "polyveck_make_hint");
+  checkpolyveck3(PQCLEAN_DILITHIUM5_CLEAN_polyveck_use_hint, PQCLEAN_DILITHIUM5_CLEAN_polyveck_use_hint_jazz, "polyveck_use_hint");
 
   return 0;
 }

@@ -182,6 +182,18 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_decompose_jazz(
   return v1, v0;
 }
 
+export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_make_hint_jazz(
+  reg ptr u32[polyveck] h,
+  reg ptr u32[polyveck] v0,
+  reg ptr u32[polyveck] v1
+) -> reg ptr u32[polyveck], reg u32
+{
+  h = h; v0 = v0; v1 = v1;
+  reg u32 s;
+  s, h = _polyveck_make_hint(h, v0, v1);
+  return h, s;
+}
+
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_use_hint_jazz
 (
   reg ptr u32[polyveck] w,
