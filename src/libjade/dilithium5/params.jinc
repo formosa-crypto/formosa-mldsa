@@ -164,6 +164,18 @@ inline fn __mem_to_seed (reg u32 p) -> stack u8[SEEDBYTES] {
   return a;
 }
 
+inline fn __seed_to_mem (reg ptr u8[SEEDBYTES] pa, reg u32 p) {
+  reg u32 ai i;
+
+  i = 0;
+
+  while (i < SEEDBYTES) {
+    ai = (32u) pa[(int) i];
+    (u8)[p + i] = ai;
+    i += 1;
+  }
+}
+
 inline fn __mem_to_crhseed (reg u32 p) -> stack u8[CRHBYTES] {
   stack u8[CRHBYTES] a;
   reg ptr u8[CRHBYTES] pa;

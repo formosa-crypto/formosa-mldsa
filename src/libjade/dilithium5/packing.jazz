@@ -5,10 +5,11 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_pack_pk_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CL
     pk = _pack_pk(pk, rho, t1);
     return pk;
 }
+
 inline fn __polyvecl_to_mem(reg u32 p, reg ptr u32[polyvecl] v) {
   reg u32 i, t;
   i = 0;
-  while (i < polyvecl) { 
+  while (i < polyvecl) {
     t = v[(int) i];
     (u32)[p + 4 * i] = t;
     i += 1;
@@ -35,25 +36,71 @@ fn _mem_to_polyvecl(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl]
   return v;
 }
 
-fn _mem_to_polyvecl1(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
-  v = __mem_to_polyvecl(v, p);
+inline fn __polyveck_to_mem(reg u32 p, reg ptr u32[polyveck] v) {
+  reg u32 i, t;
+  i = 0;
+  while (i < polyveck) {
+    t = v[(int) i];
+    (u32)[p + 4 * i] = t;
+    i += 1;
+  }     
+}
+
+fn _polyveck_to_mem(reg u32 p, reg ptr u32[polyveck] v) { 
+  __polyveck_to_mem(p, v);
+}
+
+inline fn __mem_to_polyveck(reg ptr u32[polyveck] v, reg u32 p) -> reg ptr u32[polyveck] {
+  reg u32 i, t;
+  i = 0;
+  while (i < polyveck) { 
+    t = (u32)[p + 4 * i];
+    v[(int) i] = t;
+    i += 1;
+  }
   return v;
 }
 
-fn _mem_to_polyvecl2(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
-  v = __mem_to_polyvecl(v, p);
+fn _mem_to_polyveck(reg ptr u32[polyveck] v, reg u32 p) -> reg ptr u32[polyveck] {
+  v = __mem_to_polyveck(v, p);
   return v;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sk_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] {
+export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sk_internal_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] {
     sk = sk; rho_tr_key = rho_tr_key; pt0_ps1_ps2 = pt0_ps1_ps2;
-    //reg ptr u8[SEEDBYTES] rho
-    //reg ptr u8[SEEDBYTES] tr
-    //reg ptr u8[SEEDBYTES] key
-    //reg ptr u32[polyvecl] t0
-    //reg ptr u32[polyvecl] s1
-    //reg ptr u32[polyvecl] s2
-    sk = _pack_sk(sk, rho_tr_key, pt0_ps1_ps2);
+    
+    reg ptr u8[SEEDBYTES] rprho;
+    stack u8[SEEDBYTES] rho;
+    rho = __mem_to_seed(rho_tr_key[0]);
+    rprho = rho;
+    
+    reg ptr u8[SEEDBYTES] rptr;
+    stack u8[SEEDBYTES] tr;    
+    tr = __mem_to_seed(rho_tr_key[1]);
+    rptr = tr;
+   
+    reg ptr u8[SEEDBYTES] rpkey;
+    stack u8[SEEDBYTES] key;
+    key = __mem_to_seed(rho_tr_key[2]);
+    rpkey = key;
+
+    reg ptr u32[polyveck] rpt0;
+    stack u32[polyveck] t0;
+    t0 = __mem_to_polyveck(t0, pt0_ps1_ps2[0]);
+    rpt0 = t0;
+    
+    reg ptr u32[polyvecl] rps1;
+    stack u32[polyvecl] s1;    
+    s1 = __mem_to_polyvecl(s1, pt0_ps1_ps2[1]);
+    rps1 = s1;
+    
+    reg ptr u32[polyveck] rps2;
+    stack u32[polyveck] s2;
+    s2 = __mem_to_polyveck(s2, pt0_ps1_ps2[2]);
+    rps2 = s2;
+    
+    sk = _pack_sk(sk, rprho, rptr, rpkey, rpt0, rps1, rps2);
+    
     return sk;
 }
 
@@ -69,15 +116,49 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_pk_jazz(reg ptr u8[SEEDBYTES] rho, reg
     return rho, t1;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_jazz(reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u32[3], reg ptr u32[3] {
+export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_internal_jazz(reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u32[3], reg ptr u32[3] {
     sk = sk; rho_tr_key = rho_tr_key; pt0_ps1_ps2 = pt0_ps1_ps2;
-    //reg ptr u8[SEEDBYTES] rho
-    //reg ptr u8[SEEDBYTES] tr
-    //reg ptr u8[SEEDBYTES] key
-    //reg ptr u32[polyvecl] t0
-    //reg ptr u32[polyvecl] s1
-    //reg ptr u32[polyvecl] s2
-    rho_tr_key, pt0_ps1_ps2 = _unpack_sk(rho_tr_key, pt0_ps1_ps2, sk);
+    
+    reg ptr u8[SEEDBYTES] rprho;
+    stack u8[SEEDBYTES] rho;
+    rho = __mem_to_seed(rho_tr_key[0]);
+    rprho = rho;
+    
+    reg ptr u8[SEEDBYTES] rptr;
+    stack u8[SEEDBYTES] tr;    
+    tr = __mem_to_seed(rho_tr_key[1]);
+    rptr = tr;
+   
+    reg ptr u8[SEEDBYTES] rpkey;
+    stack u8[SEEDBYTES] key;
+    key = __mem_to_seed(rho_tr_key[2]);
+    rpkey = key;
+
+    reg ptr u32[polyveck] rpt0;
+    stack u32[polyveck] t0;
+    t0 = __mem_to_polyveck(t0, pt0_ps1_ps2[0]);
+    rpt0 = t0;
+    
+    reg ptr u32[polyvecl] rps1;
+    stack u32[polyvecl] s1;    
+    s1 = __mem_to_polyvecl(s1, pt0_ps1_ps2[1]);
+    rps1 = s1;
+    
+    reg ptr u32[polyveck] rps2;
+    stack u32[polyveck] s2;
+    s2 = __mem_to_polyveck(s2, pt0_ps1_ps2[2]);
+    rps2 = s2;
+
+    rprho, rptr, rpkey, rpt0, rps1, rps2 = _unpack_sk(rprho, rptr, rpkey, rpt0, rps1, rps2, sk);
+
+    __seed_to_mem(rprho, rho_tr_key[0]);
+    __seed_to_mem(rptr, rho_tr_key[1]);
+    __seed_to_mem(rpkey, rho_tr_key[2]);
+    
+    __polyveck_to_mem(pt0_ps1_ps2[0], rpt0);
+    __polyvecl_to_mem(pt0_ps1_ps2[1], rps1);
+    __polyveck_to_mem(pt0_ps1_ps2[2], rps2);
+    
     return rho_tr_key, pt0_ps1_ps2;
 }
 
