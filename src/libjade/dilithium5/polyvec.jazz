@@ -214,13 +214,13 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_pack_w1_jazz(
   return r;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_expand_jazz(
-  reg ptr u32[matKL] mat,
-  reg ptr u8[SEEDBYTES] rho
-) -> reg ptr u32[matKL] {
-  mat = _polyvec_matrix_expand(mat, rho);
-  return mat;
-}
+//export fn PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_expand_jazz(
+//  reg ptr u32[matKL] mat,
+//  reg ptr u8[SEEDBYTES] rho
+//) -> reg ptr u32[matKL] {
+//  mat = _polyvec_matrix_expand(mat, rho);
+//  return mat;
+//}
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_pointwise_montgomery_jazz(
   reg ptr u32[polyveck] t,
