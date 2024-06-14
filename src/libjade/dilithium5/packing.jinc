@@ -298,6 +298,8 @@ fn _unpack_sig(reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[pol
     sig = sig; c = c; z = z; h = h;
 
     reg u32 status;
+    status = 0;
+    
     inline int i;
     
     inline int start_pos;
@@ -339,14 +341,16 @@ fn _unpack_sig(reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[pol
     reg ptr u32[N] nh;
     for i = 0 to K {
       nh = h[i * N: N];
-      
-      for j = 0 to N {
-         nh[j] = r0;
+
+      if status == 0 {
+        for j = 0 to N {
+           nh[j] = r0;
+        }
       }
            
       reg u32 cond;
       cond = 0;
-      srj = (32u)sig[OMEGA + i];
+      srj = (32u)pptsig[OMEGA + i];
       cond = 1 if srj < k;
       cond = 1 if srj > OMEGA;
       if cond == 1 {
@@ -355,7 +359,7 @@ fn _unpack_sig(reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[pol
 
       rj = k;
       reg u32 sro;
-      sro = (32u)sig[OMEGA + i];
+      sro = (32u)pptsig[OMEGA + i];
       while (rj < sro) {
       
         cond = 1;
@@ -372,20 +376,22 @@ fn _unpack_sig(reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[pol
 	
 	reg u32 r1;
 	r1 = 1;
-	nh[srj] = r1;
+        if status == 0 {
+          nh[srj] = r1;
+	}
 	rj += 1;
       }
-      k = (32u)sig[OMEGA + i];
+      k = (32u)pptsig[OMEGA + i];
 
       rj = k;
       while (rj < OMEGA) {
-	srj = (32u)sig[rj];
+	srj = (32u)pptsig[rj];
         if (srj != r0) {
 	  status = 1;
 	}
 	rj += 1;
       }
-      h[i * N : N] = nh;
+      h[i * N : N] = nh;      
     }
     () = #unspill(c);
 
