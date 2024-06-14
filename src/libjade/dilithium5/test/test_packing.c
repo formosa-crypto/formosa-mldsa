@@ -23,11 +23,11 @@ int PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz(uint8_t c[SEEDBYTES], polyvecl *z, 
 
 int main ()
 {
-    check_pk_rhot1(PQCLEAN_DILITHIUM5_CLEAN_pack_pk_jazz, PQCLEAN_DILITHIUM5_CLEAN_pack_pk, "pack_pk_jazz");
-    check_rhot1_pk(PQCLEAN_DILITHIUM5_CLEAN_unpack_pk_jazz, PQCLEAN_DILITHIUM5_CLEAN_unpack_pk, "unpack_pk_jazz");
-    check_sk_rhotrkeyt0s1s2(PQCLEAN_DILITHIUM5_CLEAN_pack_sk_jazz, PQCLEAN_DILITHIUM5_CLEAN_pack_sk, "pack_sk_jazz");
-    check_rhotrkeyt0s1s2_sk(PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_jazz, PQCLEAN_DILITHIUM5_CLEAN_unpack_sk, "unpack_sk_jazz");
-    check_sig_czh(PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz, PQCLEAN_DILITHIUM5_CLEAN_pack_sig, "pack_sig_jazz");
-    // check_czh_sig(PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz, PQCLEAN_DILITHIUM5_CLEAN_unpack_sig, "unpack_sig_jazz");
+     check_pk_rhot1(PQCLEAN_DILITHIUM5_CLEAN_pack_pk_jazz, PQCLEAN_DILITHIUM5_CLEAN_pack_pk, "pack_pk_jazz");
+     check_rhot1_pk(PQCLEAN_DILITHIUM5_CLEAN_unpack_pk_jazz, PQCLEAN_DILITHIUM5_CLEAN_unpack_pk, "unpack_pk_jazz");
+     check_sk_rhotrkeyt0s1s2(PQCLEAN_DILITHIUM5_CLEAN_pack_sk_jazz, PQCLEAN_DILITHIUM5_CLEAN_pack_sk, "pack_sk_jazz");
+     check_rhotrkeyt0s1s2_sk(PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_jazz, PQCLEAN_DILITHIUM5_CLEAN_unpack_sk, "unpack_sk_jazz");
+     check_sig_czh(PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz, PQCLEAN_DILITHIUM5_CLEAN_pack_sig, "pack_sig_jazz");
+     check_czh_sig(PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz, PQCLEAN_DILITHIUM5_CLEAN_unpack_sig, "unpack_sig_jazz");
     return 0;
 }

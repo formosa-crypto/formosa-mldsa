@@ -226,46 +226,46 @@ int PQCLEAN_DILITHIUM5_CLEAN_unpack_sig(uint8_t c[SEEDBYTES],
                                         polyvecl *z,
                                         polyveck *h,
                                         const uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES]) {
-    /* unsigned int i, j, k; */
+    unsigned int i, j, k;
 
-    /* for (i = 0; i < SEEDBYTES; ++i) { */
-    /*     c[i] = sig[i]; */
-    /* } */
-    /* sig += SEEDBYTES; */
+    for (i = 0; i < SEEDBYTES; ++i) {
+        c[i] = sig[i];
+    }
+    sig += SEEDBYTES;
 
-    /* for (i = 0; i < L; ++i) { */
-    /*     PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack(&z->vec[i], sig + i * POLYZ_PACKEDBYTES); */
-    /* } */
-    /* sig += L * POLYZ_PACKEDBYTES; */
+    for (i = 0; i < L; ++i) {
+        PQCLEAN_DILITHIUM5_CLEAN_polyz_unpack(&z->vec[i], sig + i * POLYZ_PACKEDBYTES);
+    }
+    sig += L * POLYZ_PACKEDBYTES;
 
-    /* /\* Decode h *\/ */
-    /* k = 0; */
-    /* for (i = 0; i < K; ++i) { */
-    /*     for (j = 0; j < N; ++j) { */
-    /*         h->vec[i].coeffs[j] = 0; */
-    /*     } */
+    /* Decode h */
+    k = 0;
+    for (i = 0; i < K; ++i) {
+        for (j = 0; j < N; ++j) {
+            h->vec[i].coeffs[j] = 0;
+        }
 
-    /*     if (sig[OMEGA + i] < k || sig[OMEGA + i] > OMEGA) { */
-    /*         return 1; */
-    /*     } */
+        if (sig[OMEGA + i] < k || sig[OMEGA + i] > OMEGA) {
+            return 1;
+        }
 
-    /*     for (j = k; j < sig[OMEGA + i]; ++j) { */
-    /*         /\* Coefficients are ordered for strong unforgeability *\/ */
-    /*         if (j > k && sig[j] <= sig[j - 1]) { */
-    /*             return 1; */
-    /*         } */
-    /*         h->vec[i].coeffs[sig[j]] = 1; */
-    /*     } */
+        for (j = k; j < sig[OMEGA + i]; ++j) {
+            /* Coefficients are ordered for strong unforgeability */
+            if (j > k && sig[j] <= sig[j - 1]) {
+                return 1;
+            }
+            h->vec[i].coeffs[sig[j]] = 1;
+        }
 
-    /*     k = sig[OMEGA + i]; */
-    /* } */
+        k = sig[OMEGA + i];
+    }
 
-    /* /\* Extra indices are zero for strong unforgeability *\/ */
-    /* for (j = k; j < OMEGA; ++j) { */
-    /*     if (sig[j]) { */
-    /*         return 1; */
-    /*     } */
-    /* } */
+    /* Extra indices are zero for strong unforgeability */
+    for (j = k; j < OMEGA; ++j) {
+        if (sig[j]) {
+            return 1;
+        }
+    }
 
     return 0;
 }
