@@ -162,8 +162,9 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_internal_jazz(reg ptr u32[3] rho_tr
     return rho_tr_key, pt0_ps1_ps2;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz(reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck] {
+export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz(reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
     sig = sig; c = c; z = z; h = h;
-    c, z, h = _unpack_sig(c, z, h, sig);
-    return c, z, h;
+    reg u32 status;
+    c, z, h, status = _unpack_sig(c, z, h, sig);
+    return c, z, h, status;
 }
