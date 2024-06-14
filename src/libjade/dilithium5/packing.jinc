@@ -119,7 +119,56 @@ fn _pack_sk(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg p
 **************************************************/
 fn _pack_sig(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] {
     sig = sig; c = c; z = z; h = h;
-    //TODO
+    
+    inline int i;
+    
+    inline int start_pos;
+    start_pos = 0;
+    
+    reg ptr u8[SEEDBYTES] ptsig;
+    ptsig = sig[0 : SEEDBYTES];
+    ptsig = #copy(c);
+    sig[0 : SEEDBYTES] = ptsig;
+    start_pos += SEEDBYTES;
+
+    reg ptr u32[N] nz;
+    reg ptr u8[POLYZ_PACKEDBYTES] nsig;
+    for i = 0 to L {
+        nz = z[i * N: N];
+        nsig = sig[start_pos : POLYZ_PACKEDBYTES];
+        sig[start_pos : POLYZ_PACKEDBYTES] = _polyz_pack(nsig, nz);
+	start_pos += POLYZ_PACKEDBYTES;
+    }
+
+    reg u32 r0;
+    r0 = 0;
+    reg ptr u8[OMEGA + K]  pptsig;    
+    pptsig = sig[start_pos : OMEGA + K];
+    for i = 0 to OMEGA + K {
+        pptsig[i] = r0;
+    }
+    
+    inline int j;
+    reg u32 rj;
+    reg u32 hrj;
+    reg u32 k;
+    k = 0;
+
+    reg ptr u32[N] nh;    
+    for i = 0 to K {
+       nh = h[i * N: N];
+       for j = 0 to N {
+	   rj = j;
+	   hrj = h[rj];
+       	   if hrj != 0 {
+	       pptsig[k] = rj;
+	       k += 1;
+	   }
+       }
+       pptsig[i + OMEGA] = k;
+    }
+    sig[start_pos : OMEGA + K] = pptsig;
+    
     return sig; 
 }
 
@@ -165,10 +214,71 @@ fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[PQ
 *              - const polyveck *s2: pointer to output vector s2
 *              - uint8_t sk[]: byte array containing bit-packed sk
 **************************************************/
-fn _unpack_sk(reg ptr u8[SEEDBYTES] rho, reg ptr u8[SEEDBYTES] tr, reg ptr u8[SEEDBYTES] key, reg ptr u32[polyveck] pt0, reg ptr u32[polyvecl] ps1, reg ptr u32[polyveck] ps2, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[SEEDBYTES], reg ptr u8[SEEDBYTES], reg ptr u8[SEEDBYTES], reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck] {
-    sk = sk; rho = rho; tr = tr; key = key; pt0 = pt0; ps1 = ps1; ps2 = ps2;
+fn _unpack_sk(reg ptr u8[SEEDBYTES] rho, reg ptr u8[SEEDBYTES] tr, reg ptr u8[SEEDBYTES] key, reg ptr u32[polyveck] t0, reg ptr u32[polyvecl] s1, reg ptr u32[polyveck] s2, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[SEEDBYTES], reg ptr u8[SEEDBYTES], reg ptr u8[SEEDBYTES], reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck] {
+    sk = sk; rho = rho; tr = tr; key = key; t0 = t0; s1 = s1; s2 = s2;
 
-    return rho, tr, key, pt0, ps1, ps2;
+    inline int i;
+    inline int start_pos;
+    start_pos = 0;
+    
+    reg ptr u8[SEEDBYTES] tsk;
+    
+    tsk = sk[0:SEEDBYTES];
+    rho = #copy(tsk);
+    start_pos += SEEDBYTES;
+    
+    tsk = sk[SEEDBYTES :  SEEDBYTES];
+    key = #copy(tsk);
+    start_pos += SEEDBYTES;
+    
+    tsk = sk[start_pos : SEEDBYTES];
+    tr = #copy(tsk);
+    start_pos += SEEDBYTES;
+    
+    reg ptr u8[POLYETA_PACKEDBYTES] nsk;
+
+    () = #spill(t0);
+    () = #spill(s2);
+    () = #spill(rho);
+    () = #spill(tr);
+    () = #spill(key);    
+    reg ptr u32[N] ns1;
+    for i = 0 to L {
+        ns1 = s1[i * N: N];
+        nsk = sk[start_pos : POLYETA_PACKEDBYTES];
+	() = #spill(sk);		
+        s1[i * N: N] = _polyeta_unpack(ns1, nsk);
+	() = #unspill(sk);
+	start_pos += POLYETA_PACKEDBYTES;
+    }
+    
+    () = #unspill(s2);
+    reg ptr u32[N] ns2;
+    for i = 0 to K {
+        ns2 = s2[i * N: N];
+        nsk = sk[start_pos : POLYETA_PACKEDBYTES];
+	() = #spill(sk);
+        s2[i * N: N] = _polyeta_unpack(ns2, nsk);
+        () = #unspill(sk);
+	start_pos += POLYETA_PACKEDBYTES;
+    }
+    () = #unspill(t0);
+    
+    reg ptr u32[N] nt0;
+    reg ptr u8[POLYT0_PACKEDBYTES] nnsk;
+    for i = 0 to K {
+        nt0 = t0[i * N: N];
+        nnsk = sk[start_pos : POLYT0_PACKEDBYTES];
+	() = #spill(sk);
+        t0[i * N: N] = _polyt0_unpack(nt0, nnsk);
+	() = #unspill(sk);
+	start_pos += POLYT0_PACKEDBYTES;	
+    }
+    () = #unspill(rho);
+    () = #unspill(tr);
+    () = #unspill(key);    
+
+    return rho, tr, key, t0, s1, s2;
 }
 
 /*************************************************
