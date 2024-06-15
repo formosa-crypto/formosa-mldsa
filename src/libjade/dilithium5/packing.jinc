@@ -127,6 +127,7 @@ fn _pack_sig(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[S
     
     reg ptr u8[SEEDBYTES] ptsig;
     ptsig = sig[0 : SEEDBYTES];
+    // FIXME this copy can be improved using 32 bits load and store instead of 8
     ptsig = #copy(c);
     sig[0 : SEEDBYTES] = ptsig;
     start_pos += SEEDBYTES;
@@ -144,6 +145,8 @@ fn _pack_sig(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[S
     r0 = 0;
     reg ptr u8[OMEGA + K]  pptsig;    
     pptsig = sig[start_pos : OMEGA + K];
+    // FIXME use a while loop ?
+    // FIXME use 32 bits 0 ? OMEGA + K = 75 + 8 = 83 = 20 * 4 + 3
     for i = 0 to OMEGA + K {
         pptsig[i] = r0;
     }
