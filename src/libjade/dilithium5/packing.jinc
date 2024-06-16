@@ -322,13 +322,11 @@ fn _unpack_sig(reg ptr u8[SEEDBYTES] c,
     for i = 0 to L {
         nz = z[i * N: N];
         nsig = sig[start_pos : POLYZ_PACKEDBYTES];
-	() = #spill(sig);
         z[i * N: N] = _polyz_unpack(nz, nsig);
-        () = #unspill(sig);
 	start_pos += POLYZ_PACKEDBYTES;
     }
 
-    () = #unspill(h,c);
+    () = #unspill(c, h);
     status = 0;
     r0 = 0;
     r1 = 1;
