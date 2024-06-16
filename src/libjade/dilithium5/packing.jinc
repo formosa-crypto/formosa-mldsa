@@ -297,106 +297,90 @@ fn _unpack_sk(reg ptr u8[SEEDBYTES] rho, reg ptr u8[SEEDBYTES] tr, reg ptr u8[SE
 *
 * Returns 1 in case of malformed signature; otherwise 0.
 **************************************************/
-fn _unpack_sig(reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
+fn _unpack_sig(reg ptr u8[SEEDBYTES] c, 
+               reg ptr u32[polyvecl] z, 
+               reg ptr u32[polyveck] h, 
+               reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig) -> 
+         reg ptr u8[SEEDBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
+    // fixme this should be in the export function not here
     sig = sig; c = c; z = z; h = h;
 
-    reg u32 status;
-    status = 0;
-    
+    reg u32 status, r0, r1, j, sj, sjm1, sroi, k;
     inline int i;
-    
     inline int start_pos;
-    start_pos = 0;
-    
     reg ptr u8[SEEDBYTES] ptsig;
+    reg ptr u8[OMEGA + K] pptsig;
+    reg ptr u32[N] nh, nz;
+    reg ptr u8[POLYZ_PACKEDBYTES] nsig;
+
     ptsig = sig[0 : SEEDBYTES];
     c = #copy(ptsig);
-    start_pos += SEEDBYTES;
+    start_pos = SEEDBYTES;
 
-    () = #spill(c);
-    () = #spill(h);
-    reg ptr u32[N] nz;
-    reg ptr u8[POLYZ_PACKEDBYTES] nsig;
+    () = #spill(c, h);
+
     for i = 0 to L {
         nz = z[i * N: N];
         nsig = sig[start_pos : POLYZ_PACKEDBYTES];
-
 	() = #spill(sig);
         z[i * N: N] = _polyz_unpack(nz, nsig);
         () = #unspill(sig);
 	start_pos += POLYZ_PACKEDBYTES;
     }
 
-    reg u32 r0;
+    () = #unspill(h,c);
+    status = 0;
     r0 = 0;
-    reg ptr u8[OMEGA + K] pptsig;
+    r1 = 1;
     pptsig = sig[start_pos : OMEGA + K];
-   
-    
-    reg u32 rj;
-    reg u32 srj;
-    
-    inline int j;
-    () = #unspill(h);
-    
-    reg u32 k;
     k = 0;    
-    reg ptr u32[N] nh;
     for i = 0 to K {
-      nh = h[i * N: N];
-
-      if status == 0 {
-        for j = 0 to N {
-           nh[j] = r0;
+      if (status == 0) { 
+        nh = h[i * N: N];
+        j = 0;
+        // FIXME improve this loop 
+        while (j < N) {
+          nh[j] = r0;
+          j += 1;
+        } 
+        sroi = (32u)pptsig[OMEGA + i];
+        // FIXME : should be sign or unsign comparison ?
+        status = 1 if sroi <32u k;
+        status = 1 if sroi >32u OMEGA;
+        if (status == 0) {
+          j = k;
+          sjm1 = (32u)pptsig[j]; 
+          j += 1;
+          sj = (32u)pptsig[j]; 
+          while (j <32u sroi) {
+            if (sj <=32u sjm1) { 
+              status = 1;
+              j = sroi; // exit loop
+            } else {
+              j += 1;
+              nh[sj] = r1;
+              // for the next iteration
+              sjm1 = sj;
+              sj = (32u)pptsig[j];                
+            }              
+          }
+          k = sroi if (status == 0);
         }
+        h[i * N : N] = nh; 
       }
-           
-      reg u32 cond;
-      cond = 0;
-      srj = (32u)pptsig[OMEGA + i];
-      cond = 1 if srj < k;
-      cond = 1 if srj > OMEGA;
-      if cond == 1 {
-        status = 1;
-      }    
-
-      rj = k;
-      reg u32 sro;
-      sro = (32u)pptsig[OMEGA + i];
-      while (rj < sro) {
-      
-        cond = 1;
-	cond = 0 if rj <= k;
-	srj = (32u)pptsig[rj];
-	reg u32 srj1;
-	reg u32 rj1;
-	rj1 = rj - 1;
-	srj1 = (32u)pptsig[rj1];
-	cond = 0 if srj > srj1;
-        if cond == 1 {
-          status = 1;
-        }
-	
-	reg u32 r1;
-	r1 = 1;
-        if status == 0 {
-          nh[srj] = r1;
-	}
-	rj += 1;
-      }
-      k = (32u)pptsig[OMEGA + i];
-
-      rj = k;
-      while (rj < OMEGA) {
-	srj = (32u)pptsig[rj];
-        if (srj != r0) {
-	  status = 1;
-	}
-	rj += 1;
-      }
-      h[i * N : N] = nh;      
     }
-    () = #unspill(c);
+    if (status == 0) {
+      j = k;
+      while(j <32u OMEGA) {
+        sj = (32u)pptsig[j];
+        if (sj != 0) {
+          j = OMEGA;
+          status = 1; 
+        } else { 
+          j += 1; 
+        }
+      }
+    }         
 
     return c, z, h, status;
 }
