@@ -345,7 +345,10 @@ fn _unpack_sig(reg ptr u8[SEEDBYTES] c,
         status = 1 if sroi >32u OMEGA;
         if (status == 0) {
           j = k;
-          sjm1 = (32u)pptsig[j]; 
+          sjm1 = (32u)pptsig[j];
+	  if (j <32u sroi) {
+            nh[sjm1] = r1;
+	  }
           j += 1; 
           // this is safe because j = k <= OMEGA < OMEGA + K
           sj = (32u)pptsig[j]; 
