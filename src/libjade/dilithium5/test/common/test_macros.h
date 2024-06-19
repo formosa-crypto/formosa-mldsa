@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <params.h>
 
 #define check32to32(FUNCTION_C, FUNCTION_JASMIN, function_name)		\
   {									\

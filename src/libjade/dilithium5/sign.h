@@ -10,6 +10,8 @@ void PQCLEAN_DILITHIUM5_CLEAN_challenge(poly *c, const uint8_t seed[SEEDBYTES]);
 
 int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk);
 
+int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed(uint8_t *pk, uint8_t *sk, uint8_t *seedbuf);
+
 int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature(uint8_t *sig, size_t *siglen,
         const uint8_t *m, size_t mlen,
         const uint8_t *sk);
