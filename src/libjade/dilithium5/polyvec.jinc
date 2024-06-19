@@ -322,6 +322,20 @@ fn _polyveck_power2round(
   return v1, v0;
 }
 
+fn _polyveck_power2round_inplace(
+  reg ptr u32[polyveck] v1,
+  reg ptr u32[polyveck] v0
+) -> reg ptr u32[polyveck], reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pv1 pv0 pv;
+  for i = 0 to K {
+    pv1 = v1[i * N : N]; pv0 = v0[i * N : N]; 
+    v1[i * N : N], v0[i * N : N] = _poly_power2round_inplace(pv1, pv0);
+  }
+  return v1, v0;
+}
+
 fn _polyveck_decompose(
   reg ptr u32[polyveck] v1,
   reg ptr u32[polyveck] v0,

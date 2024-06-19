@@ -587,6 +587,11 @@ fn _poly_power2round(reg ptr u32[N] a1, reg ptr u32[N] a0, reg ptr u32[N] a) -> 
   return (a1, a0);
 }
 
+fn _poly_power2round_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[N], reg ptr u32[N] {
+  a1, a0 = __poly_power2round(a1, a0, a1);
+  return (a1, a0);
+}
+
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_poly_shiftl
 *
