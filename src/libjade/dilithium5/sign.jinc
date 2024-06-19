@@ -12,6 +12,65 @@ require "packing.jinc"
 *
 * Returns 0 (success)
 **************************************************/
+
+fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
+                                     reg ptr u8[ PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] inp) -> reg ptr u8[SEEDBYTES]
+{ 
+  stack u32[25*2] state;
+  reg ptr u32[25*2] pstate;
+  reg u32 i t s next;
+  
+  pstate = state;
+  pstate = __keccak_init_ref(pstate);
+  () = #spill(outp);
+  reg u32 last;
+
+  while {
+    last = (PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2) - (SHAKE256_RATE >> 2);
+  } 
+  (i < last)
+  { 
+    next = i + (SHAKE256_RATE >> 2);
+    while (i < next) { 
+      t = inp[u32 (int)i];
+      s = pstate[(int)i];
+      t ^= s;
+      pstate[(int)i] = t;
+      i += 1;
+    }
+    () = #spill(i, inp);
+    pstate = _keccakf1600_ref(pstate);
+    () = #unspill(i, inp);
+  }    
+
+  while(i < (PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2)) {
+    t = inp[u32 (int)i];
+    s = pstate[(int)i];
+    t ^= s;
+    pstate[(int)i] = t;
+    i += 1;
+  }
+  s = (32u)pstate[u8 (i * 4)];
+  s ^= TRAIL_BYTE;
+  pstate[u8 (i * 4)] = s;
+  s = (32u) pstate[u8 (SHAKE256_RATE - 1)];
+  s ^= 128;
+  pstate[u8 (SHAKE256_RATE - 1)] = s;
+
+  pstate = _keccakf1600_ref(pstate);
+  
+  () = #unspill(outp);
+  i = 0;
+  while (i < SEEDBYTES / 4) {
+    t = pstate[(int)i];
+    outp[(int)i] = t;
+    i += 1;
+  }   
+  return outp;
+}  
+   
+
+
 fn _crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES], reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], reg u32 {
     reg u32 status;
 
@@ -70,10 +129,15 @@ fn _crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKE
     pk = _pack_pk(pk, rho, t1);
 
     /* Compute H(rho, t1) and write secret key */
-//    shake256(tr, SEEDBYTES, pk, PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES);
+    () = #spill(pk);    
+    tr = shake256_PUBLICKEYBYTES_SEEDBYTES(tr, pk);
     () = #unspill(sk);
-   sk = _pack_sk(sk, rho, tr, key, t0, s1, s2);
+    reg ptr u8[SEEDBYTES] key;
 
+    rho = state[u8 0:SEEDBYTES];
+    key = state[u8 SEEDBYTES + CRHBYTES : SEEDBYTES];
+    sk = _pack_sk(sk, rho, tr, key, t0, s1, s2);
+    () = #unspill(pk);
     status = 1;
 
     return pk, sk, status;

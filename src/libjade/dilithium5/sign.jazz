@@ -11,6 +11,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_D
   pk = pk; sk = sk;
   reg u32 status;
   pk, sk, status = _crypto_sign_keypair_jazz(pk, sk);
+  pk = pk; sk = sk; status = status;
   return pk, sk, status;
 }
 
