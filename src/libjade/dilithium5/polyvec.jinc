@@ -224,6 +224,20 @@ fn _polyveck_add(
   return w;
 }
 
+fn _polyveck_add_inplace(
+  reg ptr u32[polyveck] u,
+  reg ptr u32[polyveck] v
+) -> reg ptr u32[polyveck] 
+{
+  inline int i;
+  reg ptr u32[N] pu pv;
+  for i = 0 to K {
+    pu = u[i * N : N]; pv = v[i * N : N];
+    u[i * N : N] = _poly_add_inplace(pu, pv);
+  }
+  return u;
+}
+
 fn _polyveck_sub(
   reg ptr u32[polyveck] w,
   reg ptr u32[polyveck] u,
