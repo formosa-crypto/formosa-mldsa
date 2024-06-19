@@ -588,7 +588,15 @@ fn _poly_power2round(reg ptr u32[N] a1, reg ptr u32[N] a0, reg ptr u32[N] a) -> 
 }
 
 fn _poly_power2round_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[N], reg ptr u32[N] {
-  a1, a0 = __poly_power2round(a1, a0, a1);
+  reg u32 i, a_, a0_, a1_;
+
+  i = 0;
+  while (i < N) {
+    a_ = a1[(int) i];
+    a0_, a1_ = __power2round_a0a1(a_);
+    a0[(int) i] = a0_; a1[(int) i] = a1_;
+    i += 1;
+  }
   return (a1, a0);
 }
 

@@ -1,3 +1,5 @@
+require "packing.jinc"
+
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair
 *
@@ -11,10 +13,69 @@
 * Returns 0 (success)
 **************************************************/
 fn _crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES], reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], reg u32 {
-    pk = pk; sk = sk;
     reg u32 status;
-    status = -1;
-    //TODO    
+
+    stack u8[SEEDBYTES] seedbuf, tr;
+    stack u32[matKL] mat;
+    stack u32[polyvecl] s1;
+    stack u32[polyveck] s2, t1, t0;
+
+    seedbuf = #randombytes(seedbuf);
+
+    /****
+    * Implements shake256(seedbuf, 2 * SEEDBYTES + CRHBYTES, seedbuf, SEEDBYTES);
+    ****/
+    stack u32[PQC_SHAKECTX_BYTES*2] state;
+    reg ptr u32[PQC_SHAKECTX_BYTES*2] pstate;
+    pstate = state;
+
+    () = #spill(pk, sk);
+    pstate = __SHAKE256_init_seed_ref(pstate, seedbuf);
+    state = pstate;
+    /***/
+
+    reg ptr u8[SEEDBYTES] rho;
+    rho = state[u8 0:SEEDBYTES];
+
+    /* Expand matrix */
+    mat = _polyvec_matrix_expand(mat, rho);
+
+    reg ptr u8[CRHBYTES] rhoprime;
+    rhoprime = state[u8 SEEDBYTES:CRHBYTES];
+
+    reg u32 nonce;
+    nonce = 0;
+    /* Sample short vectors s1 and s2 */
+    s1 = _polyvecl_uniform_eta(s1, rhoprime, nonce);
+    nonce = L;
+    rhoprime = state[u8 SEEDBYTES:CRHBYTES];
+    s2 = _polyveck_uniform_eta(s2, rhoprime, nonce);
+
+    /* Matrix-vector multiplication */
+    s1 = _polyvecl_ntt(s1);
+    t1 = _polyvec_matrix_pointwise_montgomery(t1, mat, s1);
+    t1 = _polyveck_reduce(t1);
+    t1 = _polyveck_invntt_tomont(t1);
+
+    /* Add error vector s2 */
+    t1 = _polyveck_add_inplace(t1, s2);
+
+    /* Extract t1 and write public key */
+    t1 = _polyveck_caddq(t1);
+    t1, t0 = _polyveck_power2round_inplace(t1, t0);
+
+    () = #unspill(pk);
+    rho = state[u8 0:SEEDBYTES];
+    //() = #spill(s1, s2);
+    pk = _pack_pk(pk, rho, t1);
+
+    /* Compute H(rho, t1) and write secret key */
+//    shake256(tr, SEEDBYTES, pk, PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES);
+    () = #unspill(sk);
+   sk = _pack_sk(sk, rho, tr, key, t0, s1, s2);
+
+    status = 1;
+
     return pk, sk, status;
 }
 
