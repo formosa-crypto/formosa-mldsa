@@ -13,9 +13,9 @@ require "packing.jinc"
 * Returns 0 (success)
 **************************************************/
 
-fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
+fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
                                      reg ptr u8[ PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] inp) -> reg ptr u8[SEEDBYTES]
-{ 
+{
   stack u32[25*2] state;
   reg ptr u32[25*2] pstate;
   reg u32 i j t s next;
@@ -25,6 +25,7 @@ fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   () = #spill(outp);
   reg u32 last;
 
+  i = 0;
   while {
     last = (PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2) - (SHAKE256_RATE >> 2);
   } 
@@ -53,6 +54,7 @@ fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
     i += 1;
     j += 1;
   }
+  
   s = (32u)pstate[u8 (j * 4)];
   s ^= TRAIL_BYTE;
   pstate[u8 (j * 4)] = s;
@@ -67,9 +69,10 @@ fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   i = 0;
   while (i < SEEDBYTES / 4) {
     t = pstate[(int)i];
-    outp[(int)i] = t;
+    outp[u32 (int)i] = t;
     i += 1;
-  }   
+  }
+  
   return outp;
 }  
 
@@ -87,7 +90,18 @@ fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
 *
 * Returns 0 (success)
 **************************************************/
+inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -> reg ptr u32[polyvecl] {
+    reg u32 i, t;
 
+    i = 0;
+    while (i < polyvecl) {
+      t = s1[i];
+      s1hat[i] = t;
+      i += 1;
+    }
+    return s1hat;
+}
+    
 /***
 *  FIXME: share the code with next function 
 ***/
@@ -96,7 +110,7 @@ fn _crypto_sign_keypair_seed_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUB
 
     stack u8[SEEDBYTES] tr;
     stack u32[matKL] mat;
-    stack u32[polyvecl] s1;
+    stack u32[polyvecl] s1, s1hat;
     stack u32[polyveck] s2, t1, t0;
 
     /****
@@ -132,8 +146,10 @@ fn _crypto_sign_keypair_seed_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUB
     s2 = _polyveck_uniform_eta(s2, rhoprime, nonce);
 
     /* Matrix-vector multiplication */
-    s1 = _polyvecl_ntt(s1);
-    t1 = _polyvec_matrix_pointwise_montgomery(t1, mat, s1);
+    s1hat = copy_polyvecl(s1hat, s1);
+    
+    s1hat = _polyvecl_ntt(s1hat);    
+    t1 = _polyvec_matrix_pointwise_montgomery(t1, mat, s1hat);
     t1 = _polyveck_reduce(t1);
     t1 = _polyveck_invntt_tomont(t1);
 
@@ -151,16 +167,16 @@ fn _crypto_sign_keypair_seed_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUB
 
     /* Compute H(rho, t1) and write secret key */
     () = #spill(pk);
-    tr = shake256_PUBLICKEYBYTES_SEEDBYTES(tr, pk);
-    () = #unspill(sk);
-    reg ptr u8[SEEDBYTES] key;
+    tr = _shake256_PUBLICKEYBYTES_SEEDBYTES(tr, pk);
 
+    reg ptr u8[SEEDBYTES] key;
     rho = state[u8 0:SEEDBYTES];
     key = state[u8 SEEDBYTES + CRHBYTES : SEEDBYTES];
+    
+    () = #unspill(sk);
     sk = _pack_sk(sk, rho, tr, key, t0, s1, s2);
     () = #unspill(pk);
-
-
+    
     status = 0;
 
     return pk, sk, status;
@@ -226,7 +242,7 @@ fn _crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKE
 
     /* Compute H(rho, t1) and write secret key */
     () = #spill(pk);    
-    tr = shake256_PUBLICKEYBYTES_SEEDBYTES(tr, pk);
+    tr = _shake256_PUBLICKEYBYTES_SEEDBYTES(tr, pk);
     () = #unspill(sk);
     reg ptr u8[SEEDBYTES] key;
 

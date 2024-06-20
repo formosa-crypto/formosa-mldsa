@@ -7,6 +7,13 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_challenge_jazz(reg ptr u32[N] c, reg ptr u8[S
   return c;
 }
 
+export fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp, reg ptr u8[ PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] inp) -> reg ptr u8[SEEDBYTES]
+{
+  outp = outp; inp = inp;  
+  outp = _shake256_PUBLICKEYBYTES_SEEDBYTES(outp, inp);
+  return outp;
+}
+
 export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES], reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], reg u32 {
   pk = pk; sk = sk;
   reg u32 status;
