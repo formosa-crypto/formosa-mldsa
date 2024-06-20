@@ -467,9 +467,10 @@ fn _crypto_sign_signature
 
   stack u32[matKL] s_mat;
   stack u32[polyvecl] s_y;
+  stack u32[polyveck] s_h;
   reg ptr u32[matKL] mat;
-  reg ptr u32[polyvecl] y;
-  reg ptr u32[polyvecl] z;
+  reg ptr u32[polyvecl] y z;
+  reg ptr u32[polyveck] h;
   stack u32[polyveck] s_w1 s_w0;
   stack u32[N] s_cp; 
   reg ptr u32[polyveck] w1 w0;
@@ -484,7 +485,6 @@ fn _crypto_sign_signature
   reg u32 continue nonce r0; 
   stack u32 s_nonce s_continue;
   r0 = 0;
-  s_continue = r0;
   s_nonce = r0;
 
   while {
@@ -532,14 +532,63 @@ fn _crypto_sign_signature
     () = #spill(sig);
     cp = s_cp;
     cp = _poly_challenge(cp, sigseed);
-    s_cp = _poly_ntt(cp);
+    cp = _poly_ntt(cp);
     /* Compute z, reject if it reveals secret */
-
-    continue = s_continue;
-    
+    z = s_y; s1 = s_s1;
+    z = _polyvecl_pointwise_poly_montgomery(z, cp, s1); s_cp = cp;
+    z = _polyvecl_invntt_tomont(z);
+    z = _polyvecl_add2_inplace(z);
+    z = _polyvecl_reduce(z);
+    s_y = z; 
+    reg u32 chknorm bound; 
+    bound = iGAMMA1 - BETA;
+    chknorm = _polyvecl_chknorm(z, bound);
+    if (chknorm != 0) { 
+      continue = 1;
+    } else {
+    s2 = s_s2; h = s_h;
+    h = _polyveck_pointwise_poly_montgomery(h, cp, s2);
+    h = _polyveck_invntt_tomont(h); s_h = h;
+    w0 = s_w0;
+    w0 = _polyveck_sub_inplace(w0, h);
+    w0 = _polyveck_reduce(w0);
+    s_w0 = w0;
+    bound = iGAMMA2 - BETA;
+    chknorm = _polyveck_chknorm(w0, bound);
+    if (chknorm != 0) { 
+      continue = 1;
+    } else {
+    cp = s_cp; t0 = s_t0;
+    h = h;  // Needed for regalloc
+    h = _polyveck_pointwise_poly_montgomery(h, cp, t0); 
+    h = _polyveck_invntt_tomont(h); 
+    h = h; // Needed for regalloc
+    h = _polyveck_reduce(h); s_h = h;
+   
+    bound = iGAMMA2;
+    chknorm = _polyveck_chknorm(h, bound);
+    if (chknorm != 0) { 
+      continue = 1;
+    } else {
+    w0 = s_w0;
+    w0 = _polyveck_add_inplace(w0, h);
+    s_w0 = w0; w1 = s_w1;
+    reg u32 n;
+    n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
+    if (n > OMEGA) { 
+      continue = 1;
+    } else {
+    () = #unspill(sig);
+    z = s_y;
+    sig = _pack_sig_nocopy(sig, z, h);
+    () = #spill(sig);
+      continue  = 0;
+    }
+    }
+    }
+    }       
   } (continue == 1)
-  status = 1;
-  //TODO
+  status = 0;
   () = #unspill(sig);
   return sig, status;
 }

@@ -121,6 +121,29 @@ inline fn __poly_add_body(reg u32 coeff_a, reg u32 coeff_b) -> reg u32
   return coeff_a;
 }
 
+inline fn __poly_add(reg ptr u32[N] r a b) -> reg ptr u32[N]
+{
+  reg u32 i coeff_r coeff_a coeff_b;
+
+  i = 0;
+  while(i < N)
+  {
+    coeff_a = a[(int) i];
+    coeff_b = b[(int) i];
+    coeff_r = __poly_add_body(coeff_a, coeff_b);
+    r[(int) i] = coeff_r;
+
+    i += 1;
+  }
+
+  return r;
+}
+
+fn _poly_add(reg ptr u32[N] r a b) -> reg ptr u32[N] {
+  r = __poly_add(r, a, b);
+  return r;
+} 
+
 inline fn __poly_add_inplace(reg ptr u32[N] a b) -> reg ptr u32[N]
 {
   reg u32 i coeff_a coeff_b;
@@ -144,22 +167,21 @@ fn _poly_add_inplace(reg ptr u32[N] a b) -> reg ptr u32[N] {
   return a;
 } 
 
-inline fn __poly_add(reg ptr u32[N] r a b) -> reg ptr u32[N]
+fn _poly_add2_inplace(reg ptr u32[N] a) -> reg ptr u32[N]
 {
-  reg u32 i coeff_r coeff_a coeff_b;
+  reg u32 i coeff_a;
 
   i = 0;
   while(i < N)
   {
     coeff_a = a[(int) i];
-    coeff_b = b[(int) i];
-    coeff_r = __poly_add_body(coeff_a, coeff_b);
-    r[(int) i] = coeff_r;
+    coeff_a = __poly_add_body(coeff_a, coeff_a);
+    a[(int) i] = coeff_a;
 
     i += 1;
   }
 
-  return r;
+  return a;
 }
 
 /*************************************************
@@ -675,6 +697,25 @@ inline fn __poly_sub(reg ptr u32[N]c, reg ptr u32[N] a, reg ptr u32[N] b) -> reg
 fn _poly_sub(reg ptr u32[N]c, reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
   c = __poly_sub(c, a, b);
   return c;
+}
+
+inline fn __poly_sub_inplace(reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
+  reg u32 i, a_, b_, c_; 
+
+  i = 0;
+  while(i < N) {
+    a_ = a[(int) i];
+    b_ = b[(int) i];
+    c_ = a_ - b_;
+    a[(int) i] = c_;
+    i += 1;
+  }
+  return a;
+}
+
+fn _poly_sub_inplace(reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
+  a = __poly_sub_inplace(a, b);
+  return a;
 }
 
 /*************************************************

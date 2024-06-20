@@ -84,6 +84,19 @@ fn _polyvecl_add(
   return w;
 }
 
+fn _polyvecl_add2_inplace(
+  reg ptr u32[polyvecl] w
+) -> reg ptr u32[polyvecl] 
+{
+  inline int i;
+  reg ptr u32[N] pw;
+  for i = 0 to L {
+    pw = w[i * N : N];
+    w[i * N : N] = _poly_add2_inplace(pw);
+  }
+  return w;
+}
+
 fn _polyvecl_ntt(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl] 
 {
   inline int i;
@@ -209,6 +222,12 @@ fn _polyveck_caddq(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
   return v;
 }
 
+/***
+* FIXME: we can use smaller function code size by directly doing a while loop 
+* instead of doing a for loop and a internal while loop
+* This can certainly be generalized in most functions of this file 
+***/
+
 fn _polyveck_add(
   reg ptr u32[polyveck] w,
   reg ptr u32[polyveck] u,
@@ -251,6 +270,20 @@ fn _polyveck_sub(
     w[i * N : N] = _poly_sub(pw, pu, pv);
   }
   return w;
+}
+
+fn _polyveck_sub_inplace(
+  reg ptr u32[polyveck] u,
+  reg ptr u32[polyveck] v
+) -> reg ptr u32[polyveck] 
+{
+  inline int i;
+  reg ptr u32[N] pu pv;
+  for i = 0 to K {
+    pu = u[i * N : N]; pv = v[i * N : N];
+    u[i * N : N] = _poly_sub_inplace(pu, pv);
+  }
+  return u;
 }
 
 fn _polyveck_shiftl(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] 

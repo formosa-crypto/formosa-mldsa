@@ -175,6 +175,60 @@ fn _pack_sig(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[S
     return sig; 
 }
 
+// Same as _pack_sig(sig, sig[0:SEEDBYTES], z, h)
+fn _pack_sig_nocopy(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] {
+    sig = sig; z = z; h = h;
+    
+    inline int i;
+    
+    inline int start_pos;
+    start_pos = 0;
+    
+    start_pos += SEEDBYTES;
+
+    reg ptr u32[N] nz;
+    reg ptr u8[POLYZ_PACKEDBYTES] nsig;
+    for i = 0 to L {
+        nz = z[i * N: N];
+        nsig = sig[start_pos : POLYZ_PACKEDBYTES];
+        sig[start_pos : POLYZ_PACKEDBYTES] = _polyz_pack(nsig, nz);
+	start_pos += POLYZ_PACKEDBYTES;
+    }
+
+    reg u32 r0;
+    r0 = 0;
+    reg ptr u8[OMEGA + K]  pptsig;    
+    pptsig = sig[start_pos : OMEGA + K];
+    // FIXME use a while loop ?
+    // FIXME use 32 bits 0 ? OMEGA + K = 75 + 8 = 83 = 20 * 4 + 3
+    for i = 0 to OMEGA + K {
+        pptsig[i] = r0;
+    }
+    
+    reg u32 j;
+    reg u32 hj;
+    reg u32 k;
+    k = 0;
+
+    reg ptr u32[N] nh;    
+    for i = 0 to K {
+       nh = h[i * N: N];
+       j = 0;
+       while (j < N) {
+         hj = nh[j];
+         if hj != 0 {
+           pptsig[k] = j;
+           k += 1;
+         }
+	 j += 1;
+       }
+       pptsig[i + OMEGA] = k;
+    }
+    sig[start_pos : OMEGA + K] = pptsig;
+    
+    return sig; 
+}
+
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_unpack_pk
 *
