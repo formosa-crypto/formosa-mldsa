@@ -217,7 +217,18 @@ fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[PQ
 *              - const polyveck *s2: pointer to output vector s2
 *              - uint8_t sk[]: byte array containing bit-packed sk
 **************************************************/
-fn _unpack_sk(reg ptr u8[SEEDBYTES] rho, reg ptr u8[SEEDBYTES] tr, reg ptr u8[SEEDBYTES] key, reg ptr u32[polyveck] t0, reg ptr u32[polyvecl] s1, reg ptr u32[polyveck] s2, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[SEEDBYTES], reg ptr u8[SEEDBYTES], reg ptr u8[SEEDBYTES], reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck] {
+fn _unpack_sk
+  (reg ptr u8[SEEDBYTES] rho, 
+   reg ptr u8[SEEDBYTES] tr, 
+   reg ptr u8[SEEDBYTES] key, 
+   reg ptr u32[polyveck] t0, 
+   reg ptr u32[polyvecl] s1, 
+   reg ptr u32[polyveck] s2, 
+   reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) 
+  -> reg ptr u8[SEEDBYTES], reg ptr u8[SEEDBYTES], reg ptr u8[SEEDBYTES], 
+     reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck] 
+     // rho, tr, key, t0, s1, s2
+{
     sk = sk; rho = rho; tr = tr; key = key; t0 = t0; s1 = s1; s2 = s2;
 
     inline int i;

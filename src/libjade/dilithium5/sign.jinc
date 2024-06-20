@@ -18,7 +18,7 @@ fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
 { 
   stack u32[25*2] state;
   reg ptr u32[25*2] pstate;
-  reg u32 i t s next;
+  reg u32 i j t s next;
   
   pstate = state;
   pstate = __keccak_init_ref(pstate);
@@ -30,29 +30,32 @@ fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   } 
   (i < last)
   { 
-    next = i + (SHAKE256_RATE >> 2);
-    while (i < next) { 
+    j = 0;
+    while (j < (SHAKE256_RATE >> 2)) { 
       t = inp[u32 (int)i];
-      s = pstate[(int)i];
+      s = pstate[(int)j];
       t ^= s;
-      pstate[(int)i] = t;
+      pstate[(int)j] = t;
       i += 1;
+      j += 1;
     }
     () = #spill(i, inp);
     pstate = _keccakf1600_ref(pstate);
     () = #unspill(i, inp);
   }    
-
+  
+  j = 0;
   while(i < (PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2)) {
     t = inp[u32 (int)i];
-    s = pstate[(int)i];
+    s = pstate[(int)j];
     t ^= s;
-    pstate[(int)i] = t;
+    pstate[(int)j] = t;
     i += 1;
+    j += 1;
   }
-  s = (32u)pstate[u8 (i * 4)];
+  s = (32u)pstate[u8 (j * 4)];
   s ^= TRAIL_BYTE;
-  pstate[u8 (i * 4)] = s;
+  pstate[u8 (j * 4)] = s;
   s = (32u) pstate[u8 (SHAKE256_RATE - 1)];
   s ^= 128;
   pstate[u8 (SHAKE256_RATE - 1)] = s;
@@ -60,6 +63,7 @@ fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   pstate = _keccakf1600_ref(pstate);
   
   () = #unspill(outp);
+  // FIXME this copy is not necessary if we return pstate, in that case it should be taken as argument
   i = 0;
   while (i < SEEDBYTES / 4) {
     t = pstate[(int)i];
@@ -84,6 +88,9 @@ fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
 * Returns 0 (success)
 **************************************************/
 
+/***
+*  FIXME: share the code with next function 
+***/
 fn _crypto_sign_keypair_seed_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[2 * SEEDBYTES + CRHBYTES] seedbuf) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES], reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], reg u32 {
     reg u32 status;
 
@@ -157,7 +164,6 @@ fn _crypto_sign_keypair_seed_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUB
     return pk, sk, status;
 }
 
-
 fn _crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES], reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], reg u32 {
     reg u32 status;
 
@@ -169,7 +175,8 @@ fn _crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKE
     seedbuf = #randombytes(seedbuf);
 
     /****
-    * Implements shake256(seedbuf, 2 * SEEDBYTES + CRHBYTES, seedbuf, SEEDBYTES);
+    * Implements shake256(seedbuf, 2 * SEEDBYTES + CRHBYTES, seedbuf, SEEDBYTES);    
+    * Remark we use directly state as destination instead of seedbuf.
     ****/
     stack u32[PQC_SHAKECTX_BYTES*2] state;
     reg ptr u32[PQC_SHAKECTX_BYTES*2] pstate;
@@ -230,6 +237,57 @@ fn _crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKE
     return pk, sk, status;
 }
 
+/***
+* Precondition:
+  - pos is a multiple of 4 
+***/
+fn _shake256_inc_absorb_mem
+  (reg ptr u32[25*2] pstate, 
+   reg u32 pos, 
+   reg u32 m, 
+   reg u32 mlen) -> reg ptr u32[25*2], reg u32
+{
+  reg u32 t s aux;
+  aux = SHAKE256_RATE - pos;
+  if (aux <= mlen) {
+    while (pos < SHAKE256_RATE) { 
+      t = (u32)[m];
+      s = pstate.[pos];
+      s ^= t;
+      pstate.[pos] = s;
+      pos += 4; m += 4;
+      mlen -= 4;      
+    } 
+    while {
+      () = #spill(m, mlen);
+      pstate = _keccakf1600_ref(pstate);
+      () = #unspill(m, mlen);
+      pos = 0;
+    } 
+    // FIXME: it will be good to be able to write (SHAKE256_RATE < mlen)
+    (mlen > SHAKE256_RATE) 
+    {
+      while (pos < SHAKE256_RATE) { 
+        t = (u32)[m];
+        s = pstate.[pos];
+        s ^= t;
+        pstate.[pos] = s;
+        pos += 4; m += 4;
+      }
+      mlen -= SHAKE256_RATE;
+    }
+  }
+  // Invariant mlen < SHAKE256_RATE - pos 
+  while (mlen > 0) {
+    t = (32u)(u8)[m];
+    s = (32u)pstate[u8 pos];
+    s ^= t;
+    pstate[u8 pos] = s;
+    pos += 1; m += 1; mlen -= 1;
+  }
+  return pstate, pos;
+}
+
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature
 *
@@ -243,12 +301,51 @@ fn _crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKE
 *
 * Returns 0 (success)
 **************************************************/
-fn _crypto_sign_signature(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg u8 m, reg ptr u32[2] siglen_mlen, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES], reg u32 {
-    sig = sig; siglen_mlen = siglen_mlen; sk = sk;
-    reg u32 status; 
-    status = -1;
-    //TODO
-    return sig, status;
+fn _crypto_sign_signature
+  (reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, 
+   reg u32 m, 
+   reg ptr u32[2] siglen_mlen, 
+   reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) 
+   -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES], reg u32 
+{
+  sig = sig; siglen_mlen = siglen_mlen; sk = sk;
+  reg u32 status; 
+  stack u8[SEEDBYTES] s_rho, s_rhoprime, s_tr, s_key;
+  stack u32[polyveck] s_t0, s_s2;
+  stack u32[polyvecl] s_s1;
+
+  reg ptr u8[SEEDBYTES] rho, rhoprime, tr, key;
+  reg ptr u32[polyveck] t0, s2;
+  reg ptr u32[polyvecl] s1;
+
+  reg u32 pos mlen;
+
+  rho = s_rho; tr = s_tr; key = s_key;
+  t0 = s_t0; s1 = s_s1; s2 = s_s2;
+
+  () = #spill(sig, siglen_mlen, m);
+  (rho, tr, key, t0, s1, s2) = _unpack_sk(rho, tr, key, t0, s1, s2, sk);
+  /* Compute CRH(tr, msg) */
+  
+  stack u32[25*2] state;
+  reg ptr u32[25*2] pstate;
+  pstate = state;
+  /***
+  *  shake256_inc_init(&state);
+  *  shake256_inc_absorb(&state, tr, SEEDBYTES);
+  ***/
+  pstate = __add_seed_ref(pstate, tr); 
+  pstate = __add_zero_after_add(pstate, SEEDBYTES);
+  reg u32 pos;
+  () = #unspill(siglen_mlen, m);
+  mlen = siglen_mlen[1];
+  pos = SEEDBYTES;
+  pstate, pos = _shake256_inc_absorb_mem(pstate, pos, m, mlen);
+
+  status = 1;
+  //TODO
+  () = #unspill(sig);
+  return sig, status;
 }
 
 /*************************************************
