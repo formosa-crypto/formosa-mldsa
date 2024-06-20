@@ -580,10 +580,10 @@ fn _crypto_sign(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sm, reg u8 m, 
 *
 * Returns 0 if signature could be verified correctly and -1 otherwise
 **************************************************/
-fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg u8 m, reg ptr u32[2] siglen_mlen, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
-    sig = sig; m = m; siglen_mlen = siglen_mlen; pk = pk;
+fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg u8 m, reg u32 mlen, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
     reg u32 status;
     status = -1;
+    
     //TODO
     return status;
 }
