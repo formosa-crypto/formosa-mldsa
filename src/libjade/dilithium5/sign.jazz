@@ -22,7 +22,6 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed_jazz(reg ptr u8[PQCL
   pk = pk; sk = sk; status = status;
   return pk, sk, status;
 }
-export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg u8 m, reg ptr u32[2] siglen_mlen, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES], reg u32
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg u32 m, reg ptr u32[2] siglen_mlen, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES], reg u32
 {

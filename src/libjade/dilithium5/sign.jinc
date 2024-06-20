@@ -159,7 +159,9 @@ fn _crypto_sign_keypair_seed_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUB
     key = state[u8 SEEDBYTES + CRHBYTES : SEEDBYTES];
     sk = _pack_sk(sk, rho, tr, key, t0, s1, s2);
     () = #unspill(pk);
-    status = 1;
+
+
+    status = 0;
 
     return pk, sk, status;
 }
@@ -232,7 +234,8 @@ fn _crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKE
     key = state[u8 SEEDBYTES + CRHBYTES : SEEDBYTES];
     sk = _pack_sk(sk, rho, tr, key, t0, s1, s2);
     () = #unspill(pk);
-    status = 1;
+    
+    status = 0;
 
     return pk, sk, status;
 }
