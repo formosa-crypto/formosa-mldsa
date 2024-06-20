@@ -35,9 +35,9 @@ inline fn __add_seed_ref(reg ptr u32[25*2] state,
   return state;
 }
 
-inline fn __add_crhseed_ref(reg ptr u32[25*2] state,
-                         reg ptr u8[CRHBYTES] in) 
-                      -> reg ptr u32[25*2] 
+inline fn __add_crh_ref(reg ptr u32[25*2] state,
+                        reg ptr u8[CRHBYTES] in) 
+                     -> reg ptr u32[25*2] 
 {
   reg u32 i t0 inlen4;
 
@@ -52,6 +52,25 @@ inline fn __add_crhseed_ref(reg ptr u32[25*2] state,
   }
   return state;
 }
+
+inline fn __add_seedcrh_ref(reg ptr u32[25*2] state,
+                        reg ptr u8[SEEDBYTES + CRHBYTES] in) 
+                     -> reg ptr u32[25*2] 
+{
+  reg u32 i t0 inlen4;
+
+  inlen4 = (SEEDBYTES + CRHBYTES) >> 2;
+
+  i = 0;
+  while ( i < inlen4 )
+  {
+    t0 = in[u32 (int)i];
+    state[(int)i] = t0;
+    i += 1;
+  }
+  return state;
+}
+
 
 inline fn __add_nonce_ref(
   reg ptr u32[25*2] state, 
@@ -163,7 +182,7 @@ fn _stream256_init(
   reg u32 nonce
 ) -> reg ptr u32[25*2]
 {
-  state = __add_crhseed_ref(state, seed);
+  state = __add_crh_ref(state, seed);
   state = __add_nonce_ref(state, CRHBYTES >> 1, nonce);
   state = __add_zero_after_add(state, CRHBYTES + 2);
   state = __add_block_end(state, CRHBYTES + 2, SHAKE256_RATE);

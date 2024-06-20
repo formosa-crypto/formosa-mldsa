@@ -321,6 +321,26 @@ fn _poly_decompose (reg ptr u32[N] a1, reg ptr u32[N] a0, reg ptr u32[N] a) -> r
   return a1, a0;
 }
 
+// equivalent to _poly_decompose(a1, a0, a1)
+fn _poly_decompose_inplace (reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[N], reg ptr u32[N] {
+  reg u32 i;
+  reg u32 q;
+
+  q = __Q();
+
+  i = 0;
+  while (i < N) {
+    reg u32 a0_, a1_, a_;
+    a_ = a1[(int) i];
+    a0_, a1_ = __decompose_a0a1(a_, q);
+    a0[(int) i] = a0_;
+    a1[(int) i] = a1_;
+    i += 1;
+  }
+
+  return a1, a0;
+}
+
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_polyeta_pack
 *

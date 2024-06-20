@@ -18,7 +18,7 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
 {
   stack u32[25*2] state;
   reg ptr u32[25*2] pstate;
-  reg u32 i j t s next;
+  reg u32 i j t s;
   
   pstate = state;
   pstate = __keccak_init_ref(pstate);
@@ -54,7 +54,10 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
     i += 1;
     j += 1;
   }
-  
+
+  /***
+  *  FIXME : replace it by __add_block_end but warning 
+  ***/
   s = (32u)pstate[u8 (j * 4)];
   s ^= TRAIL_BYTE;
   pstate[u8 (j * 4)] = s;
@@ -74,7 +77,9 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   }
   
   return outp;
-}  
+} 
+
+ 
 
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed
@@ -307,6 +312,73 @@ fn _shake256_inc_absorb_mem
   return pstate, pos;
 }
 
+/***
+* Precondition CRHBYTES should have been filled in pstate
+***/
+fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES 
+  (reg ptr u32[25*2] pstate, 
+   reg ptr u8[K * POLYW1_PACKEDBYTES] m
+  ) -> reg ptr u32[25*2], reg u32
+{
+  reg u32 t s i pos;
+  i = 0;
+  pos = CRHBYTES;
+  while (pos < SHAKE256_RATE) { 
+      t = m.[u32 i];
+      s = pstate.[pos];
+      s ^= t;
+      pstate.[pos] = s;
+      pos += 4; i += 4;
+    } 
+
+  while {
+    () = #spill(m, i);
+    pstate = _keccakf1600_ref(pstate);
+    () = #unspill(m, i);
+    pos = 0;      
+  } 
+  // FIXME: it will be good to be able to write (SHAKE256_RATE < mlen)
+  (i > K * POLYW1_PACKEDBYTES - SHAKE256_RATE) 
+  {
+    while (pos < SHAKE256_RATE) { 
+      t = m.[u32 i];
+      s = pstate.[pos];
+      s ^= t;
+      pstate.[pos] = s;
+      pos += 4; i += 4;
+    }
+  }
+
+  // Invariant i + SHAKE256_RATE <= K * POLYW1_PACKEDBYTES 
+  while (i < K * POLYW1_PACKEDBYTES) {
+    t = (32u)m[i];
+    s = (32u)pstate[u8 pos];
+    s ^= t;
+    pstate[u8 pos] = s;
+    pos += 1; i += 1;
+  }
+  return pstate, pos;
+}
+
+/** FIXME : This is __add_block_end, but with "i" a reg **/
+fn _shake256_inc_finalize(
+   reg ptr u32[25*2] state, 
+   reg u32 i
+) -> reg ptr u32[25*2]
+{
+  reg u32 t0 t1;
+  
+  t0 = (32u) state[u8 (int)i];
+  t0 ^= TRAIL_BYTE;
+  state[u8 (int)i] = (8u) t0;
+
+  t0 = (32u) state[u8 SHAKE256_RATE - 1];  
+  t1 = 0x80;
+  t0 ^= t1;
+  state[u8 SHAKE256_RATE - 1] = (8u) t0;
+
+  return state;
+}
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature
 *
@@ -329,21 +401,28 @@ fn _crypto_sign_signature
 {
   sig = sig; siglen_mlen = siglen_mlen; sk = sk;
   reg u32 status; 
-  stack u8[SEEDBYTES] s_rho, s_rhoprime, s_tr, s_key;
+  stack u8[SEEDBYTES] s_rho, s_tr;
+  stack u8[CRHBYTES] s_rhoprime;
   stack u32[polyveck] s_t0, s_s2;
   stack u32[polyvecl] s_s1;
+  stack u8[SEEDBYTES + CRHBYTES] s_key_mu;
 
-  reg ptr u8[SEEDBYTES] rho, rhoprime, tr, key;
+  reg ptr u8[SEEDBYTES] rho, tr, key;
   reg ptr u32[polyveck] t0, s2;
   reg ptr u32[polyvecl] s1;
+  reg ptr u8[CRHBYTES] mu rhoprime;
+  reg ptr u8[SEEDBYTES + CRHBYTES] key_mu;
 
   reg u32 pos mlen;
+  inline int i;
 
-  rho = s_rho; tr = s_tr; key = s_key;
+  rho = s_rho; tr = s_tr; key = s_key_mu[0:SEEDBYTES];
   t0 = s_t0; s1 = s_s1; s2 = s_s2;
 
   () = #spill(sig, siglen_mlen, m);
   (rho, tr, key, t0, s1, s2) = _unpack_sk(rho, tr, key, t0, s1, s2, sk);
+  s_rho = rho; s_tr = tr; s_t0 = t0; s_s1 = s1; s_s2 = s2;
+  s_key_mu[0:SEEDBYTES] = key;
   /* Compute CRH(tr, msg) */
   
   stack u32[25*2] state;
@@ -355,12 +434,110 @@ fn _crypto_sign_signature
   ***/
   pstate = __add_seed_ref(pstate, tr); 
   pstate = __add_zero_after_add(pstate, SEEDBYTES);
-  reg u32 pos;
   () = #unspill(siglen_mlen, m);
   mlen = siglen_mlen[1];
   pos = SEEDBYTES;
   pstate, pos = _shake256_inc_absorb_mem(pstate, pos, m, mlen);
+  pstate = _shake256_inc_finalize(pstate, pos);
+  pstate = _keccakf1600_ref(pstate);
+  // FIXME define a function for that
+  mu = s_key_mu[SEEDBYTES : CRHBYTES];
+  for i = 0 to CRHBYTES/4 {
+    reg u32 t;
+    t = pstate[i];
+    mu[u32 i] = t;
+  }
+  s_key_mu[SEEDBYTES: CRHBYTES] = mu;
+  
+  // shake256(rhoprime, CRHBYTES, key, SEEDBYTES + CRHBYTES);
+  key_mu = s_key_mu;
+  pstate = __add_seedcrh_ref(pstate, key_mu);
+  pstate = __add_zero_after_add(pstate, SEEDBYTES + CRHBYTES);
+  pstate = __add_block_end(pstate, SEEDBYTES + CRHBYTES, SHAKE256_RATE);
+  pstate = _keccakf1600_ref(pstate);
+  state = pstate;
+  rhoprime = s_rhoprime;
+  for i = 0 to CRHBYTES/4 {
+    reg u32 t;
+    t = pstate[i];
+    rhoprime[u32 i] = t;
+  }
+  s_rhoprime = rhoprime;
+  
 
+  stack u32[matKL] s_mat;
+  stack u32[polyvecl] s_y;
+  reg ptr u32[matKL] mat;
+  reg ptr u32[polyvecl] y;
+  reg ptr u32[polyvecl] z;
+  stack u32[polyveck] s_w1 s_w0;
+  stack u32[N] s_cp; 
+  reg ptr u32[polyveck] w1 w0;
+  reg ptr u32[N] cp; 
+
+  mat = s_mat; rho = s_rho;
+  mat = _polyvec_matrix_expand(mat, rho); s_mat = mat;  
+  s1 = s_s1; s1 = _polyvecl_ntt(s1); s_s1 = s1;
+  s2 = s_s2; s2 = _polyveck_ntt(s2); s_s2 = s2;
+  t0 = s_t0; t0 = _polyveck_ntt(t0); s_t0 = t0;
+
+  reg u32 continue nonce r0; 
+  stack u32 s_nonce s_continue;
+  r0 = 0;
+  s_continue = r0;
+  s_nonce = r0;
+
+  while {
+    /* Sample intermediate vector y */
+    rhoprime = s_rhoprime; 
+    nonce = s_nonce;
+    s_y = _polyvecl_uniform_gamma1(s_y, rhoprime, nonce);
+    nonce = s_nonce; nonce += 1; s_nonce = nonce;
+    
+    /* Matrix-vector multiplication */
+    z = s_y; z = _polyvecl_ntt(z); s_y = z;
+    mat = s_mat;
+    w1 = s_w1; w1 = _polyvec_matrix_pointwise_montgomery(w1, mat, z); 
+    w1 = _polyveck_reduce(w1);
+    w1 = _polyveck_invntt_tomont(w1);
+  
+    /* Decompose w and call the random oracle */
+    w1 = _polyveck_caddq(w1);
+    w0 = s_w0;
+    w1, s_w0 = _polyveck_decompose_inplace(w1, w0);
+    s_w1 = w1; 
+    () = #unspill(sig);
+    reg ptr u8[K * POLYW1_PACKEDBYTES] sig1;
+    sig1 = sig[0: K * POLYW1_PACKEDBYTES];
+    sig1 = _polyveck_pack_w1(sig1, w1);
+    sig[0: K * POLYW1_PACKEDBYTES] = sig1;
+    () = #spill(sig);
+    // SHAKE256
+    pstate = state; mu = s_key_mu[SEEDBYTES : CRHBYTES];
+    pstate = __add_crh_ref(pstate, mu);
+    pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES(pstate, sig1);
+    pstate = _shake256_inc_finalize(pstate, pos);
+    pstate = _keccakf1600_ref(pstate);
+    // FIXME define a function for that
+    reg ptr u8[SEEDBYTES] sigseed;
+    () = #unspill(sig);
+    sigseed = sig[0:SEEDBYTES];
+    for i = 0 to SEEDBYTES/4 {
+      reg u32 t;
+      t = pstate[i];
+      sigseed[u32 i] = t;
+    }
+    state = pstate;
+    sig[0:SEEDBYTES] = sigseed;
+    () = #spill(sig);
+    cp = s_cp;
+    cp = _poly_challenge(cp, sigseed);
+    s_cp = _poly_ntt(cp);
+    /* Compute z, reject if it reveals secret */
+
+    continue = s_continue;
+    
+  } (continue == 1)
   status = 1;
   //TODO
   () = #unspill(sig);

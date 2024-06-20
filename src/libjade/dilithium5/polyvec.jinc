@@ -342,7 +342,7 @@ fn _polyveck_power2round_inplace(
 ) -> reg ptr u32[polyveck], reg ptr u32[polyveck]
 {
   inline int i;
-  reg ptr u32[N] pv1 pv0 pv;
+  reg ptr u32[N] pv1 pv0;
   for i = 0 to K {
     pv1 = v1[i * N : N]; pv0 = v0[i * N : N]; 
     v1[i * N : N], v0[i * N : N] = _poly_power2round_inplace(pv1, pv0);
@@ -361,6 +361,21 @@ fn _polyveck_decompose(
   for i = 0 to K {
     pv1 = v1[i * N : N]; pv0 = v0[i * N : N]; pv = v[i * N : N];
     v1[i * N : N], v0[i * N : N] = _poly_decompose(pv1, pv0, pv);
+  }
+  return v1, v0;
+}
+
+//equivalent to _polyveck_decompose(v1, v0, v1)
+fn _polyveck_decompose_inplace(
+  reg ptr u32[polyveck] v1,
+  reg ptr u32[polyveck] v0
+) -> reg ptr u32[polyveck], reg ptr u32[polyveck] 
+{
+  inline int i;
+  reg ptr u32[N] pv1 pv0;
+  for i = 0 to K {
+    pv1 = v1[i * N : N]; pv0 = v0[i * N : N]; 
+    v1[i * N : N], v0[i * N : N] = _poly_decompose_inplace(pv1, pv0);
   }
   return v1, v0;
 }
