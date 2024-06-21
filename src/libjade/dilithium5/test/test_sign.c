@@ -18,6 +18,8 @@ int main ()
 {
     check_outp_inp(shake256, shake256_PUBLICKEYBYTES_SEEDBYTES, "shake256_PUBLICKEYBYTES_SEEDBYTES");  
     check_pksk_pksksb(PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed_jazz, PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed, "crypto_sign_keypair_seed");
+    check_sigsiglen_mmlensk(PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature_jazz, PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature, "crypto_sign_signature");    
     check_b_sigsiglenmmmlenpk(PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify_jazz, PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify, "crypto_sign_verify");
+    
     return 0;
 }
