@@ -466,7 +466,7 @@ fn _crypto_sign_signature
   
 
   stack u32[matKL] s_mat;
-  stack u32[polyvecl] s_y;
+  stack u32[polyvecl] s_y, s_z;
   stack u32[polyveck] s_h;
   reg ptr u32[matKL] mat;
   reg ptr u32[polyvecl] y z;
@@ -495,7 +495,10 @@ fn _crypto_sign_signature
     nonce = s_nonce; nonce += 1; s_nonce = nonce;
     
     /* Matrix-vector multiplication */
-    z = s_y; z = _polyvecl_ntt(z); s_y = z;
+    s_z = copy_polyvecl(s_z, s_y);
+    z = s_z;
+    z = _polyvecl_ntt(z);
+    s_z = z;
     mat = s_mat;
     w1 = s_w1; w1 = _polyvec_matrix_pointwise_montgomery(w1, mat, z); 
     w1 = _polyveck_reduce(w1);
