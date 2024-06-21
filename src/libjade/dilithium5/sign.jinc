@@ -642,13 +642,14 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
 
     inline int i;
 
-    _unpack_pk(rho, t1, pk);
+    () = #spill(m, mlen);
+    rho, t1 = _unpack_pk(rho, t1, pk);
 
     reg u32 ts;
 
+    c, z, h, ts = _unpack_sig(c, z, h, sig);
     status = 0;
 
-    ts = _unpack_sig(c, z, h, sig);
     if (ts == 1) { status = -1; }
 
     if (status == 0) {
@@ -659,7 +660,6 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
       if (ts == 1) { status = -1; }
 
       if (status == 0) {
-        () = #spill(status);
         mu[0:SEEDBYTES] = _shake256_PUBLICKEYBYTES_SEEDBYTES(mu[0:SEEDBYTES], pk);
 
         reg ptr u32[25*2] pstate;
@@ -672,6 +672,7 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
         pstate = __add_zero_after_add(pstate, SEEDBYTES);
 //        () = #unspill(siglen_mlen, m);
         pos = SEEDBYTES;
+        () = #unspill(m, mlen);
         pstate, pos = _shake256_inc_absorb_mem(pstate, pos, m, mlen);
         pstate = _shake256_inc_finalize(pstate, pos);
         pstate = _keccakf1600_ref(pstate);
@@ -681,6 +682,7 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
           t = pstate[i];
           mu[u32 i] = t;
         }
+        state = pstate;
 
         // shake256_inc_init(&state);
         // shake256_inc_absorb(&state, mu, SEEDBYTES);
@@ -716,10 +718,12 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
         *  shake256_inc_init(&state);
         *  shake256_inc_absorb(&state, mu, SEEDBYTES);
         ***/
+        pstate = state;
         pstate = __add_crh_ref(pstate, mu);
         pstate = __add_zero_after_add(pstate, SEEDBYTES);
 //        () = #unspill(siglen_mlen, m);
         pos = SEEDBYTES;
+        () = #unspill(m, mlen);
         pstate, pos = _shake256_inc_absorb_mem(pstate, pos, m, mlen);
         pstate = _shake256_inc_finalize(pstate, pos);
         pstate = _keccakf1600_ref(pstate);
@@ -747,7 +751,7 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
         //    }
         //  }
         //}
-        () = #unspill(status);
+        status = 0;
       }
     }
 
