@@ -469,13 +469,12 @@ fn _crypto_sign_signature
   stack u32[polyvecl] s_y, s_z;
   stack u32[polyveck] s_h;
   reg ptr u32[matKL] mat;
-  reg ptr u32[polyvecl] y z;
+  reg ptr u32[polyvecl] y, z;
   reg ptr u32[polyveck] h;
   stack u32[polyveck] s_w1 s_w0;
   stack u32[N] s_cp; 
   reg ptr u32[polyveck] w1 w0;
   reg ptr u32[N] cp; 
-
   mat = s_mat; rho = s_rho;
   mat = _polyvec_matrix_expand(mat, rho); s_mat = mat;  
   s1 = s_s1; s1 = _polyvecl_ntt(s1); s_s1 = s1;
@@ -496,11 +495,9 @@ fn _crypto_sign_signature
     
     /* Matrix-vector multiplication */
     s_z = copy_polyvecl(s_z, s_y);
-    z = s_z;
-    z = _polyvecl_ntt(z);
-    s_z = z;
+    s_z = _polyvecl_ntt(s_z);
     mat = s_mat;
-    w1 = s_w1; w1 = _polyvec_matrix_pointwise_montgomery(w1, mat, z); 
+    w1 = s_w1; w1 = _polyvec_matrix_pointwise_montgomery(w1, mat, s_z); 
     w1 = _polyveck_reduce(w1);
     w1 = _polyveck_invntt_tomont(w1);
   
@@ -537,58 +534,57 @@ fn _crypto_sign_signature
     cp = _poly_challenge(cp, sigseed);
     cp = _poly_ntt(cp);
     /* Compute z, reject if it reveals secret */
-    z = s_y; s1 = s_s1;
-    z = _polyvecl_pointwise_poly_montgomery(z, cp, s1); s_cp = cp;
-    z = _polyvecl_invntt_tomont(z);
-    z = _polyvecl_add2_inplace(z);
-    z = _polyvecl_reduce(z);
-    s_y = z; 
+    s1 = s_s1;
+    s_z = _polyvecl_pointwise_poly_montgomery(s_z, cp, s1); s_cp = cp;
+    s_z = _polyvecl_invntt_tomont(s_z);
+    s_z = _polyvecl_add2_inplace(s_z);
+    s_z = _polyvecl_reduce(s_z);
     reg u32 chknorm bound; 
     bound = iGAMMA1 - BETA;
-    chknorm = _polyvecl_chknorm(z, bound);
+    chknorm = _polyvecl_chknorm(s_z, bound);
     if (chknorm != 0) { 
       continue = 1;
     } else {
-    s2 = s_s2; h = s_h;
-    h = _polyveck_pointwise_poly_montgomery(h, cp, s2);
-    h = _polyveck_invntt_tomont(h); s_h = h;
-    w0 = s_w0;
-    w0 = _polyveck_sub_inplace(w0, h);
-    w0 = _polyveck_reduce(w0);
-    s_w0 = w0;
-    bound = iGAMMA2 - BETA;
-    chknorm = _polyveck_chknorm(w0, bound);
-    if (chknorm != 0) { 
-      continue = 1;
-    } else {
-    cp = s_cp; t0 = s_t0;
-    h = h;  // Needed for regalloc
-    h = _polyveck_pointwise_poly_montgomery(h, cp, t0); 
-    h = _polyveck_invntt_tomont(h); 
-    h = h; // Needed for regalloc
-    h = _polyveck_reduce(h); s_h = h;
+      s2 = s_s2; h = s_h;
+      h = _polyveck_pointwise_poly_montgomery(h, cp, s2);
+      h = _polyveck_invntt_tomont(h); s_h = h;
+      w0 = s_w0;
+      w0 = _polyveck_sub_inplace(w0, h);
+      w0 = _polyveck_reduce(w0);
+      s_w0 = w0;
+      bound = iGAMMA2 - BETA;
+      chknorm = _polyveck_chknorm(w0, bound);
+      if (chknorm != 0) { 
+        continue = 1;
+      } else {
+        cp = s_cp; t0 = s_t0;
+        h = h;  // Needed for regalloc
+        h = _polyveck_pointwise_poly_montgomery(h, cp, t0); 
+        h = _polyveck_invntt_tomont(h); 
+        h = h; // Needed for regalloc
+        h = _polyveck_reduce(h); s_h = h;
    
-    bound = iGAMMA2;
-    chknorm = _polyveck_chknorm(h, bound);
-    if (chknorm != 0) { 
-      continue = 1;
-    } else {
-    w0 = s_w0;
-    w0 = _polyveck_add_inplace(w0, h);
-    s_w0 = w0; w1 = s_w1;
-    reg u32 n;
-    n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
-    if (n > OMEGA) { 
-      continue = 1;
-    } else {
-    () = #unspill(sig);
-    z = s_y;
-    sig = _pack_sig_nocopy(sig, z, h);
-    () = #spill(sig);
-      continue  = 0;
-    }
-    }
-    }
+        bound = iGAMMA2;
+        chknorm = _polyveck_chknorm(h, bound);
+        if (chknorm != 0) { 
+          continue = 1;
+        } else {
+          w0 = s_w0;
+          w0 = _polyveck_add_inplace(w0, h);
+          s_w0 = w0; w1 = s_w1;
+          reg u32 n;
+          n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
+          if (n > OMEGA) { 
+            continue = 1;
+          } else {
+            () = #unspill(sig);
+            z = s_y;
+            sig = _pack_sig_nocopy(sig, z, h);
+            () = #spill(sig);
+            continue  = 0;
+          }
+        }
+      }
     }       
   } (continue == 1)
   status = 0;
