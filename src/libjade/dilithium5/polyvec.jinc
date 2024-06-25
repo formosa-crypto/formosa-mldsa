@@ -94,6 +94,7 @@ fn _polyvecl_add_inplace(
   reg ptr u32[N] py;  
   for i = 0 to L {
     py = y[i * N : N];
+    pz = z[i * N : N];
     z[i * N : N] = _poly_add_inplace(pz, py);
   }
   return z;

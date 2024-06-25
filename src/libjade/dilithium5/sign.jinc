@@ -537,7 +537,7 @@ fn _crypto_sign_signature
     s1 = s_s1;
     s_z = _polyvecl_pointwise_poly_montgomery(s_z, cp, s1); s_cp = cp;
     s_z = _polyvecl_invntt_tomont(s_z);
-    s_z = _polyvecl_add2_inplace(s_z);
+    s_z = _polyvecl_add_inplace(s_z, s_y);
     s_z = _polyvecl_reduce(s_z);
     reg u32 chknorm bound; 
     bound = iGAMMA1 - BETA;
