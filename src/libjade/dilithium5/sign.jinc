@@ -314,6 +314,7 @@ fn _shake256_inc_absorb_mem
 
 /***
 * Precondition CRHBYTES should have been filled in pstate
+* CRHBYTES + K * POLYW1_PACKEDBYTES is dividable by 4 and 136
 ***/
 fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES 
   (reg ptr u32[25*2] pstate, 
@@ -324,12 +325,11 @@ fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES
   i = 0;
   pos = CRHBYTES;
   while (pos < SHAKE256_RATE) { 
-      t = m.[u32 i];
-      s = pstate.[pos];
-      s ^= t;
-      pstate.[pos] = s;
-      pos += 4; i += 4;
-    } 
+    s = m.[u32 i];
+    pstate.[pos] = s;
+    pos += 4; i += 4;
+  }
+
 
   while {
     () = #spill(m, i);
@@ -337,8 +337,7 @@ fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES
     () = #unspill(m, i);
     pos = 0;      
   } 
-  // FIXME: it will be good to be able to write (SHAKE256_RATE < mlen)
-  (i > K * POLYW1_PACKEDBYTES - SHAKE256_RATE) 
+  (i < K * POLYW1_PACKEDBYTES)
   {
     while (pos < SHAKE256_RATE) { 
       t = m.[u32 i];
@@ -349,14 +348,6 @@ fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES
     }
   }
 
-  // Invariant i + SHAKE256_RATE <= K * POLYW1_PACKEDBYTES 
-  while (i < K * POLYW1_PACKEDBYTES) {
-    t = (32u)m[i];
-    s = (32u)pstate[u8 pos];
-    s ^= t;
-    pstate[u8 pos] = s;
-    pos += 1; i += 1;
-  }
   return pstate, pos;
 }
 
@@ -379,6 +370,7 @@ fn _shake256_inc_finalize(
 
   return state;
 }
+
 /*************************************************
 * Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature
 *
@@ -481,7 +473,7 @@ fn _crypto_sign_signature
   s2 = s_s2; s2 = _polyveck_ntt(s2); s_s2 = s2;
   t0 = s_t0; t0 = _polyveck_ntt(t0); s_t0 = t0;
 
-  reg u32 continue nonce r0; 
+  reg u32 continue nonce r0;
   stack u32 s_nonce s_continue;
   r0 = 0;
   s_nonce = r0;
@@ -515,10 +507,12 @@ fn _crypto_sign_signature
     // SHAKE256
     pstate = state; mu = s_key_mu[SEEDBYTES : CRHBYTES];
     pstate = __add_crh_ref(pstate, mu);
+    pstate = __add_zero_after_add(pstate, CRHBYTES);
     pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES(pstate, sig1);
     pstate = _shake256_inc_finalize(pstate, pos);
     pstate = _keccakf1600_ref(pstate);
     // FIXME define a function for that
+
     reg ptr u8[SEEDBYTES] sigseed;
     () = #unspill(sig);
     sigseed = sig[0:SEEDBYTES];
@@ -529,6 +523,8 @@ fn _crypto_sign_signature
     }
     state = pstate;
     sig[0:SEEDBYTES] = sigseed;
+   
+    
     () = #spill(sig);
     cp = s_cp;
     cp = _poly_challenge(cp, sigseed);
@@ -539,53 +535,54 @@ fn _crypto_sign_signature
     s_z = _polyvecl_invntt_tomont(s_z);
     s_z = _polyvecl_add_inplace(s_z, s_y);
     s_z = _polyvecl_reduce(s_z);
-    reg u32 chknorm bound; 
-    bound = iGAMMA1 - BETA;
-    chknorm = _polyvecl_chknorm(s_z, bound);
-    if (chknorm != 0) { 
-      continue = 1;
-    } else {
-      s2 = s_s2; h = s_h;
-      h = _polyveck_pointwise_poly_montgomery(h, cp, s2);
-      h = _polyveck_invntt_tomont(h); s_h = h;
-      w0 = s_w0;
-      w0 = _polyveck_sub_inplace(w0, h);
-      w0 = _polyveck_reduce(w0);
-      s_w0 = w0;
-      bound = iGAMMA2 - BETA;
-      chknorm = _polyveck_chknorm(w0, bound);
-      if (chknorm != 0) { 
-        continue = 1;
-      } else {
-        cp = s_cp; t0 = s_t0;
-        h = h;  // Needed for regalloc
-        h = _polyveck_pointwise_poly_montgomery(h, cp, t0); 
-        h = _polyveck_invntt_tomont(h); 
-        h = h; // Needed for regalloc
-        h = _polyveck_reduce(h); s_h = h;
+        continue = 0;
+    // reg u32 chknorm bound; 
+    // bound = iGAMMA1 - BETA;
+    // chknorm = _polyvecl_chknorm(s_z, bound);
+    // if (chknorm != 0) { 
+    //   continue = 1;
+    // } else {
+    //   s2 = s_s2; h = s_h;
+    //   h = _polyveck_pointwise_poly_montgomery(h, cp, s2);
+    //   h = _polyveck_invntt_tomont(h); s_h = h;
+    //   w0 = s_w0;
+    //   w0 = _polyveck_sub_inplace(w0, h);
+    //   w0 = _polyveck_reduce(w0);
+    //   s_w0 = w0;
+    //   bound = iGAMMA2 - BETA;
+    //   chknorm = _polyveck_chknorm(w0, bound);
+    //   if (chknorm != 0) { 
+    //     continue = 1;
+    //   } else {
+    //     cp = s_cp; t0 = s_t0;
+    //     h = h;  // Needed for regalloc
+    //     h = _polyveck_pointwise_poly_montgomery(h, cp, t0); 
+    //     h = _polyveck_invntt_tomont(h); 
+    //     h = h; // Needed for regalloc
+    //     h = _polyveck_reduce(h); s_h = h;
    
-        bound = iGAMMA2;
-        chknorm = _polyveck_chknorm(h, bound);
-        if (chknorm != 0) { 
-          continue = 1;
-        } else {
-          w0 = s_w0;
-          w0 = _polyveck_add_inplace(w0, h);
-          s_w0 = w0; w1 = s_w1;
-          reg u32 n;
-          n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
-          if (n > OMEGA) { 
-            continue = 1;
-          } else {
-            () = #unspill(sig);
-            z = s_y;
-            sig = _pack_sig_nocopy(sig, z, h);
-            () = #spill(sig);
-            continue  = 0;
-          }
-        }
-      }
-    }       
+    //     bound = iGAMMA2;
+    //     chknorm = _polyveck_chknorm(h, bound);
+    //     if (chknorm != 0) { 
+    //       continue = 1;
+    //     } else {
+    //       w0 = s_w0;
+    //       w0 = _polyveck_add_inplace(w0, h);
+    //       s_w0 = w0; w1 = s_w1;
+    //       reg u32 n;
+    //       n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
+    //       if (n > OMEGA) { 
+    //         continue = 1;
+    //       } else {
+    //         () = #unspill(sig);
+    //         z = s_y;
+    //         sig = _pack_sig_nocopy(sig, z, h);
+    //         () = #spill(sig);
+    //         continue  = 0;
+    //       }
+    //     }
+    //   }
+    // }       
   } (continue == 1)
   status = 0;
   () = #unspill(sig);
