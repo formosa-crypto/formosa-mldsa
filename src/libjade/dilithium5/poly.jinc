@@ -199,11 +199,12 @@ fn _poly_add2_inplace(reg ptr u32[N] a) -> reg ptr u32[N]
 inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
   reg u32 r;
   reg u32 q;
+  r = 0;
   q = __Q();
   q -= 1;
   q = q >> 3;
   
-  if (B > q) {
+  if (B >s q) {
     r = 1;
   }
 
@@ -213,11 +214,11 @@ inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
   i = 0;
   while {
     t = a[(int) i];
-    t = -t if t < 0;
+    t = -t if t <s 0;
     
     i += 1;
 
-    if (t >= B) {
+    if (t >=s B) {
       r = 1;
       i = N;
     }

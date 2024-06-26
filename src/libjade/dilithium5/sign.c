@@ -207,13 +207,6 @@ rej:
     PQCLEAN_DILITHIUM5_CLEAN_polyvecl_add(&z, &z, &y);
     PQCLEAN_DILITHIUM5_CLEAN_polyvecl_reduce(&z);
 
-    
-    for (int i = 0; i < L; ++i) {
-      for (int j = 0; j < N; ++j) {      
-        ((uint32_t*)sig)[i * L + j] = z.coeffs[i][j];
-      }
-    }
-    return 0;
     if (PQCLEAN_DILITHIUM5_CLEAN_polyvecl_chknorm(&z, GAMMA1 - BETA)) {
         goto rej;
     }
@@ -224,6 +217,7 @@ rej:
     PQCLEAN_DILITHIUM5_CLEAN_polyveck_invntt_tomont(&h);
     PQCLEAN_DILITHIUM5_CLEAN_polyveck_sub(&w0, &w0, &h);
     PQCLEAN_DILITHIUM5_CLEAN_polyveck_reduce(&w0);
+    
     if (PQCLEAN_DILITHIUM5_CLEAN_polyveck_chknorm(&w0, GAMMA2 - BETA)) {
         goto rej;
     }
