@@ -534,55 +534,56 @@ fn _crypto_sign_signature
     s_z = _polyvecl_pointwise_poly_montgomery(s_z, cp, s1); s_cp = cp;
     s_z = _polyvecl_invntt_tomont(s_z);
     s_z = _polyvecl_add_inplace(s_z, s_y);
-    s_z = _polyvecl_reduce(s_z);
-        continue = 0;
-    // reg u32 chknorm bound; 
-    // bound = iGAMMA1 - BETA;
-    // chknorm = _polyvecl_chknorm(s_z, bound);
-    // if (chknorm != 0) { 
-    //   continue = 1;
-    // } else {
-    //   s2 = s_s2; h = s_h;
-    //   h = _polyveck_pointwise_poly_montgomery(h, cp, s2);
-    //   h = _polyveck_invntt_tomont(h); s_h = h;
-    //   w0 = s_w0;
-    //   w0 = _polyveck_sub_inplace(w0, h);
-    //   w0 = _polyveck_reduce(w0);
-    //   s_w0 = w0;
-    //   bound = iGAMMA2 - BETA;
-    //   chknorm = _polyveck_chknorm(w0, bound);
-    //   if (chknorm != 0) { 
-    //     continue = 1;
-    //   } else {
-    //     cp = s_cp; t0 = s_t0;
-    //     h = h;  // Needed for regalloc
-    //     h = _polyveck_pointwise_poly_montgomery(h, cp, t0); 
-    //     h = _polyveck_invntt_tomont(h); 
-    //     h = h; // Needed for regalloc
-    //     h = _polyveck_reduce(h); s_h = h;
+    s_z = _polyvecl_reduce(s_z);   
+    
+    reg u32 chknorm bound; 
+    bound = iGAMMA1 - BETA;
+    chknorm = _polyvecl_chknorm(s_z, bound);
+    () = #spill(sig);    
+    if (chknorm != 0) { 
+      continue = 1;
+    } else {
+      s2 = s_s2; h = s_h;
+      h = _polyveck_pointwise_poly_montgomery(h, cp, s2);
+      h = _polyveck_invntt_tomont(h); s_h = h;
+      w0 = s_w0;
+      w0 = _polyveck_sub_inplace(w0, h);
+      w0 = _polyveck_reduce(w0);
+      s_w0 = w0;
+      bound = iGAMMA2 - BETA;
+      chknorm = _polyveck_chknorm(w0, bound);
+      if (chknorm != 0) { 
+        continue = 1;
+      } else {
+        cp = s_cp; t0 = s_t0;
+        h = h;  // Needed for regalloc
+        h = _polyveck_pointwise_poly_montgomery(h, cp, t0); 
+        h = _polyveck_invntt_tomont(h); 
+        h = h; // Needed for regalloc
+        h = _polyveck_reduce(h); s_h = h;
    
-    //     bound = iGAMMA2;
-    //     chknorm = _polyveck_chknorm(h, bound);
-    //     if (chknorm != 0) { 
-    //       continue = 1;
-    //     } else {
-    //       w0 = s_w0;
-    //       w0 = _polyveck_add_inplace(w0, h);
-    //       s_w0 = w0; w1 = s_w1;
-    //       reg u32 n;
-    //       n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
-    //       if (n > OMEGA) { 
-    //         continue = 1;
-    //       } else {
-    //         () = #unspill(sig);
-    //         z = s_y;
-    //         sig = _pack_sig_nocopy(sig, z, h);
-    //         () = #spill(sig);
-    //         continue  = 0;
-    //       }
-    //     }
-    //   }
-    // }       
+        bound = iGAMMA2;
+        chknorm = _polyveck_chknorm(h, bound);
+        if (chknorm != 0) { 
+          continue = 1;
+        } else {
+          w0 = s_w0;
+          w0 = _polyveck_add_inplace(w0, h);
+          s_w0 = w0; w1 = s_w1;
+          reg u32 n;
+          n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
+          if (n > OMEGA) { 
+            continue = 1;
+          } else {
+            () = #unspill(sig);
+            z = s_y;
+            sig = _pack_sig_nocopy(sig, z, h);
+            () = #spill(sig);
+            continue  = 0;
+          }
+        }
+      }
+    }
   } (continue == 1)
   status = 0;
   () = #unspill(sig);
