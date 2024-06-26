@@ -523,8 +523,7 @@ fn _crypto_sign_signature
     }
     state = pstate;
     sig[0:SEEDBYTES] = sigseed;
-   
-    
+       
     () = #spill(sig);
     cp = s_cp;
     cp = _poly_challenge(cp, sigseed);
@@ -576,8 +575,7 @@ fn _crypto_sign_signature
             continue = 1;
           } else {
             () = #unspill(sig);
-            z = s_y;
-            sig = _pack_sig_nocopy(sig, z, h);
+            sig = _pack_sig_nocopy(sig, s_z, h);
             () = #spill(sig);
             continue  = 0;
           }
