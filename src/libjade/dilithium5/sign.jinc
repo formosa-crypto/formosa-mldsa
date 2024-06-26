@@ -642,35 +642,34 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
 
     inline int i;
 
-    () = #spill(m, mlen);
+    status = 0;
+    
+    // siglen != PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES is checked in the C wrapper
+    
+    () = #spill(m, mlen, status);
+    
     rho, t1 = _unpack_pk(rho, t1, pk);
 
-    reg u32 ts;
+    reg u32 chk;
+    c, z, h, chk = _unpack_sig(c, z, h, sig);
 
-    c, z, h, ts = _unpack_sig(c, z, h, sig);
-    status = 0;
-
-    if (ts == 1) { status = -1; }
+    () = #unspill(status);
+    if (chk == 1) { status = -1; }
 
     if (status == 0) {
-
-      pz = z;
-      //TOFIX
-      // ts = _polyvecl_chknorm(pz, GAMMA1 - BETA);
-      if (ts == 1) { status = -1; }
+      reg u32 chknorm bound; 
+      bound = iGAMMA1 - BETA;
+      chk = _polyvecl_chknorm(z, bound);     
+      if (chk == 1) { status = -1; }
 
       if (status == 0) {
+        () = #spill(status);
         mu[0:SEEDBYTES] = _shake256_PUBLICKEYBYTES_SEEDBYTES(mu[0:SEEDBYTES], pk);
-
+	
         reg ptr u32[25*2] pstate;
         pstate = state;
-        /***
-        *  shake256_inc_init(&state);
-        *  shake256_inc_absorb(&state, mu, SEEDBYTES);
-        ***/
         pstate = __add_seed_ref(pstate, mu[0:SEEDBYTES]);
         pstate = __add_zero_after_add(pstate, SEEDBYTES);
-//        () = #unspill(siglen_mlen, m);
         pos = SEEDBYTES;
         () = #unspill(m, mlen);
         pstate, pos = _shake256_inc_absorb_mem(pstate, pos, m, mlen);
@@ -683,14 +682,7 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
           mu[u32 i] = t;
         }
         state = pstate;
-
-        // shake256_inc_init(&state);
-        // shake256_inc_absorb(&state, mu, SEEDBYTES);
-        // shake256_inc_absorb(&state, m, mlen);
-        // shake256_inc_finalize(&state);
-        // shake256_inc_squeeze(mu, CRHBYTES, &state);
-        // shake256_inc_ctx_release(&state);
-
+	
         cp = _poly_challenge(cp, c);
         mat = _polyvec_matrix_expand(mat, rho);
 
@@ -700,58 +692,42 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
         cp = _poly_ntt(cp);
         t1 =_polyveck_shiftl(t1);
         t1 = _polyveck_ntt(t1);
-        // TOFIX need inplace
-        //t1 = _polyveck_pointwise_poly_montgomery(t1, cp, t1);
+        t1 = _polyveck_pointwise_poly_montgomery_inplace(t1, cp);
 
         w1 = _polyveck_sub_inplace(w1, t1);
         w1 = _polyveck_reduce(w1);
         w1 = _polyveck_invntt_tomont(w1);
 
-
         w1 = _polyveck_caddq(w1);
-        // TOFIX need inplace
-        //w1 = _polyveck_use_hint(w1, w1, h);
+	
+        w1 = _polyveck_use_hint_inplace(w1, h);
         buf = _polyveck_pack_w1(buf, w1);
 
-        //TODO
-        /***
-        *  shake256_inc_init(&state);
-        *  shake256_inc_absorb(&state, mu, SEEDBYTES);
-        ***/
         pstate = state;
         pstate = __add_crh_ref(pstate, mu);
-        pstate = __add_zero_after_add(pstate, SEEDBYTES);
-//        () = #unspill(siglen_mlen, m);
-        pos = SEEDBYTES;
-        () = #unspill(m, mlen);
-        pstate, pos = _shake256_inc_absorb_mem(pstate, pos, m, mlen);
+        pstate = __add_zero_after_add(pstate, CRHBYTES);
+        pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES(pstate, buf);
         pstate = _shake256_inc_finalize(pstate, pos);
         pstate = _keccakf1600_ref(pstate);
         // FIXME define a function for that
-        for i = 0 to CRHBYTES/4 {
+        for i = 0 to SEEDBYTES/4 {
           reg u32 t;
           t = pstate[i];
-          mu[u32 i] = t;
+          c2[u32 i] = t;
         }
 
-        // shake256_inc_init(&state);
-        // shake256_inc_absorb(&state, mu, CRHBYTES);
-        // shake256_inc_absorb(&state, buf, K * POLYW1_PACKEDBYTES);
-        // shake256_inc_finalize(&state);
-        // shake256_inc_squeeze(c2, SEEDBYTES, &state);
-        // shake256_inc_ctx_release(&state);
-
-
         // FIXME : must break early if needed
-        //inline int i;
-        //for i = 0 to SEEDBYTES {
-        //  if (status == 0) {
-        //    if (c[i] != c2[i]) {
-        //      status = -1;
-        //    }
-        //  }
-        //}
-        status = 0;
+        () = #unspill(status);
+        reg u32 ci c2i;
+        for i = 0 to SEEDBYTES {
+          if (status == 0) {
+	    ci = (32u)c[i];
+	    c2i = (32u)c2[i];
+            if (ci != c2i) {
+              status = -1;
+            }
+          }
+        }
       }
     }
 

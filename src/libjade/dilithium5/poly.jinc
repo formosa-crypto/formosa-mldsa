@@ -560,8 +560,25 @@ inline fn __poly_pointwise_montgomery(reg ptr u32[N] c, reg ptr u32[N] a, reg pt
   return c;
 }
 
+inline fn __poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg ptr u32[N] {
+  reg u32 i, a_, c_;
+  i = 0;
+  while (i < N) {
+    a_ = a[(int) i];
+    c_ = __mul_montgomery_reduce_8380417(a_, a_);
+    c[(int) i] = c_;
+    i += 1;
+  }
+  return c;
+}
+
 fn _poly_pointwise_montgomery(reg ptr u32[N] c, reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
   c = __poly_pointwise_montgomery(c, a, b);
+  return c;
+}
+
+fn _poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg ptr u32[N] {
+  c = __poly_pointwise_montgomery_inplace(c, a);
   return c;
 }
 
@@ -1054,8 +1071,28 @@ inline fn __poly_use_hint(reg ptr u32[N] b, reg ptr u32[N] a, reg ptr u32[N] h) 
   return b;
 }
 
+inline fn __poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] {
+  reg u32 i, b_, h_, q;       
+
+  q = __Q();
+  i = 0;
+  while(i < N) {
+    b_ = b[(int) i];
+    h_ = h[(int) i];
+    b_ = __use_hint(b_, h_, q);
+    b[(int) i] = b_;
+    i += 1;
+  }
+  return b;
+}
+
 fn _poly_use_hint(reg ptr u32[N] b, reg ptr u32[N] a, reg ptr u32[N] h) -> reg ptr u32[N] {
   b = __poly_use_hint(b, a, h);
+  return b;
+}
+
+fn _poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] {
+  b = __poly_use_hint_inplace(b, h);
   return b;
 }
 

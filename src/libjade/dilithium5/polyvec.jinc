@@ -354,6 +354,20 @@ fn _polyveck_pointwise_poly_montgomery(
   return r;
 }
 
+fn _polyveck_pointwise_poly_montgomery_inplace(
+  reg ptr u32[polyveck] r,
+  reg ptr u32[N] a
+) -> reg ptr u32[polyveck] 
+{
+  inline int i;
+  reg ptr u32[N] pr;
+  for i = 0 to K {
+    pr = r[i * N : N];
+    r[i * N: N] = _poly_pointwise_montgomery_inplace(pr, a);
+  }
+  return r;
+}
+
 fn _polyveck_chknorm(reg ptr u32[polyveck] v, reg u32 bound) -> reg u32
 {
   inline int i;
@@ -459,6 +473,20 @@ fn _polyveck_use_hint(
   for i = 0 to K {
     pw = w[i * N : N]; pu = u[i * N : N]; ph = h[i * N : N];
     w[i * N : N] = _poly_use_hint(pw, pu, ph);
+  }
+  return w;
+}
+
+fn _polyveck_use_hint_inplace(
+  reg ptr u32[polyveck] w,
+  reg ptr u32[polyveck] h
+) -> reg ptr u32[polyveck] 
+{
+  inline int i;
+  reg ptr u32[N] pw ph;
+  for i = 0 to K {
+    pw = w[i * N : N]; ph = h[i * N : N];
+    w[i * N : N] = _poly_use_hint_inplace(pw, ph);
   }
   return w;
 }
