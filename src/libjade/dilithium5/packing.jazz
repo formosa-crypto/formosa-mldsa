@@ -3,6 +3,7 @@ require "packing.jinc"
 export fn PQCLEAN_DILITHIUM5_CLEAN_pack_pk_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] {
     pk = pk; rho = rho; t1 = t1;
     pk = _pack_pk(pk, rho, t1);
+    pk = pk;
     return pk;
 }
 
@@ -100,6 +101,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sk_internal_jazz(reg ptr u8[PQCLEAN_DILI
     rps2 = s2;
     
     sk = _pack_sk(sk, rprho, rptr, rpkey, rpt0, rps1, rps2);
+    sk = sk;
     
     return sk;
 }
@@ -107,12 +109,21 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sk_internal_jazz(reg ptr u8[PQCLEAN_DILI
 export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] {
     sig = sig; c = c; z = z; h = h;
     sig = _pack_sig(sig, c, z, h);
+    sig = sig;
     return sig;
 }
 
+// Due to https://github.com/jasmin-lang/jasmin/issues/837, the returned values of _unpack_pk are not removed, and this triggers a reg alloc error.
+// We circumvent the issue by spilling, but then we encounter https://github.com/jasmin-lang/jasmin/issues/850, which explains why we don't use #spill and #unspill
 export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_pk_jazz(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
-    pk = pk; rho = rho; t1 = t1;
+    stack ptr u8[SEEDBYTES] s_rho;
+    stack ptr u32[polyveck] s_t1;
+
+    rho = rho; t1 = t1; pk = pk;
+    s_rho = rho; s_t1 = t1;
     rho, t1 = _unpack_pk(rho, t1, pk);
+    s_rho[0:SEEDBYTES] = rho; s_t1[0:polyveck] = t1; // for the checker, this updates s_rho and s_t1, but will be compiled into a nop
+    rho = s_rho; t1 = s_t1;
     return rho, t1;
 }
 
@@ -166,5 +177,6 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz(reg ptr u8[SEEDBYTES] c, reg 
     sig = sig; c = c; z = z; h = h;
     reg u32 status;
     c, z, h, status = _unpack_sig(c, z, h, sig);
+    c = c; z = z; h = h; status = status;
     return c, z, h, status;
 }

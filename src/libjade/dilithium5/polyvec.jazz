@@ -5,8 +5,9 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_eta_jazz(reg ptr u32[polyvec
   reg u32 nonce
 ) -> reg ptr u32[polyvecl]
 {
-  v = v;
+  v = v; seed = seed; nonce = nonce;
   v = _polyvecl_uniform_eta(v, seed, nonce);
+  v = v;
   return v;
 }
 
@@ -16,8 +17,9 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_uniform_gamma1_jazz(
   reg u32 nonce
 ) -> reg ptr u32[polyvecl]
 {
-  v = v;
+  v = v; seed = seed; nonce = nonce;
   v = _polyvecl_uniform_gamma1(v, seed, nonce);
+  v = v;
   return v;
 }
 
@@ -25,6 +27,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_reduce_jazz(reg ptr u32[polyvecl] v)
 {
   v = v;
   v = _polyvecl_reduce(v);
+  v = v;
   return v;
 }
 
@@ -36,18 +39,21 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_add_jazz(
 {
   w = w; u = u; v = v;
   w = _polyvecl_add(w, u, v);
+  w = w;
   return w;
 }
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_ntt_jazz(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl] {
    v = v;
    v = _polyvecl_ntt(v);
+   v = v;
    return v;
 }
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_invntt_tomont_jazz(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl] {
   v = v;
   v = _polyvecl_invntt_tomont(v);
+  v = v;
   return v;
 }
 
@@ -58,6 +64,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_poly_montgomery_jazz(
 ) -> reg ptr u32[polyvecl] {
    r = r; a = a; v = v;    
    r = _polyvecl_pointwise_poly_montgomery(r, a, v);
+   r = r;
    return r;
 }
 
@@ -68,6 +75,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_pointwise_acc_montgomery_jazz(
 ) -> reg ptr u32[N] {
   w = w; u = u; v = v;
   w = _polyvecl_pointwise_acc_montgomery(w, u, v);
+  w = w;
   return w;
 }
 
@@ -75,6 +83,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyvecl_chknorm_jazz(reg ptr u32[polyvecl] v
   v = v; bound = bound;
   reg u32 r;
   r = _polyvecl_chknorm(v, bound);
+  r = r;
   return r;
 }
 
@@ -89,18 +98,21 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_uniform_eta_jazz(
 ) -> reg ptr u32[polyveck] {
   v = v; seed = seed; nonce = nonce;
   v = _polyveck_uniform_eta(v, seed, nonce);
+  v = v;
   return v;
 }
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_reduce_jazz(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
   v = v;
   v = _polyveck_reduce(v);
+  v = v;
   return v;
 }
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_caddq_jazz(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
   v = v;
   v = _polyveck_caddq(v);
+  v = v;
   return v;
 }
 
@@ -112,6 +124,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_add_jazz(
 {
   w = w; u = u; v = v;
   w = _polyveck_add(w, u, v);
+  w = w;
   return w;
 }
 
@@ -123,24 +136,28 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_sub_jazz(
 {
   w = w; u = u; v = v;
   w = _polyveck_sub(w, u, v);
+  w = w;
   return w;
 }
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_shiftl_jazz(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
   v = v;
   v = _polyveck_shiftl(v);
+  v = v;
   return v;
 }
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_ntt_jazz(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
   v = v;
   v = _polyveck_ntt(v);
+  v = v;
   return v;
 }
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_invntt_tomont_jazz(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
   v = v;
   v = _polyveck_invntt_tomont(v);
+  v = v;
   return v;
 }
 
@@ -151,6 +168,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_pointwise_poly_montgomery_jazz(
 ) -> reg ptr u32[polyveck] {
   r = r; a = a; v = v;    
   r = _polyveck_pointwise_poly_montgomery(r, a, v);
+  r = r;
   return r;
 }
 
@@ -169,6 +187,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_power2round_jazz(
 ) -> reg ptr u32[polyveck], reg ptr u32[polyveck] {
   v1 = v1; v0 = v0; v = v;
   v1, v0 = _polyveck_power2round(v1, v0, v);
+  v1 = v1; v0 = v0;
   return v1, v0;
 }
 
@@ -179,6 +198,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_decompose_jazz(
 ) -> reg ptr u32[polyveck], reg ptr u32[polyveck] {
   v1 = v1; v0 = v0; v = v;
   v1, v0 = _polyveck_decompose(v1, v0, v);
+  v1 = v1; v0 = v0;
   return v1, v0;
 }
 
@@ -191,6 +211,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_make_hint_jazz(
   h = h; v0 = v0; v1 = v1;
   reg u32 s;
   s, h = _polyveck_make_hint(h, v0, v1);
+  s = s; h = h;
   return h, s;
 }
 
@@ -202,6 +223,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_use_hint_jazz
 ) -> reg ptr u32[polyveck] {
   w = w; u = u; h = h;
   w = _polyveck_use_hint(w, u, h);
+  w = w;
   return w;
 }
 
@@ -211,6 +233,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyveck_pack_w1_jazz(
 ) -> reg ptr u8[K * POLYW1_PACKEDBYTES] {
   r = r; w1 = w1;
   r = _polyveck_pack_w1(r, w1);
+  r = r;
   return r;
 }
 
@@ -227,7 +250,8 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_pointwise_montgomery_jazz(
   reg ptr u32[matKL] mat,
   reg ptr u32[polyvecl] v
 ) -> reg ptr u32[polyveck] {
-  t = t; mat = mat;
+  t = t; mat = mat; v = v;
   t = _polyvec_matrix_pointwise_montgomery(t, mat, v);
+  t = t;
   return t;
 }
