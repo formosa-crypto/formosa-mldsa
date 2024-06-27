@@ -14,7 +14,7 @@ void shake256_PUBLICKEYBYTES_SEEDBYTES(uint8_t *output, const uint8_t *input);
 
 #include "sign_wrap.h"
 
-void check_crypto_sign_keypair() {
+void check_crypto_sign_keypair_seed() {
   uint8_t pk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES];
   uint8_t pk_jazz[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES];
   uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES];
@@ -120,9 +120,9 @@ void check_crypto_sign_verify() {
 
 int main ()
 {
-  check_check_shake256_PUBLICKEYBYTES_SEEDBYTES();
-  check_pksk_pksksb();
+  check_shake256_PUBLICKEYBYTES_SEEDBYTES();
+  check_crypto_sign_keypair_seed();
   check_crypto_sign_signature();    
   check_crypto_sign_verify();
-    return 0;
+  return 0;
 }

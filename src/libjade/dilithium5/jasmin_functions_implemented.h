@@ -135,7 +135,6 @@
 
 // /////////////////////////////////////////////////////////////////////////////
 // polyvec.o
-#if 0
 #define polyveck_add_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyveck_add PQCLEAN_DILITHIUM5_CLEAN_polyveck_add_jazz
 
@@ -213,11 +212,9 @@
 
 #define polyvec_matrix_pointwise_montgomery_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_pointwise_montgomery PQCLEAN_DILITHIUM5_CLEAN_polyvec_matrix_pointwise_montgomery_jazz
-#endif
 
 // /////////////////////////////////////////////////////////////////////////////
 // packing.o
-#if 0
 #define pack_pk_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_pack_pk PQCLEAN_DILITHIUM5_CLEAN_pack_pk_jazz
 
@@ -235,27 +232,26 @@
 
 #define unpack_sk_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_unpack_sk PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_jazz
-#endif
 
 // /////////////////////////////////////////////////////////////////////////////
 // sign.o
-#if 0
-#define crypto_sign_jazz
-#define PQCLEAN_DILITHIUM5_CLEAN_crypto_sign PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_jazz
 
 #define crypto_sign_keypair_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_jazz
-
-#define crypto_sign_open_jazz
-#define PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_open PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_open_jazz
 
 #define crypto_sign_signature_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature_jazz
 
 #define crypto_sign_verify_jazz
 #define PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify_jazz
+
+#if 0
+#define crypto_sign_jazz
+#define PQCLEAN_DILITHIUM5_CLEAN_crypto_sign PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_jazz
+
+#define crypto_sign_open_jazz
+#define PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_open PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_open_jazz
 #endif
 
 #endif
-
 #endif
