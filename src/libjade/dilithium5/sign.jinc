@@ -657,7 +657,7 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
     if (chk == 1) { status = -1; }
 
     if (status == 0) {
-      reg u32 chknorm bound; 
+      reg u32 bound;
       bound = iGAMMA1 - BETA;
       chk = _polyvecl_chknorm(z, bound);     
       if (chk == 1) { status = -1; }
@@ -690,7 +690,7 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
         w1 = _polyvec_matrix_pointwise_montgomery(w1, mat, z);
 
         cp = _poly_ntt(cp);
-        t1 =_polyveck_shiftl(t1);
+        t1 = _polyveck_shiftl(t1);
         t1 = _polyveck_ntt(t1);
         t1 = _polyveck_pointwise_poly_montgomery_inplace(t1, cp);
 
@@ -698,8 +698,7 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
         w1 = _polyveck_reduce(w1);
         w1 = _polyveck_invntt_tomont(w1);
 
-        w1 = _polyveck_caddq(w1);
-	
+        w1 = _polyveck_caddq(w1);	
         w1 = _polyveck_use_hint_inplace(w1, h);
         buf = _polyveck_pack_w1(buf, w1);
 
@@ -724,7 +723,7 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
 	    ci = (32u)c[i];
 	    c2i = (32u)c2[i];
             if (ci != c2i) {
-              status = -1;
+              status = i + 1;
             }
           }
         }

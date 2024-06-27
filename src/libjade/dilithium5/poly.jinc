@@ -565,7 +565,8 @@ inline fn __poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a
   i = 0;
   while (i < N) {
     a_ = a[(int) i];
-    c_ = __mul_montgomery_reduce_8380417(a_, a_);
+    c_ = c[(int) i];
+    c_ = __mul_montgomery_reduce_8380417(a_, c_);
     c[(int) i] = c_;
     i += 1;
   }
