@@ -14,6 +14,37 @@ void shake256_PUBLICKEYBYTES_SEEDBYTES(uint8_t *output, const uint8_t *input);
 
 #include "sign_wrap.h"
 
+void check_crypto_sign_keypair() {
+  uint8_t pk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES];
+  uint8_t pk_jazz[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES];
+  uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES];
+  uint8_t sk_jazz[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES];
+  uint8_t sb[2 * SEEDBYTES + CRHBYTES];
+  uint8_t sb_jazz[2 * SEEDBYTES + CRHBYTES];
+  for (int t=0; t<TESTS; t++) {
+    fillarrnu8(sb, sb_jazz, 2 * SEEDBYTES + CRHBYTES);
+    PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed(pk, sk, sb);
+    PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed_jazz(pk_jazz, sk_jazz, sb_jazz);
+    eqarr(PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES, PRId8, pk, pk_jazz, "crypto_sign_keypair_seed");
+    eqarr(PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES, PRId8, sk, sk_jazz, "crypto_sign_keypair_seed");
+  }
+  printf("PASS: crypto_sign_keypair_seed\n");
+}
+
+void check_shake256_PUBLICKEYBYTES_SEEDBYTES() {
+  uint8_t outp[SEEDBYTES];
+  uint8_t outp_jazz[SEEDBYTES];
+  uint8_t inp[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES];
+  uint8_t inp_jazz[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES];
+  for (int t=0; t<TESTS; t++) {
+    fillarrnu8(inp, inp_jazz, PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES);
+    shake256(outp, SEEDBYTES, inp, PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES);
+    shake256_PUBLICKEYBYTES_SEEDBYTES(outp_jazz, inp_jazz);
+    eqarr(SEEDBYTES, PRId8, outp, outp_jazz, "shake256_PUBLICKEYBYTES_SEEDBYTES");
+  }
+  printf("PASS: shake256_PUBLICKEYBYTES_SEEDBYTES\n");
+}
+
 void check_crypto_sign_signature() {
   size_t siglen = 0;
   size_t siglen_jazz = 0;
@@ -89,9 +120,9 @@ void check_crypto_sign_verify() {
 
 int main ()
 {
-  //    check_outp_inp(shake256, shake256_PUBLICKEYBYTES_SEEDBYTES, "shake256_PUBLICKEYBYTES_SEEDBYTES");  
-  //    check_pksk_pksksb(PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed_jazz, PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed, "crypto_sign_keypair_seed");
-  //    check_crypto_sign_signature();    
-    check_crypto_sign_verify();
+  check_check_shake256_PUBLICKEYBYTES_SEEDBYTES();
+  check_pksk_pksksb();
+  check_crypto_sign_signature();    
+  check_crypto_sign_verify();
     return 0;
 }
