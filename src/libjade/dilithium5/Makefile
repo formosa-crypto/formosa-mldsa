@@ -1,81 +1,56 @@
 #-------------------------------------------------------------------------------
 
 ARMCC ?= arm-linux-gnueabi-gcc
-ARMCFLAGS ?= -Wall -O3 -march=armv7 -fPIC
-ARMAR ?= arm-linux-gnueabi-ar
-
+ARMCFLAGS ?= -Wall -O1 -march=armv7 -fPIC
 #-mcpu=cortex-m4 # not working - TODO: check why (same for test/)
-
-
-#-------------------------------------------------------------------------------
-LIB=libdilithium5_clean.a
-HEADERS=api.h ntt.h packing.h params.h poly.h polyvec.h reduce.h rounding.h sign.h symmetric.h 
-OBJECTS=ntt.o packing.o poly.o polyvec.o reduce.o rounding.o sign.o symmetric-shake.o fips202.o library.o
-
-#-------------------------------------------------------------------------------
+ARMAR ?= arm-linux-gnueabi-ar
 JASMIN ?= jasminc
-PREPROCESSOR ?= ../../../ext/jasmin-preprocessor/preprocessor
 
-JASMIN_FILES := $(subst ./,,$(shell find . -name '*.jazz'))
+.PHONY: all clean compile_c compile_j
 
-PRE_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%.jpp)
-ASM_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%.s)
-OBJ_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%_jazz.o)
-
-JASMIN_LIB := library
-
-FULL_TESTING ?=
-
-#-------------------------------------------------------------------------------
-#-- TODO, improve, done quick
-
-small-testing:
-	$(MAKE) clean
-	$(MAKE) compile
-
-full-testing:
-	$(MAKE) clean
-	$(MAKE) FULL_TESTING='-DJAZZ' compile
+all: compile_c compile_j
+clean: clean_c clean_j
 
 #-------------------------------------------------------------------------------
 
-benjamin: benjamin-small-testing
+LIB_C = libdilithium5_c.a
+HEADERS_C = api.h ntt.h packing.h params.h poly.h polyvec.h reduce.h rounding.h sign.h symmetric.h
+OBJECTS_C = ntt.o packing.o poly.o polyvec.o reduce.o rounding.o sign.o symmetric-shake.o fips202.o
 
-benjamin-small-testing:
-	$(MAKE) clean
-	$(MAKE) ARMCC=arm-none-eabi-gcc ARMAR=arm-none-eabi-ar compile
-
-
-benjamin-full-testing:
-	$(MAKE) clean
-	$(MAKE) ARMCC=arm-none-eabi-gcc ARMAR=arm-none-eabi-ar FULL_TESTING='-DJAZZ' compile
-
-#-------------------------------------------------------------------------------
-
-$(JASMIN_LIB).o: $(JASMIN_LIB).s
+%.o: %.c $(HEADERS_C)
 	$(ARMCC) $(ARMCFLAGS) -c -o $@ $<
 
-$(ASM_JASMIN_FILES):
+$(LIB_C): $(OBJECTS_C)
+	$(ARMAR) rcs $@ $^
+
+compile_c: clean_c $(LIB_C)
+
+clean_c:
+	rm -f $(OBJECTS_C) $(LIB_C)
+
+#-------------------------------------------------------------------------------
+
+LIB_J=libdilithium5_j.a
+JASMIN_LIB := library
+JASMIN_FILES := $(subst ./,,$(shell find . -name '*.jazz'))
+PRE_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%.jpp)
+ASM_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%.s)
+OBJECTS_J := $(JASMIN_FILES:%.jazz=%_jazz.o)
+
+# Rule to generate .s files from .jazz files
 %.s: %.jazz
-	$(JASMIN) -arch=arm-m4 -o $@ $< 
+	$(JASMIN) -arch=arm-m4 -o $@ $<
 
-#-------------------------------------------------------------------------------
+library_jazz.o: library.s
+	$(ARMCC) $(ARMCFLAGS) -c -o $@ $<
 
-compile: $(LIB)
+compile_j: clean_j $(LIB_J)
 
-%.o: %.c $(HEADERS)
-	$(ARMCC) $(ARMCFLAGS) $(FULL_TESTING) -c -o $@ $<
+# Rule to create the static library
+$(LIB_J): library_jazz.o
+	$(ARMAR) -r $@ library_jazz.o
 
-$(LIB): $(OBJECTS)
-	$(ARMAR) -r $@ $(OBJECTS)
-
-
-#-------------------------------------------------------------------------------
-clean:
-	$(RM) $(OBJECTS)
-	$(RM) $(LIB)
-	$(RM) $(ASM_JASMIN_FILES)
-	$(RM) $(PRE_JASMIN_FILES)
-	$(RM) $(JASMIN_LIB).{o,s}
+clean_j:
+	rm -f $(PRE_JASMIN_FILES) $(ASM_JASMIN_FILES) $(OBJECTS_J) $(LIB_J)
 
 
