@@ -1,8 +1,6 @@
 #ifndef PQCLEAN_DILITHIUM5_CLEAN_PARAMS_H
 #define PQCLEAN_DILITHIUM5_CLEAN_PARAMS_H
 
-#include "jasmin_functions_implemented.h"
-
 #define SEEDBYTES 32
 #define CRHBYTES 64
 #define N 256
