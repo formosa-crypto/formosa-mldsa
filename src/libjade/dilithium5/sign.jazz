@@ -14,13 +14,13 @@ export fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp, reg ptr 
   return outp;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES], reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], reg u32 {
-  pk = pk; sk = sk;
-  reg u32 status;
-  pk, sk, status = _crypto_sign_keypair_jazz(pk, sk);
-  pk = pk; sk = sk; status = status;
-  return pk, sk, status;
-}
+// export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES], reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], reg u32 {
+//   pk = pk; sk = sk;
+//   reg u32 status;
+//   pk, sk, status = _crypto_sign_keypair_jazz(pk, sk);
+//   pk = pk; sk = sk; status = status;
+//   return pk, sk, status;
+// }
 
 export fn PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[2 * SEEDBYTES + CRHBYTES] sb) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES], reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], reg u32 {
   pk = pk; sk = sk; sb = sb;

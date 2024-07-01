@@ -9,7 +9,7 @@
 #endif
 
 #ifndef MESSAGE_SIZE
-#define MESSAGE_SIZE 357
+#define MESSAGE_SIZE 10000
 #endif
 
 int main () {
@@ -20,7 +20,7 @@ int main () {
   uint8_t m[MESSAGE_SIZE];
   size_t mlen = MESSAGE_SIZE;
   size_t siglen = 0;
-  
+
   clock_t start_time, end_time;
   double time_taken;
 
@@ -28,15 +28,15 @@ int main () {
   for (int t=0; t<RUNS; t++) {
     fillarr(uint8_t, 2 * SEEDBYTES + CRHBYTES, sb);
     PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed(pk, sk, sb);
-  }  
+  }
   end_time = clock();
-  
+
   time_taken = ((double) (end_time - start_time)) / CLOCKS_PER_SEC / RUNS;
   printf("Keygen execution time: %f seconds\n", time_taken);
-  
+
   start_time = clock();
   // Retrieves the last generated key pair to sign messages
-  for (int t=0; t<RUNS; t++) {  
+  for (int t=0; t<RUNS; t++) {
     // Generates random message
     fillarr(uint8_t, MESSAGE_SIZE, m);
     // Sign the random message
@@ -47,7 +47,7 @@ int main () {
     }
   }
   end_time = clock();
-  
+
   time_taken = ((double) (end_time - start_time)) / CLOCKS_PER_SEC / RUNS;
   printf("Signature execution time: %f seconds\n", time_taken);
 
@@ -61,7 +61,9 @@ int main () {
     }
   }
   end_time = clock();
-  
+
   time_taken = ((double) (end_time - start_time)) / CLOCKS_PER_SEC / RUNS;
   printf("Verification execution time: %f seconds\n", time_taken);
+
+  return 0;
 }

@@ -1,32 +1,56 @@
 #--
+
 ARMCC ?= arm-linux-gnueabi-gcc
 ARMCFLAGS ?= -Wall -O3 -march=armv7
+ARMAR ?= arm-linux-gnueabi-ar
 
-#-mcpu=cortex-m4 # not working - TODO: check why
+UNAME_S := $(shell uname -s)
 
-# Variables
+ifeq ($(UNAME_S),Darwin)
+	ARMCC := /Applications/ARM/bin/arm-none-eabi-gcc
+	ARMCFLAGS := -Wall -O1 -fPIC -mcpu=cortex-m4 -mlittle-endian -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs
+	ARMAR := /Applications/ARM/bin/arm-none-eabi-ar
+endif
+
+JASMIN ?= jasminc
+
+.PHONY: all clean_lib clean_bench compile_lib compile_bench
+
+all: clean compile
+compile: compile_lib compile_bench
+clean: clean_lib clean_bench
+
+FILES_DIR := ../../
+H_FILES := api.h ntt.h packing.h params.h poly.h polyvec.h reduce.h rounding.h sign.h symmetric.h
+H_FILE_PATHS := $(addprefix $(FILES_DIR), $(H_FILES))
+C_FILES := ntt.c packing.c poly.c polyvec.c reduce.c rounding.c sign.c symmetric-shake.c fips202.c
+C_FILE_PATHS := $(addprefix $(FILES_DIR), $(C_FILES))
+
+OBJECTS_C := $(patsubst %.c, %.o, $(notdir $(C_FILE_PATHS)))
+
+%.o: ../../%.c
+	@echo "Compiling $<"
+	$(ARMCC) $(ARMCFLAGS) -I$(FILES_DIR) -c -o $@ $<
+
+libdilithium5.a : $(OBJECTS_C)
+	@echo "Creating library $@"
+	$(ARMAR) rcs $@ $^
+
+clean_lib:
+	rm -f main.o libdilithium5.a $(OBJECTS_C)
+
 INCLUDES := -I../../test/common -I../../
 
-LIB_C = ../../libdilithium5_c.a
-LDFLAGS_C = -L../.. -ldilithium5_c
-
-# Source files
-SRC_C = main_c.c
-OBJ_C = $(SRC_C:.c=.o)
-
 # Target executable
-TARGET_C = bench_sign_keypair
+
+main.o: main.c
+	$(ARMCC) $(ARMCFLAGS) $(INCLUDES) -c -o main.o main.c
 
 # Rules
-all: $(TARGET_C)
+bench_sign: main.o libdilithium5.a
+	$(ARMCC) $(ARMCFLAGS) -o bench_sign main.o -L. -ldilithium5 -lc -lm -lgcc
 
-$(TARGET_C): $(OBJ_C) $(LIB_C)
-	$(ARMCC) $(ARMCFLAGS) -static -o $@ $(OBJ_C) $(LDFLAGS_C)
+compile_bench: bench_sign
 
-%.o: %.c
-	$(ARMCC) $(ARMCFLAGS) $(INCLUDES) -c -o $@ $<
-
-clean:
-	rm -f $(OBJ_C) $(TARGET_C)
-
-.PHONY: all clean
+clean_bench:
+	rm -f main.o bench_sign
