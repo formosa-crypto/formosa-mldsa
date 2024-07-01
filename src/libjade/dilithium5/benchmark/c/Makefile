@@ -48,7 +48,7 @@ main.o: main.c
 
 # Rules
 bench_sign: main.o libdilithium5.a
-	$(ARMCC) $(ARMCFLAGS) -o bench_sign main.o -L. -ldilithium5 -lc -lm -lgcc
+	$(ARMCC) $(ARMCFLAGS) -o bench_sign main.o -static -L. -ldilithium5 -lc -lm -lgcc
 
 compile_bench: bench_sign
 
