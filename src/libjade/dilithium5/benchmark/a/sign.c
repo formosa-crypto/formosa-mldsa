@@ -65,7 +65,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
 }
 
 /*************************************************
-* Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed
 *
 * Description: Generates public and private key.
 *
@@ -79,7 +79,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
 * Returns 0 (success)
 **************************************************/
 int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed(uint8_t *pk, uint8_t *sk, uint8_t *seedbuf) {
-    uint8_t tr[SEEDBYTES];
+    uint8_t tr[TRBYTES];
     const uint8_t *rho, *rhoprime, *key;
     polyvecl mat[K];
     polyvecl s1, s1hat;
@@ -114,7 +114,7 @@ int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed(uint8_t *pk, uint8_t *sk, 
    pack_pk(pk, rho, &t1);
 
    /* Compute H(rho, t1) and write secret key */
-   shake256(tr, SEEDBYTES, pk,CRYPTO_PUBLICKEYBYTES);
+   shake256(tr, TRBYTES, pk,CRYPTO_PUBLICKEYBYTES);
    pack_sk(sk, rho, tr, key, &t0, &s1, &s2);
 
     return 0;
