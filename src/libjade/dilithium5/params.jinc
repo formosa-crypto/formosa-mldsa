@@ -23,14 +23,17 @@ param int POLYETA_PACKEDBYTES = 96; // N/8 * 3
 param int PQC_SHAKECTX_BYTES = 25;
 param int SEEDBYTES = 32;
 param int CRHBYTES = 64;
+param int TRBYTES = 64;
+param int RNDBYTES = 32;
+param int CTILDEBYTES = 64;
 
 param int SHAKE256_RATE = 136;
 param int SHAKE128_RATE = 168;
 param int D = 13;
 
 param int PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES = (SEEDBYTES + K*POLYT1_PACKEDBYTES);
-param int PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES = (3*SEEDBYTES + L*POLYETA_PACKEDBYTES + K*POLYETA_PACKEDBYTES + K*POLYT0_PACKEDBYTES);
-param int PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES = (SEEDBYTES + L*POLYZ_PACKEDBYTES + POLYVECH_PACKEDBYTES);
+param int PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES = (2*SEEDBYTES + TRBYTES + L*POLYETA_PACKEDBYTES + K*POLYETA_PACKEDBYTES + K*POLYT0_PACKEDBYTES);
+param int PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES = (CTILDEBYTES + L*POLYZ_PACKEDBYTES + POLYVECH_PACKEDBYTES);
 
 param int iGAMMA1 = (1 << 19);
 u32 GAMMA1 = iGAMMA1;
@@ -199,6 +202,18 @@ inline fn __mem_to_crhseed (reg u32 p) -> stack u8[CRHBYTES] {
   } 
   a = pa;
   return a;
+}
+
+inline fn __crhseed_to_mem (reg ptr u8[CRHBYTES] pa, reg u32 p) {
+  reg u32 ai i;
+
+  i = 0;
+
+  while (i < CRHBYTES) {
+    ai = (32u) pa[(int) i];
+    (u8)[p + i] = ai;
+    i += 1;
+  }
 }
 
 inline fn __mem_to_polyeta (reg u32 p) -> stack u8[POLYETA_PACKEDBYTES] {

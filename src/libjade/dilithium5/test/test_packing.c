@@ -18,16 +18,16 @@
 
 void PQCLEAN_DILITHIUM5_CLEAN_pack_pk_jazz(uint8_t pk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES], const uint8_t rho[SEEDBYTES], const polyveck *t1);
 void PQCLEAN_DILITHIUM5_CLEAN_unpack_pk_jazz(uint8_t rho[SEEDBYTES], polyveck *t1, const uint8_t pk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES]);
-void PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz(uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES], const uint8_t c[SEEDBYTES], const polyvecl *z, const polyveck *h);
-int PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz(uint8_t c[SEEDBYTES], polyvecl *z, polyveck *h, const uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES]);
+void PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz(uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES], const uint8_t c[CTILDEBYTES], const polyvecl *z, const polyveck *h);
+int PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz(uint8_t c[CTILDEBYTES], polyvecl *z, polyveck *h, const uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES]);
 
 void check_unpack_sig() {
   int32_t z[N*L];						 
   int32_t z_jazz[N*L];
   int32_t h[N*K];
   int32_t h_jazz[N*K];
-  uint8_t c[SEEDBYTES];
-  uint8_t c_jazz[SEEDBYTES];
+  uint8_t c[CTILDEBYTES];
+  uint8_t c_jazz[CTILDEBYTES];
   uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES];
   uint8_t sig_jazz[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES];
   for(int t=0; t<TESTS; t++) {

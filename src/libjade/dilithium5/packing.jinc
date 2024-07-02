@@ -43,7 +43,7 @@ fn _pack_pk(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg p
 *              - const polyvecl *s1: pointer to vector s1
 *              - const polyveck *s2: pointer to vector s2
 **************************************************/
-fn _pack_sk(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBYTES] rho, reg ptr u8[SEEDBYTES] tr, reg ptr u8[SEEDBYTES] key, reg ptr u32[polyveck] t0, reg ptr u32[polyvecl] s1, reg ptr u32[polyveck] s2) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] {
+fn _pack_sk(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBYTES] rho, reg ptr u8[TRBYTES] tr, reg ptr u8[SEEDBYTES] key, reg ptr u32[polyveck] t0, reg ptr u32[polyvecl] s1, reg ptr u32[polyveck] s2) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] {
     sk = sk; rho = rho; tr = tr; key = key; t0 = t0; s1 = s1; s2 = s2;
 
     inline int i;
@@ -51,21 +51,22 @@ fn _pack_sk(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg p
     start_pos = 0;
     
     reg ptr u8[SEEDBYTES] tsk;
+    reg ptr u8[TRBYTES] ttr;
     
-    tsk = sk[0:SEEDBYTES];
+    tsk = sk[start_pos : SEEDBYTES];
     tsk = #copy(rho);
     sk[start_pos:SEEDBYTES] = tsk;
     start_pos += SEEDBYTES;
     
-    tsk = sk[SEEDBYTES :  SEEDBYTES];
+    tsk = sk[start_pos :  SEEDBYTES];
     tsk = #copy(key);
     sk[start_pos : SEEDBYTES] = tsk;
     start_pos += SEEDBYTES;
     
-    tsk = sk[2 * SEEDBYTES : SEEDBYTES];
-    tsk = #copy(tr);
-    sk[start_pos : SEEDBYTES] = tsk;
-    start_pos += SEEDBYTES;
+    ttr = sk[start_pos : TRBYTES];
+    ttr = #copy(tr);
+    sk[start_pos : TRBYTES] = ttr;
+    start_pos += TRBYTES;
     
     reg ptr u8[POLYETA_PACKEDBYTES] nsk;
 
@@ -117,7 +118,7 @@ fn _pack_sk(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg p
 *              - const polyvecl *z: pointer to vector z
 *              - const polyveck *h: pointer to hint vector h
 **************************************************/
-fn _pack_sig(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] {
+fn _pack_sig(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[CTILDEBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] {
     sig = sig; c = c; z = z; h = h;
     
     inline int i;
@@ -125,12 +126,12 @@ fn _pack_sig(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[S
     inline int start_pos;
     start_pos = 0;
     
-    reg ptr u8[SEEDBYTES] ptsig;
-    ptsig = sig[0 : SEEDBYTES];
+    reg ptr u8[CTILDEBYTES] ptsig;
+    ptsig = sig[start_pos : CTILDEBYTES];
     // FIXME this copy can be improved using 32 bits load and store instead of 8
     ptsig = #copy(c);
-    sig[0 : SEEDBYTES] = ptsig;
-    start_pos += SEEDBYTES;
+    sig[start_pos : CTILDEBYTES] = ptsig;
+    start_pos += CTILDEBYTES;
 
     reg ptr u32[N] nz;
     reg ptr u8[POLYZ_PACKEDBYTES] nsig;
@@ -184,7 +185,7 @@ fn _pack_sig_nocopy(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg p
     inline int start_pos;
     start_pos = 0;
     
-    start_pos += SEEDBYTES;
+    start_pos += CTILDEBYTES;
 
     reg ptr u32[N] nz;
     reg ptr u8[POLYZ_PACKEDBYTES] nsig;
@@ -273,13 +274,13 @@ fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[PQ
 **************************************************/
 fn _unpack_sk
   (reg ptr u8[SEEDBYTES] rho, 
-   reg ptr u8[SEEDBYTES] tr, 
+   reg ptr u8[TRBYTES] tr, 
    reg ptr u8[SEEDBYTES] key, 
    reg ptr u32[polyveck] t0, 
    reg ptr u32[polyvecl] s1, 
    reg ptr u32[polyveck] s2, 
    reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) 
-  -> reg ptr u8[SEEDBYTES], reg ptr u8[SEEDBYTES], reg ptr u8[SEEDBYTES], 
+  -> reg ptr u8[SEEDBYTES], reg ptr u8[TRBYTES], reg ptr u8[SEEDBYTES], 
      reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck] 
      // rho, tr, key, t0, s1, s2
 {
@@ -290,18 +291,19 @@ fn _unpack_sk
     start_pos = 0;
     
     reg ptr u8[SEEDBYTES] tsk;
+    reg ptr u8[TRBYTES] ttr;
     
-    tsk = sk[0:SEEDBYTES];
+    tsk = sk[start_pos : SEEDBYTES];
     rho = #copy(tsk);
     start_pos += SEEDBYTES;
     
-    tsk = sk[SEEDBYTES :  SEEDBYTES];
+    tsk = sk[start_pos :  SEEDBYTES];
     key = #copy(tsk);
     start_pos += SEEDBYTES;
     
-    tsk = sk[start_pos : SEEDBYTES];
-    tr = #copy(tsk);
-    start_pos += SEEDBYTES;
+    ttr = sk[start_pos : TRBYTES];
+    tr = #copy(ttr);
+    start_pos += TRBYTES;
     
     reg ptr u8[POLYETA_PACKEDBYTES] nsk;
 
@@ -359,25 +361,26 @@ fn _unpack_sk
 *
 * Returns 1 in case of malformed signature; otherwise 0.
 **************************************************/
-fn _unpack_sig(reg ptr u8[SEEDBYTES] c, 
+fn _unpack_sig(reg ptr u8[CTILDEBYTES] c, 
                reg ptr u32[polyvecl] z, 
                reg ptr u32[polyveck] h, 
                reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig) -> 
-         reg ptr u8[SEEDBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
+         reg ptr u8[CTILDEBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
     // fixme this should be in the export function not here
     sig = sig; c = c; z = z; h = h;
 
     reg u32 status, r0, r1, j, sj, sjm1, sroi, k;
     inline int i;
     inline int start_pos;
-    reg ptr u8[SEEDBYTES] ptsig;
+    reg ptr u8[CTILDEBYTES] ptsig;
     reg ptr u8[OMEGA + K] pptsig;
     reg ptr u32[N] nh, nz;
     reg ptr u8[POLYZ_PACKEDBYTES] nsig;
 
-    ptsig = sig[0 : SEEDBYTES];
+    start_pos = 0;
+    ptsig = sig[start_pos : CTILDEBYTES];
     c = #copy(ptsig);
-    start_pos = SEEDBYTES;
+    start_pos += CTILDEBYTES;
 
     () = #spill(c, h);
 

@@ -53,13 +53,13 @@ inline fn __add_crh_ref(reg ptr u32[25*2] state,
   return state;
 }
 
-inline fn __add_seedcrh_ref(reg ptr u32[25*2] state,
-                        reg ptr u8[SEEDBYTES + CRHBYTES] in) 
+inline fn __add_seedrndcrh_ref(reg ptr u32[25*2] state,
+                        reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] in) 
                      -> reg ptr u32[25*2] 
 {
   reg u32 i t0 inlen4;
 
-  inlen4 = (SEEDBYTES + CRHBYTES) >> 2;
+  inlen4 = (SEEDBYTES + RNDBYTES + CRHBYTES) >> 2;
 
   i = 0;
   while ( i < inlen4 )

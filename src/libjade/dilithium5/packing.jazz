@@ -75,9 +75,12 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sk_internal_jazz(reg ptr u8[PQCLEAN_DILI
     rho = __mem_to_seed(rho_tr_key[0]);
     rprho = rho;
     
-    reg ptr u8[SEEDBYTES] rptr;
-    stack u8[SEEDBYTES] tr;    
-    tr = __mem_to_seed(rho_tr_key[1]);
+    reg ptr u8[TRBYTES] rptr;
+    stack u8[TRBYTES] tr;    
+    // This should be
+    //   tr = __mem_to_trbytes(rho_tr_key[1]);
+    // but since CRHBYTES = TRBYTES = 64, it is ok
+    tr = __mem_to_crhseed(rho_tr_key[1]);
     rptr = tr;
    
     reg ptr u8[SEEDBYTES] rpkey;
@@ -106,7 +109,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sk_internal_jazz(reg ptr u8[PQCLEAN_DILI
     return sk;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] {
+export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[CTILDEBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] {
     sig = sig; c = c; z = z; h = h;
     sig = _pack_sig(sig, c, z, h);
     sig = sig;
@@ -135,9 +138,12 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_internal_jazz(reg ptr u32[3] rho_tr
     rho = __mem_to_seed(rho_tr_key[0]);
     rprho = rho;
     
-    reg ptr u8[SEEDBYTES] rptr;
-    stack u8[SEEDBYTES] tr;    
-    tr = __mem_to_seed(rho_tr_key[1]);
+    reg ptr u8[TRBYTES] rptr;
+    stack u8[TRBYTES] tr;    
+    // This should be
+    //   tr = __mem_to_trbytes(rho_tr_key[1]);
+    // but since CRHBYTES = TRBYTES = 64, it is ok
+    tr = __mem_to_crhseed(rho_tr_key[1]);
     rptr = tr;
    
     reg ptr u8[SEEDBYTES] rpkey;
@@ -163,7 +169,10 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_internal_jazz(reg ptr u32[3] rho_tr
     rprho, rptr, rpkey, rpt0, rps1, rps2 = _unpack_sk(rprho, rptr, rpkey, rpt0, rps1, rps2, sk);
 
     __seed_to_mem(rprho, rho_tr_key[0]);
-    __seed_to_mem(rptr, rho_tr_key[1]);
+    // This should be
+    //   __trbytes_to_mem(rptr, rho_tr_key[1]);
+    // but since CRHBYTES = TRBYTES = 64, it is ok
+    __crhseed_to_mem(rptr, rho_tr_key[1]);
     __seed_to_mem(rpkey, rho_tr_key[2]);
     
     __polyveck_to_mem(pt0_ps1_ps2[0], rpt0);
@@ -173,7 +182,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_internal_jazz(reg ptr u32[3] rho_tr
     return rho_tr_key, pt0_ps1_ps2;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz(reg ptr u8[SEEDBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
+export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz(reg ptr u8[CTILDEBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig) -> reg ptr u8[CTILDEBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
     sig = sig; c = c; z = z; h = h;
     reg u32 status;
     c, z, h, status = _unpack_sig(c, z, h, sig);
