@@ -21,7 +21,7 @@ compile: compile_lib compile_bench
 clean: clean_lib clean_bench
 
 # Rule to generate .s files from .jazz files
-library.s: ../../library.jazz
+library.s: library.jazz
 	$(JASMIN) -arch=arm-m4 -o $@ $<
 
 sign_wrap_jazz.o: ../../sign_wrap.c

@@ -1,2 +1,7 @@
-require "ntt.jinc"
+require "ntt.jazz"
+require "reduce.jazz"
+require "rounding.jazz"
+require "poly.jazz"
+require "polyvec.jazz"
+require "packing.jazz"
 require "sign.jazz"

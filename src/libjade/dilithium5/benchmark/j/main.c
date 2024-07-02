@@ -14,8 +14,6 @@
 
 extern int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed_jazz(uint8_t *pk, uint8_t *sk, const uint8_t seed[SEEDBYTES]);
 extern int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_jazz(uint8_t *pk, uint8_t *sk);
-extern int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature_jazz(uint8_t *sig, size_t *siglen, const uint8_t *m, size_t mlen, const uint8_t *sk);
-extern int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify_jazz(const uint8_t *sig, size_t siglen, const uint8_t *m, size_t mlen, const uint8_t *pk);
 
 int main () {
   uint8_t pk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES];
