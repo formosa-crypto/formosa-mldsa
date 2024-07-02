@@ -21,6 +21,30 @@ void PQCLEAN_DILITHIUM5_CLEAN_unpack_pk_jazz(uint8_t rho[SEEDBYTES], polyveck *t
 void PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz(uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES], const uint8_t c[CTILDEBYTES], const polyvecl *z, const polyveck *h);
 int PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz(uint8_t c[CTILDEBYTES], polyvecl *z, polyveck *h, const uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES]);
 
+void check_pack_sig() {
+  int32_t z[N*L];
+  int32_t z_jazz[N*L];
+  int32_t h[N*K];
+  int32_t h_jazz[N*K];
+  uint8_t c[CTILDEBYTES];
+  uint8_t c_jazz[CTILDEBYTES];
+  uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES];
+  uint8_t sig_jazz[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES];
+  for(int t=0; t<TESTS; t++) {
+    fillarrni32(z, z_jazz, N*L);
+    fillarrni32(h, h_jazz, N*K);
+    for (int i = 0; i < K * N; ++i) {
+      h[i] = 0;
+      h_jazz[i] = 0;
+    }
+    fillarrnu8(c, c_jazz, CTILDEBYTES);
+    PQCLEAN_DILITHIUM5_CLEAN_pack_sig(sig, c, (polyvecl *)z, (polyveck *)h);
+    PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz(sig_jazz, c, (polyvecl *)z_jazz, (polyveck *)h_jazz);
+    eqarr(PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES, PRId8, sig, sig_jazz, "pack_sig")
+  }
+  printf("PASS: pack_sig\n");
+ }
+
 void check_unpack_sig() {
   int32_t z[N*L];						 
   int32_t z_jazz[N*L];
@@ -52,6 +76,7 @@ int main ()
      check_rhot1_pk(PQCLEAN_DILITHIUM5_CLEAN_unpack_pk_jazz, PQCLEAN_DILITHIUM5_CLEAN_unpack_pk, "unpack_pk_jazz");
      check_sk_rhotrkeyt0s1s2(PQCLEAN_DILITHIUM5_CLEAN_pack_sk_jazz, PQCLEAN_DILITHIUM5_CLEAN_pack_sk, "pack_sk_jazz");
      check_rhotrkeyt0s1s2_sk(PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_jazz, PQCLEAN_DILITHIUM5_CLEAN_unpack_sk, "unpack_sk_jazz");
+     check_pack_sig();
      check_unpack_sig();
     return 0;
 }
