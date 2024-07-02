@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 
 ARMCC ?= arm-linux-gnueabi-gcc
-ARMCFLAGS ?= -Wall -O3 -march=armv7
+ARMCFLAGS ?= -Wall -O3 -march=armv7 -fPIC
 ARMAR ?= arm-linux-gnueabi-ar
 
 UNAME_S := $(shell uname -s)
