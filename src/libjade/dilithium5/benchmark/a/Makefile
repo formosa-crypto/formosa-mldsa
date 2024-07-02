@@ -1,14 +1,14 @@
 #--
 
 ARMCC ?= arm-linux-gnueabi-gcc
-ARMCFLAGS ?= -Wall -O3 -march=armv7
+ARMCFLAGS ?= -Wall -O3 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mthumb
 ARMAR ?= arm-linux-gnueabi-ar
 
 UNAME_S := $(shell uname -s)
 
 ifeq ($(UNAME_S),Darwin)
 	ARMCC := /Applications/ARM/bin/arm-none-eabi-gcc
-	ARMCFLAGS := -Wall -O1 -fPIC -mcpu=cortex-m4 -mlittle-endian -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs 
+	ARMCFLAGS := -Wall -O3 -fPIC -mcpu=cortex-m4 -mlittle-endian -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs 
 	ARMAR := /Applications/ARM/bin/arm-none-eabi-ar
 endif
 
