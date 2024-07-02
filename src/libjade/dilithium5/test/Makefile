@@ -1,8 +1,15 @@
 #--
 ARMCC ?= arm-linux-gnueabi-gcc
 ARMCFLAGS ?= -Wall -O3 -march=armv7
+ARMAR ?= arm-linux-gnueabi-ar
 
-#-mcpu=cortex-m4 # not working - TODO: check why
+UNAME_S := $(shell uname -s)
+
+ifeq ($(UNAME_S),Darwin)
+	ARMCC := /Applications/ARM/bin/arm-none-eabi-gcc
+	ARMCFLAGS := -Wall -O1 -fPIC -mcpu=cortex-m4 -mlittle-endian -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs
+	ARMAR := /Applications/ARM/bin/arm-none-eabi-ar
+endif
 
 #--
 TESTS_C := $(subst ./,,$(shell find . -name 'test_*.c'))
