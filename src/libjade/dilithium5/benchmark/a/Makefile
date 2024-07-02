@@ -28,7 +28,7 @@ C_FILES := fips202.c keccakf1600.c packing.c poly.c polyvec.c notrandombytes.c r
 C_OBJECTS := $(C_FILES:.c=.o)
 S_OBJECTS := $(S_FILES:.S=.o) $(S_FILES:.s=.o)
 
-%.o: %.c $(H_FILES)
+%.o: %.c
 	$(ARMCC) $(ARMCFLAGS) -c -o $@ $<
 
 # Rule to compile Assembly files to object files

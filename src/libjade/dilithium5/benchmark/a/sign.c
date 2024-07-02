@@ -266,20 +266,20 @@ rej:
 *
 * Returns 0 (success)
 **************************************************/
-int crypto_sign(uint8_t *sm,
-                size_t *smlen,
-                const uint8_t *m,
-                size_t mlen,
-                const uint8_t *sk)
-{
-  size_t i;
+/* int crypto_sign(uint8_t *sm, */
+/*                 size_t *smlen, */
+/*                 const uint8_t *m, */
+/*                 size_t mlen, */
+/*                 const uint8_t *sk) */
+/* { */
+/*   size_t i; */
 
-  for(i = 0; i < mlen; ++i)
-    sm[CRYPTO_BYTES + mlen - 1 - i] = m[mlen - 1 - i];
-  crypto_sign_signature(sm, smlen, sm + CRYPTO_BYTES, mlen, sk);
-  *smlen += mlen;
-  return 0;
-}
+/*   for(i = 0; i < mlen; ++i) */
+/*     sm[CRYPTO_BYTES + mlen - 1 - i] = m[mlen - 1 - i]; */
+/*   crypto_sign_signature(sm, smlen, sm + CRYPTO_BYTES, mlen, sk); */
+/*   *smlen += mlen; */
+/*   return 0; */
+/* } */
 
 /*************************************************
 * Name:        crypto_sign_verify
@@ -376,32 +376,32 @@ int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify(const uint8_t *sig,
 *
 * Returns 0 if signed message could be verified correctly and -1 otherwise
 **************************************************/
-int crypto_sign_open(uint8_t *m,
-                     size_t *mlen,
-                     const uint8_t *sm,
-                     size_t smlen,
-                     const uint8_t *pk)
-{
-  size_t i;
+/* int crypto_sign_open(uint8_t *m, */
+/*                      size_t *mlen, */
+/*                      const uint8_t *sm, */
+/*                      size_t smlen, */
+/*                      const uint8_t *pk) */
+/* { */
+/*   size_t i; */
 
-  if(smlen < CRYPTO_BYTES)
-    goto badsig;
+/*   if(smlen < CRYPTO_BYTES) */
+/*     goto badsig; */
 
-  *mlen = smlen - CRYPTO_BYTES;
-  if(crypto_sign_verify(sm, CRYPTO_BYTES, sm + CRYPTO_BYTES, *mlen, pk))
-    goto badsig;
-  else {
-    /* All good, copy msg, return 0 */
-    for(i = 0; i < *mlen; ++i)
-      m[i] = sm[CRYPTO_BYTES + i];
-    return 0;
-  }
+/*   *mlen = smlen - CRYPTO_BYTES; */
+/*   if(crypto_sign_verify(sm, CRYPTO_BYTES, sm + CRYPTO_BYTES, *mlen, pk)) */
+/*     goto badsig; */
+/*   else { */
+/*     /\* All good, copy msg, return 0 *\/ */
+/*     for(i = 0; i < *mlen; ++i) */
+/*       m[i] = sm[CRYPTO_BYTES + i]; */
+/*     return 0; */
+/*   } */
 
-badsig:
-  /* Signature verification failed */
-  *mlen = -1;
-  for(i = 0; i < smlen; ++i)
-    m[i] = 0;
+/* badsig: */
+/*   /\* Signature verification failed *\/ */
+/*   *mlen = -1; */
+/*   for(i = 0; i < smlen; ++i) */
+/*     m[i] = 0; */
 
-  return -1;
-}
+/*   return -1; */
+/* } */
