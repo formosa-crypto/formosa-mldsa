@@ -7,9 +7,9 @@ ARMAR ?= arm-linux-gnueabi-ar
 UNAME_S := $(shell uname -s)
 
 ifeq ($(UNAME_S),Darwin)
-	ARMCC := /Applications/ARM/bin/arm-none-eabi-gcc
+	ARMCC := arm-none-eabi-gcc
 	ARMCFLAGS := -Wall -O1 -fPIC -mcpu=cortex-m4 -mlittle-endian -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs
-	ARMAR := /Applications/ARM/bin/arm-none-eabi-ar
+	ARMAR := arm-none-eabi-ar
 endif
 
 #-mcpu=cortex-m4 # not working - TODO: check why (same for test/)
