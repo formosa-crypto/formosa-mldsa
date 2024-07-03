@@ -2,7 +2,6 @@
 
 #include "time.h"
 #include "test_macros.h"
-#include "sign_wrap.h"
 
 #ifndef RUNS
 #define RUNS 10000
@@ -12,8 +11,10 @@
 #define MESSAGE_SIZE 10000
 #endif
 
-extern int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed_jazz(uint8_t *pk, uint8_t *sk, const uint8_t seed[SEEDBYTES]);
-extern int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_jazz(uint8_t *pk, uint8_t *sk);
+extern int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed(uint8_t *pk, uint8_t *sk, const uint8_t seed[SEEDBYTES]);
+extern int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk);
+extern int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature(uint8_t sig[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], size_t *siglen, uint8_t* m, size_t mlen, uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES]);
+extern int PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify(const uint8_t *sig, size_t siglen, const uint8_t *m, size_t mlen, const uint8_t *pk);
 
 int main () {
   uint8_t pk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES];
@@ -30,7 +31,7 @@ int main () {
   start_time = clock();
   for (int t=0; t<RUNS; t++) {
     fillarr(uint8_t, 2 * SEEDBYTES + CRHBYTES, sb);
-    PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed_jazz(pk, sk, sb);
+    PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed(pk, sk, sb);
   }  
   end_time = clock();
   
@@ -43,7 +44,7 @@ int main () {
     // Generates random message
     fillarr(uint8_t, MESSAGE_SIZE, m);
     // Sign the random message
-    int r = PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature_jazz(sig, &siglen, m, mlen, sk);
+    int r = PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature(sig, &siglen, m, mlen, sk);
     if (r != 0) {
       printf("Signature failed\n");
       exit(1);
@@ -57,7 +58,7 @@ int main () {
   start_time = clock();
   // Retrieves the last signature (TODO : do better)
   for (int t=0; t<RUNS; t++) {
-    int r = PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify_jazz(sig, PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES, m, MESSAGE_SIZE, pk);
+    int r = PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify(sig, PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES, m, MESSAGE_SIZE, pk);
     if (r != 0) {
       printf("Verification failed\n");
       exit(1);

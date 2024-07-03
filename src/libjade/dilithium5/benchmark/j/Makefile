@@ -24,7 +24,7 @@ clean: clean_lib clean_bench
 library.s: library.jazz
 	$(JASMIN) -arch=arm-m4 -o $@ $<
 
-sign_wrap_jazz.o: ../../sign_wrap.c
+sign_wrap_jazz.o: sign_wrap.c
 	$(ARMCC) $(ARMCFLAGS) -c -o $@ $<
 
 library_jazz.o: library.s
