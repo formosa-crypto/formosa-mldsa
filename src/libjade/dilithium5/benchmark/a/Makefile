@@ -20,10 +20,10 @@ all: clean compile
 compile: compile_lib compile_bench
 clean: clean_lib clean_bench
 
-S_FILES := basemul_257.S fnt_257.S ifnt_257.S ntt.S pointwise_mont.s vector.s
+S_FILES := basemul_257.S fnt_257.S ifnt_257.S keccakf1600.S  ntt.S pointwise_mont.s vector.s
 H_FILES := api.h config.h fips202.h hal.h keccakf1600.h ntt.h packing.h params.h pointwise_mont.h poly.h polyvec.h randombytes. reduce.h rounding.h sign.h smallntt.h smallpoly.h symmetric.h vector.h
 I_FILES := macros.i macros_fnt.i
-C_FILES := fips202.c keccakf1600.c packing.c poly.c polyvec.c notrandombytes.c rounding.c sign.c smallpoly.c symmetric-shake.c
+C_FILES := fips202.c packing.c poly.c polyvec.c notrandombytes.c rounding.c sign.c smallpoly.c symmetric-shake.c
 
 C_OBJECTS := $(C_FILES:.c=.o)
 S_OBJECTS := $(S_FILES:.S=.o) $(S_FILES:.s=.o)
