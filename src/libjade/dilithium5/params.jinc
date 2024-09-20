@@ -99,7 +99,9 @@ inline fn __mem_to_poly (reg u32 p) -> stack u32[N] {
   reg u32 ai i;
   pa = a;
   i = 0;
-  while (i < N) { 
+  reg u32 n;
+  n = N;
+  while (i < n) {
     ai = (u32)[p + 4 * i];
     pa[(int) i] = ai;
     i += 1;
@@ -113,7 +115,9 @@ inline fn __poly_to_mem (stack u32[N] a, reg u32 p) {
   reg ptr u32[N] pa;
   i = 0;
   pa = a;
-  while (i < N) { 
+  reg u32 n;
+  n = N;
+  while (i < n) {
     ai = pa[(int) i];
     (u32)[p + 4 * i] = ai;
     i += 1;
@@ -124,8 +128,9 @@ inline fn __state_to_mem (reg ptr u32[25*2] pa, reg u32 p) {
   reg u32 ai i;
 
   i = 0;
-
-  while (i < 25*2) {
+  reg u32 temp;
+  temp = 25*2;
+  while (i < temp) {
     ai = pa[(int) i];
     (u32)[p + 4 * i] = ai;
     i += 1;
@@ -136,8 +141,9 @@ inline fn __buf_to_mem (reg ptr u8[SHAKE256_RATE] pa, reg u32 p) {
   reg u32 ai i;
 
   i = 0;
-
-  while (i < SHAKE256_RATE) {
+  reg u32 shake256_rate;
+  shake256_rate = SHAKE256_RATE;
+  while (i < shake256_rate) {
     ai = (32u) pa[(int) i];
     (u8)[p + i] = ai;
     i += 1;
@@ -152,7 +158,9 @@ inline fn __mem_to_seed (reg u32 p) -> stack u8[SEEDBYTES] {
 
   pa = a;
   i = 0;
-  while (i < SEEDBYTES  / 4) { 
+  reg u32 temp;
+  temp = SEEDBYTES  / 4;
+  while (i < temp) {
     ai = [p + 4*i];
     pa[u32 (int) i] = ai;
     i += 1;
@@ -172,8 +180,9 @@ inline fn __seed_to_mem (reg ptr u8[SEEDBYTES] pa, reg u32 p) {
   reg u32 ai i;
 
   i = 0;
-
-  while (i < SEEDBYTES) {
+  reg u32 seedbytes;
+  seedbytes = SEEDBYTES;
+  while (i < seedbytes) {
     ai = (32u) pa[(int) i];
     (u8)[p + i] = ai;
     i += 1;
@@ -188,7 +197,9 @@ inline fn __mem_to_crhseed (reg u32 p) -> stack u8[CRHBYTES] {
 
   pa = a;
   i = 0;
-  while (i < CRHBYTES  / 4) { 
+  reg u32 temp;
+  temp = CRHBYTES  / 4;
+  while (i < temp) {
     ai = [p + 4*i];
     pa[u32 (int) i] = ai;
     i += 1;
@@ -208,8 +219,10 @@ inline fn __crhseed_to_mem (reg ptr u8[CRHBYTES] pa, reg u32 p) {
   reg u32 ai i;
 
   i = 0;
+  reg u32 crhbytes;
+  crhbytes = CRHBYTES;
 
-  while (i < CRHBYTES) {
+  while (i < crhbytes) {
     ai = (32u) pa[(int) i];
     (u8)[p + i] = ai;
     i += 1;

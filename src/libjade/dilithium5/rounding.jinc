@@ -15,9 +15,13 @@ require "params.jinc"
 inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32 
 {
   reg u32 a0 a1;
-  a1 = a + ((1 << (D - 1)) - 1); 
+  reg u32 temp;
+  temp = ((1 << (D - 1)) - 1);
+  a1 = a + temp;
   a1 = a1 >>s D;
-  a0 = a - (a1 << D);
+  reg u32 temp;
+  temp = (a1 << D);
+  a0 = a - temp;
   return (a0, a1);     
 }
 
@@ -38,7 +42,7 @@ inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32
 // precondition q = Q
 inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
 {
-  reg u32 a0 a1 aux;
+  reg u32 a0 a1 aux temp;
   
   /* a1  = (a + 127) >> 7; */
   a1 =  a + 127;
@@ -46,21 +50,33 @@ inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
   
   /* a1  = (a1 * 1025 + (1 << 21)) >> 22;
      a1 &= 15; */
-  
-  aux = a1 + (a1 << 10); // aux = a1 * 1025;
-  aux += (1 << 21);
-  a1 = #UBFX(aux, 22, 4);
-  
+
+  temp = (a1 << 10);
+  aux = a1 + temp; // aux = a1 * 1025;
+  temp = 1 << 21;
+  aux += temp;
+  // a1 = #UBFX(aux, 22, 4);
+  a1 = #SLLI(aux, 6); // RISCV 32 - (22 + 4) = 6
+  a1 = #SRLI(a1, 28); // RISCV 32 - 4 = 28
+
   /* *a0  = a - a1 * 2 * GAMMA2; */
   /* - 2*GAMMA2 = (1 - 2 ^ 10) * 2^9 */
-  aux = a1 - (a1 << 10);
-  a0 = a + (aux << 9);  
+  reg u32 temp;
+  temp = (a1 << 10);
+  aux = a1 - temp;
+  temp = (aux << 9);
+  a0 = a + temp;
   
   /* *a0 -= (((Q - 1) / 2 - *a0) >> 31) & Q; */
   /* (Q - 1) / 2 = 1023 * 2^12 */
   aux = 1023;
-  aux = #RSB(a0, aux << 12); // (Q - 1) / 2 - *a0
-  aux = q & (aux >>s 31);
+  // (Q - 1) / 2 - *a0
+  // aux = #RSB(a0, aux << 12); // ARM
+  aux = aux << 12; // RISCV
+  aux = aux - a0; // RISCV
+
+  temp = (aux >>s 31);
+  aux = q & temp;
   a0 -= aux;
   
   return a0, a1;
@@ -92,14 +108,24 @@ inline fn __make_hint(reg u32 a0, reg u32 a1, reg u32 gamma2) -> reg u32
 {
    reg u32 mgamma2 res;
    inline bool lt eq;
-   
+
    res = 1;
    if (a0 <=s gamma2) {
      mgamma2 = -gamma2;
-     ?{"==" = eq, "<s" = lt} = #CMP(a0,mgamma2);
+     // ?{"==" = eq, "<s" = lt} = #CMP(a0,mgamma2);
+     eq = (a0 == mgamma2);
+     lt = (a0 <s mgamma2);
+
      if (!lt) {
-       res = 0 if !eq;
-       res = 0 if a1 == 0;
+
+      if (!eq) {
+         res = 0;
+      }
+
+      if (a1 == 0) {
+         res = 0;
+       }
+
      }
    }
    return res;
@@ -138,13 +164,21 @@ int32_t PQCLEAN_DILITHIUM5_CLEAN_use_hint(int32_t a, unsigned int hint) {
 inline fn __use_hint(reg u32 a, reg u32 hint, reg u32 q) -> reg u32 {
   reg u32 a0 a1;
   inline bool gt le;
+
   a0, a1 = __decompose_a0a1(a, q);
-  // FIXME this can be optimize if hint = 0 then no need to compute a0
-  // We can split decompose in two parts
+
   if (hint != 0) {
-    ?{">s" = gt, "<=s" = le} = #CMP(a0, 0);
-    a1 += 1 if gt; 
-    a1 -= 1 if le;
+   //    ?{">s" = gt, "<=s" = le} = #CMP(a0, 0);
+   gt = (a0 >s 0);
+   le = (a0 <=s 0);
+
+   if (gt) {
+      a1 += 1;
+   }
+   if (le) {
+     a1 -=1 ;
+   }
+
     a1 &= 15;
   }
   return a1;

@@ -16,20 +16,34 @@ require "params.jinc"
 inline fn __montgomery_reduce_8380417(reg u32 a_low a_high) -> reg u32
 {
   reg u32 a_low_x7 a_low_x7169 a_low_x58728449;
-  reg u32 minus_q;
   reg u32 res;
+  reg u32 q qinv minus_q;
+  reg u32 t0 t1;
+  minus_q = MINUS_Q;
+  q = iQ;
 
-  a_low_x7 = #RSB(a_low, (a_low << 3));
-  a_low_x7169 = a_low + (a_low_x7 << 10);
+  /// The following two attempts to construct a_low_x58728449 are equivalent
+  // #1
+  t0 = a_low << 3;
+  a_low_x7 = t0 - a_low;
+  t0 = a_low_x7 << 10;
+  a_low_x7169 = a_low + t0;
+  t0 = a_low_x7169 << 13;
+  a_low_x58728449 = a_low + t0;
 
-  minus_q = __MINUS_Q();
+  // #2
+  // qinv = 58728449;
+  // a_low_x58728449 = #MUL(a_low, qinv);
 
-  a_low_x58728449 = a_low + (a_low_x7169 << 13);
+  reg u32 txQ_high, txQ_low, tp_high, tp_low;
+  txQ_low = #MUL(a_low_x58728449, q);
+  txQ_high = #MULH(a_low_x58728449, q);
 
-  // (a_low_x58728449 * minus_q) + (a_low + a_high * 2**32); 
-  _, res = #SMLAL(a_low, a_high, a_low_x58728449, minus_q);
+  tp_low = a_low - txQ_low;
+  tp_high = a_high - txQ_high;
+  if tp_low >32u a_low { tp_high = tp_high + 1; } // carry
 
-  res = res;
+  res = tp_high;
   return res;
 }
 
@@ -54,13 +68,21 @@ inline fn __reduce32_8380417(reg u32 a) -> reg u32
 {
   reg u32 t t_x511 t_x523265 t_x4286586879 res;
 
-  t = a + (1 << 22); // 1<<22 == 4194304
+  reg u32 shift;
+  shift = (1 << 22); // 1<<22 == 4194304
+  t = a + shift;
   t = t >>s 23; // we have that: t = (a + (1 << 22)) >> 23;
 
-  t_x511 = #RSB(t, (t << 9)); // t * 2**9 - t
-  t_x523265 = t + (t_x511 << 10);
-  t_x4286586879 = #RSB(t, (t_x523265 << 13)); // ((t * 523265) * 2**13) - t
-  
+  //  t_x511 = #RSB(t, (t << 9)); // t * 2**9 - t  #ARM instruction
+  reg u32 t0;
+  t0 = t << 9;
+  t_x511 = t0 - t;
+
+  shift = (t_x511 << 10);
+  t_x523265 = t + shift;
+  //  t_x4286586879 = #RSB(t, (t_x523265 << 13)); // ((t * 523265) * 2**13) - t # ARM instruction
+  t0 = t_x523265 << 13;
+  t_x4286586879 = t0 - t;
   // we have that: t_x4286586879 == t * -Q 
 
   res = a + t_x4286586879;
@@ -92,7 +114,8 @@ inline fn __caddq(reg u32 a) -> reg u32
   reg u32 q res;
 
   q = __Q();
-  res = q & (a >>s 31);
+  res = (a >>s 31);
+  res = q & res;
   res += a;
 
   return res;

@@ -44,14 +44,18 @@ fn _polyvecl_uniform_gamma1(
   reg u32 l;
   l = L;
   nonce = l * nonce;
-  nonce = #UBFX(nonce, 0, 16);
+  // nonce = #UBFX(nonce, 0, 16); // ARM
+  nonce = #SLLI(nonce, 16); // RISCV 32 - (0 + 16) = 16
+  nonce = #SRLI(nonce, 16); // RISCV 32 - 16 = 16
   for i = 0 to L {
     p = v[i * N : N]; 
     s_v = v; s_nonce = nonce; s_seed = seed;
     p = _poly_uniform_gamma1(p, seed, nonce);
     s_v[i * N : N] = p; v = s_v;  nonce = s_nonce; seed = s_seed;
-    nonce += 1; nonce = #UBFX(nonce, 0, 16);
-
+    nonce += 1;
+    // nonce = #UBFX(nonce, 0, 16); // ARM
+    nonce = #SLLI(nonce, 16); // RISCV 32 - (0 + 16) = 16
+    nonce = #SRLI(nonce, 16); // RISCV 32 - 16 = 16
   }
   return v;
 }

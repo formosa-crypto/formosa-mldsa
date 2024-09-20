@@ -6,9 +6,9 @@ ARMAR ?= arm-linux-gnueabi-ar
 UNAME_S := $(shell uname -s)
 
 ifeq ($(UNAME_S),Darwin)
-	ARMCC := /Applications/ARM/bin/arm-none-eabi-gcc
-	ARMCFLAGS := -Wall -O1 -fPIC -mcpu=cortex-m4 -mlittle-endian -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs
-	ARMAR := /Applications/ARM/bin/arm-none-eabi-ar
+	ARMCC := /opt/homebrew/bin/riscv64-unknown-elf-gcc
+	ARMCFLAGS := -Wall -O1 -march=rv32im -mabi=ilp32
+	ARMAR := /opt/homebrew/bin/riscv64-unknown-elf-ar
 endif
 
 #--

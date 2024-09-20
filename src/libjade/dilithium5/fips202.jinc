@@ -8,7 +8,9 @@ inline fn __keccak_init_ref(reg ptr u32[25*2] state) -> reg ptr u32[25*2]
 
   i = 0;
   t = 0;
-  while(i < 25*2)
+  reg u32 temp;
+  temp = 25*2;
+  while(i < temp)
   { state[(int)i] = t;
     i += 1;
   }
@@ -122,7 +124,9 @@ inline fn __add_zero_after_add(reg ptr u32[25*2] state, inline int nbbytes) -> r
   nbbytes = nbbytes + ((nbbytes % 4 == 2) ? 2 : 0);
 
   i = (nbbytes / 4);
-  while (i < 25*2) {
+  reg u32 t;
+  t = 25*2;
+  while (i < t) {
     state[(int) i] = zero;
     i += 1;
   } 
@@ -163,7 +167,9 @@ fn _stream128_refill_buffer(
   reg u32 q
 ) -> reg ptr u32[25*2], reg ptr u32[N], reg u32, reg u32, reg u32, reg u32[3] 
 {
-  if (pos == SHAKE128_RATE >> 2) {
+  reg u32 shake128_rate__2;
+  shake128_rate__2 = SHAKE128_RATE >> 2;
+  if (pos == shake128_rate__2) {
     stack u32 sctr;
     stack ptr u32[N] sa;
     sctr = ctr; sa = a;
@@ -198,7 +204,9 @@ fn _stream256_refill_buffer(
   reg u32 n205
 ) -> reg ptr u32[25*2], reg ptr u32[N], reg u32, reg u32, reg u32, reg u32
 {
-  if (pos == SHAKE256_RATE >> 2) {
+  reg u32 shake256_rate__2;
+  shake256_rate__2 = SHAKE256_RATE >> 2;
+  if (pos == shake256_rate__2) {
     stack u32 sctr;
     stack ptr u32[N] sa;
     sctr = ctr; sa = a;
@@ -216,7 +224,9 @@ fn _stream256_full_squeeze (
 ) -> reg ptr u8[SHAKE256_RATE] {
   reg u32 i, t;
   i = 0;
-  while (i < SHAKE256_RATE / 4) {
+  reg u32 shake256_rate_4;
+  shake256_rate_4 = SHAKE256_RATE / 4;
+  while (i < shake256_rate_4) {
     t = state[(int) i];
     buf[u32 (int) i] = t;
     i += 1;

@@ -32,7 +32,9 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   (i < last)
   { 
     j = 0;
-    while (j < (SHAKE256_RATE >> 2)) { 
+    reg u32 temp;
+    temp = (SHAKE256_RATE >> 2);
+    while (j < temp) {
       t = inp[u32 (int)i];
       s = pstate[(int)j];
       t ^= s;
@@ -46,7 +48,9 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   }    
   
   j = 0;
-  while(i < (PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2)) {
+  reg u32 temp;
+  temp = (PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2);
+  while(i < temp) {
     t = inp[u32 (int)i];
     s = pstate[(int)j];
     t ^= s;
@@ -70,7 +74,9 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   () = #unspill(outp);
   // FIXME this copy is not necessary if we return pstate, in that case it should be taken as argument
   i = 0;
-  while (i < SEEDBYTES / 4) {
+  reg u32 temp;
+  temp =  SEEDBYTES / 4;
+  while (i < temp) {
     t = pstate[(int)i];
     outp[u32 (int)i] = t;
     i += 1;
@@ -99,7 +105,9 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
   (i < last)
   { 
     j = 0;
-    while (j < (SHAKE256_RATE >> 2)) { 
+    reg u32 temp;
+    temp = (SHAKE256_RATE >> 2);
+    while (j < temp) {
       t = inp[u32 (int)i];
       s = pstate[(int)j];
       t ^= s;
@@ -113,7 +121,9 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
   }    
   
   j = 0;
-  while(i < (PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2)) {
+    reg u32 temp;
+  temp = (PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2);
+  while(i < temp) {
     t = inp[u32 (int)i];
     s = pstate[(int)j];
     t ^= s;
@@ -137,7 +147,9 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
   () = #unspill(outp);
   // FIXME this copy is not necessary if we return pstate, in that case it should be taken as argument
   i = 0;
-  while (i < TRBYTES / 4) {
+  reg u32 temp;
+  temp = TRBYTES / 4;
+  while (i < temp) {
     t = pstate[(int)i];
     outp[u32 (int)i] = t;
     i += 1;
@@ -166,7 +178,9 @@ inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -
     reg u32 i, t;
 
     i = 0;
-    while (i < polyvecl) {
+    reg u32 t;
+    t = polyvecl;
+    while (i < t) {
       t = s1[i];
       s1hat[i] = t;
       i += 1;
@@ -339,10 +353,12 @@ fn _shake256_inc_absorb_mem
    reg u32 m, 
    reg u32 mlen) -> reg ptr u32[25*2], reg u32
 {
-  reg u32 t s aux;
-  aux = SHAKE256_RATE - pos;
+  reg u32 t s aux shake256_rate;
+  shake256_rate = SHAKE256_RATE;
+
+  aux = shake256_rate - pos;
   if (aux <= mlen) {
-    while (pos < SHAKE256_RATE) { 
+    while (pos < shake256_rate) {
       t = (u32)[m];
       s = pstate.[pos];
       s ^= t;
@@ -357,9 +373,9 @@ fn _shake256_inc_absorb_mem
       pos = 0;
     } 
     // FIXME: it will be good to be able to write (SHAKE256_RATE < mlen)
-    (mlen > SHAKE256_RATE) 
+    (mlen > shake256_rate)
     {
-      while (pos < SHAKE256_RATE) { 
+      while (pos < shake256_rate) {
         t = (u32)[m];
         s = pstate.[pos];
         s ^= t;
@@ -392,22 +408,26 @@ fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES
   reg u32 t s i pos;
   i = 0;
   pos = CRHBYTES;
-  while (pos < SHAKE256_RATE) { 
+  reg u32 temp;
+  temp = SHAKE256_RATE;
+  while (pos < temp) {
     s = m.[u32 i];
     pstate.[pos] = s;
     pos += 4; i += 4;
   }
 
 
+  reg u32 temp2;
+  temp2 = K * POLYW1_PACKEDBYTES;
   while {
     () = #spill(m, i);
     pstate = _keccakf1600_ref(pstate);
     () = #unspill(m, i);
     pos = 0;      
   } 
-  (i < K * POLYW1_PACKEDBYTES)
+  (i < temp2)
   {
-    while (pos < SHAKE256_RATE) { 
+    while (pos < temp) {
       t = m.[u32 i];
       s = pstate.[pos];
       s ^= t;
@@ -558,7 +578,8 @@ fn _crypto_sign_signature
   stack u32 s_nonce;
   r0 = 0;
   s_nonce = r0;
-
+  reg u32 one;
+  one = 1;
   while {
     /* Sample intermediate vector y */
     rhoprime = s_rhoprime; 
@@ -654,7 +675,9 @@ fn _crypto_sign_signature
           s_w0 = w0; w1 = s_w1;
           reg u32 n;
           n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
-          if (n > OMEGA) { 
+          reg u32 t;
+          t = OMEGA;
+          if (n > t) {
             continue = 1;
           } else {
             () = #unspill(sig);
@@ -665,7 +688,7 @@ fn _crypto_sign_signature
         }
       }
     }
-  } (continue == 1)
+  } (continue == one)
   status = 0;
   () = #unspill(sig);
   return sig, status;
@@ -737,13 +760,16 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
     c, z, h, chk = _unpack_sig(c, z, h, sig);
 
     () = #unspill(status);
-    if (chk == 1) { status = -1; }
+    //FIXME for arm or improve riscv suport
+    reg u32 t;
+    t = 1;
+    if (chk == t) { status = -1; }
 
     if (status == 0) {
       reg u32 bound;
       bound = iGAMMA1 - BETA;
-      chk = _polyvecl_chknorm(z, bound);     
-      if (chk == 1) { status = -1; }
+      chk = _polyvecl_chknorm(z, bound);
+      if (chk == t) { status = -1; }
 
       if (status == 0) {
         () = #spill(status);

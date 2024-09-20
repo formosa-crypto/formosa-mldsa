@@ -55,7 +55,9 @@ inline fn shift_right(reg u32[2] x, inline int i) -> reg u32[2]
     l = low(x);
 
     l >>= i;
-    l |= (h << (32 - i));
+    reg u32 temp;
+    temp = (h << (32 - i));
+    l |= temp;
     h >>= i;
 
     reg u32[2] y;
@@ -126,7 +128,9 @@ inline fn __poly_add(reg ptr u32[N] r a b) -> reg ptr u32[N]
   reg u32 i coeff_r coeff_a coeff_b;
 
   i = 0;
-  while(i < N)
+  reg u32 n;
+  n = N;
+  while(i < n)
   {
     coeff_a = a[(int) i];
     coeff_b = b[(int) i];
@@ -149,7 +153,9 @@ inline fn __poly_add_inplace(reg ptr u32[N] a b) -> reg ptr u32[N]
   reg u32 i coeff_a coeff_b;
 
   i = 0;
-  while(i < N)
+  reg u32 n;
+  n = N;
+  while(i < n)
   {
     coeff_a = a[(int) i];
     coeff_b = b[(int) i];
@@ -172,7 +178,9 @@ fn _poly_add2_inplace(reg ptr u32[N] a) -> reg ptr u32[N]
   reg u32 i coeff_a;
 
   i = 0;
-  while(i < N)
+  reg u32 n;
+  n = N;
+  while(i < n)
   {
     coeff_a = a[(int) i];
     coeff_a = __poly_add_body(coeff_a, coeff_a);
@@ -210,11 +218,17 @@ inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
 
   reg u32 t;
   
-  reg u32 i;
-  i = 0;
+  reg u32 i; i = 0;
+  reg u32 n; n = N;
+
   while {
     t = a[(int) i];
-    t = -t if t <s 0;
+    // FIXME for arm
+    //t = -t if t <s 0;
+    if (t <s 0) {
+       t = -t;
+    }
+
     
     i += 1;
 
@@ -223,7 +237,7 @@ inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
       i = N;
     }
     
-  } (i != N)
+  } (i != n)
   
   return r;  
 }
@@ -274,7 +288,9 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[SEEDBYTES] seed) -> reg ptr u32[
   aux = 0;
   // FIXME improve this loop
   i = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while (i < n) {
     c[(int) i] = aux;
     i += 1;
   }
@@ -282,9 +298,11 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[SEEDBYTES] seed) -> reg ptr u32[
   reg u32 j;
   j = N - TAU;
   reg u32 b;
-  while (j < N) {
+  while (j < n) {
     while {
-      if (pos >= SHAKE256_RATE) {
+      reg u32 shake256_rate;
+      shake256_rate = SHAKE256_RATE;
+      if (pos >= shake256_rate) {
           // save j pbuf c, signs
           js = j; cs = c; s_signs = #copy(signs); 
           state = _keccakf1600_ref(state);  
@@ -301,7 +319,9 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[SEEDBYTES] seed) -> reg ptr u32[
 
     aux = signs[0] & 1;
     aux <<= 1;
-    aux = 1 - aux;
+    reg u32 one;
+    one = 1;    
+    aux = one - aux;
     c[(int) b] = aux;
 
     signs = shift_right(signs, 1);
@@ -332,7 +352,9 @@ fn _poly_decompose (reg ptr u32[N] a1, reg ptr u32[N] a0, reg ptr u32[N] a) -> r
   q = __Q();
 
   i = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while (i < n) {
     reg u32 a0_, a1_, a_;
     a_ = a[(int) i];
     a0_, a1_ = __decompose_a0a1(a_, q);
@@ -352,7 +374,9 @@ fn _poly_decompose_inplace (reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32
   q = __Q();
 
   i = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while (i < n) {
     reg u32 a0_, a1_, a_;
     a_ = a1[(int) i];
     a0_, a1_ = __decompose_a0a1(a_, q);
@@ -377,7 +401,9 @@ fn _poly_decompose_inplace (reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32
 inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
   reg u32 c;
   c = a[(int) i];
-  c = ETA - c;
+  reg u32 eta;
+  eta = ETA;
+  c = eta - c;
   return c;  
 }
 
@@ -386,17 +412,18 @@ inline fn __polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
 
   reg u32 i, j;
   reg u32[8] t;
-  
+  reg u32 eta;
+  eta = ETA;
   /*
   for (i = 0; i < N / 8; ++i) {
-      t[0] = (uint8_t) (ETA - a->coeffs[8 * i + 0]);
-      t[1] = (uint8_t) (ETA - a->coeffs[8 * i + 1]);
-      t[2] = (uint8_t) (ETA - a->coeffs[8 * i + 2]);
-      t[3] = (uint8_t) (ETA - a->coeffs[8 * i + 3]);
-      t[4] = (uint8_t) (ETA - a->coeffs[8 * i + 4]);
-      t[5] = (uint8_t) (ETA - a->coeffs[8 * i + 5]);
-      t[6] = (uint8_t) (ETA - a->coeffs[8 * i + 6]);
-      t[7] = (uint8_t) (ETA - a->coeffs[8 * i + 7]);
+      t[0] = (uint8_t) (eta - a->coeffs[8 * i + 0]);
+      t[1] = (uint8_t) (eta - a->coeffs[8 * i + 1]);
+      t[2] = (uint8_t) (eta - a->coeffs[8 * i + 2]);
+      t[3] = (uint8_t) (eta - a->coeffs[8 * i + 3]);
+      t[4] = (uint8_t) (eta - a->coeffs[8 * i + 4]);
+      t[5] = (uint8_t) (eta - a->coeffs[8 * i + 5]);
+      t[6] = (uint8_t) (eta - a->coeffs[8 * i + 6]);
+      t[7] = (uint8_t) (eta - a->coeffs[8 * i + 7]);
   
       r[3 * i + 0]  = (t[0] >> 0) | (t[1] << 3) | (t[2] << 6);
       r[3 * i + 1]  = (t[2] >> 2) | (t[3] << 1) | (t[4] << 4) | (t[5] << 7);
@@ -405,18 +432,40 @@ inline fn __polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
   */
   
   i = 0; j = 0;
-  while(i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n) {
     inline int k;
     for k = 0 to 8 {
       t[k] = __eta_minus_coeff(a, i);
       i += 1;
     }
     reg u32 aux;
-    aux = t[0] | t[1] << 3;  aux |= t[2] << 6;
+    reg u32 temp;
+    temp = t[1] << 3;
+    aux = t[0] | temp;  
+    temp = t[2] << 6;
+    aux |= temp;
     r[(int) j] = aux; j += 1;
-    aux = #UBFX(t[2], 2, 6); aux |= t[3] << 1; aux |= t[4] << 4; aux |= t[5] << 7;
-    r[(int) j] = aux; j += 1;
-    aux = #UBFX(t[5], 1, 7); aux |= t[6] << 2; aux |= t[7] << 5;
+    // aux = #UBFX(t[2], 2, 6); // ARM
+    aux = #SLLI(t[2], 24); // RISCV 32 - (2 + 6) = 24
+    aux = #SRLI(aux, 26); // RISCV 32 - 6 = 26
+    reg u32 temp;
+    temp = t[3] << 1;
+    aux |= temp;
+    temp = t[4] << 4;
+    aux |= temp;
+    temp = t[5] << 7;
+    aux |= temp;
+    r[(int) j] = aux;
+    j += 1;
+    // aux = #UBFX(t[5], 1, 7); // ARM
+    aux = #SLLI(t[5], 24); // RISCV 32 - (1 + 7) = 24
+    aux = #SRLI(aux, 25); // RISCV 32 - 7 = 25
+    temp = t[6] << 2;
+    aux |= temp;
+    temp = t[7] << 5;
+    aux |= temp;
     r[(int) j] = aux; j += 1;
   }
   return r;
@@ -445,48 +494,74 @@ inline fn __polyeta_unpack(reg ptr u32[N] r, reg ptr u8[POLYETA_PACKEDBYTES] a) 
   inline int k;
   reg u32 aux;
   i = 0; j = 0;
-  while(i < N) {
+  reg u32 n; n = N;
+  reg u32 eta; eta = ETA;
+
+  while(i < n) {
   
     for k = 0 to 3 { t[k] = (32u) a[(int) j]; j +=1; }
     
     /* r->coeffs[8 * i + 0] =  (a[3 * i + 0] >> 0) & 7;
        r->coeffs[8 * i + 0] = ETA - r->coeffs[8 * i + 0]; */
-    aux = #UBFX(t[0], 0, 3); aux = ETA - aux;
+    // aux = #UBFX(t[0], 0, 3); // ARM
+    aux = #SLLI(t[0], 29); // RISCV 32 - (0 + 3) = 29
+    aux = #SRLI(aux, 29); // RISCV 32 - 3 = 29
+    aux = eta - aux;
     r[(int) i] = aux; i += 1; 
   
     /* r->coeffs[8 * i + 1] =  (a[3 * i + 0] >> 3) & 7;
        r->coeffs[8 * i + 1] = ETA - r->coeffs[8 * i + 1]; */
-    aux = #UBFX(t[0], 3, 3); aux = ETA - aux; 
+    // aux = #UBFX(t[0], 3, 3); // ARM
+    aux = #SLLI(t[0], 26); // RISCV 32 - (3 + 3) = 26
+    aux = #SRLI(aux, 29); // RISCV 32 - 3 = 29
+    aux = eta - aux;
     r[(int) i] = aux; i += 1;
     
     /* r->coeffs[8 * i + 2] = ((a[3 * i + 0] >> 6) | (a[3 * i + 1] << 2)) & 7;
        r->coeffs[8 * i + 2] = ETA - r->coeffs[8 * i + 2]; */
-    aux = t[0] >> 6; aux |= t[1] << 2; aux &= 7; aux = ETA - aux;
+    aux = t[0] >> 6;
+    reg u32 temp;
+    temp = t[1] << 2;
+    aux |= temp; aux &= 7; aux = eta - aux;
     r[(int) i] = aux; i += 1;
     
     /* r->coeffs[8 * i + 3] =  (a[3 * i + 1] >> 1) & 7;
-       r->coeffs[8 * i + 3] = ETA - r->coeffs[8 * i + 3]; */
-    aux = #UBFX(t[1], 1, 3); aux = ETA - aux;
+       r->coeffs[8 * i + 3] = eta - r->coeffs[8 * i + 3]; */
+    // aux = #UBFX(t[1], 1, 3);
+    aux = #SLLI(t[1], 28); // RISCV 32 - (1 + 3) = 28
+    aux = #SRLI(aux, 29); // RISCV 32 - 3 = 29
+    aux = eta - aux;
     r[(int) i] = aux; i += 1;
     
     /* r->coeffs[8 * i + 4] =  (a[3 * i + 1] >> 4) & 7;
-       r->coeffs[8 * i + 4] = ETA - r->coeffs[8 * i + 4]; */
-    aux = #UBFX(t[1], 4, 3); aux = ETA - aux;	
+       r->coeffs[8 * i + 4] = eta - r->coeffs[8 * i + 4]; */
+    // aux = #UBFX(t[1], 4, 3);
+    aux = #SLLI(t[1], 25); // RISCV 32 - (4 + 3) = 25
+    aux = #SRLI(aux, 29); // RISCV 32 - 3 = 29
+    aux = eta - aux;
     r[(int) i] = aux; i += 1;
     
     /* r->coeffs[8 * i + 5] = ((a[3 * i + 1] >> 7) | (a[3 * i + 2] << 1)) & 7;
        r->coeffs[8 * i + 5] = ETA - r->coeffs[8 * i + 5]; */
-    aux = t[1] >> 7; aux |= t[2] << 1; aux &= 7; aux = ETA - aux;	
+    aux = t[1] >> 7; 
+    temp = t[2] << 1;
+    aux |= temp; aux &= 7; aux = eta - aux;	
     r[(int) i] = aux; i += 1;
     
     /* r->coeffs[8 * i + 6] =  (a[3 * i + 2] >> 2) & 7;
-       r->coeffs[8 * i + 6] = ETA - r->coeffs[8 * i + 6]; */
-    aux = #UBFX(t[2], 2, 3); aux = ETA - aux;	
+       r->coeffs[8 * i + 6] = eta - r->coeffs[8 * i + 6]; */
+    // aux = #UBFX(t[2], 2, 3);
+    aux = #SLLI(t[2], 27); // RISCV 32 - (2 + 3) = 27
+    aux = #SRLI(aux, 29); // RISCV 32 - 3 = 29
+    aux = eta - aux;
     r[(int) i] = aux; i += 1;
     
     /* r->coeffs[8 * i + 7] =  (a[3 * i + 2] >> 5) & 7;
-       r->coeffs[8 * i + 7] = ETA - r->coeffs[8 * i + 7]; */
-    aux = #UBFX(t[2],5, 3); aux = ETA - aux;	
+       r->coeffs[8 * i + 7] = eta - r->coeffs[8 * i + 7]; */
+    // aux = #UBFX(t[2], 5, 3);
+    aux = #SLLI(t[2], 24); // RISCV 32 - (5 + 3) = 24
+    aux = #SRLI(aux, 29); // RISCV 32 - 3 = 29
+    aux = eta - aux;
     r[(int) i] = aux; i += 1;
   }
   return r;  
@@ -551,7 +626,10 @@ inline fn _poly_invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
 inline fn __poly_pointwise_montgomery(reg ptr u32[N] c, reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
   reg u32 i, a_, b_, c_;
   i = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n)
+  {
     a_ = a[(int) i]; b_ = b[(int) i];
     c_ = __mul_montgomery_reduce_8380417(a_, b_);
     c[(int) i] = c_;
@@ -563,7 +641,10 @@ inline fn __poly_pointwise_montgomery(reg ptr u32[N] c, reg ptr u32[N] a, reg pt
 inline fn __poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg ptr u32[N] {
   reg u32 i, a_, c_;
   i = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n)
+  {
     a_ = a[(int) i];
     c_ = c[(int) i];
     c_ = __mul_montgomery_reduce_8380417(a_, c_);
@@ -601,7 +682,10 @@ inline fn __poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a
   reg u32 i, s, a0_, a1_, h_, gamma2;
   gamma2 = __GAMMA2();
   i = 0; s = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n)
+  {
     a0_ = a0[(int) i];
     a1_ = a1[(int) i];
     h_ = __make_hint(a0_, a1_, gamma2);
@@ -634,7 +718,10 @@ inline fn __poly_power2round(reg ptr u32[N] a1, reg ptr u32[N] a0, reg ptr u32[N
   reg u32 i, a_, a0_, a1_;
     
   i = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n)
+  {
     a_ = a[(int) i];
     a0_, a1_ = __power2round_a0a1(a_);
     a0[(int) i] = a0_; a1[(int) i] = a1_;
@@ -652,7 +739,10 @@ fn _poly_power2round_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u3
   reg u32 i, a_, a0_, a1_;
 
   i = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n)
+  {
     a_ = a1[(int) i];
     a0_, a1_ = __power2round_a0a1(a_);
     a0[(int) i] = a0_; a1[(int) i] = a1_;
@@ -673,7 +763,10 @@ inline fn __poly_shiftl(reg ptr u32[N] a) -> reg ptr u32[N] {
   reg u32 i, a_;
   
   i = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n)
+  {
     a_ = a[(int) i];
     a_ <<= D;
     a[(int) i] = a_;
@@ -703,7 +796,9 @@ inline fn __poly_sub(reg ptr u32[N]c, reg ptr u32[N] a, reg ptr u32[N] b) -> reg
   reg u32 i, a_, b_, c_; 
 
   i = 0;
-  while(i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n) {
     a_ = a[(int) i];
     b_ = b[(int) i];
     c_ = a_ - b_;
@@ -722,7 +817,9 @@ inline fn __poly_sub_inplace(reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[
   reg u32 i, a_, b_, c_; 
 
   i = 0;
-  while(i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n) {
     a_ = a[(int) i];
     b_ = b[(int) i];
     c_ = a_ - b_;
@@ -752,17 +849,24 @@ inline fn __polyt0_pack(reg ptr u8[POLYT0_PACKEDBYTES] r, reg ptr u32[N] a) -> r
   inline int k;
     
   i = 0; j = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  reg u32 temp;
+  while(i < n)
+  {
     for k = 0 to 8 {
       t[k] = a[(int) i]; i += 1;
-      t[k] = (1 << (D - 1)) - t[k];
+      temp = (1 << (D - 1));
+      t[k] = temp - t[k];
     }	
     /* r[13 * i + 0]  =  (uint8_t) t[0];           */
     r[(int) j] = t[0]; j += 1;   // j = 1
     
     /* r[13 * i + 1]  =  (uint8_t) (t[0] >>  8);   */
     /* r[13 * i + 1] |=  (uint8_t) (t[1] <<  5);   */
-    aux = t[0] >> 8; aux |= t[1] << 5;
+    aux = t[0] >> 8; 
+    temp = t[1] << 5;
+    aux |= temp;
     r[(int) j] = aux; j += 1;  // j = 2
     
     /* r[13 * i + 2]  =  (uint8_t) (t[1] >>  3);   */
@@ -771,12 +875,16 @@ inline fn __polyt0_pack(reg ptr u8[POLYT0_PACKEDBYTES] r, reg ptr u32[N] a) -> r
     
     /* r[13 * i + 3]  =  (uint8_t) (t[1] >> 11);   */
     /* r[13 * i + 3] |=  (uint8_t) (t[2] <<  2);   */
-    aux = t[1] >> 11; aux |= t[2] << 2;
+    aux = t[1] >> 11;
+    temp = t[2] << 2;
+    aux |= temp;
     r[(int) j] = aux; j += 1;  // j = 4
 
     /* r[13 * i + 4]  =  (uint8_t) (t[2] >>  6);   */
     /* r[13 * i + 4] |=  (uint8_t) (t[3] <<  7);   */
-    aux = t[2] >> 6; aux |= t[3] << 7;
+    aux = t[2] >> 6;
+    temp = t[3] << 7;
+    aux |= temp;
     r[(int) j] = aux; j += 1; // j = 5
     
     /* r[13 * i + 5]  =  (uint8_t) (t[3] >>  1);   */
@@ -785,7 +893,9 @@ inline fn __polyt0_pack(reg ptr u8[POLYT0_PACKEDBYTES] r, reg ptr u32[N] a) -> r
     
     /* r[13 * i + 6]  =  (uint8_t) (t[3] >>  9);   */
     /* r[13 * i + 6] |=  (uint8_t) (t[4] <<  4);   */
-    aux = t[3] >> 9; aux |= t[4] << 4;
+    aux = t[3] >> 9; 
+    temp = t[4] << 4;
+    aux |= temp;
     r[(int) j] = aux; j += 1; // j = 7
     
     /* r[13 * i + 7]  =  (uint8_t) (t[4] >>  4);   */
@@ -794,12 +904,16 @@ inline fn __polyt0_pack(reg ptr u8[POLYT0_PACKEDBYTES] r, reg ptr u32[N] a) -> r
     
     /* r[13 * i + 8]  =  (uint8_t) (t[4] >> 12);   */
     /* r[13 * i + 8] |=  (uint8_t) (t[5] <<  1);   */
-    aux = t[4] >> 12; aux |= t[5] << 1;
+    aux = t[4] >> 12;
+    temp = t[5] << 1;
+    aux |= temp;
     r[(int) j] = aux; j += 1;  // j = 9
     
     /* r[13 * i + 9]  =  (uint8_t) (t[5] >>  7);   */
     /* r[13 * i + 9] |=  (uint8_t) (t[6] <<  6);   */
-    aux = t[5] >> 7; aux |= t[6] << 6;
+    aux = t[5] >> 7;
+    temp = t[6] << 6;
+    aux |= temp;
     r[(int) j] = aux; j += 1;  // j = 10
     
     /* r[13 * i + 10]  =  (uint8_t) (t[6] >>  2);  */
@@ -808,7 +922,9 @@ inline fn __polyt0_pack(reg ptr u8[POLYT0_PACKEDBYTES] r, reg ptr u32[N] a) -> r
     
     /* r[13 * i + 11]  =  (uint8_t) (t[6] >> 10);  */
     /* r[13 * i + 11] |=  (uint8_t) (t[7] <<  3);  */
-    aux = t[6] >> 10; aux |= t[7] << 3;
+    aux = t[6] >> 10; 
+    temp = t[7] << 3;
+    aux |= temp;
     r[(int) j] = aux; j += 1; // j = 12
     
     /* r[13 * i + 12]  =  (uint8_t) (t[7] >>  5);  */
@@ -836,16 +952,23 @@ inline fn __polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) ->
   reg u32[8] t;
   
   i = 0; j = 0;
-  while(i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n) {
     /*  r->coeffs[8 * i + 0]  = a[13 * i + 0];
         r->coeffs[8 * i + 0] |= (uint32_t)a[13 * i + 1] << 8;
         r->coeffs[8 * i + 0] &= 0x1FFF; */
     t[0] = (32u) a[(int) j]; j += 1;  // j = 1
     a_ = (32u) a[(int) j]; j += 1;    // j = 2  a_ = a[1]
-    t[0] |= a_ << 8;
-    t[0] = #UBFX(t[0], 0, 13);
+    reg u32 temp;
+    temp = a_ << 8;
+    t[0] |= temp;
+    // t[0] = #UBFX(t[0], 0, 13); // ARM
+    t[0] = #SLLI(t[0], 19); // RISCV 32 - (0 + 13) = 19
+    t[0] = #SRLI(t[0], 19); // RISCV 32 - 13 = 19
 	
-    t[0] = (1 << (D - 1)) - t[0];
+  temp = (1 << (D - 1));
+    t[0] = temp - t[0];
     r[(int) i] = t[0]; i += 1;
 	
     /*  r->coeffs[8 * i + 1]  = a[13 * i + 1] >> 5;
@@ -854,12 +977,16 @@ inline fn __polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) ->
         r->coeffs[8 * i + 1] &= 0x1FFF; */
     t[1] = a_ >> 5;
     a_ = (32u) a[(int) j]; j += 1; // j = 3
-    t[1] |= a_ << 3;
+    temp = a_ << 3;
+    t[1] |= temp;
     a_ = (32u) a[(int) j]; j += 1; // j = 4 a_ = a[3]
-    t[1] |= a_ << 11;
-    t[1] = #UBFX(t[1], 0, 13);
-
-    t[1] = (1 << (D - 1)) - t[1];
+    temp = a_ << 11;
+    t[1] |= temp;
+    // t[1] = #UBFX(t[1], 0, 13); // ARM
+    t[1] = #SLLI(t[1], 19); // RISCV 32 - (0 + 13) = 19
+    t[1] = #SRLI(t[1], 19); // RISCV 32 - 13 = 19
+    temp = (1 << (D - 1));
+    t[1] = temp - t[1];
     r[(int) i] = t[1]; i += 1;
 	
     /*  r->coeffs[8 * i + 2]  = a[13 * i + 3] >> 2;
@@ -867,10 +994,14 @@ inline fn __polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) ->
         r->coeffs[8 * i + 2] &= 0x1FFF; */
     t[2] = a_ >> 2;
     a_ = (32u) a[(int) j]; j += 1;  // j = 5  a_ = a[4]
-    t[2] |= a_ << 6;
-    t[2] = #UBFX(t[2], 0, 13);
-    
-    t[2] = (1 << (D - 1)) - t[2];
+    temp = a_ << 6;
+    t[2] |= temp;
+    // t[2] = #UBFX(t[2], 0, 13);
+    t[2] = #SLLI(t[2], 19); // RISCV 32 - (0 + 13) = 19
+    t[2] = #SRLI(t[2], 19); // RISCV 32 - 13 = 19
+
+    temp = (1 << (D - 1));
+    t[2] = temp - t[2];
     r[(int) i] = t[2]; i += 1;
 	    
     /*  r->coeffs[8 * i + 3]  = a[13 * i + 4] >> 7;
@@ -879,12 +1010,17 @@ inline fn __polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) ->
         r->coeffs[8 * i + 3] &= 0x1FFF; */
     t[3] = a_ >> 7;
     a_ = (32u) a[(int) j]; j += 1;  // j = 6
-    t[3] |= a_ << 1;
+    temp = a_ << 1;
+    t[3] |= temp;
     a_ = (32u) a[(int) j]; j += 1; // j = 7 a_ = a[6]
-    t[3] |= a_ << 9;
-    t[3] = #UBFX(t[3], 0, 13);
+    temp = a_ << 9;
+    t[3] |= temp;
+    // t[3] = #UBFX(t[3], 0, 13); // ARM
+    t[3] = #SLLI(t[3], 19); // RISCV 32 - (0 + 13) = 19
+    t[3] = #SRLI(t[3], 19); // RISCV 32 - 13 = 19
     
-    t[3] = (1 << (D - 1)) - t[3];
+    temp = (1 << (D - 1));
+    t[3] = temp - t[3];
     r[(int) i] = t[3]; i += 1;
 	
     /*  r->coeffs[8 * i + 4]  = a[13 * i + 6] >> 4;
@@ -893,12 +1029,16 @@ inline fn __polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) ->
         r->coeffs[8 * i + 4] &= 0x1FFF; */
     t[4] = a_ >> 4;
     a_ = (32u) a[(int) j]; j += 1;  // j = 8
-    t[4] |=	a_ << 4;
+    temp = a_ << 4;
+    t[4] |=	temp;
     a_ = (32u) a[(int) j]; j += 1; // j = 9   a_ = a[8]
-    t[4] |= a_ << 12;
-    t[4] = #UBFX(t[4], 0, 13);
-    
-    t[4] = (1 << (D - 1)) - t[4];
+    temp = a_ << 12;
+    t[4] |= temp;
+    // t[4] = #UBFX(t[4], 0, 13); // ARM
+    t[4] = #SLLI(t[4], 19); // RISCV 32 - (0 + 13) = 19
+    t[4] = #SRLI(t[4], 19); // RISCV 32 - 13 = 19
+    temp = (1 << (D - 1));
+    t[4] =  temp - t[4];
     r[(int) i] = t[4]; i += 1;
 
 	
@@ -907,10 +1047,13 @@ inline fn __polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) ->
         r->coeffs[8 * i + 5] &= 0x1FFF; */
     t[5] = a_ >> 1;
     a_ = (32u) a[(int) j]; j += 1; // j = 10   a_ = a[9]
-    t[5] |= a_ << 7;
-    t[5] = #UBFX(t[5], 0, 13);
-
-    t[5] = (1 << (D - 1)) - t[5];
+    temp = a_ << 7;
+    t[5] |= temp;
+    // t[5] = #UBFX(t[5], 0, 13); // ARM
+    t[5] = #SLLI(t[5], 19); // RISCV 32 - (0 + 13) = 19
+    t[5] = #SRLI(t[5], 19); // RISCV 32 - 13 = 19
+    temp = (1 << (D - 1));
+    t[5] = temp - t[5];
     r[(int) i] = t[5]; i += 1;
 
     /*  r->coeffs[8 * i + 6]  = a[13 * i + 9] >> 6;
@@ -919,12 +1062,16 @@ inline fn __polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) ->
         r->coeffs[8 * i + 6] &= 0x1FFF; */
     t[6] = a_ >> 6;
     a_ = (32u) a[(int) j]; j += 1; // j = 11   a_ = a[10]
-    t[6] |= a_ << 2;
+    temp = a_ << 2;
+    t[6] |= temp;
     a_ = (32u) a[(int) j]; j += 1; // j = 12   a_ = a[11]
-    t[6] |= a_ << 10;
-    t[6] = #UBFX(t[6], 0, 13);
-    
-    t[6] = (1 << (D - 1)) - t[6];
+    temp = a_ << 10;
+    t[6] |= temp;
+    // t[6] = #UBFX(t[6], 0, 13); // ARM
+    t[6] = #SLLI(t[6], 19); // RISCV 32 - (0 + 13) = 19
+    t[6] = #SRLI(t[6], 19); // RISCV 32 - 13 = 19
+    temp = (1 << (D - 1));
+    t[6] = temp - t[6];
     r[(int) i] = t[6]; i += 1;
 	
     /*  r->coeffs[8 * i + 7]  = a[13 * i + 11] >> 3;
@@ -932,10 +1079,13 @@ inline fn __polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) ->
         r->coeffs[8 * i + 7] &= 0x1FFF; */
     t[7] = a_ >> 3;
     a_ = (32u) a[(int) j]; j += 1; // j = 13   a_ = a[12]
-    t[7] |= a_ << 5;
-    t[7] = #UBFX(t[7], 0, 13);
-
-    t[7] = (1 << (D - 1)) - t[7];
+    temp = a_ << 5;
+    t[7] |= temp;
+    // t[7] = #UBFX(t[7], 0, 13);
+    t[7] = #SLLI(t[7], 19); // RISCV 32 - (0 + 13) = 19
+    t[7] = #SRLI(t[7], 19); // RISCV 32 - 13 = 19
+      temp = (1 << (D - 1));
+    t[7] =  temp - t[7];
     r[(int) i] = t[7]; i += 1;
 
     /* This is moved up */
@@ -973,7 +1123,10 @@ inline fn __polyt1_pack(reg ptr u8[POLYT1_PACKEDBYTES] r, reg ptr u32[N] a) -> r
   reg u32[4] t;
   inline int k;
   i = 0; j = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n)
+  {
     for k = 0 to 4 {
       t[k] = a[(int) i]; i += 1;
     }
@@ -981,15 +1134,22 @@ inline fn __polyt1_pack(reg ptr u8[POLYT1_PACKEDBYTES] r, reg ptr u32[N] a) -> r
     r[(int) j] = t[0]; j += 1;
     
     /* r[5 * i + 1] = (uint8_t) ((a->coeffs[4 * i + 0] >> 8) | (a->coeffs[4 * i + 1] << 2)); */
-    aux = t[0] >> 8; aux |= t[1] << 2;
+    aux = t[0] >> 8;
+    reg u32 temp;
+    temp = t[1] << 2;
+    aux |= temp;
     r[(int) j] = aux; j += 1;
 
     /* r[5 * i + 2] = (uint8_t) ((a->coeffs[4 * i + 1] >> 6) | (a->coeffs[4 * i + 2] << 4)); */
-    aux = t[1] >> 6; aux |= t[2] << 4;
+    aux = t[1] >> 6; 
+    temp = t[2] << 4;
+    aux |= temp;
     r[(int) j] = aux; j += 1;
 
     /* r[5 * i + 3] = (uint8_t) ((a->coeffs[4 * i + 2] >> 4) | (a->coeffs[4 * i + 3] << 6)); */
-    aux = t[2] >> 4; aux |= t[3] << 6;
+    aux = t[2] >> 4;
+    temp = t[3] << 6;
+    aux |= temp;
     r[(int) j] = aux; j += 1;
     
     /* r[5 * i + 4] = (uint8_t) (a->coeffs[4 * i + 3] >> 2);                                 */
@@ -1014,29 +1174,52 @@ fn _polyt1_pack(reg ptr u8[POLYT1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u
 *              - const uint8_t *a: byte array with bit-packed polynomial
 **************************************************/
 inline fn __polyt1_unpack(reg ptr u32[N] r, reg ptr u8[POLYT1_PACKEDBYTES] a) -> reg ptr u32[N] {
-  reg u32 i, j, aux;
+  reg u32 i, j, aux, temp;
   reg u32[5] t;
   inline int k;
   i = 0; j = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n)
+  {
     for k = 0 to 5 {
       t[k] = (32u) a[(int) j]; j += 1;
     }	
   
     /* r->coeffs[4 * i + 0] = ((a[5 * i + 0] >> 0) | ((uint32_t)a[5 * i + 1] << 8)) & 0x3FF; */
-    aux = t[0] | (t[1] << 8); aux = #UBFX(aux, 0, 10);
+    aux = t[0];
+    temp = t[1] << 8;
+    aux |= temp;
+    // aux = #UBFX(aux, 0, 10); // ARM
+    aux = #SLLI(aux, 22); // RISCV 32 - (0 + 10) = 22
+    aux = #SRLI(aux, 22); // RISCV 32 - 10 = 22
     r[(int) i] = aux; i += 1;
   
     /* r->coeffs[4 * i + 1] = ((a[5 * i + 1] >> 2) | ((uint32_t)a[5 * i + 2] << 6)) & 0x3FF; */
-    aux = t[1] >> 2; aux |= t[2] << 6; aux = #UBFX(aux, 0, 10);
+    aux = t[1] >> 2;
+    temp = t[2] << 6;
+    aux |= temp;
+    // aux = #UBFX(aux, 0, 10); // ARM
+    aux = #SLLI(aux, 22); // RISCV 32 - (0 + 10) = 22
+    aux = #SRLI(aux, 22); // RISCV 32 - 10 = 22
     r[(int) i] = aux;	i += 1;
   
     /* r->coeffs[4 * i + 2] = ((a[5 * i + 2] >> 4) | ((uint32_t)a[5 * i + 3] << 4)) & 0x3FF; */
-    aux = t[2] >> 4; aux |= t[3] << 4; aux = #UBFX(aux, 0, 10);
+    aux = t[2] >> 4;
+    temp = t[3] << 4;
+    aux |= temp;
+    // aux = #UBFX(aux, 0, 10); // ARM
+    aux = #SLLI(aux, 22); // RISCV 32 - (0 + 10) = 22
+    aux = #SRLI(aux, 22); // RISCV 32 - 10 = 22
     r[(int) i] = aux; i += 1;
   
     /* r->coeffs[4 * i + 3] = ((a[5 * i + 3] >> 6) | ((uint32_t)a[5 * i + 4] << 2)) & 0x3FF; */
-    aux = t[3] >> 6; aux |= t[4] << 2; aux = #UBFX(aux, 0, 10);
+    aux = t[3] >> 6;
+    temp = t[4] << 2;
+    aux |= temp;
+    // aux = #UBFX(aux, 0, 10); // ARM
+    aux = #SLLI(aux, 22); // RISCV 32 - (0 + 10) = 22
+    aux = #SRLI(aux, 22); // RISCV 32 - 10 = 22
     r[(int) i] = aux; i += 1;
     
   }
@@ -1062,7 +1245,9 @@ inline fn __poly_use_hint(reg ptr u32[N] b, reg ptr u32[N] a, reg ptr u32[N] h) 
 
   q = __Q();
   i = 0;
-  while(i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n) {
     a_ = a[(int) i];
     h_ = h[(int) i];
     b_ = __use_hint(a_, h_, q);
@@ -1077,7 +1262,9 @@ inline fn __poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr
 
   q = __Q();
   i = 0;
-  while(i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n) {
     b_ = b[(int) i];
     h_ = h[(int) i];
     b_ = __use_hint(b_, h_, q);
@@ -1113,9 +1300,13 @@ inline fn __polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> r
   reg u32[2] t;
   inline int k;
   i = 0; j = 0;
-  while (i < N) {
+  reg u32 n;
+  n = N;
+  while (i < n) {
     for k = 0 to 2 { t[k] = a[(int) i]; i += 1; }
-    aux = t[0] | t[1] << 4;
+    reg u32 temp;
+    temp = t[1] << 4;
+    aux = t[0] | temp;
     r[(int) j] = aux; j += 1;
   }
   return r;
@@ -1144,8 +1335,10 @@ inline fn __polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg
 
   gamma1 = __GAMMA1();
 
+  reg u32 n;
+  n = N;
   i = 0; j = 0;
-  while (i < N) {
+  while (i < n) {
     for k = 0 to 2 {
        t[k] = a[(int) i]; t[k] = gamma1 - t[k];
        i += 1;
@@ -1160,7 +1353,10 @@ inline fn __polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg
     
     /* r[5 * i + 2]  = (uint8_t) (t[0] >> 16); */
     /* r[5 * i + 2] |= (uint8_t) (t[1] << 4); */
-    aux = t[0] >> 16; aux |= t[1] << 4;
+    reg u32 temp;
+    aux = t[0] >> 16;
+    temp = t[1] << 4;
+    aux |= temp;
     r[(int) j] = aux; j += 1;
 
     /* r[5 * i + 3]  = (uint8_t) (t[1] >> 4); */
@@ -1197,16 +1393,23 @@ inline fn __polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> r
   
   gamma1 = __GAMMA1();
   i = 0; j = 0;
-  while(i < N) {
+  reg u32 n;
+  n = N;
+  while(i < n) {
     for k = 0 to 5 { t[k] = (32u) a[(int) j]; j += 1; }
     
     /* r->coeffs[2 * i + 0]  = a[5 * i + 0];  
        r->coeffs[2 * i + 0] |= (uint32_t)a[5 * i + 1] << 8; 
        r->coeffs[2 * i + 0] |= (uint32_t)a[5 * i + 2] << 16; 
        r->coeffs[2 * i + 0] &= 0xFFFFF; */
-    aux = t[0] | (t[1] << 8);
-    aux |= t[2] << 16;
-    aux = #UBFX(aux, 0, 20);
+    aux = (t[1] << 8);
+    aux = t[0] | aux;
+    reg u32 temp;
+    temp  = t[2] << 16;
+    aux |= temp;
+    // aux = #UBFX(aux, 0, 20); // ARM
+    aux = #SLLI(aux, 12); // RISCV 32 - (0 + 20) = 12
+    aux = #SRLI(aux, 12); // RISCV 32 - 20 = 12
     aux = gamma1 - aux;
     r[(int) i] = aux; i += 1;
     
@@ -1215,8 +1418,10 @@ inline fn __polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> r
     /* r->coeffs[2 * i + 1] |= (uint32_t)a[5 * i + 4] << 12; */
     /* r->coeffs[2 * i + 0] &= 0xFFFFF; */  // this look like a lucky bug
     aux = t[2] >> 4;
-    aux |= t[3] << 4;
-    aux |= t[4] << 12;
+    temp = t[3] << 4;
+    aux |= temp;
+    temp = t[4] << 12;
+    aux |= temp;
     aux = gamma1 - aux;
     r[(int) i] = aux; i += 1;
 
@@ -1251,9 +1456,16 @@ inline fn __rej_sample(
 ) -> reg ptr u32[N], reg u32 
 {
   inline bool b;
-  ?{"<u" = b} = #CMP(t, q);
-  a[(int) ctr] = t if (b);
-  ctr = ctr + 1 if (b);
+  //  ?{"<u" = b} = #CMP(t, q);
+  b = (t <u q);
+  // FIXME for arm
+  // a[(int) ctr] = t if (b);
+  // ctr = ctr + 1 if (b);
+  if (b) {
+    a[(int) ctr] = t;
+    ctr = ctr + 1;
+  }
+
   return a, ctr;
 }
 
@@ -1264,7 +1476,9 @@ inline fn __extr_rej_sample(
   reg u32 q
 ) -> reg ptr u32[N], reg u32 
 {
-  t = #UBFX(t,0, 23);
+  // t = #UBFX(t,0, 23); // ARM
+  t = #SLLI(t, 9); // RISCV 32 - (0 + 23) = 9
+  t = #SRLI(t, 9); // RISCV 32 - 23 = 9
   a, ctr = __rej_sample(a, ctr, t, q);
   return a, ctr;
 }
@@ -1281,46 +1495,57 @@ fn _poly_uniform(reg ptr u32[N] a,
   state = _stream128_init(state, seed, nonce);
   a = sa;
   
-  reg u32 ctr, ctr4, pos, q, t;
+  reg u32 ctr, ctr4, pos, q, t, temp;
   reg u32[3] buf;
 
   ctr = 0; pos = 0; q = __Q();
 
-  
-  while { ctr4 = ctr + 4; } (ctr4 < N) {
+  reg u32 n;
+  n = N;
+  while { ctr4 = ctr + 4; } (ctr4 < n) {
 
     state, a, pos, ctr, q, buf = _stream128_refill_buffer(state, a, pos, ctr, q);
 
     a, ctr = __extr_rej_sample(a, ctr, buf[0], q);  // 3 bytes in buf[0]
 
-    t = buf[0] >>u 24; t |= buf[1] << 8;    // 1 byte in buf[0] U 2 bytes in buf[1]
+    t = buf[0] >>u 24;
+    temp = buf[1] << 8;
+    t |= temp;    // 1 byte in buf[0] U 2 bytes in buf[1]
     a, ctr = __extr_rej_sample(a, ctr, t, q);
 
-    t = buf[1] >>u 16; t |= buf[2] << 16;  // 2 byte in buf[1] U 1 bytes in buf[2]
+    t = buf[1] >>u 16;
+    temp = buf[2] << 16;
+    t |= temp;  // 2 byte in buf[1] U 1 bytes in buf[2]
     a, ctr = __extr_rej_sample(a, ctr, t, q);
 
-    t = #UBFX(buf[2], 8, 23);
+    // t = #UBFX(buf[2], 8, 23); // ARM
+    t = #SLLI(buf[2], 1); // RISCV 32 - (8 + 23) = 1
+    t = #SRLI(t, 9); // RISCV 32 - 23 = 9
     a, ctr = __rej_sample(a, ctr, t, q);
 
   }
 
-  while (ctr < N) {
+  while (ctr < n) {
     state, a, pos, ctr, q, buf = _stream128_refill_buffer(state, a, pos, ctr, q);
 
     a, ctr = __extr_rej_sample(a, ctr, buf[0], q);  // 3 bytes in buf[0]
 
-    if (ctr < N) {
-      t = buf[0] >>u 24; t |= buf[1] << 8;    // 1 byte in buf[0] U 2 bytes in buf[1]
+    if (ctr < n) {
+      temp = buf[1] << 8;
+      t = buf[0] >>u 24; t |= temp;    // 1 byte in buf[0] U 2 bytes in buf[1]
       a, ctr = __extr_rej_sample(a, ctr, t, q);
     }
 
-    if (ctr < N) {
-      t = buf[1] >>u 16; t |= buf[2] << 16;  // 2 byte in buf[1] U 1 bytes in buf[2]
+    if (ctr < n) {
+      temp = buf[2] << 16;
+      t = buf[1] >>u 16; t |= temp;  // 2 byte in buf[1] U 1 bytes in buf[2]
       a, ctr = __extr_rej_sample(a, ctr, t, q);
     }
 
-    if (ctr < N) {
-      t = #UBFX(buf[2], 8, 23);
+    if (ctr < n) {
+      // t = #UBFX(buf[2], 8, 23); // ARM
+      t = #SLLI(buf[2], 1); // RISCV 32 - (8 + 23) = 1
+      t = #SRLI(t, 9); // RISCV 32 - 23 = 9
       a, ctr = __rej_sample(a, ctr, t, q);
     }
   }
@@ -1346,13 +1571,18 @@ inline fn rej_eta(
   reg u32 n205
 ) -> reg ptr u32[N], reg u32 
 {
-  if (t < 15) {
+  reg u32 temp;
+  temp = 15;
+  if (t < temp) {
     reg u32 aux;
     aux = t * n205;
     aux = aux >> 10;
-    aux = aux + (aux << 2);  /* aux *= 5 */
+    reg u32 temp;
+    temp = (aux << 2);
+    aux = aux + temp;  /* aux *= 5 */
     aux = t - aux;
-    aux = 2 - aux;
+    temp = 2;
+    aux = temp - aux;
     a[(int) ctr] = aux;
     ctr += 1;
   }
@@ -1376,31 +1606,50 @@ fn _poly_uniform_eta(reg ptr u32[N] a,
 
   ctr = 0; pos = 0; n205 = 205;
 
-  while { ctr8 = ctr + 8; } (ctr8 < N) {
+  reg u32 n;
+  n = N;
+  while { ctr8 = ctr + 8; } (ctr8 < n) {
 
     state, a, pos, ctr, n205, buf = _stream256_refill_buffer(state, a, pos, ctr, n205);
     inline int i;
     for i = 0 to 8 {
-      t = #UBFX(buf, 4*i, 4);
+      // t = #UBFX(buf, 4*i, 4); // ARM
+      t = 32; // reuse t for other purpose
+      reg u32 t_i;
+      t_i = 4 * i;
+      t_i += 4;
+      t_i = t - t_i;
+      t = #SLL(buf, t_i); // RISCV 32 - (4 * i + 4) = ?
+      t = #SRLI(t, 28); // RISCV 32 - 4 = 28
       a, ctr = rej_eta(a, ctr, t, n205);
     }     
   }
-
-  while (ctr < N) {
+  reg u32 n;
+  n = N;
+  while (ctr < n) {
     state, a, pos, ctr, n205, buf = _stream256_refill_buffer(state, a, pos, ctr, n205);
     inline int i;
     for i = 0 to 8 {
-      if ((i == 0) || (ctr < N)) { 
-        t = #UBFX(buf, 4*i, 4);
+    reg u32 n;
+    n = N;
+      if ((i == 0) || (ctr < n)) {
+        // t = #UBFX(buf, 4 * i, 4);
+        t = 32; // reuse t for other purpose
+        reg u32 t_i;
+        t_i = 4 * i;
+        t_i += 4;
+        t_i = t - t_i;
+        t = #SLL(buf, t_i); // RISCV 32 - (4 * i + 4) = ?
+        t = #SRLI(t, 28); // RISCV 32 - 4 = 28
         a, ctr = rej_eta(a, ctr, t, n205);
       }
     }       
-  } 
+  }
   return a;
 } 
 
-param int polyz_last = POLYZ_PACKEDBYTES / SHAKE256_RATE * SHAKE256_RATE;
-param int polyz_last_sz = POLYZ_PACKEDBYTES % SHAKE256_RATE;
+param int POLYZ_LAST = POLYZ_PACKEDBYTES / SHAKE256_RATE * SHAKE256_RATE;
+param int POLYZ_LAST_SZ = POLYZ_PACKEDBYTES % SHAKE256_RATE;
 
 
 fn _poly_uniform_gamma1(reg ptr u32[N] a,
@@ -1425,17 +1674,19 @@ fn _poly_uniform_gamma1(reg ptr u32[N] a,
     state = _keccakf1600_ref(state);
   }
 
-  reg ptr u8[polyz_last_sz] bufc;
-  bufc = buf_[ polyz_last : polyz_last_sz]; 
+  reg ptr u8[POLYZ_LAST_SZ] bufc;
+  bufc = buf_[ POLYZ_LAST : POLYZ_LAST_SZ];
 
   reg u32 i, t;
   i = 0;
-  while (i < polyz_last_sz / 4) {
+  reg u32 polyz_last_sz_4;
+  polyz_last_sz_4 = POLYZ_LAST_SZ / 4;
+  while (i < polyz_last_sz_4 ) {
     t = state[(int) i];
     bufc[u32 (int) i] = t;
     i += 1;
   }
-  buf_[ polyz_last : polyz_last_sz] = bufc;
+  buf_[  POLYZ_LAST : POLYZ_LAST_SZ] = bufc;
 
   buf = buf_; a = sa;
   a = _polyz_unpack(a, buf);
