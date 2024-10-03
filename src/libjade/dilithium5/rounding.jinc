@@ -19,7 +19,6 @@ inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32
   temp = ((1 << (D - 1)) - 1);
   a1 = a + temp;
   a1 = a1 >>s D;
-  reg u32 temp;
   temp = (a1 << D);
   a0 = a - temp;
   return (a0, a1);     
@@ -61,7 +60,6 @@ inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
 
   /* *a0  = a - a1 * 2 * GAMMA2; */
   /* - 2*GAMMA2 = (1 - 2 ^ 10) * 2^9 */
-  reg u32 temp;
   temp = (a1 << 10);
   aux = a1 - temp;
   temp = (aux << 9);
