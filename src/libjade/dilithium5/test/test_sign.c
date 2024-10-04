@@ -25,8 +25,8 @@ void check_crypto_sign_keypair_seed() {
     fillarrnu8(sb, sb_jazz, 2 * SEEDBYTES + CRHBYTES);
     PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed(pk, sk, sb);
     PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed_jazz(pk_jazz, sk_jazz, sb_jazz);
-    eqarr(PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES, PRId8, pk, pk_jazz, "crypto_sign_keypair_seed");
-    eqarr(PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES, PRId8, sk, sk_jazz, "crypto_sign_keypair_seed");
+    eqarr(PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES, PRId8, pk, pk_jazz, "crypto_sign_keypair_seed: wrong pk");
+    eqarr(PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES, PRId8, sk, sk_jazz, "crypto_sign_keypair_seed: wrong sk");
   }
   printf("PASS: crypto_sign_keypair_seed\n");
 }
