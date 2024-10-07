@@ -1,8 +1,8 @@
 #-------------------------------------------------------------------------------
 
-ARMCC ?= arm-linux-gnueabi-gcc
-ARMCFLAGS ?= -Wall -O3 -march=armv7 -fPIC
-ARMAR ?= arm-linux-gnueabi-ar
+ARMCC ?= riscv64-unknown-linux-gnu-gcc
+ARMCFLAGS ?= -Wall -O1 -march=rv32im -mabi=ilp32
+ARMAR ?= riscv64-unknown-linux-gnu-ar
 
 UNAME_S := $(shell uname -s)
 
