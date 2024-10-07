@@ -178,9 +178,9 @@ inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -
     reg u32 i, t;
 
     i = 0;
-    reg u32 t;
-    t = polyvecl;
-    while (i < t) {
+    reg u32 bound;
+    bound = polyvecl;
+    while (i < bound) {
       t = s1[i];
       s1hat[i] = t;
       i += 1;
