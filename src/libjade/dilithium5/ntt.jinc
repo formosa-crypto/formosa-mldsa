@@ -80,10 +80,7 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
 
   reg ptr u32[N] zetas;  
   reg u32 start_len j_len aj aj_len;
-  reg u32 zf;
   reg u32 n;
-  reg u32 one;
-  one = 1;
   n = N;
    k = 0;
    /* for (len = 128; len > 0; len >>= 1) { */
@@ -118,9 +115,8 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
        start = j_len;  // start = start + 2 * len
      } (start < n)
      //?{zf}, len = #LSRS(len, 1);
-     zf = len & 1;
      len = len >> 1;
-   } (zf != one)
+   } (len != 0)
   
   return a;
 }
