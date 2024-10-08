@@ -6,14 +6,6 @@ require "ntt.jinc"
 require "map.jinc"
 require "fips202.jinc"
 
-inline fn __ubfx(reg u32 in, inline int pos, inline int width) -> reg u32 {
-  reg u32 out;
-  // out = #UBFX(out, width, pos); // ARM
-  out = #SLLI(in, 32 - (pos + width)); // RISCV
-  out = #SRLI(out, 32 - width); //RISCV
-  return out;
-}
-
 inline fn high(reg u32[2] x) -> reg u32
 {
     reg u32 h;

@@ -54,9 +54,7 @@ inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
   aux = a1 + temp; // aux = a1 * 1025;
   temp = 1 << 21;
   aux += temp;
-  // a1 = #UBFX(aux, 22, 4);
-  a1 = #SLLI(aux, 6); // RISCV 32 - (22 + 4) = 6
-  a1 = #SRLI(a1, 28); // RISCV 32 - 4 = 28
+  a1 = __ubfx(aux, 22, 4);
 
   /* *a0  = a - a1 * 2 * GAMMA2; */
   /* - 2*GAMMA2 = (1 - 2 ^ 10) * 2^9 */
