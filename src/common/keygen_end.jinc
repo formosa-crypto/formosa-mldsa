@@ -39,7 +39,7 @@ fn keygen_inner(reg ptr u8[32] random_zeta)
 	reg u32 v32;
 	reg u8 c;
 
-	state = shake256_absorb32(random_zeta);
+	state = shake256_absorb34(random_zeta, Li2_k, Li2_l);
 	state, s256_out = shake256_squeezeblock(state, s256_out);
 
 	//TODO Maybe can load 8 bytes at a time using u64?
@@ -68,8 +68,8 @@ fn keygen_inner(reg ptr u8[32] random_zeta)
 
 	// save secret key
 	s1_rsp = s1;
-	s1_in_sk = sk[96 : Li2_pack_s1len];
-	sk[96 : Li2_pack_s1len] = pack_s1(s1_rsp, s1_in_sk);
+	s1_in_sk = sk[128 : Li2_pack_s1len];
+	sk[128 : Li2_pack_s1len] = pack_s1(s1_rsp, s1_in_sk);
 	s2_in_sk = sk[Li2_pack_s2loc : Li2_pack_s2len];
 	sk[Li2_pack_s2loc : Li2_pack_s2len] = pack_s2(s2, s2_in_sk);
 
@@ -97,7 +97,7 @@ fn keygen_inner(reg ptr u8[32] random_zeta)
 		pk[32 + j * Li2_pack_t1len : Li2_pack_t1len] = t1_in_pk;
 	}
 
-	sk[64:32] = shake256_of_pk(pk, sk[64:32]);
+	sk[64:64] = new_shake256_of_pk(pk, sk[64:64]);
 
 	for j = 0 to Li2_k {
 		t0_to_pack = t0[Li2_polydeg * j : Li2_polydeg];
@@ -107,43 +107,6 @@ fn keygen_inner(reg ptr u8[32] random_zeta)
 
 	return pk, sk;
 }
-
-/*
-inline
-fn keygen(reg u64 pk_ptr sk_ptr)
-{
-  stack u64 pk_ptr_s sk_ptr_s;
-
-	stack u8[Li2_PK_LEN] pk;
-	stack u8[Li2_SK_LEN] sk;
-	stack u8[32] random_zeta;
-	reg u8 c;
-	reg u64 i;
-
-  pk_ptr_s = pk_ptr;
-  sk_ptr_s = sk_ptr;
-
-  random_zeta = #randombytes(random_zeta);
-
-	pk, sk = keygen_inner(random_zeta);
-
-  pk_ptr = pk_ptr_s;
-	i = 0;
-	while(i < Li2_PK_LEN) {
-		c = pk[(int) i];
-		(u8)[pk_ptr + i] = c;
-		i += 1;
-	}
-
-  sk_ptr = sk_ptr_s;
-	i = 0;
-	while(i < Li2_SK_LEN) {
-		c = sk[(int) i];
-		(u8)[sk_ptr + i] = c;
-		i += 1;
-	}
-}
-*/
 
 fn keygen_derand(reg u64 pk_ptr sk_ptr, reg ptr u8[32] coins)
 {

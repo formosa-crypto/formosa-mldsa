@@ -17,15 +17,14 @@ generate-assembly: $(SRCS:%.jazz=%.s)
 
 # --------------------------------------------------------------------
 CFLAGS=-Wall -Wextra -Wpedantic -Werror -Wmissing-prototypes
-test/generate_keypair.o: test/generate_keypair.c $(SRCS_TOP)/sign.s test/randombytes.c
+test/ml_dsa.so: $(SRCS_TOP)/sign.s
 	$(CC) $(CFLAGS) -I$(SRCS_TOP)/include \
-		-DVERIFICATION_KEY_BYTES=1952 \
-		-DSIGNING_KEY_BYTES=4000 \
-		-DRANDOMNESS_BYTES=32 \
-		-DGENERATE_KEYPAIR_DERAND=jade_sign_dilithium_dilithium3_amd64_ref_keypair_derand \
-		$^ -o $@
+		$^ -fPIC -shared -o $@
 
 # --------------------------------------------------------------------
 .PHONY: clean
 clean:
-	rm -fr $(SRCS_TOP)/*.s $(TOP)/test/*.o
+	rm -fr \
+		$(SRCS_TOP)/*.s \
+		$(TOP)/test/*.o \
+		$(TOP)/test/*.so

@@ -11,9 +11,9 @@ param int Li2_beta = Li2_tau * Li2_eta;
 param int Li2_pack_w1len = Li2_k * Li2_pack_highbitslen;
 param int Li2_pack_s1len = Li2_l * Li2_pack_etalen;
 param int Li2_pack_s2len = Li2_k * Li2_pack_etalen;
-param int Li2_pack_s2loc = 3 * Li2_seedbytes + Li2_pack_s1len;
+param int Li2_pack_s2loc = 4 * Li2_seedbytes + Li2_pack_s1len;
 param int Li2_pack_t0loc = Li2_pack_s2loc + Li2_pack_s2len;
 
 param int Li2_PK_LEN = Li2_seedbytes + Li2_k * Li2_pack_t1len;
-param int Li2_SK_LEN = 3 * Li2_seedbytes + Li2_l * Li2_pack_etalen + Li2_k * Li2_pack_etalen + Li2_k * Li2_pack_t0len;
+param int Li2_SK_LEN = 4 * Li2_seedbytes + Li2_l * Li2_pack_etalen + Li2_k * Li2_pack_etalen + Li2_k * Li2_pack_t0len;
 param int Li2_SIGN_LEN = Li2_seedbytes + Li2_l * Li2_pack_zlen + Li2_omega + Li2_k;

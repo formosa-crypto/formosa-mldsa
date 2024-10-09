@@ -10,6 +10,69 @@ fn shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u
 }
 
 inline
+fn new_shake256_of_pk(reg ptr u8[Li2_PK_LEN] pk, reg ptr u8[64] out)
+	-> reg ptr u8[64]
+{
+	// FIXME: This function is smelly and should check more consistently
+	// whether the SHA3 buffer is full.
+	stack u64[25] state;
+	reg ptr u64[25] state_rsp;
+	stack u64 ptr_pk;
+	stack u64 ptr_state;
+
+	reg u64 addr;
+	reg u8 c;
+
+	state_rsp = state;
+	state_rsp = st0(state_rsp);
+
+	ptr_pk = 0;
+
+	while(ptr_pk < Li2_PK_LEN - SHAKE256_RATE) {
+		ptr_state = 0;
+		while(ptr_state < SHAKE256_RATE) {
+			addr = ptr_pk;
+			c = pk[(int) addr];
+
+			addr = ptr_state;
+			state_rsp[u8 (int) addr] ^= c;
+
+			ptr_pk += 1;
+			ptr_state += 1;
+		}
+		state_rsp = __keccakf1600_ref(state_rsp);
+	}
+
+	ptr_state = 0;
+	while(ptr_pk < Li2_PK_LEN) {
+		addr = ptr_pk;
+		c = pk[(int) addr];
+
+		addr = ptr_state;
+		state_rsp[u8 (int) addr] ^= c;
+
+		ptr_pk += 1;
+		ptr_state += 1;
+	}
+
+	addr = ptr_state;
+	state_rsp[u8 (int) addr] ^= 0x1f;
+	state_rsp[u8 SHAKE256_RATE-1] ^= 0x80;
+
+	state_rsp = __keccakf1600_ref(state_rsp);
+
+	// Extract...
+
+	addr = 0;
+	while(addr < 64) {
+		c = state_rsp[u8 (int) addr];
+		out[(int) addr] = c;
+		addr += 1;
+	}
+	return out;
+}
+
+inline
 fn shake256_of_pk(reg ptr u8[Li2_PK_LEN] pk, reg ptr u8[32] out)
 	-> reg ptr u8[32]
 {
