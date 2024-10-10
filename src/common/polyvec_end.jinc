@@ -276,78 +276,6 @@ fn deep_copy_vecl(reg ptr u32[Li2_l * Li2_polydeg] vec)
 }
 
 inline
-fn decompose_vec(reg ptr u32[Li2_k * Li2_polydeg] vec)
-	-> stack u32[Li2_k * Li2_polydeg], stack u32[Li2_k * Li2_polydeg]
-{
-	stack u32[Li2_k * Li2_polydeg] vec0 vec1;
-	reg u64 i;
-	reg u64 addr;
-	reg u32 a a0 a1;
-
-	?{}, i = #set0_64();
-	while(i < Li2_k * Li2_polydeg) {
-		addr = i;
-		a = vec[(int) addr];
-
-		a0, a1 = decompose(a);
-
-		addr = i;
-		vec0[(int) addr] = a0;
-		vec1[(int) addr] = a1;
-
-		i += 1;
-	}
-
-	return vec0, vec1;
-}
-
-inline
-fn checknorm_veck(reg ptr u32[Li2_k * Li2_polydeg] vec, inline int threshold)
-	-> stack u8
-{
-	reg u8 result;
-	stack u8 result_s;
-	stack u8 r;
-	reg u8 c;
-	inline int ii;
-
-	result = 0;
-	for ii = 0 to Li2_k {
-		r = poly_checknorm(vec[ii * Li2_polydeg : Li2_polydeg], threshold);
-		c = r;
-		result |= c;
-	}
-
-	result_s = result;
-	return result_s;
-}
-
-inline
-fn checknorm_vecl(reg ptr u32[Li2_l * Li2_polydeg] vec, inline int threshold)
-	-> stack u8
-{
-	reg ptr u32[Li2_polydeg] vec_elem;
-	stack u8 result_s;
-	reg u8 result;
-
-	stack u8 r;
-	reg u8 c;
-
-	inline int ii;
-
-	result = 0;
-	for ii = 0 to Li2_l {
-		vec_elem = vec[ii * Li2_polydeg : Li2_polydeg];
-		r = poly_checknorm(vec_elem, threshold);
-		c = r;
-		result |= c;
-	}
-
-	result_s = result;
-	return result_s;
-}
-
-inline
 fn mult_scalar_vec(reg ptr u32[Li2_polydeg] f,
 		reg ptr u32[Li2_l * Li2_polydeg] vec)
 	-> stack u32[Li2_l * Li2_polydeg]
@@ -385,37 +313,6 @@ fn mult_scalar_veck(reg ptr u32[Li2_polydeg] f,
 	}
 
 	return fvec;
-}
-
-inline
-fn polyveck_make_hint(reg ptr u32[Li2_k * Li2_polydeg] v0 v1)
-	-> stack u32, stack u32[Li2_k * Li2_polydeg]
-{
-	stack u32 total_weight weight_comp;
-	reg u32 reg_weight_comp;
-	reg u32 reg_total_weight;
-	stack u32[Li2_k * Li2_polydeg] hints;
-
-	inline int i;
-	reg ptr u32[Li2_polydeg] hints_comp v0_comp v1_comp;
-
-	total_weight = 0;
-	for i = 0 to Li2_k {
-		v0_comp = v0[i * Li2_polydeg : Li2_polydeg];
-		v1_comp = v1[i * Li2_polydeg : Li2_polydeg];
-		hints_comp = hints[i * Li2_polydeg : Li2_polydeg];
-
-		weight_comp, hints_comp = poly_make_hint(v0_comp, v1_comp, hints_comp);
-
-		reg_weight_comp = weight_comp;
-		reg_total_weight = total_weight;
-		reg_total_weight += reg_weight_comp;
-		total_weight = reg_total_weight;
-
-		hints[i * Li2_polydeg : Li2_polydeg] = hints_comp;
-	}
-
-	return total_weight, hints;
 }
 
 inline

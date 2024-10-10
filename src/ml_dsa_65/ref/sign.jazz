@@ -3,52 +3,17 @@ require "packing.jinc"
 require "params.jinc"
 
 from Common require "tofromstack.jinc"
-
 from Common require "keygen_end.jinc"
-from Common require "ref/sign_end.jinc"
-from Common require "verify_end.jinc"
 
-from Common require "sign.jinc"
-
-export fn jade_sign_dilithium_dilithium3_amd64_ref_keypair_derand( reg u64 public_key secret_key coins) -> reg u64
+export fn ml_dsa_65_generate_keypair(reg u64 verification_key signing_key randomness) -> reg u64
 {
   reg u64 r;
-  stack u8[32] stack_coins;
+  stack u8[32] randomness_on_stack;
 
-  public_key = public_key;
-  secret_key = secret_key;
-  stack_coins = __tostack32u8(stack_coins, coins);
-  keygen_derand(public_key, secret_key, stack_coins);
+  verification_key = verification_key;
+  signing_key = signing_key;
+  randomness_on_stack = __tostack32u8(randomness_on_stack, randomness);
+  keygen_derand(verification_key, signing_key, randomness_on_stack);
   ?{}, r = #set0();
   return r;
 }
-
-export fn jade_sign_dilithium_dilithium3_amd64_ref(
-  reg u64 signed_message
-          signed_message_length
-          message
-          message_length
-          secret_key
-   ) -> reg u64
-{
-  reg u64 r;
-  r = __sign(signed_message, signed_message_length,
-             message, message_length, secret_key);
-  return r;
-}
-
-
-export fn jade_sign_dilithium_dilithium3_amd64_ref_open(
-  reg u64 message
-          message_length
-          signed_message
-          signed_message_length
-          public_key
-  ) -> reg u64
-{
-  reg u64 r;
-  r = __open(message, message_length, 
-             signed_message, signed_message_length, public_key);
-  return r;
-}
-

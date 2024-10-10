@@ -97,7 +97,7 @@ fn keygen_inner(reg ptr u8[32] random_zeta)
 		pk[32 + j * Li2_pack_t1len : Li2_pack_t1len] = t1_in_pk;
 	}
 
-	sk[64:64] = new_shake256_of_pk(pk, sk[64:64]);
+	sk[64:64] = shake256_of_pk(pk, sk[64:64]);
 
 	for j = 0 to Li2_k {
 		t0_to_pack = t0[Li2_polydeg * j : Li2_polydeg];
