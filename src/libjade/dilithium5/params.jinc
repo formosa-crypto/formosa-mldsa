@@ -89,17 +89,6 @@ inline fn __GAMMA1 () -> reg u32 {
 }
 
 /* ********************************************************************** */
-/* Helper functions to facilitate architecture modularity                 */
-
-inline fn __ubfx(reg u32 in, inline int pos, inline int width) -> reg u32 {
-  reg u32 out;
-  // out = #UBFX(out, width, pos); // ARM
-  out = #SLLI(in, 32 - (pos + width)); // RISCV
-  out = #SRLI(out, 32 - width); //RISCV
-  return out;
-}
-
-/* ********************************************************************** */
 /* Helper functions for the test and export function                      */
 
 /* FIXME move those functions elsewere */

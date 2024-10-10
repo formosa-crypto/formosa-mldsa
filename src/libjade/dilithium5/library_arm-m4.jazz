@@ -1,3 +1,4 @@
+require "wrappers_arm-m4.jinc"
 require "ntt.jazz"
 require "reduce.jazz"
 require "rounding.jazz"

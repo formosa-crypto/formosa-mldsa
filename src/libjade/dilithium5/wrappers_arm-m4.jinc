@@ -1,0 +1,22 @@
+/*************************************************
+*
+* Description: Provide wrappers around functions that have
+*              architecture specific implementations
+*
+* Version : ARM-V7m
+*
+**************************************************/
+
+/* ********************************************************************** */
+/* Helper functions to facilitate architecture modularity                 */
+
+inline fn __ubfx(reg u32 in, inline int pos, inline int width) -> reg u32 {
+  in = #UBFX(in, width, pos);
+  return in;
+}
+
+// Inplace
+inline fn __rsb_left_shift(reg u32 in_1, reg u32 in_2, inline int shift) -> reg u32 {
+  in_2 = #RSB(in_1, in_2 << shift);
+  return in_2;
+}

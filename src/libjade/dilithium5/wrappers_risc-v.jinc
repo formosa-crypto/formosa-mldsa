@@ -1,0 +1,23 @@
+/*************************************************
+*
+* Description: Provide wrappers around functions that have
+*              architecture specific implementations
+*
+* Version : RISC-V
+*
+**************************************************/
+
+/* ********************************************************************** */
+/* Helper functions to facilitate architecture modularity                 */
+
+inline fn __ubfx(reg u32 in, inline int pos, inline int width) -> reg u32 {
+  in = #SLLI(in, 32 - (pos + width));
+  in = #SRLI(in, 32 - width);
+  return in;
+}
+
+inline fn __rsb_left_shift(reg u32 in_1, reg u32 in_2, inline int shift, reg u32 out) -> reg u32 {
+  in_2 = in_2 << shift;
+  out = in_2 - in_1;
+  return out;
+}
