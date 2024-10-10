@@ -1,4 +1,4 @@
-To compile the jasmin library (libdilithium5_jasmin_risc-v / libdilithium5_jasmin_arm-m4), from the dilithium5 library:
+To compile the jasmin library (libdilithium5_jasmin_risc-v / libdilithium5_jasmin_arm-m4), from the dilithium5 folder:
 
 ``` shell
 make arch=risc-v
