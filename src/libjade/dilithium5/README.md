@@ -11,6 +11,7 @@ make arch=arm-m4
 
 
 For the sake of testing:
+
     - We compare pqclean implementation to jasmin implementation on randomly generated input. To that end, we need to ship either one library (with both pqclean and jazz symbols), or two libraries (on with pqclean symbols and the other with jasmin symbols). We opted for the later, the jasmin library is built from the dilithium5 directory, the pqclean library is build from the dilithium5/test directory only for testing purposes. Running the command ```make arch=risc-v``` in the test directory forces the generation of the jasmin library (and the pqclean library).
 
 
