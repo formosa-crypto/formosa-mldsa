@@ -1,17 +1,29 @@
-#--
-ARMCC ?= riscv64-unknown-linux-gnu-gcc
-ARMCFLAGS ?= -Wall -O1 -march=rv32im -mabi=ilp32
-ARMAR ?= riscv64-unknown-linux-gnu-ar
+#-------------------------------------------------------------------------------
 
-UNAME_S := $(shell uname -s)
+include ../common.mk
 
-ifeq ($(UNAME_S),Darwin)
-	ARMCC := /opt/homebrew/bin/riscv64-unknown-elf-gcc
-	ARMCFLAGS := -Wall -O1 -march=rv32im -mabi=ilp32
-	ARMAR := /opt/homebrew/bin/riscv64-unknown-elf-ar
-endif
+#-------------------------------------------------------------------------------
 
-#--
+all : compile
+
+#-------------------------------------------------------------------------------
+
+JASMIN_LIB := ../libdilithium_jasmin_risc-v.a
+
+#-------------------------------------------------------------------------------
+
+PQCLEAN_LIB=libdilithium5_clean_$(arch).a
+PQCLEAN_HEADERS=pqclean/api.h pqclean/ntt.h pqclean/packing.h pqclean/params.h pqclean/poly.h pqclean/polyvec.h pqclean/reduce.h pqclean/rounding.h pqclean/sign.h pqclean/symmetric.h
+PQCLEAN_OBJECTS=pqclean/ntt.o pqclean/packing.o pqclean/poly.o pqclean/polyvec.o pqclean/reduce.o pqclean/rounding.o pqclean/sign.o pqclean/symmetric-shake.o pqclean/fips202.o
+
+%.o: %.c $(HEADERS)
+	$(ARMCC) $(ARMCFLAGS) $(FULL_TESTING) -c -o $@ $<
+
+$(PQCLEAN_LIB): $(PQCLEAN_OBJECTS)
+	$(ARMAR) -r $@ $(PQCLEAN_OBJECTS)
+
+#-------------------------------------------------------------------------------
+
 TESTS_C := $(subst ./,,$(shell find . -name 'test_*.c'))
 TESTS_BIN := $(subst .c,, $(TESTS_C))
 TESTS_OUT := $(addsuffix .out, $(TESTS_BIN))
@@ -19,43 +31,23 @@ TESTS_OUT := $(addsuffix .out, $(TESTS_BIN))
 #-- 
 default:
 	$(MAKE) clean
-	$(MAKE) -C ../ small-testing
 	$(MAKE) compile
 	$(MAKE) run
 
-compile: $(TESTS_BIN)
+compile: $(JASMIN_LIB) $(PQCLEAN_LIB) $(TESTS_BIN)
 run: $(TESTS_OUT)
 
 %.out: %
 	./$< || true # TODO: remove this for CI to fail || keep track of individual failures (this: when there is some time)
 
-# TODO: note that the following dependency list is incomplete
 $(TESTS_BIN):
 test_%: test_%.c ../%.jinc ../%.jazz
-	$(ARMCC) -o $@ $(ARMCFLAGS) -static test_$*.c -I./common -I../ -L../ -ldilithium5_clean
+	$(ARMCC) -o $@ $(ARMCFLAGS) -static test_$*.c -I./common -I./pqclean/ -L./ -ldilithium5_clean_risc-v -L../ -ldilithium_jasmin_risc-v
 
-#--
-TEST_NAMESPACE := -DJADE_NAMESPACE=JADE_SIGN_dilithium_dilithium5_armv7m_clean -DJADE_NAMESPACE_LC=jade_sign_dilithium_dilithium5_armv7m_clean
-TEST_SRC := common/dilithium5_api.c common/notrandombytes.c common/print.c
-TEST_INCLUDE := -I./common -I../
-TEST_LINKER := -L../ -ldilithium5_clean
-
-.PHONY: checksumbig checksumsmall functest
-
-checksumbig:
-	$(MAKE) -C ../ small-testing # temp
-	$(ARMCC) $(ARMCFLAGS) -static -o $@ $(TEST_NAMESPACE) common/checksumbig.c $(TEST_SRC) $(TEST_INCLUDE) $(TEST_LINKER)
-
-checksumsmall:
-	$(MAKE) -C ../ small-testing #temp
-	$(ARMCC) $(ARMCFLAGS) -static -o $@ $(TEST_NAMESPACE) common/checksumsmall.c $(TEST_SRC) $(TEST_INCLUDE) $(TEST_LINKER)
-
-functest:
-	$(MAKE) -C ../ small-testing # temp
-	$(ARMCC) $(ARMCFLAGS) -static -o $@ $(TEST_NAMESPACE) common/functest.c $(TEST_SRC) $(TEST_INCLUDE) $(TEST_LINKER)
+$(JASMIN_LIB):
+	$(MAKE) -C ..
 
 #--
 .PHONY: clean
 clean:
-	rm -f $(TESTS_BIN) $(TESTS_OUT) checksumbig checksumsmall functest
-
+	rm -f $(TESTS_BIN) $(TESTS_OUT) $(PQCLEAN_LIB) $(PQCLEAN_OBJECTS)
