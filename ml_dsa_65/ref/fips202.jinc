@@ -1,4 +1,4 @@
-/* -- Stolen and modified from the Kyber repo -- */
+/* -- Taken from the Kyber repo -- */
 
 param int SHAKE128_RATE = 168;
 param int SHAKE256_RATE = 136;
@@ -178,78 +178,4 @@ fn shake128_absorb34(reg ptr u64[25] state, reg const ptr u8[34] in) -> reg ptr 
   state[u8 SHAKE128_RATE - 1] ^= 0x80;
 
   return state;
-}
-
-/* -- end content from Kyber repo -- */
-
-/* -- Below are added for Dilithium -- */
-
-// Dilithium keygen inputs 32 bytes to SHAKE256
-inline
-fn shake256_absorb34(reg ptr u8[32] in, reg u8 num_rows, reg u8 num_cols) -> stack u64[25]
-{
-  reg u8 c;
-  inline int i;
-  stack u64[25] state;
-  reg ptr u64[25] state_rsp;
-
-  state_rsp = state;
-  state_rsp = st0(state_rsp);
-  // TODO: Inefficient to load one byte at a time. Optimize this.
-  for i = 0 to 32 {
-    c = in[i];
-    state_rsp[u8 i] ^= c;
-  }
-  state_rsp[u8 32] = num_rows;
-  state_rsp[u8 33] = num_cols;
-
-  state_rsp[u8 34] ^= 0x1f;
-  state_rsp[u8 SHAKE256_RATE - 1] ^= 0x80;
-
-  state = state_rsp;
-  return state;
-}
-
-inline
-fn shake256_absorb32(reg ptr u8[32] in) -> stack u64[25]
-{
-  reg u8 c;
-  inline int i;
-  stack u64[25] state;
-  reg ptr u64[25] state_rsp;
-
-  state_rsp = state;
-  state_rsp = st0(state_rsp);
-  // TODO: Inefficient to load one byte at a time. Optimize this.
-  for i = 0 to 32 {
-    c = in[i];
-    state_rsp[u8 i] ^= c;
-  }
-
-  state_rsp[u8 32] ^= 0x1f;
-  state_rsp[u8 SHAKE256_RATE - 1] ^= 0x80;
-
-  state = state_rsp;
-  return state;
-}
-
-//Maybe should allow squeezing partial blocks
-//for performance?
-inline
-fn shake256_squeezeblock(stack u64[25] state, stack u8[SHAKE256_RATE] out)
-	-> stack u64[25], stack u8[SHAKE256_RATE]
-{
-  reg u8 c;
-  reg u64 i;
-
-  state = __keccakf1600_ref(state);
-
-	?{}, i = #set0_64();
-	while(i < SHAKE256_RATE) {
-		c = state[u8 (int) i];
-		out[(int) i] = c;
-		i += 1;
-	}
-
-  return state, out;
 }

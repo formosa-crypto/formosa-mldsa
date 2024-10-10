@@ -1,30 +1,27 @@
 TOP = /home/efgh/repos/formosa-mldsa
-SRC = $(TOP)/src
-# --------------------------------------------------------------------
-SRCS_TOP = $(SRC)/ml_dsa_65/ref
-SRCS = $(SRCS_TOP)/sign.jazz
+IMPLEMENTATION = $(TOP)/ml_dsa_65/ref
 
 # --------------------------------------------------------------------
 override FLAGS += -noinsertarraycopy -lazy-regalloc
-INCLUDE = -I Common:$(SRC)/common
 JASMINC ?= jasminc
 JASMIN_COMMAND ?= $(JASMINC) $(FLAGS) $(INCLUDE)
 
 # --------------------------------------------------------------------
-generate-assembly: $(SRCS:%.jazz=%.s)
-%.s: %.jazz
+ml_dsa.s: $(IMPLEMENTATION)/ml_dsa.jazz $(wildcard $(IMPLEMENTATION)/*.jinc)
 	$(JASMIN_COMMAND) -o $@ $<
 
 # --------------------------------------------------------------------
-CFLAGS=-Wall -Wextra -Wpedantic -Werror -Wmissing-prototypes
-test/ml_dsa.so: $(SRCS_TOP)/sign.s
-	$(CC) $(CFLAGS) -I$(SRCS_TOP)/include \
-		$^ -fPIC -shared -o $@
+.PHONY: test
+test: test/ml_dsa.so
+	python3 test/nistkat.py
+
+test/ml_dsa.so: ml_dsa.s
+	$(CC) $^ -fPIC -shared -o $@
 
 # --------------------------------------------------------------------
 .PHONY: clean
 clean:
 	rm -fr \
-		$(SRCS_TOP)/*.s \
+		$(IMPLEMENTATION)/*.s \
 		$(TOP)/test/*.o \
 		$(TOP)/test/*.so

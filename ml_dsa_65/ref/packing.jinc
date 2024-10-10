@@ -1,82 +1,5 @@
 require "params.jinc"
 
-inline
-fn rho_pack(reg ptr u8[32] in out)
-	-> reg ptr u8[32]
-{
-	inline int i;
-	reg u8 c;
-	for i = 0 to 32 {
-		c = in[i];
-		out[i] = c;
-	}
-	return out;
-}
-
-fn polyeta_2_pack(reg ptr u32[Li2_polydeg] s1, reg ptr u8[Li2_pack_eta_2_len] dest)
-	-> reg ptr u8[Li2_pack_eta_2_len]
-{
-	inline int _eta;
-	reg u32 dest0 dest1 dest2;
-	reg u32 t1 t2 t3 t4 t5 t6 t7;
-	reg u32 coeff;
-	reg u64 i addr;
-
-	_eta = 2;
-	?{}, i = #set0_64();
-	while (i < Li2_polydeg) {
-		addr = i;
-		addr >>= 3;
-		addr = #LEA_64(2*addr + addr);
-
-        // r[3*i+0]  = (t[0] >> 0) | (t[1] << 3) | (t[2] << 6);
-		dest0 = _eta; // t0
-		dest0 -= s1[(int) i];
-		t1 = _eta;
-		t1 -= s1[(int) i + 1];
-		t1 <<= 3;
-		dest0 |= t1;
-		t2 = _eta;
-		t2 -= s1[(int) i + 2];
-		dest1 = t2;
-		t2 <<= 6;
-		dest0 |= t2;
-		dest[(int) addr + 0] = (8u) dest0;
-		
-		// r[3*i+1]  = (t[2] >> 2) | (t[3] << 1) | (t[4] << 4) | (t[5] << 7);
-		dest1 >>= 2;
-		t3 = _eta;
-		t3 -= s1[(int) i + 3];
-		t3 += t3;
-		dest1 |= t3;
-		t4 = _eta;
-		t4 -= s1[(int) i + 4];
-		t4 <<= 4;
-		dest1 |= t4;
-		t5 = _eta;
-		t5 -= s1[(int) i + 5];
-		dest2 = t5;
-		t5 <<= 7;
-		dest1 |= t5;
-		dest[(int) addr + 1] = (8u) dest1;
-		        
-        // r[3*i+2]  = (t[5] >> 1) | (t[6] << 2) | (t[7] << 5);
-		dest2 >>= 1;
-		t6 = _eta;
-		t6 -= s1[(int) i + 6];
-		t6 <<= 2;
-		dest2 |= t6;
-		t7 = _eta;
-		t7 -= s1[(int) i + 7];
-		t7 <<= 5;
-		dest2 |= t7;
-		dest[(int) addr + 2] = (8u) dest2;
-
-		i += 8;
-	}
-	return dest;	
-}
-
 fn polyeta_4_pack(reg ptr u32[Li2_polydeg] s1, reg ptr u8[Li2_pack_eta_4_len] dest)
 	-> reg ptr u8[Li2_pack_eta_4_len]
 {
@@ -109,6 +32,50 @@ fn polyeta_4_pack(reg ptr u32[Li2_polydeg] s1, reg ptr u8[Li2_pack_eta_4_len] de
 		i += 2;
 	}
 	return dest;
+}
+
+inline
+fn pack_s1(reg ptr u32[Li2_l * Li2_polydeg] s1, reg ptr u8[Li2_pack_s1len] dest)
+	-> reg ptr u8[Li2_pack_s1len]
+{
+	inline int ii;
+	reg ptr u8[Li2_pack_etalen] buf;
+	reg ptr u32[Li2_polydeg] poly;
+
+	for ii = 0 to Li2_l {
+		buf = dest[Li2_pack_etalen * ii : Li2_pack_etalen];
+		poly = s1[Li2_polydeg * ii : Li2_polydeg];
+		dest[Li2_pack_etalen * ii : Li2_pack_etalen] = polyeta_4_pack(poly, buf);
+	}
+	return dest;
+}
+inline
+fn pack_s2(reg ptr u32[Li2_k * Li2_polydeg] s1, reg ptr u8[Li2_pack_s2len] dest)
+	-> reg ptr u8[Li2_pack_s2len]
+{
+	inline int ii;
+	reg ptr u8[Li2_pack_etalen] buf;
+	reg ptr u32[Li2_polydeg] poly;
+
+	for ii = 0 to Li2_k {
+		buf = dest[Li2_pack_etalen * ii : Li2_pack_etalen];
+		poly = s1[Li2_polydeg * ii : Li2_polydeg];
+		dest[Li2_pack_etalen * ii : Li2_pack_etalen] = polyeta_4_pack(poly, buf);
+	}
+	return dest;
+}
+
+inline
+fn rho_pack(reg ptr u8[32] in out)
+	-> reg ptr u8[32]
+{
+	inline int i;
+	reg u8 c;
+	for i = 0 to 32 {
+		c = in[i];
+		out[i] = c;
+	}
+	return out;
 }
 
 fn polyt1_pack(reg ptr u32[Li2_polydeg] t1, reg ptr u8[Li2_pack_t1len] buf)

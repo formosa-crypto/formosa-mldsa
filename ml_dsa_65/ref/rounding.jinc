@@ -1,0 +1,27 @@
+require "params.jinc"
+
+fn power2round(reg u32 r)
+	-> reg u32, reg u32
+{
+	/*
+	int32_t a1; //high bits
+
+	a1 = (a + (1 << (D-1)) - 1) >> D;
+	*a0 = a - (a1 << D);
+	*/
+	
+	reg u32 highbits, lowbits;
+	reg u32 v32;
+
+	highbits = r;
+	highbits += (1 << (Li2_d - 1)) - 1;
+	highbits >>= Li2_d;
+
+	v32 = highbits;
+	v32 <<= Li2_d;
+
+	lowbits = r;
+	lowbits -= v32;
+
+	return highbits, lowbits;
+}

@@ -54,7 +54,7 @@ fn expandA_poly(reg ptr u8[32] rho, inline int i, inline int j,
 			value += v;
 		}
 
-		if(value < Li2_q) {
+		if(value < MODULUS) {
 			addr = (64u) term;
 			result[(int) addr] = value;
 			term += 1;

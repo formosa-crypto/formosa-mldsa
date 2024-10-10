@@ -1,9 +1,20 @@
-// This file is special.  With the goal of moving as much code as possible
-// into the common/ diretory, this file initialized all Diltihium params that
-// are specific to one variant, but are based on other parameters.
-//
-// This file should be "required" at the end of each variant's "params.jinc"
-// file.
+require "constants.jinc"
+
+param int Li2_k = 6;
+param int Li2_l = 5;
+param int Li2_gamma1 = (1 << 19);
+param int Li2_gamma2 = (MODULUS - 1) / 32;
+param int Li2_tau = 49;
+param int Li2_eta = 4;
+param int Li2_omega = 55;
+param int Li2_max_attempts = 406;
+
+// naming taken from C ref
+// actual lengths are K times the above...
+param int Li2_pack_etalen = Li2_pack_eta_4_len;
+param int Li2_pack_highbitslen = Li2_pack_highbitslen_gamma2_32;
+param int Li2_pack_zlen = Li2_pack_zlen_gamma1_219;
+param int Li2_pack_hstart = Li2_seedbytes + Li2_l * Li2_pack_zlen;
 
 param int Li2_beta = Li2_tau * Li2_eta;
 

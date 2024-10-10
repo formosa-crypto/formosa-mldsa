@@ -1,5 +1,6 @@
 require "poly.jinc"
 require "rounding.jinc"
+require "ntt.jinc"
 
 fn reduce32_vecl(reg ptr u32[Li2_l * Li2_polydeg] vec)
 	-> reg ptr u32[Li2_l * Li2_polydeg]
@@ -257,24 +258,6 @@ fn pointwise_mont_mult(reg ptr u32[Li2_polydeg] f g fg)
 	return fg;
 }
 
-// why am I doing this again?
-inline
-fn deep_copy_vecl(reg ptr u32[Li2_l * Li2_polydeg] vec)
-	-> stack u32[Li2_l * Li2_polydeg]
-{
-	stack u32[Li2_l * Li2_polydeg] dest;
-	reg u64 i;
-	reg u32 entry;
-
-	?{}, i = #set0_64();
-	while(i < Li2_l * Li2_polydeg) {
-		entry = vec[(int) i];
-		dest[(int) i] = entry;
-		i += 1;
-	}
-	return dest;
-}
-
 inline
 fn mult_scalar_vec(reg ptr u32[Li2_polydeg] f,
 		reg ptr u32[Li2_l * Li2_polydeg] vec)
@@ -338,23 +321,3 @@ fn polyveck_caddq(reg ptr u32[Li2_k * Li2_polydeg] vec)
 	}
 	return vec;
 }
-
-/*
-inline
-fn polyvec_use_hint(reg ptr u32[Li2_k * Li2_polydeg] u hints)
-	-> stack u32[Li2_k * Li2_polydeg]
-{
-	reg ptr u32[Li2_polydeg] hints_comp u_comp;
-	inline int i;
-	stack u32 result_comp;
-	stack u32[Li2_k * Li2_polydeg] result;
-
-	for i = 0 to Li2_k {
-		hints_comp = hints[i * Li2_polydeg : Li2_polydeg];
-		u_comp = u[i * Li2_polydeg : Li2_polydeg];
-		result_comp = poly_use_hint(hints_comp, u_comp);
-		result[i * Li2_polydeg : Li2_polydeg] = result_comp;
-	}
-	return result;
-}
-*/

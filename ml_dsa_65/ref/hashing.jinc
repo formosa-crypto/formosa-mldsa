@@ -1,0 +1,144 @@
+require "fips202.jinc"
+require "rounding.jinc"
+
+// Dilithium keygen inputs 32 bytes to SHAKE256
+inline
+fn shake256_absorb34(reg ptr u8[32] in, reg u8 num_rows, reg u8 num_cols) -> stack u64[25]
+{
+  reg u8 c;
+  inline int i;
+  stack u64[25] state;
+  reg ptr u64[25] state_rsp;
+
+  state_rsp = state;
+  state_rsp = st0(state_rsp);
+  // TODO: Inefficient to load one byte at a time. Optimize this.
+  for i = 0 to 32 {
+    c = in[i];
+    state_rsp[u8 i] ^= c;
+  }
+  state_rsp[u8 32] = num_rows;
+  state_rsp[u8 33] = num_cols;
+
+  state_rsp[u8 34] ^= 0x1f;
+  state_rsp[u8 SHAKE256_RATE - 1] ^= 0x80;
+
+  state = state_rsp;
+  return state;
+}
+
+inline
+fn shake256_absorb32(reg ptr u8[32] in) -> stack u64[25]
+{
+  reg u8 c;
+  inline int i;
+  stack u64[25] state;
+  reg ptr u64[25] state_rsp;
+
+  state_rsp = state;
+  state_rsp = st0(state_rsp);
+  // TODO: Inefficient to load one byte at a time. Optimize this.
+  for i = 0 to 32 {
+    c = in[i];
+    state_rsp[u8 i] ^= c;
+  }
+
+  state_rsp[u8 32] ^= 0x1f;
+  state_rsp[u8 SHAKE256_RATE - 1] ^= 0x80;
+
+  state = state_rsp;
+  return state;
+}
+
+//Maybe should allow squeezing partial blocks
+//for performance?
+inline
+fn shake256_squeezeblock(stack u64[25] state, stack u8[SHAKE256_RATE] out)
+	-> stack u64[25], stack u8[SHAKE256_RATE]
+{
+  reg u8 c;
+  reg u64 i;
+
+  state = __keccakf1600_ref(state);
+
+	?{}, i = #set0_64();
+	while(i < SHAKE256_RATE) {
+		c = state[u8 (int) i];
+		out[(int) i] = c;
+		i += 1;
+	}
+
+  return state, out;
+}
+
+inline
+fn shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u64[25], reg u64 {
+	if (offset >= SHAKE256_RATE) {
+		state = __keccakf1600_ref(state);
+		?{}, offset = #set0_64();
+	}
+	return state, offset;
+}
+
+inline
+fn shake256_of_pk(reg ptr u8[Li2_PK_LEN] pk, reg ptr u8[64] out)
+	-> reg ptr u8[64]
+{
+	// FIXME: This function is smelly and should check more consistently
+	// whether the SHA3 buffer is full.
+	stack u64[25] state;
+	reg ptr u64[25] state_rsp;
+	stack u64 ptr_pk;
+	stack u64 ptr_state;
+
+	reg u64 addr;
+	reg u8 c;
+
+	state_rsp = state;
+	state_rsp = st0(state_rsp);
+
+	ptr_pk = 0;
+
+	while(ptr_pk < Li2_PK_LEN - SHAKE256_RATE) {
+		ptr_state = 0;
+		while(ptr_state < SHAKE256_RATE) {
+			addr = ptr_pk;
+			c = pk[(int) addr];
+
+			addr = ptr_state;
+			state_rsp[u8 (int) addr] ^= c;
+
+			ptr_pk += 1;
+			ptr_state += 1;
+		}
+		state_rsp = __keccakf1600_ref(state_rsp);
+	}
+
+	ptr_state = 0;
+	while(ptr_pk < Li2_PK_LEN) {
+		addr = ptr_pk;
+		c = pk[(int) addr];
+
+		addr = ptr_state;
+		state_rsp[u8 (int) addr] ^= c;
+
+		ptr_pk += 1;
+		ptr_state += 1;
+	}
+
+	addr = ptr_state;
+	state_rsp[u8 (int) addr] ^= 0x1f;
+	state_rsp[u8 SHAKE256_RATE-1] ^= 0x80;
+
+	state_rsp = __keccakf1600_ref(state_rsp);
+
+	// Extract...
+
+	addr = 0;
+	while(addr < 64) {
+		c = state_rsp[u8 (int) addr];
+		out[(int) addr] = c;
+		addr += 1;
+	}
+	return out;
+}

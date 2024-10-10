@@ -1,9 +1,10 @@
-require "common.jinc"
 require "packing.jinc"
 require "params.jinc"
-
-from Common require "tofromstack.jinc"
-from Common require "keygen_end.jinc"
+require "constants.jinc"
+require "expandS.jinc"
+require "tofromstack.jinc"
+require "expandA.jinc"
+require "generate_keypair.jinc"
 
 export fn ml_dsa_65_generate_keypair(reg u64 verification_key signing_key randomness) -> reg u64
 {
@@ -13,7 +14,7 @@ export fn ml_dsa_65_generate_keypair(reg u64 verification_key signing_key random
   verification_key = verification_key;
   signing_key = signing_key;
   randomness_on_stack = __tostack32u8(randomness_on_stack, randomness);
-  keygen_derand(verification_key, signing_key, randomness_on_stack);
+  generate_keypair(verification_key, signing_key, randomness_on_stack);
   ?{}, r = #set0();
   return r;
 }

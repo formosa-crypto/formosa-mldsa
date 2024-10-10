@@ -1,4 +1,4 @@
-require "params.jinc"
+require "constants.jinc"
 
 //Maybe combine into params.jinc?
 param int twoTo32 = 4294967296;
@@ -28,7 +28,7 @@ fn montgomery_REDC(reg u64 a) -> reg u32
 
 	/* t = (a - (int64_t)t*Q) >> 32; */
 	v64 = (64s) t;
-	v64 *= -Li2_q;
+	v64 *= -MODULUS;
 	v64 += a;
 	v64 >>= 32;
 	t = (32s) v64;
@@ -43,26 +43,11 @@ fn caddq(reg u32 a) -> reg u32 {
 	reg u32 a_add_q;
 
 	a_add_q = a;
-	a_add_q += Li2_q;
+	a_add_q += MODULUS;
 
 	a = a_add_q if(a <s 0);
 
 	return a;
-}
-
-inline
-fn checknorm(reg u32 val, inline int threshold)
-	-> stack u8
-{
-	stack u8 result;
-	result = 0;
-	if(val >=s threshold) {
-		result = 1;
-	}
-	if(val <=s -threshold) {
-		result = 1;
-	}
-	return result;
 }
 
 inline
@@ -77,7 +62,7 @@ fn reduce32(reg u32 a) -> reg u32
 
 	//t = a - t*Q;
 	v32 = t;
-	v32 *= Li2_q;
+	v32 *= MODULUS;
 	t = a;
 	t -= v32;
 	return t;

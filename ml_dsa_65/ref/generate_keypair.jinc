@@ -1,4 +1,6 @@
 require "fips202.jinc"
+require "hashing.jinc"
+require "polyvec.jinc"
 
 inline
 fn keygen_inner(reg ptr u8[32] random_zeta)
@@ -108,7 +110,7 @@ fn keygen_inner(reg ptr u8[32] random_zeta)
 	return pk, sk;
 }
 
-fn keygen_derand(reg u64 pk_ptr sk_ptr, reg ptr u8[32] coins)
+fn generate_keypair(reg u64 pk_ptr sk_ptr, reg ptr u8[32] coins)
 {
   stack u64 pk_ptr_s sk_ptr_s;
 

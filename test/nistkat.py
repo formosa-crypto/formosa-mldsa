@@ -18,7 +18,7 @@ def generate_keypair(randomness):
     return (verification_key.raw, signing_key.raw)
 
 # ----- NIST KAT Tests -----
-with open("nistkats_65.json", "r") as nistkats_65_raw:
+with open("test/nistkats_65.json", "r") as nistkats_65_raw:
     nistkats_65 = json.load(nistkats_65_raw)
 
     for nistkat in nistkats_65:
