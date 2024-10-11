@@ -75,13 +75,13 @@ namespace column_vector {
     }
 
     inline
-    fn conditionally_add_q(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec)
+    fn conditionally_add_modulus(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec)
         -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         inline int ii;
         for ii = 0 to ROWS_IN_MATRIX_A {
             vec[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
-                polynomial::pointwise_conditionally_add_modulus(vec[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]);
+                polynomial::conditionally_add_modulus(vec[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]);
         }
         return vec;
     }

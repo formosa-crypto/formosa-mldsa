@@ -87,7 +87,7 @@ namespace polynomial {
         return f;
     }
 
-    fn pointwise_conditionally_add_modulus(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
+    fn conditionally_add_modulus(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u64 i;
@@ -95,13 +95,10 @@ namespace polynomial {
         ?{}, i = #set0_64();
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
             val = f[(int) i];
-            val = caddq(val);
+            val = coefficient::conditionally_add_modulus(val);
             f[(int) i] = val;
             i += 1;
         }
         return f;
     }
 }
-
-
-

@@ -2,7 +2,7 @@ require "fips202.jinc"
 
 inline
 fn uniform_sample_polynomial(reg ptr u8[32] rho, inline int i, inline int j,
-	reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
 {
     stack u32 polynomial_offset;
     stack u8[3] vs;
@@ -59,9 +59,9 @@ fn uniform_sample_polynomial(reg ptr u8[32] rho, inline int i, inline int j,
             result[(int) addr] = value;
             polynomial_offset += 1;
         }
-}
+    }
 
-return result;
+    return result;
 }
 
 inline

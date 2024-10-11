@@ -141,7 +141,7 @@ fn __keccakf1600_ref(reg ptr u64[25] state) -> reg ptr u64[25] {
     state = pi(state);
     state = chi(state);
     constptr = roundconstants;
-	  c = constptr.[(int) rctr];
+      c = constptr.[(int) rctr];
     state = iota(state, c);
     rctr += 8;
   }

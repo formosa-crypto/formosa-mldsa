@@ -5,10 +5,13 @@ require "column_vector.jinc"
 require "parameters.jinc"
 require "constants.jinc"
 
-param int START_OF_S2_IN_ENCODED_SIGNING_KEY =
+param int START_OF_S1_IN_ENCODED_SIGNING_KEY =
     SEED_FOR_MATRIX_A_SIZE +
     SEED_FOR_SIGNING_SIZE +
-    VERIFICATION_KEY_HASH_SIZE +
+    VERIFICATION_KEY_HASH_SIZE;
+
+param int START_OF_S2_IN_ENCODED_SIGNING_KEY =
+    START_OF_S1_IN_ENCODED_SIGNING_KEY +
     S1_ENCODED_SIZE;
 
 param int START_OF_T0_IN_ENCODED_SIGNING_KEY =
@@ -16,89 +19,71 @@ param int START_OF_T0_IN_ENCODED_SIGNING_KEY =
     S2_ENCODED_SIZE;
 
 inline
-fn keygen_internal(reg ptr u8[32] random_zeta)
+fn keygen_internal(reg ptr u8[32] randomness)
     -> stack u8[VERIFICATION_KEY_SIZE], stack u8[SIGNING_KEY_SIZE]
 {
-    // keys
     stack u8[VERIFICATION_KEY_SIZE] verification_key;
     stack u8[SIGNING_KEY_SIZE] signing_key;
+
     // PRF
     stack u64[25] state;
-    stack u8[SHAKE256_RATE] s256_out;
+    stack u8[SHAKE256_RATE] randomness_expanded;
+
     // PRF outputs
-    stack u8[32] rho;
-    reg ptr u8[32] rho_rsp;
+    stack u8[32] seed_for_matrix_A;
     stack u8[64] seed_for_error_vectors;
     stack u8[32] seed_for_signing;
 
-    // FFTs
-    stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] fft_matA;
+    // Matrices and vectors
+    stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
-    reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1_rsp;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t t1 t0;
 
-    reg ptr u8[S1_ENCODED_SIZE] s1_in_signing_key;
-    reg ptr u8[S2_ENCODED_SIZE] s2_in_signing_key;
-    reg ptr u8[T0_ENCODED_SIZE] t0_in_signing_key;
-    reg ptr u8[T1_ENCODED_SIZE] t1_in_verification_key;
-    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0_to_pack t1_to_pack;
+    state = shake256_absorb34(randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
+    state, randomness_expanded = shake256_squeezeblock(state, randomness_expanded);
 
-    //temp variables
-    inline int j;
-
-    state = shake256_absorb34(random_zeta, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
-    state, s256_out = shake256_squeezeblock(state, s256_out);
-
-    rho = s256_out[0:SEED_FOR_MATRIX_A_SIZE];
-    seed_for_error_vectors = s256_out[SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
-    seed_for_signing = s256_out[SEED_FOR_MATRIX_A_SIZE + SEED_FOR_ERROR_VECTORS_SIZE:SEED_FOR_SIGNING_SIZE];
-
-    rho_rsp = rho;
-    signing_key[0:32] = rho_pack(rho_rsp, signing_key[0:32]);
-    signing_key[32:32] = rho_pack(seed_for_signing, signing_key[32:32]); 
+    seed_for_matrix_A = randomness_expanded[0:SEED_FOR_MATRIX_A_SIZE];
+    seed_for_error_vectors = randomness_expanded[SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
+    seed_for_signing = randomness_expanded[SEED_FOR_MATRIX_A_SIZE + SEED_FOR_ERROR_VECTORS_SIZE:SEED_FOR_SIGNING_SIZE];
 
     s1, s2 = expandS(seed_for_error_vectors);
 
-    // save secret key
-    s1_rsp = s1;
-    s1_in_signing_key = signing_key[128 : S1_ENCODED_SIZE];
-    signing_key[128 : S1_ENCODED_SIZE] = pack_s1(s1_rsp, s1_in_signing_key);
-    s2_in_signing_key = signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY : S2_ENCODED_SIZE];
-    signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY : S2_ENCODED_SIZE] = pack_s2(s2, s2_in_signing_key);
+    // Serialize most of the signing key here; in particular serialize 
+    // s1 and s2 before applying the NTT to them.
+    signing_key[0:SEED_FOR_MATRIX_A_SIZE] = #copy(seed_for_matrix_A);
 
-    s1 = row_vector::ntt(s1_rsp);
+    signing_key[SEED_FOR_MATRIX_A_SIZE:SEED_FOR_SIGNING_SIZE] = #copy(seed_for_signing);
 
-    rho_rsp = rho;
-    fft_matA = expandA(rho_rsp);
-    s1_rsp = s1;
-    t = row_vector::multiply_with_matrix_on_the_left(fft_matA, s1_rsp);
+    signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY : S1_ENCODED_SIZE] =
+        s1::encode(s1, signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE]);
+
+    signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY : S2_ENCODED_SIZE] =
+        s2::encode(s2, signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY : S2_ENCODED_SIZE]);
+
+    s1 = row_vector::ntt(s1);
+
+    matrix_A = expandA(seed_for_matrix_A);
+    t = row_vector::multiply_with_matrix_on_the_left(matrix_A, s1);
     t = column_vector::reduce32(t);
     t = column_vector::invert_ntt_montgomery(t);
 
     t = column_vector::pointwise_add(t, s2);
 
-    t = column_vector::conditionally_add_q(t);
+    t = column_vector::conditionally_add_modulus(t);
     t1, t0 = column_vector::power2round(t);
 
-    rho_rsp = rho;
-    verification_key[0:32] = rho_pack(rho_rsp, verification_key[0:32]);
+    // Serialize the verification key.
+    verification_key[0:32] = #copy(seed_for_matrix_A);
+    verification_key[32: T1_ENCODED_SIZE]
+    = t1::encode(verification_key[32: T1_ENCODED_SIZE], t1);
 
-    for j = 0 to ROWS_IN_MATRIX_A {
-        t1_to_pack = t1[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL];
-        t1_in_verification_key = verification_key[32 + j * T1_ENCODED_SIZE : T1_ENCODED_SIZE];
-        t1_in_verification_key = polyt1_pack(t1_to_pack , t1_in_verification_key);
-        verification_key[32 + j * T1_ENCODED_SIZE : T1_ENCODED_SIZE] = t1_in_verification_key;
-    }
-
+    // ... and finish serializing the signing key.
     signing_key[64:64] = hash_verification_key(verification_key, signing_key[64:64]);
 
-    for j = 0 to ROWS_IN_MATRIX_A {
-        t0_to_pack = t0[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL];
-        t0_in_signing_key = signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY + j * T0_ENCODED_SIZE : T0_ENCODED_SIZE];
-        signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY + j * T0_ENCODED_SIZE : T0_ENCODED_SIZE] = polyt0_pack(t0_to_pack, t0_in_signing_key);
-    }
+    signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]
+    = t0::encode(signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE], t0);
 
     return verification_key, signing_key;
 }

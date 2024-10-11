@@ -1,6 +1,5 @@
 require "constants.jinc"
 
-// MODULUS^{-1} mod MONTGOMERY_R
 param int INVERSE_OF_MODULUS_MOD_MONTGOMERY_R = 58_728_449;
 
 inline
@@ -26,19 +25,6 @@ fn montgomery_reduce(reg u64 a) -> reg u32
 	return t;
 }
 
-// Add Q if input coefficient is negative.
-inline
-fn caddq(reg u32 a) -> reg u32 {
-
-	reg u32 a_add_q;
-
-	a_add_q = a;
-	a_add_q += MODULUS;
-
-	a = a_add_q if(a <s 0);
-
-	return a;
-}
 
 namespace coefficient {
     inline
@@ -57,5 +43,18 @@ namespace coefficient {
         t = a;
         t -= v32;
         return t;
+    }
+
+    inline
+    fn conditionally_add_modulus(reg u32 a) -> reg u32 {
+
+        reg u32 a_add_q;
+
+        a_add_q = a;
+        a_add_q += MODULUS;
+
+        a = a_add_q if(a <s 0);
+
+        return a;
     }
 }
