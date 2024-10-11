@@ -1,0 +1,32 @@
+require "params.jinc"
+
+/*************************************************
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce
+*
+* Description: For finite field element a with -2^{31}Q <= a <= Q*2^31,
+*              compute r \equiv a*2^{-32} (mod Q) such that -Q < r < Q.
+*
+* Arguments:   - int64_t: finite field element a
+*
+* Returns r.
+**************************************************/
+
+inline fn __montgomery_reduce_8380417(reg u32 a_low a_high) -> reg u32
+{
+   reg u32 a_low_x7 a_low_x7169 a_low_x58728449;
+  reg u32 minus_q;
+   reg u32 res;
+
+  a_low_x7 = #RSB(a_low, (a_low << 3));
+  a_low_x7169 = a_low + (a_low_x7 << 10);
+
+  minus_q = __MINUS_Q();
+
+  a_low_x58728449 = a_low + (a_low_x7169 << 13);
+
+  // (a_low_x58728449 * minus_q) + (a_low + a_high * 2**32);
+  _, res = #SMLAL(a_low, a_high, a_low_x58728449, minus_q);
+
+  res = res;
+  return res;
+}

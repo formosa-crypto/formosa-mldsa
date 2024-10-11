@@ -1,6 +1,7 @@
 require "wrappers_arm-m4.jinc"
-require "ntt.jazz"
+require "reduce_arm-m4.jinc"
 require "reduce.jazz"
+require "ntt.jazz"
 require "rounding.jazz"
 require "poly.jazz"
 require "polyvec.jazz"

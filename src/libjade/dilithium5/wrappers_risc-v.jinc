@@ -16,8 +16,28 @@ inline fn __ubfx(reg u32 in, inline int pos, inline int width) -> reg u32 {
   return in;
 }
 
-inline fn __rsb_left_shift(reg u32 in_1, reg u32 in_2, inline int shift, reg u32 out) -> reg u32 {
+inline fn __smull(reg u32 in_1, reg u32 in_2, reg u32 out_low, reg u32 out_high) -> reg u32, reg u32 {
+  out_low = #MUL(in_1,in_2);
+  out_high = #MULH(in_1, in_2);
+  return out_low, out_high;
+}
+
+/**
+ Operates the subtraction of the @nb_bits logical left shift on @in_2 with @in_1.
+ Writes the result in @in_1.
+**/
+inline fn __rsb_lsl_inplace(reg u32 in_1, reg u32 in_2, inline int shift) -> reg u32 {
   in_2 = in_2 << shift;
+  in_2 = in_2 - in_1;
+  return in_2;
+}
+
+/**
+ Operates the subtraction of the @nb_bits logical left shift on @in_2 with @in_1.
+ Writes the result in @out.
+**/
+inline fn __rsb_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits, reg u32 out) -> reg u32 {
+  in_2 = in_2 << nb_bits;
   out = in_2 - in_1;
   return out;
 }

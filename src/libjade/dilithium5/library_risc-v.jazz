@@ -1,6 +1,7 @@
 require "wrappers_risc-v.jinc"
-require "ntt.jazz"
+require "reduce_risc-v.jinc"
 require "reduce.jazz"
+require "ntt.jazz"
 require "rounding.jazz"
 require "poly.jazz"
 require "polyvec.jazz"
