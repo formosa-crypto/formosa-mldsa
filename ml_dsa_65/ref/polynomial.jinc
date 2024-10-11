@@ -1,0 +1,107 @@
+require "parameters.jinc"
+require "montgomery.jinc"
+
+namespace polynomial {
+    fn add(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f g sum)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
+        reg u32 result v32;
+
+        reg u64 i;
+        ?{}, i = #set0_64();
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            result = f[(int) i];
+            v32 = g[(int) i];
+            result += v32;
+            sum[(int) i] = result;
+            i += 1;
+        }
+        return sum;
+    }
+
+    fn subtract(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f g difference)
+    -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
+        reg u32 result v32;
+
+        reg u64 i;
+        ?{}, i = #set0_64();
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            result = f[(int) i];
+            v32 = g[(int) i];
+            result -= v32;
+            difference[(int) i] = result;
+            i += 1;
+        }
+        return difference;
+    }
+
+    fn sum_coefficients(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f sum)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u32 v32 result;
+
+        reg u64 i;
+        ?{}, i = #set0_64();
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            v32 = f[(int) i];
+            result = sum[(int) i];
+            result += v32;
+            sum[(int) i] = result;
+            i += 1;
+        }
+        return sum;
+    }
+
+    fn pointwise_montgomery_product(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] fft_f fft_g fft_prod)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 i;
+        reg u32 x1 x2;
+        reg u64 prod x2_64;
+        reg u32 prod_redc;
+
+        ?{}, i = #set0_64();
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            x1 = fft_f[(int) i];
+            prod = (64s) x1;
+            x2 = fft_g[(int) i];
+            x2_64 = (64s) x2;
+            prod *= x2_64;
+
+            prod_redc = montgomery_reduce(prod);
+            fft_prod[(int) i] = prod_redc;
+            i += 1;
+        }
+        return fft_prod;
+    }
+
+    fn zero(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 i;
+        ?{}, i = #set0_64();
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            // Montgomery of 0 is 0
+            f[(int) i] = 0;
+            i += 1;
+        }
+        return f;
+    }
+
+    fn pointwise_conditionally_add_modulus(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 i;
+        reg u32 val;
+        ?{}, i = #set0_64();
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            val = f[(int) i];
+            val = caddq(val);
+            f[(int) i] = val;
+            i += 1;
+        }
+        return f;
+    }
+}
+
+
+

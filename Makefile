@@ -1,21 +1,26 @@
 TOP = /home/efgh/repos/formosa-mldsa
-IMPLEMENTATION = $(TOP)/ml_dsa_65/ref
 
+PARAMETER_SET = 65
+IMPLEMENTATION_TYPE = ref
 # --------------------------------------------------------------------
 override FLAGS += -noinsertarraycopy -lazy-regalloc
 JASMINC ?= jasminc
 JASMIN_COMMAND ?= $(JASMINC) $(FLAGS) $(INCLUDE)
 
 # --------------------------------------------------------------------
-ml_dsa.s: $(IMPLEMENTATION)/ml_dsa.jazz $(wildcard $(IMPLEMENTATION)/*.jinc)
+IMPLEMENTATION = $(TOP)/ml_dsa_$(PARAMETER_SET)/$(IMPLEMENTATION_TYPE)
+
+OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)
+
+$(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION)/ml_dsa.jazz $(wildcard $(IMPLEMENTATION)/*.jinc)
 	$(JASMIN_COMMAND) -o $@ $<
 
 # --------------------------------------------------------------------
 .PHONY: test
-test: test/ml_dsa.so
+test: test/$(OUTPUT_FILE_NAME).so
 	python3 test/nistkat.py
 
-test/ml_dsa.so: ml_dsa.s
+test/$(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 	$(CC) $^ -fPIC -shared -o $@
 
 # --------------------------------------------------------------------

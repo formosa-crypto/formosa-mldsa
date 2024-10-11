@@ -1,0 +1,67 @@
+require "polynomial.jinc"
+require "rounding.jinc"
+require "ntt.jinc"
+
+// A row vector has dimensions 1 * COLUMNS_IN_MATRIX_A
+namespace row_vector {
+    fn ntt(reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec)
+        -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        inline int i;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] entry;
+
+        for i = 0 to COLUMNS_IN_MATRIX_A {
+            entry = vec[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+            entry = polynomial::ntt(entry);
+            vec[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = entry;
+        }
+
+        return vec;
+    }
+
+    inline
+    fn dot_product(stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] v1 v2, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] dotprod)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u32[COEFFICIENTS_IN_POLYNOMIAL] term_prod;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] term_prod_rsp;
+
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] v1_term v2_term;
+
+        inline int i;
+
+        dotprod = polynomial::zero(dotprod);
+        for i = 0 to COLUMNS_IN_MATRIX_A {
+            v1_term = v1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
+            v2_term = v2[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
+            term_prod_rsp = term_prod;
+            term_prod_rsp = polynomial::pointwise_montgomery_product(v1_term, v2_term, term_prod_rsp);
+            dotprod = polynomial::sum_coefficients(term_prod_rsp, dotprod);
+            term_prod = term_prod_rsp;
+        }
+
+        return dotprod;
+    }
+
+    inline
+    fn multiply_with_matrix_on_the_left(reg ptr u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mat,
+        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec)
+        -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] out;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] out_rsp;
+
+        inline int i;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            out_rsp = out[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
+            out_rsp = dot_product(
+                mat[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL * i : COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
+                vec, out_rsp);
+            out[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] = out_rsp;
+        }
+
+        return out;
+    }
+}
+
+

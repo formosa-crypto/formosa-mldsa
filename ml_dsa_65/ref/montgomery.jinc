@@ -1,20 +1,10 @@
 require "constants.jinc"
 
-//Maybe combine into params.jinc?
-param int twoTo32 = 4294967296;
-param int twoTo32Minus1 = 4294967295;
-param int dilithium_modulo = 8380417;
-param int dilithium_modulo_left_shift_41 = 18428731874223325184;
-param int dilithium_modulo_inv = 58728449;
-param int dilithium_modulo_inv_neg = 4236238847;
-param int dilithium_primitive_root = 1753;
-param int m_1 = 4193792;
-param int m_root = 2091667;
-
-param int Li2_QINV = 58728449;
+// MODULUS^{-1} mod MONTGOMERY_R
+param int INVERSE_OF_MODULUS_MOD_MONTGOMERY_R = 58_728_449;
 
 inline
-fn montgomery_REDC(reg u64 a) -> reg u32
+fn montgomery_reduce(reg u64 a) -> reg u32
 {
 	reg u32 a32;
 	reg u64 v64;
@@ -23,7 +13,7 @@ fn montgomery_REDC(reg u64 a) -> reg u32
 	/* t = (int64_t)(int32_t)a*QINV; */
 	a32 = (32s) a;
 	v64 = (64s) a32;
-	v64 *= dilithium_modulo_inv;
+	v64 *= INVERSE_OF_MODULUS_MOD_MONTGOMERY_R;
 	t = (32s) v64;
 
 	/* t = (a - (int64_t)t*Q) >> 32; */
@@ -50,20 +40,22 @@ fn caddq(reg u32 a) -> reg u32 {
 	return a;
 }
 
-inline
-fn reduce32(reg u32 a) -> reg u32
-{
-	reg u32 t v32;
+namespace coefficient {
+    inline
+    fn reduce32(reg u32 a) -> reg u32
+    {
+        reg u32 t v32;
 
-	//t = (a + (1 << 22)) >> 23;
-	t = a;
-	t += (1 << 22);
-	t = t >>s 23;
+        //t = (a + (1 << 22)) >> 23;
+        t = a;
+        t += (1 << 22);
+        t = t >>s 23;
 
-	//t = a - t*Q;
-	v32 = t;
-	v32 *= MODULUS;
-	t = a;
-	t -= v32;
-	return t;
+        //t = a - t*Q;
+        v32 = t;
+        v32 *= MODULUS;
+        t = a;
+        t -= v32;
+        return t;
+    }
 }

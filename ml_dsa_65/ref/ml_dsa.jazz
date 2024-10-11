@@ -1,20 +1,41 @@
 require "packing.jinc"
-require "params.jinc"
+require "parameters.jinc"
 require "constants.jinc"
 require "expandS.jinc"
 require "tofromstack.jinc"
 require "expandA.jinc"
-require "generate_keypair.jinc"
+require "keygen.jinc"
 
-export fn ml_dsa_65_generate_keypair(reg u64 verification_key signing_key randomness) -> reg u64
+export fn ml_dsa_65_keygen(reg u64 verification_key_out signing_key_out randomness) -> reg u64
 {
-  reg u64 r;
-  stack u8[32] randomness_on_stack;
+    reg u64 exit_code;
 
-  verification_key = verification_key;
-  signing_key = signing_key;
-  randomness_on_stack = __tostack32u8(randomness_on_stack, randomness);
-  generate_keypair(verification_key, signing_key, randomness_on_stack);
-  ?{}, r = #set0();
-  return r;
+    stack u8[32] randomness_on_stack;
+
+    stack u8[VERIFICATION_KEY_SIZE] verification_key;
+    stack u8[SIGNING_KEY_SIZE] signing_key;
+
+    reg u8 c;
+    reg u64 i;
+
+    randomness_on_stack = __tostack32u8(randomness_on_stack, randomness);
+
+    verification_key, signing_key = keygen_internal(randomness_on_stack);
+
+    i = 0;
+    while(i < VERIFICATION_KEY_SIZE) {
+        c = verification_key[(int) i];
+        (u8)[verification_key_out + i] = c;
+        i += 1;
+    }
+
+    i = 0;
+    while(i < SIGNING_KEY_SIZE) {
+        c = signing_key[(int) i];
+        (u8)[signing_key_out + i] = c;
+        i += 1;
+    }
+
+    ?{}, exit_code = #set0();
+    return exit_code;
 }

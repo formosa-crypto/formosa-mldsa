@@ -1,26 +1,15 @@
 param int MODULUS = 8_380_417;
 
-// Dropped bits from t
-param int Li2_d = 13;
-// exp(d)
-param int Li2_expd = 1 << Li2_d;
-// poly degrees
-param int Li2_polydeg = 256;
+param int BITS_IN_LOWER_PART_OF_T = 13;
 
-// byte-length of a packed t0/t1 polynomial
-param int Li2_pack_t1len = 10 * Li2_polydeg / 8;
-param int Li2_pack_t0len = 13 * Li2_polydeg / 8;
+param int COEFFICIENTS_IN_POLYNOMIAL = 256;
 
-// packed length of z for some specific gamma1
-param int Li2_pack_zlen_gamma1_217 = Li2_polydeg * 18 / 8;
-param int Li2_pack_zlen_gamma1_219 = Li2_polydeg * 20 / 8;
+param int T0_ENCODED_SIZE = (BITS_IN_LOWER_PART_OF_T * COEFFICIENTS_IN_POLYNOMIAL) / 8;
 
-// packed length of mod-eta arrays
-param int Li2_pack_eta_4_len = 128;
+// 23 = log_2(MODULUS - 1).
+param int T1_ENCODED_SIZE = ((23 - BITS_IN_LOWER_PART_OF_T) * COEFFICIENTS_IN_POLYNOMIAL) / 8;
 
-// packed length of mod-gamma2 arrays
-param int Li2_pack_highbitslen_gamma2_88 = 192;
-param int Li2_pack_highbitslen_gamma2_32 = 128;
-
-// byte-lenth of a seed
-param int Li2_seedbytes = 32;
+param int SEED_FOR_MATRIX_A_SIZE = 32;
+param int SEED_FOR_ERROR_VECTORS_SIZE = 64;
+param int SEED_FOR_SIGNING_SIZE = 32;
+param int VERIFICATION_KEY_HASH_SIZE = 64;

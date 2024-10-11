@@ -1,27 +1,28 @@
-require "params.jinc"
+require "parameters.jinc"
 
-fn power2round(reg u32 r)
-	-> reg u32, reg u32
-{
-	/*
-	int32_t a1; //high bits
+namespace coefficient {
+    fn power2round(reg u32 r)
+        -> reg u32, reg u32
+    {
+        /*
+        int32_t a1; //high bits
 
-	a1 = (a + (1 << (D-1)) - 1) >> D;
-	*a0 = a - (a1 << D);
-	*/
-	
-	reg u32 highbits, lowbits;
-	reg u32 v32;
+        a1 = (a + (1 << (D-1)) - 1) >> D;
+        *a0 = a - (a1 << D);
+        */
+        reg u32 highbits, lowbits;
+        reg u32 v32;
 
-	highbits = r;
-	highbits += (1 << (Li2_d - 1)) - 1;
-	highbits >>= Li2_d;
+        highbits = r;
+        highbits += (1 << (BITS_IN_LOWER_PART_OF_T - 1)) - 1;
+        highbits >>= BITS_IN_LOWER_PART_OF_T;
 
-	v32 = highbits;
-	v32 <<= Li2_d;
+        v32 = highbits;
+        v32 <<= BITS_IN_LOWER_PART_OF_T;
 
-	lowbits = r;
-	lowbits -= v32;
+        lowbits = r;
+        lowbits -= v32;
 
-	return highbits, lowbits;
+        return highbits, lowbits;
+    }
 }

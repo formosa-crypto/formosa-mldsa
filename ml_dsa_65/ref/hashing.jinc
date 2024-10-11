@@ -81,7 +81,7 @@ fn shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u
 }
 
 inline
-fn shake256_of_pk(reg ptr u8[Li2_PK_LEN] pk, reg ptr u8[64] out)
+fn hash_verification_key(reg ptr u8[VERIFICATION_KEY_SIZE] pk, reg ptr u8[64] out)
 	-> reg ptr u8[64]
 {
 	// FIXME: This function is smelly and should check more consistently
@@ -99,7 +99,7 @@ fn shake256_of_pk(reg ptr u8[Li2_PK_LEN] pk, reg ptr u8[64] out)
 
 	ptr_pk = 0;
 
-	while(ptr_pk < Li2_PK_LEN - SHAKE256_RATE) {
+	while(ptr_pk < VERIFICATION_KEY_SIZE - SHAKE256_RATE) {
 		ptr_state = 0;
 		while(ptr_state < SHAKE256_RATE) {
 			addr = ptr_pk;
@@ -115,7 +115,7 @@ fn shake256_of_pk(reg ptr u8[Li2_PK_LEN] pk, reg ptr u8[64] out)
 	}
 
 	ptr_state = 0;
-	while(ptr_pk < Li2_PK_LEN) {
+	while(ptr_pk < VERIFICATION_KEY_SIZE) {
 		addr = ptr_pk;
 		c = pk[(int) addr];
 

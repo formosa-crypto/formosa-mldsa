@@ -1,4 +1,3 @@
-
 inline 
 fn __tostack64u8(reg ptr u8[64] out, reg u64 inp) -> reg ptr u8[64] 
 {

@@ -2,7 +2,7 @@ import ctypes
 import json
 import hashlib
 
-_ml_dsa = ctypes.PyDLL('/home/efgh/repos/formosa-mldsa/test/ml_dsa.so')
+_ml_dsa = ctypes.PyDLL('/home/efgh/repos/formosa-mldsa/test/ml_dsa_65_ref.so')
 
 def bytearray_to_ctype(ba):
     char_array = ctypes.c_char * len(ba)
@@ -12,7 +12,7 @@ def generate_keypair(randomness):
     verification_key = ctypes.create_string_buffer(1952)
     signing_key = ctypes.create_string_buffer(4032)
 
-    ret = _ml_dsa.ml_dsa_65_generate_keypair(verification_key, signing_key, bytearray_to_ctype(randomness))
+    ret = _ml_dsa.ml_dsa_65_keygen(verification_key, signing_key, bytearray_to_ctype(randomness))
     assert ret == 0
 
     return (verification_key.raw, signing_key.raw)

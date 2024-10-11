@@ -1,10 +1,9 @@
-require "params.jinc"
+require "parameters.jinc"
 
-fn polyeta_4_pack(reg ptr u32[Li2_polydeg] s1, reg ptr u8[Li2_pack_eta_4_len] dest)
-	-> reg ptr u8[Li2_pack_eta_4_len]
+fn polyeta_4_pack(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] s1, reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] dest)
+	-> reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE]
 {
 	inline int _eta;
-	reg u8 value;
 
 	reg u32 lo hi;
 	reg u32 coeff;
@@ -13,7 +12,7 @@ fn polyeta_4_pack(reg ptr u32[Li2_polydeg] s1, reg ptr u8[Li2_pack_eta_4_len] de
 
 	_eta = 4;
 	?{}, i = #set0_64();
-	while (i < Li2_polydeg) {
+	while (i < COEFFICIENTS_IN_POLYNOMIAL) {
 		coeff = s1[(int) i];
 		lo = _eta;
 		lo -= coeff;
@@ -35,32 +34,32 @@ fn polyeta_4_pack(reg ptr u32[Li2_polydeg] s1, reg ptr u8[Li2_pack_eta_4_len] de
 }
 
 inline
-fn pack_s1(reg ptr u32[Li2_l * Li2_polydeg] s1, reg ptr u8[Li2_pack_s1len] dest)
-	-> reg ptr u8[Li2_pack_s1len]
+fn pack_s1(reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1, reg ptr u8[S1_ENCODED_SIZE] dest)
+	-> reg ptr u8[S1_ENCODED_SIZE]
 {
 	inline int ii;
-	reg ptr u8[Li2_pack_etalen] buf;
-	reg ptr u32[Li2_polydeg] poly;
+	reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] buf;
+	reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly;
 
-	for ii = 0 to Li2_l {
-		buf = dest[Li2_pack_etalen * ii : Li2_pack_etalen];
-		poly = s1[Li2_polydeg * ii : Li2_polydeg];
-		dest[Li2_pack_etalen * ii : Li2_pack_etalen] = polyeta_4_pack(poly, buf);
+	for ii = 0 to COLUMNS_IN_MATRIX_A {
+		buf = dest[ENCODED_ERROR_POLYNOMIAL_SIZE * ii : ENCODED_ERROR_POLYNOMIAL_SIZE];
+		poly = s1[COEFFICIENTS_IN_POLYNOMIAL * ii : COEFFICIENTS_IN_POLYNOMIAL];
+		dest[ENCODED_ERROR_POLYNOMIAL_SIZE * ii : ENCODED_ERROR_POLYNOMIAL_SIZE] = polyeta_4_pack(poly, buf);
 	}
 	return dest;
 }
 inline
-fn pack_s2(reg ptr u32[Li2_k * Li2_polydeg] s1, reg ptr u8[Li2_pack_s2len] dest)
-	-> reg ptr u8[Li2_pack_s2len]
+fn pack_s2(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1, reg ptr u8[S2_ENCODED_SIZE] dest)
+	-> reg ptr u8[S2_ENCODED_SIZE]
 {
 	inline int ii;
-	reg ptr u8[Li2_pack_etalen] buf;
-	reg ptr u32[Li2_polydeg] poly;
+	reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] buf;
+	reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly;
 
-	for ii = 0 to Li2_k {
-		buf = dest[Li2_pack_etalen * ii : Li2_pack_etalen];
-		poly = s1[Li2_polydeg * ii : Li2_polydeg];
-		dest[Li2_pack_etalen * ii : Li2_pack_etalen] = polyeta_4_pack(poly, buf);
+	for ii = 0 to ROWS_IN_MATRIX_A {
+		buf = dest[ENCODED_ERROR_POLYNOMIAL_SIZE * ii : ENCODED_ERROR_POLYNOMIAL_SIZE];
+		poly = s1[COEFFICIENTS_IN_POLYNOMIAL * ii : COEFFICIENTS_IN_POLYNOMIAL];
+		dest[ENCODED_ERROR_POLYNOMIAL_SIZE * ii : ENCODED_ERROR_POLYNOMIAL_SIZE] = polyeta_4_pack(poly, buf);
 	}
 	return dest;
 }
@@ -78,8 +77,8 @@ fn rho_pack(reg ptr u8[32] in out)
 	return out;
 }
 
-fn polyt1_pack(reg ptr u32[Li2_polydeg] t1, reg ptr u8[Li2_pack_t1len] buf)
-	-> reg ptr u8[Li2_pack_t1len]
+fn polyt1_pack(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1, reg ptr u8[T1_ENCODED_SIZE] buf)
+	-> reg ptr u8[T1_ENCODED_SIZE]
 {
 	reg u64 i;
 	reg u64 addr;
@@ -87,7 +86,7 @@ fn polyt1_pack(reg ptr u32[Li2_polydeg] t1, reg ptr u8[Li2_pack_t1len] buf)
 	reg u8 c;
 
 	i = 0;
-	while(i < Li2_polydeg / 4) {
+	while(i < COEFFICIENTS_IN_POLYNOMIAL / 4) {
 		// buf[5*i+0] = t1[4*i+0] >> 0;
 
 		addr = 4;
@@ -181,15 +180,15 @@ fn polyt1_pack(reg ptr u32[Li2_polydeg] t1, reg ptr u8[Li2_pack_t1len] buf)
 	return buf;
 }
 
-fn polyt1_unpack(reg ptr u32[Li2_polydeg] t1, reg ptr u8[Li2_pack_t1len] buf)
-	-> reg ptr u32[Li2_polydeg]
+fn polyt1_unpack(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1, reg ptr u8[T1_ENCODED_SIZE] buf)
+	-> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
 {
 	reg u64 i i4 i5;
 	reg u32 x0 x1 x2 x3;
 	reg u32 xtmp1 xtmp2;
 
 	i = 0;
-	while (i < Li2_polydeg / 4) {
+	while (i < COEFFICIENTS_IN_POLYNOMIAL / 4) {
 		// FIXME: opt: make i4 loop counter
 		i4 = #LEA_64(4 * i); // i4 = 4 * i
 		i5 = #LEA_64(4 * i + i); // i5 = 5 * i
@@ -230,13 +229,13 @@ fn polyt1_unpack(reg ptr u32[Li2_polydeg] t1, reg ptr u8[Li2_pack_t1len] buf)
 	return t1;
 }
 
-fn polyt0_pack(reg ptr u32[Li2_polydeg] t0, reg ptr u8[Li2_pack_t0len] dest)
-	-> reg ptr u8[Li2_pack_t0len]
+fn polyt0_pack(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0, reg ptr u8[T0_ENCODED_SIZE] dest)
+	-> reg ptr u8[T0_ENCODED_SIZE]
 {
 	// TODO: This function needs some superficial optimization
 
 	inline int max_t0;
-	max_t0 = Li2_expd / 2;
+	max_t0 = (1 << BITS_IN_LOWER_PART_OF_T) / 2;
 
 	stack u32 t0_term;
 	stack u32[8] t;
@@ -245,12 +244,11 @@ fn polyt0_pack(reg ptr u32[Li2_polydeg] t0, reg ptr u8[Li2_pack_t0len] dest)
 	reg u64 addr;
 
 	reg u32 v32;
-	stack u32 v32s;
 
 	reg u8 c c1;
 
 	?{}, i = #set0_64();
-	while(i < Li2_polydeg / 8) {
+	while(i < COEFFICIENTS_IN_POLYNOMIAL / 8) {
 		?{}, j = #set0_64();
 		while (j < 8) {
 			addr = #LEA_64(8*i + j);
