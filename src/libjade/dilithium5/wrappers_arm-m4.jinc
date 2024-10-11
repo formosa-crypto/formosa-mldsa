@@ -10,6 +10,18 @@
 /* ********************************************************************** */
 /* Helper functions to facilitate architecture modularity                 */
 
+inline fn __store_imm(inline int imm) -> reg u32 {
+  reg u32 out;
+  out = imm;
+  return out;
+}
+
+inline fn __add_large_imm(reg u32 in, inline int imm) -> reg u32 {
+  reg u32 out;
+  out = in + imm;
+  return out;
+}
+
 inline fn __imm_sub_reg_inplace(inline int imm, reg u32 in) -> reg u32 {
     in = imm - in;
     return in;
@@ -53,6 +65,26 @@ inline fn __or_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
 inline fn __plus_lsl_inplace(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
   in_1 += (in_2 << nb_bits);
   return in_1;
+}
+
+/**
+ Operates the subtraction of @in_1 with the @nb_bits logical left shift on @in_2.
+ Writes the result in @out.
+**/
+inline fn __sub_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
+  out = in_1 - (in_2 << nb_bits);
+  return out;
+}
+
+/**
+ Operates the subtraction of the @nb_bits logical left shift on @in_2 with @in_1.
+ Writes the result in @out.
+**/
+inline fn __rsub_lsl(reg u32 in_1, inline int in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
+  out = (in_2 << nb_bits) - in_1;
+  return out;
 }
 
 /**

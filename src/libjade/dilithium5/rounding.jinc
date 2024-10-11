@@ -15,12 +15,9 @@ require "params.jinc"
 inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32 
 {
   reg u32 a0 a1;
-  reg u32 temp;
-  temp = ((1 << (D - 1)) - 1);
-  a1 = a + temp;
+  a1 = __add_large_imm(a, (1 << (D - 1)) - 1);
   a1 = a1 >>s D;
-  temp = (a1 << D);
-  a0 = a - temp;
+  a0 = __sub_lsl(a, a1, D);
   return (a0, a1);     
 }
 

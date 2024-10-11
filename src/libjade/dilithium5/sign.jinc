@@ -519,10 +519,8 @@ fn _crypto_sign_signature
   s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES] = mu;
 
   rnd = s_key_rnd_mu[SEEDBYTES : RNDBYTES];
-  reg u32 tmp;
-  tmp = 0;
   for i = 0 to RNDBYTES/4 {
-    rnd[u32 i] = tmp;
+    rnd[u32 i] = __store_imm(0);
   }
   s_key_rnd_mu[SEEDBYTES : RNDBYTES] = rnd;
 
@@ -540,7 +538,6 @@ fn _crypto_sign_signature
     rhoprime[u32 i] = t;
   }
   s_rhoprime = rhoprime;
-  
 
   stack u32[matKL] s_mat;
   stack u32[polyvecl] s_y, s_z;
@@ -561,8 +558,6 @@ fn _crypto_sign_signature
   stack u32 s_nonce;
   r0 = 0;
   s_nonce = r0;
-  reg u32 one;
-  one = 1;
   while {
     /* Sample intermediate vector y */
     rhoprime = s_rhoprime; 
@@ -658,20 +653,18 @@ fn _crypto_sign_signature
           s_w0 = w0; w1 = s_w1;
           reg u32 n;
           n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
-          reg u32 t;
-          t = OMEGA;
-          if (n > t) {
+          if (n > OMEGA) {
             continue = 1;
           } else {
             () = #unspill(sig);
             sig = _pack_sig_nocopy(sig, s_z, h);
             () = #spill(sig);
-            continue  = 0;
+            continue = 0;
           }
         }
       }
     }
-  } (continue == one)
+  } (continue == 1)
   status = 0;
   () = #unspill(sig);
   return sig, status;
@@ -744,15 +737,13 @@ fn _crypto_sign_verify(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, re
 
     () = #unspill(status);
     //FIXME for arm or improve riscv suport
-    reg u32 t;
-    t = 1;
-    if (chk == t) { status = -1; }
+    if (chk == 1) { status = -1; }
 
     if (status == 0) {
       reg u32 bound;
       bound = iGAMMA1 - BETA;
       chk = _polyvecl_chknorm(z, bound);
-      if (chk == t) { status = -1; }
+      if (chk == 1) { status = -1; }
 
       if (status == 0) {
         () = #spill(status);
