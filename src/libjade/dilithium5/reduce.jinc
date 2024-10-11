@@ -25,11 +25,11 @@ inline fn __reduce32_8380417(reg u32 a) -> reg u32
   shift = (1 << 22); // 1<<22 == 4194304
   t = a + shift;
   t = t >>s 23; // we have that: t = (a + (1 << 22)) >> 23;
-  t_x511 = __rsb_lsl(t, t, 9, t_x511);
+  t_x511 = __rsb_lsl(t, t, 9);
 
   shift = (t_x511 << 10);
   t_x523265 = t + shift;
-  t_x4286586879 = __rsb_lsl(t, t_x523265, 13, t_x4286586879);
+  t_x4286586879 = __rsb_lsl(t, t_x523265, 13);
   // we have that: t_x4286586879 == t * -Q 
 
   res = a + t_x4286586879;

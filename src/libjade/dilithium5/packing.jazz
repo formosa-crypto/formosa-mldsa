@@ -11,10 +11,7 @@ inline fn __polyvecl_to_mem(reg u32 p, reg ptr u32[polyvecl] v) {
   reg u32 i, t;
   i = 0;
 
-
-  reg u32 temp;
-  temp = polyvecl;
-  while (i < temp) {
+  while (i < polyvecl) {
     t = v[(int) i];
     (u32)[p + 4 * i] = t;
     i += 1;
@@ -28,9 +25,7 @@ fn _polyvecl_to_mem(reg u32 p, reg ptr u32[polyvecl] v) {
 inline fn __mem_to_polyvecl(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
   reg u32 i, t;
   i = 0;
-  reg u32 temp;
-  temp = polyvecl;
-  while (i < temp) {
+  while (i < polyvecl) {
     t = (u32)[p + 4 * i];
     v[(int) i] = t;
     i += 1;
@@ -46,9 +41,7 @@ fn _mem_to_polyvecl(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl]
 inline fn __polyveck_to_mem(reg u32 p, reg ptr u32[polyveck] v) {
   reg u32 i, t;
   i = 0;
-  reg u32 temp;
-  temp = polyveck;
-  while (i < temp) {
+  while (i < polyveck) {
     t = v[(int) i];
     (u32)[p + 4 * i] = t;
     i += 1;
@@ -63,10 +56,7 @@ inline fn __mem_to_polyveck(reg ptr u32[polyveck] v, reg u32 p) -> reg ptr u32[p
   reg u32 i, t;
   i = 0;
 
-
-  reg u32 temp;
-  temp = polyveck;
-  while (i < temp) {
+  while (i < polyveck) {
     t = (u32)[p + 4 * i];
     v[(int) i] = t;
     i += 1;

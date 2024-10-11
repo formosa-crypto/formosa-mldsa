@@ -32,9 +32,7 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   (i < last)
   { 
     j = 0;
-    reg u32 temp;
-    temp = (SHAKE256_RATE >> 2);
-    while (j < temp) {
+    while (j < SHAKE256_RATE >> 2) {
       t = inp[u32 (int)i];
       s = pstate[(int)j];
       t ^= s;
@@ -48,9 +46,7 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   }    
   
   j = 0;
-  reg u32 temp;
-  temp = (PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2);
-  while(i < temp) {
+  while(i < PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2) {
     t = inp[u32 (int)i];
     s = pstate[(int)j];
     t ^= s;
@@ -74,9 +70,7 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   () = #unspill(outp);
   // FIXME this copy is not necessary if we return pstate, in that case it should be taken as argument
   i = 0;
-  reg u32 temp;
-  temp =  SEEDBYTES / 4;
-  while (i < temp) {
+  while (i < SEEDBYTES / 4) {
     t = pstate[(int)i];
     outp[u32 (int)i] = t;
     i += 1;
@@ -105,9 +99,7 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
   (i < last)
   { 
     j = 0;
-    reg u32 temp;
-    temp = (SHAKE256_RATE >> 2);
-    while (j < temp) {
+    while (j < SHAKE256_RATE >> 2) {
       t = inp[u32 (int)i];
       s = pstate[(int)j];
       t ^= s;
@@ -121,9 +113,7 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
   }    
   
   j = 0;
-    reg u32 temp;
-  temp = (PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2);
-  while(i < temp) {
+  while(i < PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES >> 2) {
     t = inp[u32 (int)i];
     s = pstate[(int)j];
     t ^= s;
@@ -147,9 +137,7 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
   () = #unspill(outp);
   // FIXME this copy is not necessary if we return pstate, in that case it should be taken as argument
   i = 0;
-  reg u32 temp;
-  temp = TRBYTES / 4;
-  while (i < temp) {
+  while (i < TRBYTES / 4) {
     t = pstate[(int)i];
     outp[u32 (int)i] = t;
     i += 1;
@@ -408,26 +396,21 @@ fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES
   reg u32 t s i pos;
   i = 0;
   pos = CRHBYTES;
-  reg u32 temp;
-  temp = SHAKE256_RATE;
-  while (pos < temp) {
+  while (pos < SHAKE256_RATE) {
     s = m.[u32 i];
     pstate.[pos] = s;
     pos += 4; i += 4;
   }
 
-
-  reg u32 temp2;
-  temp2 = K * POLYW1_PACKEDBYTES;
   while {
     () = #spill(m, i);
     pstate = _keccakf1600_ref(pstate);
     () = #unspill(m, i);
     pos = 0;      
   } 
-  (i < temp2)
+  (i < K * POLYW1_PACKEDBYTES)
   {
-    while (pos < temp) {
+    while (pos < SHAKE256_RATE) {
       t = m.[u32 i];
       s = pstate.[pos];
       s ^= t;

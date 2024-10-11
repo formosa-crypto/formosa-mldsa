@@ -18,4 +18,4 @@ else
 	$(error arch must be set to risc-v or arm-m4)
 endif
 
-JASMIN ?= jasminc
+JASMINC ?= jasminc

@@ -10,6 +10,13 @@
 /* ********************************************************************** */
 /* Helper functions to facilitate architecture modularity                 */
 
+inline fn __imm_sub_reg_inplace(inline int imm, reg u32 in) -> reg u32 {
+    reg u32 temp;
+    temp = imm;
+    in = temp - in;
+    return in;
+}
+
 inline fn __ubfx(reg u32 in, inline int pos, inline int width) -> reg u32 {
   in = #SLLI(in, 32 - (pos + width));
   in = #SRLI(in, 32 - width);
@@ -23,20 +30,54 @@ inline fn __smull(reg u32 in_1, reg u32 in_2, reg u32 out_low, reg u32 out_high)
 }
 
 /**
- Operates the subtraction of the @nb_bits logical left shift on @in_2 with @in_1.
+ Operates the or of the @nb_bits logical left shift on @in_2 with @in_1.
  Writes the result in @in_1.
+ Introduces a temporary register.
 **/
-inline fn __rsb_lsl_inplace(reg u32 in_1, reg u32 in_2, inline int shift) -> reg u32 {
-  in_2 = in_2 << shift;
+inline fn __or_lsl_inplace(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 temp;
+  temp = (in_2 << nb_bits);
+  in_1 |= temp;
+  return in_1;
+}
+
+/**
+ Operates the or of the @nb_bits logical left shift on @in_2 with @in_1.
+**/
+inline fn __or_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
+  out = (in_2 << nb_bits);
+  out |= in_1;
+  return out;
+}
+
+/**
+ Operates the addition of the @nb_bits logical left shift on @in_2 with @in_1.
+ Writes the result in @in_1.
+ Introduces a temporary register.
+**/
+inline fn __plus_lsl_inplace(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 temp;
+  temp = (in_2 << nb_bits);
+  in_1 += temp;
+  return in_1;
+}
+
+/**
+ Operates the subtraction of the @nb_bits logical left shift on @in_2 with @in_1.
+ Writes the result in @in_2.
+**/
+inline fn __rsb_lsl_inplace(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  in_2 = in_2 << nb_bits;
   in_2 = in_2 - in_1;
   return in_2;
 }
 
 /**
  Operates the subtraction of the @nb_bits logical left shift on @in_2 with @in_1.
- Writes the result in @out.
 **/
-inline fn __rsb_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits, reg u32 out) -> reg u32 {
+inline fn __rsb_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
   in_2 = in_2 << nb_bits;
   out = in_2 - in_1;
   return out;

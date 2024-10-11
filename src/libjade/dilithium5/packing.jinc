@@ -161,9 +161,7 @@ fn _pack_sig(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[C
     for i = 0 to K {
        nh = h[i * N: N];
        j = 0;
-       reg u32 n;
-       n = N;
-       while (j < n) {
+       while (j < N) {
          hj = nh[j];
          if hj != 0 {
            pptsig[k] = j;
@@ -217,9 +215,7 @@ fn _pack_sig_nocopy(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg p
     for i = 0 to K {
        nh = h[i * N: N];
        j = 0;
-       reg u32 n;
-       n = N;
-       while (j < n) {
+       while (j < N) {
          hj = nh[j];
          if hj != 0 {
            pptsig[k] = j;
@@ -408,9 +404,7 @@ fn _unpack_sig(reg ptr u8[CTILDEBYTES] c,
         // FIXME : introduce a local function to not duplicate the code
         j = 0;
         // FIXME improve this loop
-        reg u32 n;
-        n = N;
-        while (j < n) {
+        while (j < N) {
           nh[j] = r0;
           j += 1;
         } 
@@ -418,9 +412,8 @@ fn _unpack_sig(reg ptr u8[CTILDEBYTES] c,
         if (sroi <32u k) {
            status = 1;
         }
-        reg u32 omega;
-        omega = OMEGA;
-        if (sroi >32u omega) {
+
+        if (sroi >32u OMEGA) {
            status = 1;
         }
         if (status == 0) {
@@ -456,9 +449,7 @@ fn _unpack_sig(reg ptr u8[CTILDEBYTES] c,
     }
     if (status == 0) {
       j = k;
-      reg u32 omega;
-      omega = OMEGA;
-      while(j <32u omega) {
+      while(j <32u OMEGA) {
         sj = (32u)pptsig[j];
         if (sj != 0) {
           j = OMEGA;

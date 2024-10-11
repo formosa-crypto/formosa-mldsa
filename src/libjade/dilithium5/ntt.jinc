@@ -80,9 +80,7 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
 
   reg ptr u32[N] zetas;  
   reg u32 start_len j_len aj aj_len;
-  reg u32 n;
-  n = N;
-   k = 0;
+  k = 0;
    /* for (len = 128; len > 0; len >>= 1) { */
    len = 128;
    while {
@@ -113,7 +111,7 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
          j_len += 1;
        } (j < start_len)
        start = j_len;  // start = start + 2 * len
-     } (start < n)
+     } (start < N)
      //?{zf}, len = #LSRS(len, 1);
      len = len >> 1;
    } (len != 0)
@@ -169,8 +167,6 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
 
   reg ptr u32[N] zetas;  
   reg u32 start_len j_len aj aj_len;
-  reg u32 n;
-  n = N;
 
   k = 256;
   /* for (len = 1; len < N; len <<= 1) */
@@ -202,10 +198,10 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
         j_len += 1;
       } (j < start_len)
       start = j_len;  // start = start + 2 * len
-    }  (start < n)
+    }  (start < N)
     len <<= 1; 
     
-  } (len < n)        
+  } (len < N)
 
   reg u32 f; 
   f = 41978; // mont^2/256
@@ -219,7 +215,7 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
     a[(int) j] = aj;
   
     j+=1;
-  } (j < n)
+  } (j < N)
 
   return a;
 }
