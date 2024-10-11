@@ -38,7 +38,7 @@ inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32
 // precondition q = Q
 inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
 {
-  reg u32 a0 a1 aux temp;
+  reg u32 a0 a1 aux;
   
   /* a1  = (a + 127) >> 7; */
   a1 =  a + 127;
@@ -47,27 +47,21 @@ inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
   /* a1  = (a1 * 1025 + (1 << 21)) >> 22;
      a1 &= 15; */
 
-  temp = (a1 << 10);
-  aux = a1 + temp; // aux = a1 * 1025;
-  temp = 1 << 21;
-  aux += temp;
+  aux = __plus_lsl(a1, a1, 10); // aux = a1 * 1025;
+  aux = __add_large_imm(aux, 1 << 21);
   a1 = __ubfx(aux, 22, 4);
 
   /* *a0  = a - a1 * 2 * GAMMA2; */
   /* - 2*GAMMA2 = (1 - 2 ^ 10) * 2^9 */
-  temp = (a1 << 10);
-  aux = a1 - temp;
-  temp = (aux << 9);
-  a0 = a + temp;
+  aux = __sub_lsl(a1, a1, 10);
+  a0 = __plus_lsl(a, aux, 9);
   
   /* *a0 -= (((Q - 1) / 2 - *a0) >> 31) & Q; */
   /* (Q - 1) / 2 = 1023 * 2^12 */
   aux = 1023;
   // (Q - 1) / 2 - *a0
   aux = __rsb_lsl_inplace(a0, aux, 12);
-
-  temp = (aux >>s 31);
-  aux = q & temp;
+  aux = __and_asr(q, aux, 31);
   a0 -= aux;
   
   return a0, a1;

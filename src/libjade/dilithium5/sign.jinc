@@ -166,9 +166,7 @@ inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -
     reg u32 i, t;
 
     i = 0;
-    reg u32 bound;
-    bound = polyvecl;
-    while (i < bound) {
+    while (i < polyvecl) {
       t = s1[i];
       s1hat[i] = t;
       i += 1;
@@ -341,12 +339,11 @@ fn _shake256_inc_absorb_mem
    reg u32 m, 
    reg u32 mlen) -> reg ptr u32[25*2], reg u32
 {
-  reg u32 t s aux shake256_rate;
-  shake256_rate = SHAKE256_RATE;
+  reg u32 t s aux;
 
-  aux = shake256_rate - pos;
+  aux = __imm_sub_reg(SHAKE256_RATE, pos);
   if (aux <= mlen) {
-    while (pos < shake256_rate) {
+    while (pos < SHAKE256_RATE) {
       t = (u32)[m];
       s = pstate.[pos];
       s ^= t;
@@ -361,9 +358,9 @@ fn _shake256_inc_absorb_mem
       pos = 0;
     } 
     // FIXME: it will be good to be able to write (SHAKE256_RATE < mlen)
-    (mlen > shake256_rate)
+    (mlen > SHAKE256_RATE)
     {
-      while (pos < shake256_rate) {
+      while (pos < SHAKE256_RATE) {
         t = (u32)[m];
         s = pstate.[pos];
         s ^= t;

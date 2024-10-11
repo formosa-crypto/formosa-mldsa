@@ -27,6 +27,12 @@ inline fn __imm_sub_reg_inplace(inline int imm, reg u32 in) -> reg u32 {
     return in;
 }
 
+inline fn __imm_sub_reg(inline int imm, reg u32 in) -> reg u32 {
+    reg u32 out;
+    out = imm - in;
+    return out;
+}
+
 inline fn __ubfx(reg u32 in, inline int pos, inline int width) -> reg u32 {
   in = #UBFX(in, width, pos);
   return in;
@@ -58,6 +64,15 @@ inline fn __or_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
 }
 
 /**
+ Operates the and of the @nb_bits arithmetic right shift on @in_2 with @in_1.
+**/
+inline fn __and_asr(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
+  out = in_1 & (in_2 >>s nb_bits);
+  return out;
+}
+
+/**
  Operates the addition of the @nb_bits logical left shift on @in_2 with @in_1.
  Writes the result in @in_1.
  Introduces a temporary register.
@@ -65,6 +80,16 @@ inline fn __or_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
 inline fn __plus_lsl_inplace(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
   in_1 += (in_2 << nb_bits);
   return in_1;
+}
+
+
+/**
+ Operates the addition of the @nb_bits logical left shift on @in_2 with @in_1.
+**/
+inline fn __plus_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
+  out = in_1 +  (in_2 << nb_bits);
+  return out;
 }
 
 /**
