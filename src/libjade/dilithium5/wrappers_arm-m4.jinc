@@ -34,7 +34,7 @@ inline fn __imm_sub_reg(inline int imm, reg u32 in) -> reg u32 {
 }
 
 inline fn __ubfx(reg u32 in, inline int pos, inline int width) -> reg u32 {
-  in = #UBFX(in, width, pos);
+  in = #UBFX(in, pos, width);
   return in;
 }
 
