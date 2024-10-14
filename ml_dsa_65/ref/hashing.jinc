@@ -138,3 +138,61 @@ fn hash_verification_key(reg ptr u8[VERIFICATION_KEY_SIZE] pk, reg ptr u8[64] ou
     }
     return out;
 }
+
+inline
+fn hash_tr_m(reg ptr u8[64] tr, reg u64 m_len, reg u64 m)
+	-> stack u8[64]
+{
+	// FIXME: This function is smelly and should check more consistently when
+	// the SHA3 buffer is full.
+	stack u8[64] mu;
+	stack u64[25] state;
+	reg u8 c;
+	reg u64 offset;
+	reg u64 m_loc;
+	reg u64 space_required;
+
+	state = st0(state);
+	offset = 0;
+	while(offset < 64) {
+		c = tr[(int) offset];
+		state[u8 (int) offset] ^= c;
+		offset += 1;
+	}
+
+	m_loc = 0;
+	space_required = m_len;
+	space_required += 32; //edge case correction
+	while(space_required >= SHAKE256_RATE) {
+		while(offset < SHAKE256_RATE) {
+			c = (u8) [m + m_loc];
+			state[u8 (int) offset] ^= c;
+			m_loc += 1;
+			offset += 1;
+		}
+		state = __keccakf1600_ref(state);
+		offset = 0;
+		space_required = m_len;
+		space_required -= m_loc;
+	}
+
+	//last block
+	while(m_loc < m_len) {
+		c = (u8) [m + m_loc];
+		state[u8 (int) offset] ^= c;
+		m_loc += 1;
+		offset += 1;
+	}
+	state[u8 (int) offset] ^= 0x1f;
+	state[u8 SHAKE256_RATE-1] ^= 0x80;
+
+	state = __keccakf1600_ref(state);
+
+	offset = 0;
+	while(offset < 64) {
+		c = state[u8 (int) offset];
+		mu[(int) offset] = c;
+		offset += 1;
+	}
+	return mu;
+}

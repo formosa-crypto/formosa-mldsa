@@ -12,7 +12,8 @@ IMPLEMENTATION = $(TOP)/ml_dsa_$(PARAMETER_SET)/$(IMPLEMENTATION_TYPE)
 
 OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)
 
-$(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION)/ml_dsa.jazz $(wildcard $(IMPLEMENTATION)/*.jinc)
+$(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION)/ml_dsa.jazz $(wildcard $(IMPLEMENTATION)/*.jinc) $(wildcard $(IMPLEMENTATION)/encoding/*.jinc)
+
 	$(JASMIN_COMMAND) -o $@ $<
 
 # --------------------------------------------------------------------

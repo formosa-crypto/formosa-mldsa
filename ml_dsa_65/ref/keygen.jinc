@@ -4,19 +4,10 @@ require "row_vector.jinc"
 require "column_vector.jinc"
 require "parameters.jinc"
 require "constants.jinc"
-
-param int START_OF_S1_IN_ENCODED_SIGNING_KEY =
-    SEED_FOR_MATRIX_A_SIZE +
-    SEED_FOR_SIGNING_SIZE +
-    VERIFICATION_KEY_HASH_SIZE;
-
-param int START_OF_S2_IN_ENCODED_SIGNING_KEY =
-    START_OF_S1_IN_ENCODED_SIGNING_KEY +
-    S1_ENCODED_SIZE;
-
-param int START_OF_T0_IN_ENCODED_SIGNING_KEY =
-    START_OF_S2_IN_ENCODED_SIGNING_KEY +
-    S2_ENCODED_SIZE;
+require "encoding/s1.jinc"
+require "encoding/s2.jinc"
+require "encoding/t0.jinc"
+require "encoding/t1.jinc"
 
 inline
 fn keygen_internal(reg ptr u8[32] randomness)

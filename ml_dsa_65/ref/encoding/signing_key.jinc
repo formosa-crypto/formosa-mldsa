@@ -1,0 +1,34 @@
+require "../parameters.jinc"
+require "s1.jinc"
+require "s2.jinc"
+
+namespace signing_key {
+    inline
+    fn decode(reg ptr u8[SIGNING_KEY_SIZE] sk)
+            -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], //s1
+               stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], //s2
+               stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] //t0
+    {
+        stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0;
+
+        s1 = s1::decode(signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE]);
+
+        for ii = 0 to ROWS_IN_MATRIX_A {
+            poly_to_unpack = s2[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+            sx_in_sk = sk[Li2_pack_s2loc + ii * Li2_pack_etalen : Li2_pack_etalen];
+            poly_to_unpack = polyeta_unpack(poly_to_unpack, sx_in_sk);
+            s2[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = poly_to_unpack;
+        }
+
+        for ii = 0 to ROWS_IN_MATRIX_A {
+            poly_to_unpack = t0[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+            t0_in_sk = sk[SIGNING_KEY_SIZE - (ROWS_IN_MATRIX_A - ii) * Li2_pack_t0len : Li2_pack_t0len];
+            poly_to_unpack = polyt0_unpack(poly_to_unpack, t0_in_sk);
+            t0[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = poly_to_unpack;
+        }
+
+        return s1, s2, t0;
+    }
+}

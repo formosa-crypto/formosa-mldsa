@@ -1,0 +1,120 @@
+require "../parameters.jinc"
+
+namespace t1 {
+    fn encode_polynomial(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1, reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] buf)
+        -> reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE]
+    {
+        reg u64 i;
+        reg u64 addr;
+        reg u32 x x1;
+        reg u8 c;
+
+        i = 0;
+        while(i < COEFFICIENTS_IN_POLYNOMIAL / 4) {
+            // buf[5*i+0] = t1[4*i+0] >> 0;
+
+            addr = 4;
+            addr *= i;
+            x = t1[(int) addr];
+            c = (8u) x;
+
+            addr = 5;
+            addr *= i;
+            buf[(int) addr] = c;
+
+            // buf[5*i+1] = (t1[4*i+0] >> 8) | (t1[4*i+1] << 2);
+
+            addr = 4;
+            addr *= i;
+            x = t1[(int) addr];
+            x >>= 8;
+
+            addr = 4;
+            addr *= i;
+            addr += 1;
+            x1 = t1[(int) addr];
+            x1 <<= 2;
+            x |= x1;
+
+            addr = 5;
+            addr *= i;
+            addr += 1;
+            c = (8u) x;
+            buf[(int) addr] = c;
+
+            // buf[5*i+2] = (t1[4*i+1] >> 6) | (t1[4*i+2] << 4);
+
+            addr = 4;
+            addr *= i;
+            addr += 1;
+            x = t1[(int) addr];
+            x >>= 6;
+
+            addr = 4;
+            addr *= i;
+            addr += 2;
+            x1 = t1[(int) addr];
+            x1 <<= 4;
+            x |= x1;
+
+            addr = 5;
+            addr *= i;
+            addr += 2;
+            c = (8u) x;
+            buf[(int) addr] = c;
+
+            // buf[5*i+3] = (t1[4*i+2] >> 4) | (t1[4*i+3] << 6);
+
+            addr = 4;
+            addr *= i;
+            addr += 2;
+            x = t1[(int) addr];
+            x >>= 4;
+
+            addr = 4;
+            addr *= i;
+            addr += 3;
+            x1 = t1[(int) addr];
+            x1 <<= 6;
+            x |= x1;
+
+            addr = 5;
+            addr *= i;
+            addr += 3;
+            c = (8u) x;
+            buf[(int) addr] = c;
+
+            // buf[5*i+4] = (t1[4*i+3] >> 2);
+
+            addr = 4;
+            addr *= i;
+            addr += 3;
+            x = t1[(int) addr];
+            x >>= 2;
+
+            addr = 5;
+            addr *= i;
+            addr += 4;
+            c = (8u) x;
+            buf[(int) addr] = c;
+
+            i += 1;
+        }
+
+        return buf;
+    }
+
+    inline fn
+    encode(reg ptr u8[T1_ENCODED_SIZE] encoded, reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t1) -> reg ptr u8[T1_ENCODED_SIZE] {
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1_to_pack;
+
+        inline int j;
+
+        for j = 0 to ROWS_IN_MATRIX_A {
+            t1_to_pack = t1[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL];
+            encoded[j * T1_POLYNOMIAL_ENCODED_SIZE : T1_POLYNOMIAL_ENCODED_SIZE] = encode_polynomial(t1_to_pack, encoded[j * T1_POLYNOMIAL_ENCODED_SIZE : T1_POLYNOMIAL_ENCODED_SIZE]);
+        }
+
+        return encoded;
+    }
+}

@@ -1,4 +1,3 @@
-require "encoding.jinc"
 require "parameters.jinc"
 require "constants.jinc"
 require "expandS.jinc"

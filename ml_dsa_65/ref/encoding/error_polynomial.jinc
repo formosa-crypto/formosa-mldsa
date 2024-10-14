@@ -1,0 +1,69 @@
+require "../parameters.jinc"
+
+namespace error_polynomial {
+    fn encode(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial, reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] dest)
+        -> reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE]
+    {
+        inline int _eta;
+
+        reg u32 lo hi;
+        reg u32 coeff;
+
+        reg u64 i addr;
+
+        _eta = 4;
+
+        ?{}, i = #set0_64();
+        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
+            coeff = polynomial[(int) i];
+            lo = _eta;
+            lo -= coeff;
+
+            coeff = polynomial[(int) i + 1];
+            hi = _eta;
+            hi -= coeff;
+
+            hi <<= 4;
+            hi |= lo;
+
+            addr = i;
+            addr >>= 1;
+            dest[(int) addr] = hi;
+
+            i += 2;
+        }
+        return dest;
+    }
+
+    fn decode(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] r, reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] a)
+    -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
+        inline int _eta;
+        reg u64 i;
+        reg u32 x;
+
+        _eta = 4;
+
+        ?{}, i = #set0_64();
+        while (i < COEFFICIENTS_IN_POLYNOMIAL / 2) {
+            // r->coeffs[2*i+0] = a[i] & 0x0F;
+            x = (32u) a[(int) i];
+            x &= 0x0F;
+            // r->coeffs[2*i+0] = ETA - r->coeffs[2*i+0];
+            x = -x;
+            x += _eta;
+            r[2 * ((int) i)] = x;
+
+            // r->coeffs[2*i+1] = a[i] >> 4;
+            x = (32u) a[(int) i];
+            x >>= 4;
+            // r->coeffs[2*i+1] = ETA - r->coeffs[2*i+1];
+            x = -x;
+            x += _eta;
+            r[2 * ((int) i) + 1] = x;
+
+            i += 1;
+        }
+        return r;
+    }
+
+}
