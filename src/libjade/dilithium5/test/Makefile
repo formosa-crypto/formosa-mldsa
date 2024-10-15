@@ -8,7 +8,25 @@ all : clean compile
 
 #-------------------------------------------------------------------------------
 
-JASMIN_LIB := ../libdilithium_jasmin_$(arch).a
+JASMIN_LIB := libdilithium_jasmin_test_$(arch).a
+JASMIN_OBJECTS := library_test_$(arch).o
+JASMIN_FILES := library_test_$(arch).jazz
+
+PRE_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%.jpp)
+ASM_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%.s)
+OBJ_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%_jazz.o)
+
+#-------------------------------------------------------------------------------
+
+$(JASMIN_OBJECTS): library_test_$(arch).s
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(ASM_JASMIN_FILES):
+%.s: %.jazz
+	$(JASMINC) -arch=$(arch) -o $@ $<
+
+$(JASMIN_LIB): $(JASMIN_OBJECTS)
+	$(CAR) -r $@ $(JASMIN_OBJECTS)
 
 #-------------------------------------------------------------------------------
 
@@ -42,12 +60,9 @@ run: $(TESTS_OUT)
 
 $(TESTS_BIN):
 test_%: test_%.c ../%.jinc ../%.jazz
-	$(CC) -o $@ $(CFLAGS) -static test_$*.c -I./common -I./pqclean/ -L./ -ldilithium5_clean -L../ -ldilithium_jasmin_$(arch)
-
-$(JASMIN_LIB):
-	$(MAKE) -C ..
+	$(CC) -o $@ $(CFLAGS) -static test_$*.c -I./common -I./pqclean/ -L./ -ldilithium5_clean -L../ -ldilithium_jasmin_test_$(arch)
 
 #--
 .PHONY: clean
 clean:
-	rm -f $(TESTS_BIN) $(TESTS_OUT) $(PQCLEAN_LIB) $(PQCLEAN_OBJECTS)
+	rm -f $(TESTS_BIN) $(TESTS_OUT) $(PQCLEAN_LIB) $(PQCLEAN_OBJECTS) $(JASMIN_LIB) $(JASMIN_OBJECTS) $(ASM_JASMIN_FILES) $(PRE_JASMIN_FILES) $(OBJ_JASMIN_FILES) library_$(arch).{o,s}
