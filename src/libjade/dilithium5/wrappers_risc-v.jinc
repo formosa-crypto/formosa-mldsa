@@ -40,6 +40,46 @@ inline fn __imm_sub_reg(inline int imm, reg u32 in) -> reg u32 {
     return out;
 }
 
+inline fn __set_if_true(reg u32 in, inline bool b) -> reg u32 {
+  reg u32 out;
+  if (b) {
+    out = in;
+  }
+  return out;
+}
+
+inline fn __set_if_true_plus_imm(reg u32 in, inline int i, inline bool b) -> reg u32 {
+  reg u32 out;
+  reg u32 temp;
+  if (b) {
+    temp = in + i;
+    out = temp;
+  }
+  return out;
+}
+
+inline fn __cmp_b(reg u32 in_1, reg u32 in_2) -> inline bool {
+  inline bool b;
+  b = (in_1 <u in_2);
+  return b;
+}
+
+inline fn __cmp_eq_lt(reg u32 in_1, reg u32 in_2) -> inline bool, inline bool {
+  inline bool lt;
+  inline bool eq;
+  eq = (in_1 == in_2);
+  lt = (in_1 <s in_2);
+  return eq, lt;
+}
+
+inline fn __cmp_gt_le_zero(reg u32 in) -> inline bool, inline bool {
+  inline bool gt;
+  inline bool le;
+  gt = (in >s 0);
+  le = (in <=s 0);
+  return gt, le;
+}
+
 inline fn __ubfx(reg u32 in, inline int pos, inline int width) -> reg u32 {
   in = #SLLI(in, 32 - (pos + width));
   in = #SRLI(in, 32 - width);

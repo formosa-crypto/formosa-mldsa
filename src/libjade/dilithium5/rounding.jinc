@@ -97,9 +97,8 @@ inline fn __make_hint(reg u32 a0, reg u32 a1, reg u32 gamma2) -> reg u32
    res = 1;
    if (a0 <=s gamma2) {
      mgamma2 = -gamma2;
-     // ?{"==" = eq, "<s" = lt} = #CMP(a0,mgamma2);
-     eq = (a0 == mgamma2);
-     lt = (a0 <s mgamma2);
+
+     eq, lt = __cmp_eq_lt(a0, mgamma2);
 
      if (!lt) {
 
@@ -153,9 +152,8 @@ inline fn __use_hint(reg u32 a, reg u32 hint, reg u32 q) -> reg u32 {
   a0, a1 = __decompose_a0a1(a, q);
 
   if (hint != 0) {
-   //    ?{">s" = gt, "<=s" = le} = #CMP(a0, 0);
-   gt = (a0 >s 0);
-   le = (a0 <=s 0);
+   gt, le = __cmp_gt_le_zero(a0);
+
 
    if (gt) {
       a1 += 1;

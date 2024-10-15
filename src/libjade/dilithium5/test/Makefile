@@ -17,10 +17,10 @@ PQCLEAN_HEADERS=pqclean/api.h pqclean/ntt.h pqclean/packing.h pqclean/params.h p
 PQCLEAN_OBJECTS=pqclean/ntt.o pqclean/packing.o pqclean/poly.o pqclean/polyvec.o pqclean/reduce.o pqclean/rounding.o pqclean/sign.o pqclean/symmetric-shake.o pqclean/fips202.o
 
 %.o: %.c $(HEADERS)
-	$(ARMCC) $(ARMCFLAGS) $(FULL_TESTING) -c -o $@ $<
+	$(CC) $(CFLAGS) $(FULL_TESTING) -c -o $@ $<
 
 $(PQCLEAN_LIB): $(PQCLEAN_OBJECTS)
-	$(ARMAR) -r $@ $(PQCLEAN_OBJECTS)
+	$(AR) -r $@ $(PQCLEAN_OBJECTS)
 
 #-------------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ run: $(TESTS_OUT)
 
 $(TESTS_BIN):
 test_%: test_%.c ../%.jinc ../%.jazz
-	$(ARMCC) -o $@ $(ARMCFLAGS) -static test_$*.c -I./common -I./pqclean/ -L./ -ldilithium5_clean_risc-v -L../ -ldilithium_jasmin_risc-v
+	$(CC) -o $@ $(ARMCFLAGS) -static test_$*.c -I./common -I./pqclean/ -L./ -ldilithium5_clean_$(arch) -L../ -ldilithium_jasmin_$(arch)
 
 $(JASMIN_LIB):
 	$(MAKE) -C ..

@@ -18,7 +18,7 @@ OBJ_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%_jazz.o)
 #-------------------------------------------------------------------------------
 
 $(JASMIN_OBJECTS): library_$(arch).s
-	$(ARMCC) $(ARMCFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(ASM_JASMIN_FILES):
 %.s: %.jazz
@@ -29,7 +29,7 @@ $(ASM_JASMIN_FILES):
 compile: $(JASMIN_LIB)
 
 $(JASMIN_LIB): $(JASMIN_OBJECTS)
-	$(ARMAR) -r $@ $(JASMIN_OBJECTS)
+	$(AR) -r $@ $(JASMIN_OBJECTS)
 
 #-------------------------------------------------------------------------------
 clean:

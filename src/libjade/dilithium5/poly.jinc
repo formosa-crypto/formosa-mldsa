@@ -1289,15 +1289,10 @@ inline fn __rej_sample(
 ) -> reg ptr u32[N], reg u32 
 {
   inline bool b;
-  //  ?{"<u" = b} = #CMP(t, q);
-  b = (t <u q);
-  // FIXME for arm
-  // a[(int) ctr] = t if (b);
-  // ctr = ctr + 1 if (b);
-  if (b) {
-    a[(int) ctr] = t;
-    ctr = ctr + 1;
-  }
+  b = __cmp_b(t, q);
+
+  a[(int) ctr] = __set_if_true(t, b);
+  ctr = __set_if_true_plus_imm(ctr, 1, b);
 
   return a, ctr;
 }
@@ -1476,9 +1471,7 @@ fn _poly_uniform_gamma1(reg ptr u32[N] a,
 
   reg u32 i, t;
   i = 0;
-  reg u32 polyz_last_sz_4;
-  polyz_last_sz_4 = POLYZ_LAST_SZ / 4;
-  while (i < polyz_last_sz_4 ) {
+  while (i < POLYZ_LAST_SZ / 4) {
     t = state[(int) i];
     bufc[u32 (int) i] = t;
     i += 1;
