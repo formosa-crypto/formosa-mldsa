@@ -14,9 +14,18 @@ param int ETA = 4;
 
 param int MAX_ONES_IN_HINT = 55;
 
+// Commitment coefficients are in the interval: [0, ((FIELD_MODULUS − 1)/2γ2) − 1]
+// ((FIELD_MODULUS − 1)/2γ2) − 1 = 15, which means we need 4 bits to represent a
+// coefficient.
+param int BITS_PER_COMMITMENT_COEFFICIENT = 4;
+
 param int COMMITMENT_HASH_SIZE = 48;
 
+param int ONES_IN_VERIFIER_CHALLENGE = 49;
+
+// ----------------------------------------------------------------------
 // The constants below are all determined from the values specified above.
+// ----------------------------------------------------------------------
 
 param int T0_ENCODED_SIZE = ROWS_IN_MATRIX_A * T0_POLYNOMIAL_ENCODED_SIZE;
 param int T1_ENCODED_SIZE = ROWS_IN_MATRIX_A * T1_POLYNOMIAL_ENCODED_SIZE;
@@ -57,3 +66,9 @@ param int HINT_ENCODED_SIZE = MAX_ONES_IN_HINT + ROWS_IN_MATRIX_A;
 param int SIGNATURE_SIZE = COMMITMENT_HASH_SIZE +
                            GAMMA1_ENCODED_SIZE +
                            HINT_ENCODED_SIZE;
+
+param int ENCODED_COMMITMENT_POLYNOMIAL_SIZE =
+    (BITS_PER_COMMITMENT_COEFFICIENT * COEFFICIENTS_IN_POLYNOMIAL) / 8;
+param int ENCODED_COMMITMENT_SIZE = ENCODED_COMMITMENT_POLYNOMIAL_SIZE * ROWS_IN_MATRIX_A;
+
+param int BETA = ONES_IN_VERIFIER_CHALLENGE * ETA;

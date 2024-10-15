@@ -3,9 +3,8 @@ TOP = /home/efgh/repos/formosa-mldsa
 PARAMETER_SET = 65
 IMPLEMENTATION_TYPE = ref
 # --------------------------------------------------------------------
-override FLAGS += -noinsertarraycopy -lazy-regalloc
 JASMINC ?= jasminc
-JASMIN_COMMAND ?= $(JASMINC) $(FLAGS) $(INCLUDE)
+JASMIN_COMMAND ?= $(JASMINC) $(JASMINC_FLAGS) $(INCLUDE)
 
 # --------------------------------------------------------------------
 IMPLEMENTATION = $(TOP)/ml_dsa_$(PARAMETER_SET)/$(IMPLEMENTATION_TYPE)
@@ -28,6 +27,6 @@ test/$(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 .PHONY: clean
 clean:
 	rm -fr \
-		$(IMPLEMENTATION)/*.s \
+		$(TOP)/*.s \
 		$(TOP)/test/*.o \
 		$(TOP)/test/*.so

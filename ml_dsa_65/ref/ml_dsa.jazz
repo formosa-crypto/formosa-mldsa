@@ -1,9 +1,6 @@
-require "parameters.jinc"
-require "constants.jinc"
-require "expandS.jinc"
 require "tofromstack.jinc"
-require "expandA.jinc"
 require "keygen.jinc"
+require "sign.jinc"
 
 export fn ml_dsa_65_keygen(reg u64 verification_key_out signing_key_out randomness) -> reg u64
 {
@@ -32,6 +29,41 @@ export fn ml_dsa_65_keygen(reg u64 verification_key_out signing_key_out randomne
     while(i < SIGNING_KEY_SIZE) {
         c = signing_key[(int) i];
         (u8)[signing_key_out + i] = c;
+        i += 1;
+    }
+
+    ?{}, exit_code = #set0();
+    return exit_code;
+}
+
+// TODO: Add context string
+export fn ml_dsa_65_sign(reg u64 signature_out signing_key message message_size randomness) -> reg u64
+{
+    reg u64 exit_code;
+
+    stack u8[32] randomness_on_stack;
+    stack u8[SIGNING_KEY_SIZE] signing_key_on_stack;
+
+    stack u8[SIGNATURE_SIZE] signature;
+    stack u32 status;
+
+    reg u8 c;
+    reg u64 i;
+
+    randomness_on_stack = __tostack32u8(randomness_on_stack, randomness);
+    i = 0;
+    while(i < SIGNING_KEY_SIZE) {
+        c = (u8)[signing_key + i];
+        signing_key_on_stack[(int) i] = c;
+        i += 1;
+    }
+
+    signature, status = sign_internal(signing_key_on_stack, message, message_size, randomness_on_stack);
+
+    i = 0;
+    while(i < SIGNATURE_SIZE) {
+        c = signature[(int) i];
+        (u8)[signature_out + i] = c;
         i += 1;
     }
 

@@ -27,7 +27,7 @@ fn shake256_absorb34(reg ptr u8[32] in, reg u8 num_rows, reg u8 num_cols) -> sta
 }
 
 inline
-fn shake256_absorb32(reg ptr u8[32] in) -> stack u64[25] {
+fn shake256_absorb_commitment_hash(reg ptr u8[48] in) -> stack u64[25] {
     reg u8 c;
     inline int i;
     stack u64[25] state;
@@ -36,12 +36,12 @@ fn shake256_absorb32(reg ptr u8[32] in) -> stack u64[25] {
     state_rsp = state;
     state_rsp = st0(state_rsp);
     // TODO: Inefficient to load one byte at a time. Optimize this.
-    for i = 0 to 32 {
-    c = in[i];
-    state_rsp[u8 i] ^= c;
+    for i = 0 to 48 {
+        c = in[i];
+        state_rsp[u8 i] ^= c;
     }
 
-    state_rsp[u8 32] ^= 0x1f;
+    state_rsp[u8 48] ^= 0x1f;
     state_rsp[u8 SHAKE256_RATE - 1] ^= 0x80;
 
     state = state_rsp;
@@ -140,59 +140,172 @@ fn hash_verification_key(reg ptr u8[VERIFICATION_KEY_SIZE] pk, reg ptr u8[64] ou
 }
 
 inline
-fn hash_tr_m(reg ptr u8[64] tr, reg u64 m_len, reg u64 m)
-	-> stack u8[64]
+fn hash_tr_m(reg ptr u8[64] tr, reg u64 message_size, reg u64 m)
+    -> stack u8[64]
 {
-	// FIXME: This function is smelly and should check more consistently when
-	// the SHA3 buffer is full.
-	stack u8[64] mu;
-	stack u64[25] state;
-	reg u8 c;
-	reg u64 offset;
-	reg u64 m_loc;
-	reg u64 space_required;
+    stack u8[64] mu;
+    stack u64[25] state;
+    reg u8 c;
+    reg u64 offset;
+    reg u64 m_loc;
 
-	state = st0(state);
-	offset = 0;
-	while(offset < 64) {
-		c = tr[(int) offset];
-		state[u8 (int) offset] ^= c;
-		offset += 1;
-	}
+    state = st0(state);
+    offset = 0;
+    while(offset < 64) {
+        c = tr[(int) offset];
+        state[u8 (int) offset] ^= c;
+        offset += 1;
+    }
 
-	m_loc = 0;
-	space_required = m_len;
-	space_required += 32; //edge case correction
-	while(space_required >= SHAKE256_RATE) {
-		while(offset < SHAKE256_RATE) {
-			c = (u8) [m + m_loc];
-			state[u8 (int) offset] ^= c;
-			m_loc += 1;
-			offset += 1;
-		}
-		state = __keccakf1600_ref(state);
-		offset = 0;
-		space_required = m_len;
-		space_required -= m_loc;
-	}
+    // Absorb the domain separation context.
+    // TODO: This is null for now.
+    state[u8 (int) offset] ^= 0x00;
+    offset += 1;
+    state[u8 (int) offset] ^= 0x00;
+    offset += 1;
 
-	//last block
-	while(m_loc < m_len) {
-		c = (u8) [m + m_loc];
-		state[u8 (int) offset] ^= c;
-		m_loc += 1;
-		offset += 1;
-	}
-	state[u8 (int) offset] ^= 0x1f;
-	state[u8 SHAKE256_RATE-1] ^= 0x80;
+    m_loc = 0;
+    while(m_loc < message_size) {
+        state, offset = shake256_consider_permute(state, offset);
+        c = (u8) [m + m_loc];
+        state[u8 (int) offset] ^= c;
+        m_loc += 1;
+        offset += 1;
+    }
+    // Absorb separator byte
+    state, offset = shake256_consider_permute(state, offset);
+    state[u8 (int) offset] ^= 0x1f;
 
-	state = __keccakf1600_ref(state);
+    // Finish
+    state, offset = shake256_consider_permute(state, offset);
+    state[u8 SHAKE256_RATE-1] ^= 0x80;
 
-	offset = 0;
-	while(offset < 64) {
-		c = state[u8 (int) offset];
-		mu[(int) offset] = c;
-		offset += 1;
-	}
-	return mu;
+    state = __keccakf1600_ref(state);
+
+    offset = 0;
+    while(offset < 64) {
+        c = state[u8 (int) offset];
+        mu[(int) offset] = c;
+        offset += 1;
+    }
+    return mu;
+}
+
+inline
+fn hash_mu_w1(reg ptr u8[64] mu, reg ptr u8[ENCODED_COMMITMENT_SIZE] w1_packed)
+    -> stack u8[COMMITMENT_HASH_SIZE]
+{
+    stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
+    stack u64[25] state;
+    reg u8 c;
+    reg u64 offset;
+    reg u64 w1_loc;
+
+    state = st0(state);
+    ?{}, offset = #set0_64();
+
+    // Absorb mu
+    while(offset < 64) {
+        state, offset = shake256_consider_permute(state, offset);
+        c = mu[(int) offset];
+        state[u8 (int) offset] ^= c;
+        offset += 1;
+    }
+
+    // Absorb w1
+    ?{}, w1_loc = #set0_64();
+    while(w1_loc < ENCODED_COMMITMENT_SIZE) {
+        state, offset = shake256_consider_permute(state, offset);
+        c = w1_packed[(int) w1_loc];
+        state[u8 (int) offset] ^= c;
+        w1_loc += 1;
+        offset += 1;
+    }
+
+    // Absorb separator byte
+    state, offset = shake256_consider_permute(state, offset);
+    state[u8 (int) offset] ^= 0x1f;
+
+    // Finish
+    state, offset = shake256_consider_permute(state, offset);
+    state[u8 SHAKE256_RATE-1] ^= 0x80;
+
+    state = __keccakf1600_ref(state);
+    ?{}, offset = #set0_64();
+
+    while(offset < COMMITMENT_HASH_SIZE) {
+        c = state[u8 (int) offset];
+        commitment_hash[(int) offset] = c;
+        offset += 1;
+    }
+    return commitment_hash;
+}
+
+// TODO can simplify signature
+inline
+fn sample_in_ball(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, reg ptr u8[48] commitment_hash)
+    -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+{
+    stack u64[25] state;
+    reg ptr u64[25] state_rsp;
+
+    reg u64 i;
+    reg u64 b;
+    reg u64 offset;
+    reg u64 signs;
+    inline int ii;
+    reg u8 c;
+    reg u64 v;
+    reg u32 v32 fb;
+
+    state = shake256_absorb_commitment_hash(commitment_hash);
+    state_rsp = state;
+    state_rsp = __keccakf1600_ref(state_rsp);
+
+    signs = 0;
+    for ii = 0 to 8 {
+        c = state_rsp[u8 ii];
+        v = (64u) c;
+        v <<= 8 * ii;
+        signs |= v;
+    }
+
+    offset = 8;
+
+    i = 0;
+    while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+        f[(int) i] = 0;
+        i += 1;
+    }
+
+    i = COEFFICIENTS_IN_POLYNOMIAL - ONES_IN_VERIFIER_CHALLENGE;
+    while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+        // do-while
+        while {
+            if(offset >= SHAKE256_RATE) {
+                state_rsp = __keccakf1600_ref(state_rsp);
+                offset = 0;
+            }
+            c = state_rsp[u8 (int) offset];
+            b = (64u) c;
+            offset += 1;
+        } (b > i)
+
+        v32 = f[(int) b];
+        f[(int) i] = v32;
+
+        //f[(int) b] = 1 - 2 * (signs & 1);
+        v32 = (32u) signs;
+        v32 &= 1;
+        fb = 1;
+        fb -= v32;
+        fb -= v32;
+        f[(int) b] = fb;
+
+        signs >>= 1;
+
+        i += 1;
+    }
+
+    return f;
 }

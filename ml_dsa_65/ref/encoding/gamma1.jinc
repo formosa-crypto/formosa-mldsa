@@ -1,0 +1,142 @@
+require "../parameters.jinc"
+
+namespace gamma1 {
+    inline
+    fn encode_polynomial(reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] r, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] a)
+        -> reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE]
+    {
+        inline int gamma1;
+        reg u64 i;
+        reg u32 x;
+        reg u8 c;
+        reg u32 t0 t1;
+        reg u64 dest_addr src_addr;
+
+        gamma1 = 1 << 19;
+        ?{}, i = #set0_64();
+        ?{}, src_addr = #set0_64();
+        ?{}, dest_addr = #set0_64();
+        while (i < COEFFICIENTS_IN_POLYNOMIAL / 2) {
+            // t[0] = GAMMA1 - a->coeffs[2*i+0];
+            t0 = gamma1;
+            t0 -= a[(int) src_addr + 0];
+
+            // t[1] = GAMMA1 - a->coeffs[2*i+1];
+            t1 = gamma1;
+            t1 -= a[(int) src_addr + 1];
+
+            // r[5*i+0]  = t[0];
+            x = t0;
+            r[(int) dest_addr] = (8u) x;
+
+            // r[5*i+1]  = t[0] >> 8;
+            x = t0;
+            x >>= 8;
+            r[(int) dest_addr + 1] = (8u) x;
+
+            // r[5*i+2]  = t[0] >> 16;
+            x = t0;
+            x >>= 16;
+            c = (8u) x;
+
+            // r[5*i+2] |= t[1] << 4;
+            x = t1;
+            x <<= 4;
+            c |= (8u) x;
+            r[(int) dest_addr + 2] = c;
+
+            // r[5*i+3]  = t[1] >> 4;
+            x = t1;
+            x >>= 4;
+            r[(int) dest_addr + 3] = (8u) x;
+
+            // r[5*i+4]  = t[1] >> 12;
+            x = t1;
+            x >>= 12;
+            r[(int) dest_addr + 4] = (8u) x;
+
+            i += 1;
+            src_addr += 2;
+            dest_addr += 5;
+        }
+        return r;
+    }
+
+    fn decode(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] r, reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] a)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 i;
+        reg u32 x c32;
+        reg u64 addr;
+
+        i = 0;
+        while(i < COEFFICIENTS_IN_POLYNOMIAL / 2) {
+            // TODO: replace with: addr = #LEA_64(4*i + i);
+            addr = i;
+            addr *= 5;
+
+            //r->coeffs[2*i+0]  = a[5*i+0];
+            x = (32u) a[(int) addr];
+
+            //r->coeffs[2*i+0] |= (uint32_t)a[5*i+1] << 8;
+            addr = i;
+            addr *= 5;
+            addr += 1;
+            c32 = (32u) a[(int) addr];
+            c32 <<= 8;
+            x |= c32;
+
+            //r->coeffs[2*i+0] |= (uint32_t)a[5*i+2] << 16;
+            addr = i;
+            addr *= 5;
+            addr += 2;
+            c32 = (32u) a[(int) addr];
+            c32 <<= 16;
+            x |= c32;
+
+            //r->coeffs[2*i+0] = GAMMA1 - r->coeffs[2*i+0];
+
+            x &= 0xFFFFF;
+            x = -x;
+            x += 1 << 19;
+            addr = i;
+            addr *= 2;
+            r[(int) addr] = x;
+
+            //r->coeffs[2*i+1]  = a[5*i+2] >> 4;
+            addr = i;
+            addr *= 5;
+            addr += 2;
+            x = (32u) a[(int) addr];
+            x >>= 4;
+
+            //r->coeffs[2*i+1] |= (uint32_t)a[5*i+3] << 4;
+            addr = i;
+            addr *= 5;
+            addr += 3;
+            c32 = (32u) a[(int) addr];
+            c32 <<= 4;
+            x |= c32;
+
+            //r->coeffs[2*i+1] |= (uint32_t)a[5*i+4] << 12;
+            addr = i;
+            addr *= 5;
+            addr += 4;
+            c32 = (32u) a[(int) addr];
+            c32 <<= 12;
+            x |= c32;
+
+            //r->coeffs[2*i+1] = GAMMA1 - r->coeffs[2*i+1];
+            x = -x;
+            x += 1 << 19;
+            addr = i;
+            addr *= 2;
+            addr += 1;
+            r[(int) addr] = x;
+
+            i += 1;
+        }
+
+        return r;
+    }
+}

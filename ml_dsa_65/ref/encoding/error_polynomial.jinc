@@ -65,5 +65,4 @@ namespace error_polynomial {
         }
         return r;
     }
-
 }

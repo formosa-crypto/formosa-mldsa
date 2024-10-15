@@ -8,6 +8,8 @@ require "encoding/s1.jinc"
 require "encoding/s2.jinc"
 require "encoding/t0.jinc"
 require "encoding/t1.jinc"
+require "expandA.jinc"
+require "expandS.jinc"
 
 inline
 fn keygen_internal(reg ptr u8[32] randomness)
@@ -60,7 +62,7 @@ fn keygen_internal(reg ptr u8[32] randomness)
     t = column_vector::reduce32(t);
     t = column_vector::invert_ntt_montgomery(t);
 
-    t = column_vector::pointwise_add(t, s2);
+    t = column_vector::add(t, s2);
 
     t = column_vector::conditionally_add_modulus(t);
     t1, t0 = column_vector::power2round(t);

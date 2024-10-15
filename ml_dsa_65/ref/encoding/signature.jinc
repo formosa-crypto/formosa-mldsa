@@ -1,0 +1,68 @@
+require "../parameters.jinc"
+require "gamma1.jinc"
+
+namespace signature {
+    param int START_OF_GAMMA1_IN_ENCODED_SIGNATURE = COMMITMENT_HASH_SIZE;
+    param int START_OF_HINT_IN_ENCODED_SIGNATURE = 
+        START_OF_GAMMA1_IN_ENCODED_SIGNATURE +
+        GAMMA1_ENCODED_SIZE;
+
+    inline
+    fn encode(reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash,
+            reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] z,
+            reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] h)
+        -> stack u8[SIGNATURE_SIZE]
+    {
+        stack u8[SIGNATURE_SIZE] signature;
+        reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] z_buf;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] z_to_pack;
+
+        inline int ii;
+        reg u64 i j k addr;
+        reg u32 coeff;
+        reg u8 c;
+
+        ?{}, i = #set0_64();
+        while (i < COMMITMENT_HASH_SIZE) {
+            c = commitment_hash[(int) i];
+            signature[(int) i] = c;
+            i += 1;
+        }
+
+        for ii = 0 to COLUMNS_IN_MATRIX_A {
+            z_buf = signature[START_OF_GAMMA1_IN_ENCODED_SIGNATURE + ENCODED_GAMMA1_POLYNOMIAL_SIZE * ii : ENCODED_GAMMA1_POLYNOMIAL_SIZE];
+            z_to_pack = z[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+            z_buf = gamma1::encode_polynomial(z_buf, z_to_pack);
+            signature[START_OF_GAMMA1_IN_ENCODED_SIGNATURE + ENCODED_GAMMA1_POLYNOMIAL_SIZE * ii : ENCODED_GAMMA1_POLYNOMIAL_SIZE] = z_buf;
+        }
+
+        // Clear the hints buffer
+        ?{}, i = #set0_64();
+        while (i < MAX_ONES_IN_HINT + ROWS_IN_MATRIX_A) {
+            signature[(int) (START_OF_HINT_IN_ENCODED_SIGNATURE + i)] = 0;
+            i += 1;
+        }
+
+        // Write hints
+        ?{}, k = #set0_64(); // The amounts of hints that were written
+        ?{}, i = #set0_64();
+        while (i < ROWS_IN_MATRIX_A) {
+            ?{}, j = #set0_64();
+            while (j < COEFFICIENTS_IN_POLYNOMIAL) {
+                addr = i;
+                addr <<= 8;
+                addr += j;
+                coeff = h[(int) addr];
+                if coeff != 0 {
+                    signature[(int) (START_OF_HINT_IN_ENCODED_SIGNATURE + k)] = (8u) j;
+                    k += 1;
+                }
+                j += 1;
+            }
+            signature[(int) (START_OF_HINT_IN_ENCODED_SIGNATURE + MAX_ONES_IN_HINT + i)] = (8u) k;
+            i += 1;
+        }
+
+        return signature;
+    }
+}

@@ -25,4 +25,64 @@ namespace coefficient {
 
         return highbits, lowbits;
     }
+
+    // high bits = a0, low bits = a1
+    inline
+    fn decompose(reg u32 a) -> reg u32, reg u32 {
+        reg u64 a0;
+        reg u32 a0_32;
+        reg u32 a1;
+        reg u32 v;
+        reg u64 v64;
+
+        // a1  = (a + 127) >> 7;
+        a1 = a;
+        a1 += 127;
+        a1 >>= 7;
+
+        // a1  = (a1*1025 + (1 << 21)) >> 22;
+        v = a1;
+        a1 <<= 10;
+        a1 += v;
+        a1 += (int) (1 << 21);
+        a1 >>= 22;
+
+        // a1 &= 15;
+        a1 &= 15;
+
+        // *a0  = a - a1*2*GAMMA2;
+        v64 = (64u) a1;
+        v64 *= 2 * MODULUS / 32;
+        a0 = (64u) a;
+        a0 -= v64;
+
+        // *a0 -= (((Q-1)/2 - *a0) >> 31) & Q;
+        v64 = (MODULUS - 1) / 2;
+        v64 -= a0;
+        v64 >>= 31;
+        v64 &= MODULUS;
+        a0 -= v64;
+
+        a0_32 = (32u) a0;
+        return a0_32, a1;
+    }
+
+    fn make_hint(reg u32 a0, reg u32 a1) -> reg u32 {
+        reg u32 result;
+
+        result = 0;
+
+        if a0 >s GAMMA2 {
+            result = 1;
+        } else if a0 <s -GAMMA2 {
+            result = 1;
+        } else if a0 == -GAMMA2 {
+            if(a1 != 0) {
+                result = 1;
+            }
+        }
+
+        return result;
+    }
+
 }

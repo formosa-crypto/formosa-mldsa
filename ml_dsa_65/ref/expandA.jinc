@@ -9,7 +9,6 @@ fn uniform_sample_polynomial(reg ptr u8[32] rho, inline int i, inline int j,
     reg u32 value v;
     reg u64 xof_offset;
     stack u64[25] state;
-    reg ptr u64[25] state_rsp;
     inline int k;
     reg u8 c;
     reg u64 addr;
@@ -23,20 +22,19 @@ fn uniform_sample_polynomial(reg ptr u8[32] rho, inline int i, inline int j,
     seed[32] = j;
     seed[33] = i;
 
-    state_rsp = state;
     seed_rsp = seed;
-    state_rsp = shake128_absorb34(state_rsp, seed_rsp);
-    state_rsp = __keccakf1600_ref(state_rsp);
+    state = shake128_absorb34(state, seed_rsp);
+    state = __keccakf1600_ref(state);
 
     xof_offset = 0;
     polynomial_offset = 0;
     while(polynomial_offset < COEFFICIENTS_IN_POLYNOMIAL) {
         for k = 0 to 3 {
             if(xof_offset >= SHAKE128_RATE) {
-                state_rsp = __keccakf1600_ref(state_rsp);
+                state = __keccakf1600_ref(state);
                 xof_offset = 0;
             }
-            c = state_rsp[u8 (int) xof_offset];
+            c = state[u8 (int) xof_offset];
             vs[k] = c;
             xof_offset += 1;
         }

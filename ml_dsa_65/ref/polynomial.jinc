@@ -101,4 +101,75 @@ namespace polynomial {
         }
         return f;
     }
+
+    inline
+    fn check_coefficient_norm(reg u32 val, inline int threshold)
+        -> stack u8
+    {
+        stack u8 result;
+        result = 0;
+        if(val >=s threshold) {
+            result = 1;
+        }
+        if(val <=s -threshold) {
+            result = 1;
+        }
+        return result;
+    }
+
+
+    inline
+    fn check_infinity_norm(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, inline int threshold)
+        -> stack u8
+    {
+        stack u8 r;
+        reg u8 result;
+        stack u8 result_s;
+        reg u8 c;
+        reg u64 i;
+        reg u32 val;
+
+        result = 0;
+
+        ?{}, i = #set0_64();
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            val = f[(int) i];
+            r = check_coefficient_norm(val, threshold);
+            c = r;
+            result |= c;
+            i += 1;
+        }
+
+        result_s = result;
+        return result_s;
+    }
+
+    inline
+    fn make_hint(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f0 f1 hints)
+        -> stack u32, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u32 weight;
+        reg u64 i;
+        reg u32 a0 a1;
+        reg u32 h;
+
+        i = 0;
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            hints[(int) i] = 0;
+            i += 1;
+        }
+
+        weight = 0;
+        i = 0;
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            a0 = f0[(int) i];
+            a1 = f1[(int) i];
+            h = coefficient::make_hint(a0, a1);
+            hints[(int) i] = h;
+            weight += h;
+            i += 1;
+        }
+
+        return weight, hints;
+    }
 }

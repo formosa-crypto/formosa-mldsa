@@ -1,0 +1,41 @@
+require "../parameters.jinc"
+
+namespace commitment {
+    fn encode_polynomial(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] w1, reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded)
+        -> reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
+    {
+        reg u64 i src_addr;
+        reg u32 c32;
+
+        ?{}, i = #set0_64();
+        ?{}, src_addr = #set0_64();
+        while (i < COEFFICIENTS_IN_POLYNOMIAL / 2) {
+            //  r[i] = a->coeffs[2*i+0] | (a->coeffs[2*i+1] << 4);
+            c32 = w1[(int) src_addr + 1];
+            c32 <<= 4;
+            c32 |= w1[(int) src_addr + 0];
+            encoded[(int) i] = (8u) c32;
+
+            i += 1;
+            src_addr += 2;
+        }
+        return encoded;
+    }
+
+    inline
+    fn encode(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w1)
+        -> stack u8[ENCODED_COMMITMENT_SIZE]
+    {
+        inline int ii;
+        stack u8[ENCODED_COMMITMENT_SIZE] dest;
+        reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] buf;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly;
+
+        for ii = 0 to ROWS_IN_MATRIX_A {
+            buf = dest[ENCODED_COMMITMENT_POLYNOMIAL_SIZE * ii : ENCODED_COMMITMENT_POLYNOMIAL_SIZE];
+            poly = w1[COEFFICIENTS_IN_POLYNOMIAL * ii : COEFFICIENTS_IN_POLYNOMIAL];
+            dest[ENCODED_COMMITMENT_POLYNOMIAL_SIZE * ii : ENCODED_COMMITMENT_POLYNOMIAL_SIZE] = encode_polynomial(poly, buf);
+        }
+        return dest;
+    }
+}
