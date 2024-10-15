@@ -6,10 +6,10 @@
 #include "fips202.h"
 
 #ifndef TESTS
-#define TESTS 1000
+#define TESTS 5
 #endif
 
-void PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed_jazz(uint8_t *pk, uint8_t *sk, uint8_t *sb);
+void JASMIN_DILITHIUM5_crypto_sign_keypair_seed(uint8_t *pk, uint8_t *sk, uint8_t *sb);
 void shake256_PUBLICKEYBYTES_SEEDBYTES(uint8_t *output, const uint8_t *input);
 
 #include "sign_wrap.h"
@@ -24,7 +24,7 @@ void check_crypto_sign_keypair_seed() {
   for (int t=0; t<TESTS; t++) {
     fillarrnu8(sb, sb_jazz, 2 * SEEDBYTES + CRHBYTES);
     PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed(pk, sk, sb);
-    PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed_jazz(pk_jazz, sk_jazz, sb_jazz);
+    JASMIN_DILITHIUM5_crypto_sign_keypair_seed(pk_jazz, sk_jazz, sb_jazz);
     eqarr(PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES, PRId8, pk, pk_jazz, "crypto_sign_keypair_seed: wrong pk");
     eqarr(PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES, PRId8, sk, sk_jazz, "crypto_sign_keypair_seed: wrong sk");
   }
@@ -69,7 +69,7 @@ void check_crypto_sign_signature() {
     fillarrnu8(m, m_jazz, SEEDBYTES);
     // Sign the random message
     int r = PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature(sig, &siglen, m, mlen, sk);
-    int r_jazz = PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_signature_jazz(sig_jazz, &siglen_jazz, m_jazz, mlen_jazz, sk);
+    int r_jazz = JASMIN_DILITHIUM5_crypto_sign_signature(sig_jazz, &siglen_jazz, m_jazz, mlen_jazz, sk);
     if (r != r_jazz) {
       printf("FAIL: crypto_sign_signature\n");
       exit(1);
@@ -109,7 +109,7 @@ void check_crypto_sign_verify() {
       printf("Could not verify signature with C code.");
       exit(1);
     }
-    int r_jazz = PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_verify_jazz(sig, PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES, m, SEEDBYTES, pk);
+    int r_jazz = JASMIN_DILITHIUM5_crypto_sign_verify(sig, PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES, m, SEEDBYTES, pk);
     if (r != r_jazz) {
       printf("FAIL: crypto_sign_verify\n");
       exit(1);

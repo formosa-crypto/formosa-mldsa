@@ -1,6 +1,6 @@
 require "packing.jinc"
  
-export fn PQCLEAN_DILITHIUM5_CLEAN_pack_pk_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] {
+export fn JASMIN_DILITHIUM5_pack_pk(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] {
     pk = pk; rho = rho; t1 = t1;
     pk = _pack_pk(pk, rho, t1);
     pk = pk;
@@ -69,7 +69,7 @@ fn _mem_to_polyveck(reg ptr u32[polyveck] v, reg u32 p) -> reg ptr u32[polyveck]
   return v;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sk_internal_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] {
+export fn JASMIN_DILITHIUM5_pack_sk_internal(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk, reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] {
     sk = sk; rho_tr_key = rho_tr_key; pt0_ps1_ps2 = pt0_ps1_ps2;
     
     reg ptr u8[SEEDBYTES] rprho;
@@ -111,7 +111,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sk_internal_jazz(reg ptr u8[PQCLEAN_DILI
     return sk;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[CTILDEBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] {
+export fn JASMIN_DILITHIUM5_pack_sig(reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig, reg ptr u8[CTILDEBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] {
     sig = sig; c = c; z = z; h = h;
     sig = _pack_sig(sig, c, z, h);
     sig = sig;
@@ -120,7 +120,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_pack_sig_jazz(reg ptr u8[PQCLEAN_DILITHIUM5_C
 
 // Due to https://github.com/jasmin-lang/jasmin/issues/837, the returned values of _unpack_pk are not removed, and this triggers a reg alloc error.
 // We circumvent the issue by spilling, but then we encounter https://github.com/jasmin-lang/jasmin/issues/850, which explains why we don't use #spill and #unspill
-export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_pk_jazz(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
+export fn JASMIN_DILITHIUM5_unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
     stack ptr u8[SEEDBYTES] s_rho;
     stack ptr u32[polyveck] s_t1;
 
@@ -132,7 +132,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_pk_jazz(reg ptr u8[SEEDBYTES] rho, reg
     return rho, t1;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_internal_jazz(reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u32[3], reg ptr u32[3] {
+export fn JASMIN_DILITHIUM5_unpack_sk_internal(reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u32[3], reg ptr u32[3] {
     sk = sk; rho_tr_key = rho_tr_key; pt0_ps1_ps2 = pt0_ps1_ps2;
     
     reg ptr u8[SEEDBYTES] rprho;
@@ -184,7 +184,7 @@ export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_internal_jazz(reg ptr u32[3] rho_tr
     return rho_tr_key, pt0_ps1_ps2;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_unpack_sig_jazz(reg ptr u8[CTILDEBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig) -> reg ptr u8[CTILDEBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
+export fn JASMIN_DILITHIUM5_unpack_sig(reg ptr u8[CTILDEBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h, reg ptr u8[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_BYTES] sig) -> reg ptr u8[CTILDEBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
     sig = sig; c = c; z = z; h = h;
     reg u32 status;
     c, z, h, status = _unpack_sig(c, z, h, sig);

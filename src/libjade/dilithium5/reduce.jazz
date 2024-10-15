@@ -1,26 +1,26 @@
 require "reduce.jinc"
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_montgomery_reduce_jazz(reg u32 al ah) -> reg u32
+export fn JASMIN_DILITHIUM5_montgomery_reduce(reg u32 al ah) -> reg u32
 {
   reg u32 r;
   r = __montgomery_reduce_8380417(al, ah);
   return r;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_reduce32_jazz(reg u32 a) -> reg u32
+export fn JASMIN_DILITHIUM5_reduce32(reg u32 a) -> reg u32
 {
   reg u32 res;
   res = __reduce32_8380417(a);
   return res;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_caddq_jazz(reg u32 a) -> reg u32
+export fn JASMIN_DILITHIUM5_caddq(reg u32 a) -> reg u32
 {
   a = __caddq(a);
   return a;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_freeze_jazz(reg u32 a) -> reg u32
+export fn JASMIN_DILITHIUM5_freeze(reg u32 a) -> reg u32
 {
   a = __freeze(a);
   return a;

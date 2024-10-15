@@ -12,7 +12,7 @@
 
 
 int32_t PQCLEAN_DILITHIUM5_CLEAN_power2round(int32_t *a0, int32_t a);
-int32_t PQCLEAN_DILITHIUM5_CLEAN_power2round_jazz(int32_t *a0, int32_t a);
+int32_t JASMIN_DILITHIUM5_power2round(int32_t *a0, int32_t a);
 
 int test_power2round()
 {
@@ -24,7 +24,7 @@ int test_power2round()
     randombytes((uint8_t*)(&arg), sizeof(int32_t));
 
     a1_c = PQCLEAN_DILITHIUM5_CLEAN_power2round(&a0_c, arg);
-    a1_jazz = PQCLEAN_DILITHIUM5_CLEAN_power2round_jazz(&a0_jazz, arg);
+    a1_jazz = JASMIN_DILITHIUM5_power2round(&a0_jazz, arg);
 
     if (a0_c != a0_jazz) {
       printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", arg, a0_c, a0_jazz);
@@ -45,7 +45,7 @@ int test_power2round()
 }
 
 int32_t PQCLEAN_DILITHIUM5_CLEAN_decompose(int32_t *a0, int32_t a);
-int32_t PQCLEAN_DILITHIUM5_CLEAN_decompose_jazz(int32_t *a0, int32_t a);
+int32_t JASMIN_DILITHIUM5_decompose(int32_t *a0, int32_t a);
 
 int test_decompose()
 {
@@ -57,7 +57,7 @@ int test_decompose()
     randombytes((uint8_t*)(&arg), sizeof(int32_t));
 
     a1_c = PQCLEAN_DILITHIUM5_CLEAN_decompose(&a0_c, arg);
-    a1_jazz = PQCLEAN_DILITHIUM5_CLEAN_decompose_jazz(&a0_jazz, arg);
+    a1_jazz = JASMIN_DILITHIUM5_decompose(&a0_jazz, arg);
 
     if (a0_c != a0_jazz) {
       printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", arg, a0_c, a0_jazz);
@@ -78,18 +78,18 @@ int test_decompose()
 }
 
 int32_t PQCLEAN_DILITHIUM5_CLEAN_make_hint(int32_t a0, int32_t a1);
-int32_t PQCLEAN_DILITHIUM5_CLEAN_make_hint_jazz(int32_t a0, int32_t a1);
+int32_t JASMIN_DILITHIUM5_make_hint(int32_t a0, int32_t a1);
 
 int32_t PQCLEAN_DILITHIUM5_CLEAN_use_hint(int32_t a0, unsigned int hint);
-int32_t PQCLEAN_DILITHIUM5_CLEAN_use_hint_jazz(int32_t a0, unsigned int hint);
+int32_t JASMIN_DILITHIUM5_use_hint(int32_t a0, unsigned int hint);
 
 
 int main ()
 {
   test_power2round();
   test_decompose();
-  check3232to32(PQCLEAN_DILITHIUM5_CLEAN_make_hint, PQCLEAN_DILITHIUM5_CLEAN_make_hint_jazz, "make_hint");
-  check3232to32(PQCLEAN_DILITHIUM5_CLEAN_use_hint, PQCLEAN_DILITHIUM5_CLEAN_use_hint_jazz, "use_hint");
+  check3232to32(PQCLEAN_DILITHIUM5_CLEAN_make_hint, JASMIN_DILITHIUM5_make_hint, "make_hint");
+  check3232to32(PQCLEAN_DILITHIUM5_CLEAN_use_hint, JASMIN_DILITHIUM5_use_hint, "use_hint");
   return 0;
 }
 

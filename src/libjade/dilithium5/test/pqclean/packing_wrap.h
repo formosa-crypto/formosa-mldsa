@@ -1,13 +1,13 @@
-#ifndef PQCLEAN_DILITHIUM5_CLEAN_PACKING_WRAP_H
-#define PQCLEAN_DILITHIUM5_CLEAN_PACKING_WRAP_H
+#ifndef JASMIN_DILITHIUM5_PACKING_WRAP_H
+#define JASMIN_DILITHIUM5_PACKING_WRAP_H
+
 #include "params.h"
-#include "packing.h"
 #include <stdint.h>
 
-void PQCLEAN_DILITHIUM5_CLEAN_pack_sk_internal_jazz(uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], const uint8_t* rho_tr_key[3], const int32_t* to_s1_s2[3]);
-void PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_internal_jazz(uint8_t* rho_tr_key[3], int32_t* to_s1_s2[3], const uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES]);
+void JASMIN_DILITHIUM5_pack_sk_internal(uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], const uint8_t* rho_tr_key[3], const int32_t* to_s1_s2[3]);
+void JASMIN_DILITHIUM5_unpack_sk_internal(uint8_t* rho_tr_key[3], int32_t* to_s1_s2[3], const uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES]);
 
-void PQCLEAN_DILITHIUM5_CLEAN_pack_sk_jazz(uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], const uint8_t rho[SEEDBYTES], const uint8_t tr[TRBYTES], const uint8_t key[SEEDBYTES], const polyveck *t0, const polyvecl *s1, const polyveck *s2) {
+void JASMIN_DILITHIUM5_pack_sk(uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES], const uint8_t rho[SEEDBYTES], const uint8_t tr[TRBYTES], const uint8_t key[SEEDBYTES], const polyveck *t0, const polyvecl *s1, const polyveck *s2) {
   const uint8_t* rho_tr_key[3];
   rho_tr_key[0] = rho;
   rho_tr_key[1] = tr;
@@ -18,10 +18,10 @@ void PQCLEAN_DILITHIUM5_CLEAN_pack_sk_jazz(uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_C
   t0_s1_s2[1] = (int32_t*) s1;
   t0_s1_s2[2] = (int32_t*) s2;
 
-  PQCLEAN_DILITHIUM5_CLEAN_pack_sk_internal_jazz(sk, rho_tr_key, t0_s1_s2);
+  JASMIN_DILITHIUM5_pack_sk_internal(sk, rho_tr_key, t0_s1_s2);
 }
 
-void PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_jazz(uint8_t rho[SEEDBYTES], uint8_t tr[TRBYTES], uint8_t key[SEEDBYTES], polyveck *t0, polyvecl *s1, polyveck *s2,const uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES]) {
+void JASMIN_DILITHIUM5_unpack_sk(uint8_t rho[SEEDBYTES], uint8_t tr[TRBYTES], uint8_t key[SEEDBYTES], polyveck *t0, polyvecl *s1, polyveck *s2,const uint8_t sk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_SECRETKEYBYTES]) {
   uint8_t* rho_tr_key[3];
   rho_tr_key[0] = rho;
   rho_tr_key[1] = tr;
@@ -32,7 +32,7 @@ void PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_jazz(uint8_t rho[SEEDBYTES], uint8_t tr[
   t0_s1_s2[1] = (int32_t*) s1;
   t0_s1_s2[2] = (int32_t*) s2;
 
-  PQCLEAN_DILITHIUM5_CLEAN_unpack_sk_internal_jazz(rho_tr_key, t0_s1_s2, sk); 
+  JASMIN_DILITHIUM5_unpack_sk_internal(rho_tr_key, t0_s1_s2, sk);
 }
 
 #endif

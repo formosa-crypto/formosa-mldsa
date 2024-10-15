@@ -20,7 +20,7 @@ all: clean compile
 compile: compile_lib compile_bench
 clean: clean_lib clean_bench
 
-FILES_DIR := ../../
+FILES_DIR := ../../test/pqclean/
 H_FILES := api.h ntt.h packing.h params.h poly.h polyvec.h reduce.h rounding.h sign.h symmetric.h
 H_FILE_PATHS := $(addprefix $(FILES_DIR), $(H_FILES))
 C_FILES := ntt.c packing.c poly.c polyvec.c reduce.c rounding.c sign.c symmetric-shake.c fips202.c
@@ -28,7 +28,7 @@ C_FILE_PATHS := $(addprefix $(FILES_DIR), $(C_FILES))
 
 OBJECTS_C := $(patsubst %.c, %.o, $(notdir $(C_FILE_PATHS)))
 
-%.o: ../../%.c
+%.o: ../../test/pqclean/%.c
 	@echo "Compiling $<"
 	$(ARMCC) $(ARMCFLAGS) -I$(FILES_DIR) -c -o $@ $<
 

@@ -1,7 +1,9 @@
-#include "notrandombytes.c"
+#include <time.h>
+#include <stdlib.h>
+#include <stdio.h>
 
-#include "time.h"
-#include "test_macros.h"
+#include "pqclean_params.h"
+#include "notrandombytes.c"
 #include "sign.h"
 
 #ifndef RUNS
@@ -11,6 +13,15 @@
 #ifndef MESSAGE_SIZE
 #define MESSAGE_SIZE 10000
 #endif
+
+#define fillarr(ty, k, a)                       \
+{                                               \
+  ty arg;                                       \
+  for (int i = 0; i < k; i++) {                 \
+    randombytes((uint8_t*)(&arg), sizeof(ty));  \
+    a[i] = arg;                                 \
+  }                                             \
+}
 
 int main () {
   uint8_t pk[PQCLEAN_DILITHIUM5_CLEAN_CRYPTO_PUBLICKEYBYTES];

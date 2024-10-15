@@ -1,19 +1,19 @@
 require "ntt.jinc"
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_mul_montgomery_reduce_jazz(reg u32 x y) -> reg u32
+export fn JASMIN_DILITHIUM5_mul_montgomery_reduce(reg u32 x y) -> reg u32
 {
   reg u32 r;
   r = __mul_montgomery_reduce_8380417(x, y);
   return r;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_ntt_jazz(reg ptr u32[N] rpa) -> reg ptr u32[N] {
+export fn JASMIN_DILITHIUM5_ntt(reg ptr u32[N] rpa) -> reg ptr u32[N] {
   rpa = rpa;
   rpa = __ntt(rpa);
   return rpa;
 }
 
-export fn PQCLEAN_DILITHIUM5_CLEAN_invntt_tomont_jazz(reg ptr u32[N] rpa) -> reg ptr u32[N] {
+export fn JASMIN_DILITHIUM5_invntt_tomont(reg ptr u32[N] rpa) -> reg ptr u32[N] {
   rpa = rpa;
   rpa = __invntt_tomont(rpa);
   return rpa;

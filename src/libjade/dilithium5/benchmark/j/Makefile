@@ -40,7 +40,7 @@ clean_lib:
 	rm -f library.s library_jazz.o sign_wrap_jazz.o libdilithium5.a
 
 
-INCLUDES := -I../../test/common -I../../
+INCLUDES := -I./
 
 # Target executable
 
