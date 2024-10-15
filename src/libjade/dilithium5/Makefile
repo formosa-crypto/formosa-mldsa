@@ -29,7 +29,7 @@ $(ASM_JASMIN_FILES):
 compile: $(JASMIN_LIB)
 
 $(JASMIN_LIB): $(JASMIN_OBJECTS)
-	$(AR) -r $@ $(JASMIN_OBJECTS)
+	$(CAR) -r $@ $(JASMIN_OBJECTS)
 
 #-------------------------------------------------------------------------------
 clean:

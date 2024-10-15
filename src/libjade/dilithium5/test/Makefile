@@ -8,11 +8,11 @@ all : clean compile
 
 #-------------------------------------------------------------------------------
 
-JASMIN_LIB := ../libdilithium_jasmin_risc-v.a
+JASMIN_LIB := ../libdilithium_jasmin_$(arch).a
 
 #-------------------------------------------------------------------------------
 
-PQCLEAN_LIB=libdilithium5_clean_$(arch).a
+PQCLEAN_LIB=libdilithium5_clean.a
 PQCLEAN_HEADERS=pqclean/api.h pqclean/ntt.h pqclean/packing.h pqclean/params.h pqclean/poly.h pqclean/polyvec.h pqclean/reduce.h pqclean/rounding.h pqclean/sign.h pqclean/symmetric.h
 PQCLEAN_OBJECTS=pqclean/ntt.o pqclean/packing.o pqclean/poly.o pqclean/polyvec.o pqclean/reduce.o pqclean/rounding.o pqclean/sign.o pqclean/symmetric-shake.o pqclean/fips202.o
 
@@ -20,7 +20,7 @@ PQCLEAN_OBJECTS=pqclean/ntt.o pqclean/packing.o pqclean/poly.o pqclean/polyvec.o
 	$(CC) $(CFLAGS) $(FULL_TESTING) -c -o $@ $<
 
 $(PQCLEAN_LIB): $(PQCLEAN_OBJECTS)
-	$(AR) -r $@ $(PQCLEAN_OBJECTS)
+	$(CAR) -r $@ $(PQCLEAN_OBJECTS)
 
 #-------------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ run: $(TESTS_OUT)
 
 $(TESTS_BIN):
 test_%: test_%.c ../%.jinc ../%.jazz
-	$(CC) -o $@ $(ARMCFLAGS) -static test_$*.c -I./common -I./pqclean/ -L./ -ldilithium5_clean_$(arch) -L../ -ldilithium_jasmin_$(arch)
+	$(CC) -o $@ $(CFLAGS) -static test_$*.c -I./common -I./pqclean/ -L./ -ldilithium5_clean -L../ -ldilithium_jasmin_$(arch)
 
 $(JASMIN_LIB):
 	$(MAKE) -C ..
