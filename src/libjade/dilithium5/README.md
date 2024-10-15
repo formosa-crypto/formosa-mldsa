@@ -45,7 +45,6 @@ brew install --cask spike
 ``` shell
 git clone https://github.com/riscv-software-src/riscv-pk.git
 cd riscv-pk
-export RISCV="./build/install"
 mkdir build
 cd build
 mkdir install
