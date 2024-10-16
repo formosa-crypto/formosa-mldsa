@@ -8,13 +8,15 @@ require "encoding/t0.jinc"
 require "encoding/signature.jinc"
 require "encoding/commitment.jinc"
 require "row_vector.jinc"
-require "sample_mask_vector.jinc"
+require "sample/mask.jinc"
+require "sample/matrix_A.jinc"
+require "sample/challenge.jinc"
 
 inline
-fn compute_rho_prime(reg ptr u8[32] k, reg ptr u8[32] randomness, reg ptr u8[MESSAGE_REPRESENTATIVE_SIZE] mu)
+fn derive_seed_for_mask(reg ptr u8[32] k, reg ptr u8[32] randomness, reg ptr u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative)
     -> stack u8[MESSAGE_REPRESENTATIVE_SIZE]
 {
-    stack u8[64] rho_prime;
+    stack u8[64] seed_for_mask;
     reg u8 c;
     reg u64 i;
     stack u64[25] state;
@@ -37,7 +39,7 @@ fn compute_rho_prime(reg ptr u8[32] k, reg ptr u8[32] randomness, reg ptr u8[MES
     while(i < 128) {
         loc = i;
         loc -= MESSAGE_REPRESENTATIVE_SIZE;
-        c = mu[(int) loc];
+        c = message_representative[(int) loc];
         state[u8 (int) i] = c;
         i += 1;
     }
@@ -50,10 +52,10 @@ fn compute_rho_prime(reg ptr u8[32] k, reg ptr u8[32] randomness, reg ptr u8[MES
     ?{}, i = #set0_64();
     while(i < 64) {
         c = state[u8 (int) i];
-        rho_prime[(int) i] = c;
+        seed_for_mask[(int) i] = c;
         i += 1;
     }
-    return rho_prime;
+    return seed_for_mask;
 }
 
 inline
@@ -63,26 +65,23 @@ fn sign_internal(
         reg u64 message_size,
         reg ptr u8[32] randomness
 )
-        -> stack u8[SIGNATURE_SIZE], stack u32
+        -> stack u8[SIGNATURE_SIZE], reg u16
 {
-    stack u8[SIGNATURE_SIZE] signature;
+    stack u8[SIGNATURE_SIZE] signature_encoded;
 
     // parts of signing_key
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0;
 
-    // automatic variables in spec
     stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
-    stack u8[MESSAGE_REPRESENTATIVE_SIZE] mu;
+    stack u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative;
 
-    // corresponds to kappa/l in spec
-    stack u16 nonce;
-    reg u16 reg_nonce;
-    stack u8[64] rho_prime;
+    reg u16 domain_separator_for_mask;
+    stack u8[64] seed_for_mask;
 
-    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] z;
-    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] h;
+    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint;
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w0 w1;
     stack u8[ENCODED_COMMITMENT_SIZE] commitment_encoded;
@@ -92,67 +91,50 @@ fn sign_internal(
 
     stack u32[COEFFICIENTS_IN_POLYNOMIAL] verifier_challenge;
 
-    // while loop condition
-    stack u8 done;
-    // attempt: abort with error if we have tried too many times
-    stack u16 attempt;
-    // return status: ok == 0, err == -1
-    stack u32 status;
-    // temporary bools used for while loop condition
-    reg bool tmpbool;
-    reg bool zf;
-    reg u8 tmpboolu8;
+    stack u8 exit_rejection_sampling_loop;
 
-    // extra intermediate values
-    // not space-efficient...
-    // but this is reference impl so we're fine?
-    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] y;
+    // Count and return signing attempts; this is useful for testing.
+    stack u16 signing_attempts;
+
+    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w;
-    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] y_as_ntt;
+    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask_as_ntt;
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] cs1;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] cs2;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] ct0;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] r0_plus_ct0;
 
     stack u32 ones_in_hint;
-    stack u8 normcheck_result;
+    stack u8 infinity_norm_check_result;
 
     s1 = s1::decode(signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE], s1);
     s2 = s2::decode(signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY: S2_ENCODED_SIZE], s2);
     t0 = t0::decode(t0, signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]);
 
     () = #spill(randomness);
-    mu = hash_tr_m(signing_key[64:MESSAGE_REPRESENTATIVE_SIZE], message_size, pointer_to_message);
+    message_representative = derive_message_representative(signing_key[64:MESSAGE_REPRESENTATIVE_SIZE], message_size, pointer_to_message);
     () = #unspill(randomness);
 
-    rho_prime = compute_rho_prime(signing_key[32:32], randomness, mu);
+    seed_for_mask = derive_seed_for_mask(signing_key[32:32], randomness, message_representative);
 
-    matrix_A = expandA(signing_key[0:32]);
+    matrix_A = sample::matrix_A(signing_key[0:32]);
 
     s1 = row_vector::ntt(s1);
     s2 = column_vector::ntt(s2);
     t0 = column_vector::ntt(t0);
 
-    nonce = 0;
-    done = 0;
-    attempt = 1;
-    status = -1;
-    while {
-        // TODO: Error if we exhaust the number of attempts.
-        tmpbool = attempt > MAX_SIGNING_ATTEMPTS;
-        tmpboolu8 = #SETcc(tmpbool);
-        tmpboolu8 |= done;
-        _, _, _, _, zf = #TEST_8(tmpboolu8, tmpboolu8);
-    } (zf) {
-        attempt += 1;
+    domain_separator_for_mask = 0;
 
-        reg_nonce = nonce;
-        y = sample_mask_vector(rho_prime, reg_nonce);
-        nonce += COLUMNS_IN_MATRIX_A;
+    exit_rejection_sampling_loop = 0;
+    signing_attempts = 0;
+    while (exit_rejection_sampling_loop != 1) {
+        signing_attempts += 1;
 
-        y_as_ntt = #copy(y);
-        y_as_ntt = row_vector::ntt(y_as_ntt);
-        w = row_vector::multiply_with_matrix_on_the_left(matrix_A, y_as_ntt);
+        mask, domain_separator_for_mask = sample::mask(seed_for_mask, domain_separator_for_mask);
+
+        mask_as_ntt = #copy(mask);
+        mask_as_ntt = row_vector::ntt(mask_as_ntt);
+        w = row_vector::multiply_with_matrix_A(matrix_A, mask_as_ntt);
         w = column_vector::reduce32(w);
         w = column_vector::invert_ntt_montgomery(w);
 
@@ -161,43 +143,42 @@ fn sign_internal(
 
         commitment_encoded = commitment::encode(w1);
 
-        commitment_hash = hash_mu_w1(mu, commitment_encoded);
+        commitment_hash = derive_commitment_hash(message_representative, commitment_encoded);
 
-        verifier_challenge = sample_in_ball(verifier_challenge, commitment_hash);
+        verifier_challenge = sample::challenge(verifier_challenge, commitment_hash);
         verifier_challenge = polynomial::ntt(verifier_challenge);
 
         cs1 = row_vector::multiply_by_polynomial(s1, verifier_challenge);
         cs1 = row_vector::invert_ntt_montgomery(cs1);
-        z = row_vector::add(cs1, y);
-        z = row_vector::reduce32(z);
-        normcheck_result = row_vector::check_infinity_norm(z, (int) (GAMMA1 - BETA));
+        signer_response = row_vector::add(cs1, mask);
+        signer_response = row_vector::reduce32(signer_response);
+        infinity_norm_check_result = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
 
-        if(normcheck_result == 0) {
+        if(infinity_norm_check_result == 0) {
             cs2 = column_vector::multiply_by_polynomial(s2, verifier_challenge);
             cs2 = column_vector::invert_ntt_montgomery(cs2);
             r0 = column_vector::subtract(w0, cs2);
             w0 = column_vector::reduce32(w0);
-            normcheck_result = column_vector::check_infinity_norm(r0, (int) (GAMMA2 - BETA));
+            infinity_norm_check_result = column_vector::check_infinity_norm(r0, (int) (GAMMA2 - BETA));
 
-            if(normcheck_result == 0) {
+            if(infinity_norm_check_result == 0) {
                 ct0 = column_vector::multiply_by_polynomial(t0, verifier_challenge);
                 ct0 = column_vector::invert_ntt_montgomery(ct0);
                 ct0 = column_vector::reduce32(ct0);
-                normcheck_result = column_vector::check_infinity_norm(ct0, GAMMA2);
+                infinity_norm_check_result = column_vector::check_infinity_norm(ct0, GAMMA2);
 
-                if(normcheck_result == 0) {
+                if(infinity_norm_check_result == 0) {
                     r0_plus_ct0 = column_vector::add(r0, ct0);
 
-                    ones_in_hint, h = column_vector::make_hint(r0_plus_ct0, w1);
+                    ones_in_hint, hint = column_vector::make_hint(r0_plus_ct0, w1);
                     if(ones_in_hint < MAX_ONES_IN_HINT) {
-                        done = 1;
-                        status = 0;
+                        exit_rejection_sampling_loop = 1;
                     }
                 }
             }
         }
     }
 
-    signature = signature::encode(commitment_hash, z, h);
-    return signature, status;
+    signature_encoded = signature::encode(commitment_hash, signer_response, hint);
+    return signature_encoded, signing_attempts;
 }

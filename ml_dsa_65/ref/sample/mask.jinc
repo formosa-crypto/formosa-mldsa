@@ -1,9 +1,9 @@
-require "fips202.jinc"
-require "parameters.jinc"
-require "encoding/gamma1.jinc"
+require "../fips202.jinc"
+require "../parameters.jinc"
+require "../encoding/gamma1.jinc"
 
 inline
-fn xof_init(stack u64[25] state, reg ptr u8[64] rho_prime, stack u16 kappa)
+fn xof_init(stack u64[25] state, reg ptr u8[64] rho_prime, stack u16 domain_separator)
     -> stack u64[25] {
     reg u64 i;
     reg u8 c;
@@ -17,12 +17,12 @@ fn xof_init(stack u64[25] state, reg ptr u8[64] rho_prime, stack u16 kappa)
         i += 1;
     }
 
-    v = kappa;
+    v = domain_separator;
     v &= 0xFF;
     c = (8u) v;
     state[u8 64] = c;
 
-    v = kappa;
+    v = domain_separator;
     v >>= 8;
     c = (8u) v;
     state[u8 65] = c;
@@ -34,7 +34,7 @@ fn xof_init(stack u64[25] state, reg ptr u8[64] rho_prime, stack u16 kappa)
 }
 
 inline
-fn sample_mask_polynomial(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, reg ptr u8[64] rho_prime, stack u16 kappa)
+fn sample_mask_polynomial(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, reg ptr u8[64] rho_prime, stack u16 domain_separator)
     -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
 {
     reg u64 i;
@@ -45,7 +45,7 @@ fn sample_mask_polynomial(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, reg ptr u8[
     stack u64 output_squeeze_counter;
     reg u64 addr;
 
-    state = xof_init(state, rho_prime, kappa);
+    state = xof_init(state, rho_prime, domain_separator);
 
     y_loc = 0;
     output_squeeze_counter = 0;
@@ -70,26 +70,24 @@ fn sample_mask_polynomial(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, reg ptr u8[
     return f;
 }
 
-inline
-fn sample_mask_vector(reg ptr u8[64] rho_prime, reg u16 nonce)
-    -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
-{
-    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask_vector;
-    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] mask_polynomial;
+namespace sample {
+    inline
+    fn mask(reg ptr u8[64] rho_prime, reg u16 domain_separator)
+        -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u16
+    {
+        stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] mask_polynomial;
 
-    inline int i;
-    stack u16 kappa;
-    reg u16 v;
+        inline int i;
 
-    for i = 0 to COLUMNS_IN_MATRIX_A {
-        v = nonce;
-        v += i;
-        kappa = v;
+        for i = 0 to COLUMNS_IN_MATRIX_A {
+            mask_polynomial = mask[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
 
-        mask_polynomial = mask_vector[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-        mask_polynomial = sample_mask_polynomial(mask_polynomial, rho_prime, kappa);
+            mask_polynomial = sample_mask_polynomial(mask_polynomial, rho_prime, domain_separator);
+            domain_separator += 1;
 
-        mask_vector[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] = mask_polynomial;
+            mask[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] = mask_polynomial;
+        }
+        return mask, domain_separator;
     }
-    return mask_vector;
 }

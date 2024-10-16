@@ -1,4 +1,4 @@
-require "parameters.jinc"
+require "../parameters.jinc"
 
 namespace coefficient {
     fn power2round(reg u32 r)

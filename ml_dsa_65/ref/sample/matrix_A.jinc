@@ -1,4 +1,4 @@
-require "fips202.jinc"
+require "../fips202.jinc"
 
 inline
 fn uniform_sample_polynomial(reg ptr u8[32] rho, inline int i, inline int j,
@@ -62,23 +62,25 @@ fn uniform_sample_polynomial(reg ptr u8[32] rho, inline int i, inline int j,
     return result;
 }
 
-inline
-fn expandA(stack u8[32] rho) -> stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
-{
-    reg ptr u8[32] rho_rsp;
-    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly;
-    stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix;
+namespace sample {
+    inline
+    fn matrix_A(stack u8[32] rho) -> stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg ptr u8[32] rho_rsp;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly;
+        stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix;
 
-    inline int i j;
+        inline int i j;
 
-    for i = 0 to ROWS_IN_MATRIX_A {
-        for j = 0 to COLUMNS_IN_MATRIX_A {
-            rho_rsp = rho;
-            poly = matrix[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            poly = uniform_sample_polynomial(rho_rsp, i, j, poly);
-            matrix[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = poly;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            for j = 0 to COLUMNS_IN_MATRIX_A {
+                rho_rsp = rho;
+                poly = matrix[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+                poly = uniform_sample_polynomial(rho_rsp, i, j, poly);
+                matrix[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = poly;
+            }
         }
-    }
 
-    return matrix;
+        return matrix;
+    }
 }

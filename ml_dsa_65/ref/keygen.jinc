@@ -8,8 +8,8 @@ require "encoding/s1.jinc"
 require "encoding/s2.jinc"
 require "encoding/t0.jinc"
 require "encoding/t1.jinc"
-require "expandA.jinc"
-require "expandS.jinc"
+require "sample/matrix_A.jinc"
+require "sample/error_vectors.jinc"
 
 inline
 fn keygen_internal(reg ptr u8[32] randomness)
@@ -41,7 +41,7 @@ fn keygen_internal(reg ptr u8[32] randomness)
     seed_for_error_vectors = randomness_expanded[SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
     seed_for_signing = randomness_expanded[SEED_FOR_MATRIX_A_SIZE + SEED_FOR_ERROR_VECTORS_SIZE:SEED_FOR_SIGNING_SIZE];
 
-    s1, s2 = expandS(seed_for_error_vectors);
+    s1, s2 = sample::error_vectors(seed_for_error_vectors);
 
     // Serialize most of the signing key here; in particular serialize 
     // s1 and s2 before applying the NTT to them.
@@ -57,8 +57,8 @@ fn keygen_internal(reg ptr u8[32] randomness)
 
     s1 = row_vector::ntt(s1);
 
-    matrix_A = expandA(seed_for_matrix_A);
-    t = row_vector::multiply_with_matrix_on_the_left(matrix_A, s1);
+    matrix_A = sample::matrix_A(seed_for_matrix_A);
+    t = row_vector::multiply_with_matrix_A(matrix_A, s1);
     t = column_vector::reduce32(t);
     t = column_vector::invert_ntt_montgomery(t);
 

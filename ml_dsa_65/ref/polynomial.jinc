@@ -1,5 +1,5 @@
 require "parameters.jinc"
-require "montgomery.jinc"
+require "arithmetic/modular.jinc"
 
 namespace polynomial {
     fn add(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f g sum)
