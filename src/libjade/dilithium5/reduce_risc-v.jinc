@@ -13,8 +13,8 @@ inline fn __montgomery_reduce_8380417(reg u32 a_low a_high) -> reg u32
 {
   reg u32 a_low_x7 a_low_x7169 a_low_x58728449;
   reg u32 res;
-  reg u32 q qinv minus_q;
-  reg u32 t0 t1;
+  reg u32 q minus_q;
+  reg u32 t0;
   minus_q = MINUS_Q;
   q = iQ;
 
