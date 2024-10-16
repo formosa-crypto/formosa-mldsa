@@ -26,7 +26,7 @@ $(ASM_JASMIN_FILES):
 	$(JASMINC) -arch=$(arch) -o $@ $<
 
 $(JASMIN_LIB): $(JASMIN_OBJECTS)
-	$(CAR) -r $@ $(JASMIN_OBJECTS)
+	$(AR) -r $@ $(JASMIN_OBJECTS)
 
 #-------------------------------------------------------------------------------
 
@@ -38,7 +38,7 @@ PQCLEAN_OBJECTS=pqclean/ntt.o pqclean/packing.o pqclean/poly.o pqclean/polyvec.o
 	$(CC) $(CFLAGS) $(FULL_TESTING) -c -o $@ $<
 
 $(PQCLEAN_LIB): $(PQCLEAN_OBJECTS)
-	$(CAR) -r $@ $(PQCLEAN_OBJECTS)
+	$(AR) -r $@ $(PQCLEAN_OBJECTS)
 
 #-------------------------------------------------------------------------------
 
