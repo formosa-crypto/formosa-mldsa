@@ -1,5 +1,3 @@
-require "params.jinc"
-
 fn _montgomery_reduce_8380417(reg u32 a_low a_high) -> reg u32
 {
   reg u32 res;

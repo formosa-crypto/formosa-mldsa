@@ -1,4 +1,3 @@
-
 param int N = 256;
 param int TAU = 60;
 param int iQ = 8380417;

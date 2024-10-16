@@ -75,6 +75,10 @@ make arch=arm-m4
 This will generate a library providing the sign API (PQCLEAN_DILITHIUM5_CLEAN_challenge ..). 
 More control over which compiler / linker are used can be introspected within common.mk and the Makefile.
 
+## Additional information
+
+The jasmin Dilithium library is built mixing high level architecture-agnostic (reduce.jinc) and architecture-specific (reduce_arm-m4.jinc, reduce_risc-v.jinc) implementations, as well as low level architecture-specific implementations (such as SMULL: wrappers_arm-m4.jinc and wrapper_risc-v.jinc).
+The file dependencies are handled at a global level (in library_\*.jazz) to have the greatest control possible over the location of the implementations in the assembly.
 
 # Test compilation and execution
 
