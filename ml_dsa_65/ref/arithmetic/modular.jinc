@@ -1,4 +1,4 @@
-require "constants.jinc"
+require "../constants.jinc"
 
 param int INVERSE_OF_MODULUS_MOD_MONTGOMERY_R = 58_728_449;
 

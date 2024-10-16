@@ -1,0 +1,96 @@
+require "../fips202.jinc"
+require "../parameters.jinc"
+require "../encoding/gamma1.jinc"
+
+inline
+fn shake256_absorb_commitment_hash(reg ptr u8[COMMITMENT_HASH_SIZE] in) -> stack u64[25] {
+    reg u8 c;
+    inline int i;
+    stack u64[25] state;
+    reg ptr u64[25] state_rsp;
+
+    state_rsp = state;
+    state_rsp = st0(state_rsp);
+    // TODO: Inefficient to load one byte at a time. Optimize this.
+    for i = 0 to COMMITMENT_HASH_SIZE {
+        c = in[i];
+        state_rsp[u8 i] ^= c;
+    }
+
+    state_rsp[u8 COMMITMENT_HASH_SIZE] ^= 0x1f;
+    state_rsp[u8 SHAKE256_RATE - 1] ^= 0x80;
+
+    state = state_rsp;
+    return state;
+}
+
+
+namespace sample {
+    inline
+    fn challenge(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, reg ptr u8[COMMITMENT_HASH_SIZE] seed)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u64[25] state;
+        reg ptr u64[25] state_rsp;
+
+        reg u64 i;
+        reg u64 b;
+        reg u64 offset;
+        reg u64 signs;
+        inline int ii;
+        reg u8 c;
+        reg u64 v;
+        reg u32 v32 fb;
+
+        state = shake256_absorb_commitment_hash(seed);
+        state_rsp = state;
+        state_rsp = __keccakf1600_ref(state_rsp);
+
+        signs = 0;
+        for ii = 0 to 8 {
+            c = state_rsp[u8 ii];
+            v = (64u) c;
+            v <<= 8 * ii;
+            signs |= v;
+        }
+
+        offset = 8;
+
+        i = 0;
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            f[(int) i] = 0;
+            i += 1;
+        }
+
+        i = COEFFICIENTS_IN_POLYNOMIAL - ONES_IN_VERIFIER_CHALLENGE;
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            // do-while
+            while {
+                if(offset >= SHAKE256_RATE) {
+                    state_rsp = __keccakf1600_ref(state_rsp);
+                    offset = 0;
+                }
+                c = state_rsp[u8 (int) offset];
+                b = (64u) c;
+                offset += 1;
+            } (b > i)
+
+            v32 = f[(int) b];
+            f[(int) i] = v32;
+
+            //f[(int) b] = 1 - 2 * (signs & 1);
+            v32 = (32u) signs;
+            v32 &= 1;
+            fb = 1;
+            fb -= v32;
+            fb -= v32;
+            f[(int) b] = fb;
+
+            signs >>= 1;
+
+            i += 1;
+        }
+
+        return f;
+    }
+}

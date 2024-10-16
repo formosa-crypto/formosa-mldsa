@@ -1,6 +1,6 @@
 require "polynomial.jinc"
-require "rounding.jinc"
-require "ntt.jinc"
+require "arithmetic/rounding.jinc"
+require "arithmetic/ntt.jinc"
 
 // A column vector has dimensions ROWS_IN_MATRIX_A * 1
 namespace column_vector {

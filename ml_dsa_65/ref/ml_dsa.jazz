@@ -1,11 +1,8 @@
-require "tofromstack.jinc"
 require "keygen.jinc"
 require "sign.jinc"
 
-export fn ml_dsa_65_keygen(reg u64 verification_key_out signing_key_out randomness) -> reg u64
+export fn ml_dsa_65_keygen(reg u64 verification_key_out signing_key_out randomness)
 {
-    reg u64 exit_code;
-
     stack u8[32] randomness_on_stack;
 
     stack u8[VERIFICATION_KEY_SIZE] verification_key;
@@ -14,59 +11,71 @@ export fn ml_dsa_65_keygen(reg u64 verification_key_out signing_key_out randomne
     reg u8 c;
     reg u64 i;
 
-    randomness_on_stack = __tostack32u8(randomness_on_stack, randomness);
+    i = 0;
+    while (i < 32) {
+        c = (u8)[randomness + i];
+        randomness_on_stack[i] = c;
+        i += 1;
+    }
 
     verification_key, signing_key = keygen_internal(randomness_on_stack);
 
     i = 0;
-    while(i < VERIFICATION_KEY_SIZE) {
-        c = verification_key[(int) i];
+    while (i < VERIFICATION_KEY_SIZE) {
+        c = verification_key[i];
         (u8)[verification_key_out + i] = c;
         i += 1;
     }
 
     i = 0;
     while(i < SIGNING_KEY_SIZE) {
-        c = signing_key[(int) i];
+        c = signing_key[i];
         (u8)[signing_key_out + i] = c;
         i += 1;
     }
-
-    ?{}, exit_code = #set0();
-    return exit_code;
 }
 
-// TODO: Add context string
-export fn ml_dsa_65_sign(reg u64 signature_out signing_key message message_size randomness) -> reg u64
+// N.B.: This function assumes the domain separation context has already been appended
+// to the message; it also does NOT validate whether this was done in accordance
+// with the FIPS-204 specification.
+//
+// Ideally, we'd pass in two additional arguments, one being a pointer to the
+// context string and the other being the size of said string, but we're already
+// at 5 arguments, and Jasmin does not currently support functions that take more
+// than 6 arguments.
+export fn ml_dsa_65_sign(reg u64 signature_out signing_key message message_size randomness) -> reg u16
 {
-    reg u64 exit_code;
-
     stack u8[32] randomness_on_stack;
     stack u8[SIGNING_KEY_SIZE] signing_key_on_stack;
 
     stack u8[SIGNATURE_SIZE] signature;
-    stack u32 status;
+    reg u16 signing_attempts;
 
     reg u8 c;
     reg u64 i;
 
-    randomness_on_stack = __tostack32u8(randomness_on_stack, randomness);
     i = 0;
-    while(i < SIGNING_KEY_SIZE) {
-        c = (u8)[signing_key + i];
-        signing_key_on_stack[(int) i] = c;
+    while (i < 32) {
+        c = (u8)[randomness + i];
+        randomness_on_stack[i] = c;
         i += 1;
     }
 
-    signature, status = sign_internal(signing_key_on_stack, message, message_size, randomness_on_stack);
+    i = 0;
+    while(i < SIGNING_KEY_SIZE) {
+        c = (u8)[signing_key + i];
+        signing_key_on_stack[i] = c;
+        i += 1;
+    }
+
+    signature, signing_attempts = sign_internal(signing_key_on_stack, message, message_size, randomness_on_stack);
 
     i = 0;
     while(i < SIGNATURE_SIZE) {
-        c = signature[(int) i];
+        c = signature[i];
         (u8)[signature_out + i] = c;
         i += 1;
     }
 
-    ?{}, exit_code = #set0();
-    return exit_code;
+    return signing_attempts;
 }
