@@ -40,7 +40,7 @@ inline fn __toBitInterleaving(reg u32 x0 x1 s0 s1)
   s0 = s0 ^ (t >> 8);
   t = __toBitInterleaving_even(x1);
   t = t | (t >> 8);
-  t = s0 ^ (t << 16);
+  s0 = s0 ^ (t << 16);
 
   t = __toBitInterleaving_odd(x0);
   s1 = s1 ^ (t >> 16);
@@ -63,7 +63,7 @@ inline fn __toBitInterleaving(reg u32 x0 x1 s0 s1)
 inline fn __fromBitInterleaving_merge(reg u32 x, inline int mask, inline int shift) -> reg u32 {
    reg u32 t;
    t = x ^ (x >> shift);
-   x = x & mask;
+   t = t & mask;
    x = x ^ t;
    x = x ^ (t << shift);
    return x;
@@ -74,7 +74,7 @@ inline fn __fromBitInterleaving_merge_reg(reg u32 x, inline int imask, inline in
    reg u32 mask;
    mask = imask; 
    t = x ^ (x >> shift);
-   x = x & mask;
+   t = t & mask;
    x = x ^ t;
    x = x ^ (t << shift);
    return x;
