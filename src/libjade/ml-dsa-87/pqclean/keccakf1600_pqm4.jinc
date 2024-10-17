@@ -69,6 +69,17 @@ inline fn __fromBitInterleaving_merge(reg u32 x, inline int mask, inline int shi
    return x;
 }
 
+inline fn __fromBitInterleaving_merge_reg(reg u32 x, inline int imask, inline int shift) -> reg u32 {
+   reg u32 t;
+   reg u32 mask;
+   mask = imask; 
+   t = x ^ (x >> shift);
+   x = x & mask;
+   x = x ^ t;
+   x = x ^ (t << shift);
+   return x;
+}
+
 inline fn __fromBitInterleaving(reg u32 x0 x1)
                              -> reg u32, reg u32
 {
@@ -80,12 +91,12 @@ inline fn __fromBitInterleaving(reg u32 x0 x1)
   x1 = #BFC(x1, 0, 16);      // b31 .. b16 00000000 
   x1 = x1 | (t >> 16);       // b31 .. b16 a31 .. a16 
 
-  x0 = __fromBitInterleaving_merge(x0, 0x0000FF00, 8);
+  x0 = __fromBitInterleaving_merge_reg(x0, 0x0000FF00, 8);
   x0 = __fromBitInterleaving_merge(x0, 0x00F000F0, 4);
   x0 = __fromBitInterleaving_merge(x0, 0x0C0C0C0C, 2);
   x0 = __fromBitInterleaving_merge(x0, 0x22222222, 1);
 
-  x1 = __fromBitInterleaving_merge(x1, 0x0000FF00, 8);
+  x1 = __fromBitInterleaving_merge_reg(x1, 0x0000FF00, 8);
   x1 = __fromBitInterleaving_merge(x1, 0x00F000F0, 4);
   x1 = __fromBitInterleaving_merge(x1, 0x0C0C0C0C, 2);
   x1 = __fromBitInterleaving_merge(x1, 0x22222222, 1);
@@ -934,13 +945,78 @@ export fn KeccakF1600_StatePermute(reg ptr u32[KECCAK_state] state)
   return state;
 }
 
+
+/* 
+
+
+Keccak ~ to_interleave; Keccak_pqm4; from_interleave : ={state} ==> ={state}
+
+
+op f_to_interleave = ....
+op f_from_interleave = ....
+
+to_interleave : s = s0 => res = f_to_interleave
+from_interleave : s = s0 => res = f_form_interleave
+
+f_to_interleave (f_form_interleave s) = s 
+
+to_interleave; Keccak_pqm4 ~ 
+
+*/
+
+
+/*
+fn _KeccakF1600_StateXORLane(reg ptr u32[2] lane, reg ptr u32[2] data) 
+   -> reg prt u32[2] 
+{
+  reg u32 s0 s1 d0 d1;
+  s0 = lane[0];
+  s1 = lane[1];
+  d1 = data[0];
+  d2 = data[1];
+  s0, s1 = __toBitInterleaving(d0, d1, s0, s1);
+  lane[0] = s0;
+  lane[1] = s1;
+  return lane;
+}
+
+
+// param int nlanes 
+
+fn _KeccakF1600_StateXORLanes(reg ptr u32[2 * nlanes] state, reg ptr u32[2 * nlanes] datas) 
+   -> reg ptr u32[2 * nlanes]
+{
+  inline int i;
+  for i = 0 to nlanes {
+    reg ptr u32[2] lane data;
+    lane = state[2*i:2];
+    data = datas[2*i:2]
+    state[2*i:2] = _KeccakF1600_StateXORLane(lane, data);
+  }
+  return state;
+}
+
+
+
+
 @----------------------------------------------------------------------------
 @
+@                                     r0                          r1                  r2                   r3   
 @ void KeccakF1600_StateXORBytes(void *state, const unsigned char *data, unsigned int offset, unsigned int length)
 @
 .align 8
 .global   KeccakF1600_StateXORBytes
 KeccakF1600_StateXORBytes:
+
+if (length <> 0) {
+  offset_8 = offset & ~7;
+  
+  
+}
+return state;
+
+
+
 	cbz		r3, KeccakF1600_StateXORBytes_Exit1
 	push	{r4 - r8, lr}							@ then
 	bic		r4, r2, #7								@ offset &= ~7
@@ -1034,6 +1110,7 @@ __KeccakF1600_StateXORBytesInLane_Loop:
 	bx		lr
 
 
+                                    
 
 
 
@@ -1043,3 +1120,4 @@ __KeccakF1600_StateXORBytesInLane_Loop:
 
 
 
+*/
