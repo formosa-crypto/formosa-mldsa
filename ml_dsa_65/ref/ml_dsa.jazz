@@ -1,5 +1,15 @@
 require "keygen.jinc"
 require "sign.jinc"
+require "verify.jinc"
+
+// N.B.: Signing and verification assume the domain separation context has already
+// been appended to the message; they do NOT validate whether this was done in
+// accordance with the FIPS-204 specification.
+//
+// Ideally, we'd pass in two additional arguments, one being a pointer to the
+// context string and the other being the size of said string, but we're already
+// at 5 arguments for signing, and Jasmin does not currently support functions
+// that take more than 6 arguments.
 
 export fn ml_dsa_65_keygen(reg u64 verification_key_out signing_key_out randomness)
 {
@@ -35,14 +45,6 @@ export fn ml_dsa_65_keygen(reg u64 verification_key_out signing_key_out randomne
     }
 }
 
-// N.B.: This function assumes the domain separation context has already been appended
-// to the message; it also does NOT validate whether this was done in accordance
-// with the FIPS-204 specification.
-//
-// Ideally, we'd pass in two additional arguments, one being a pointer to the
-// context string and the other being the size of said string, but we're already
-// at 5 arguments, and Jasmin does not currently support functions that take more
-// than 6 arguments.
 export fn ml_dsa_65_sign(reg u64 signature_out signing_key message message_size randomness) -> reg u16
 {
     stack u8[32] randomness_on_stack;
@@ -78,4 +80,32 @@ export fn ml_dsa_65_sign(reg u64 signature_out signing_key message message_size 
     }
 
     return signing_attempts;
+}
+
+export fn ml_dsa_65_verify(reg u64 verification_key message message_size signature) -> reg u8 {
+    stack u8[VERIFICATION_KEY_SIZE] verification_key_on_stack;
+    stack u8[SIGNATURE_SIZE] signature_on_stack;
+
+    reg u8 verification_result;
+
+    reg u8 byte;
+    reg u64 i;
+
+    i = 0;
+    while(i < VERIFICATION_KEY_SIZE) {
+        byte = (u8)[verification_key + i];
+        verification_key_on_stack[i] = byte;
+        i += 1;
+    }
+
+    i = 0;
+    while(i < SIGNATURE_SIZE) {
+        byte = (u8)[signature + i];
+        signature_on_stack[i] = byte;
+        i += 1;
+    }
+
+    verification_result = verify_internal(verification_key_on_stack, message, message_size, signature_on_stack);
+
+    return verification_result;
 }

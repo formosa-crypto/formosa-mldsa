@@ -56,8 +56,8 @@ fn shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u
 }
 
 inline
-fn hash_verification_key(reg ptr u8[VERIFICATION_KEY_SIZE] pk, reg ptr u8[64] out)
-    -> reg ptr u8[64] {
+fn hash_verification_key(reg ptr u8[VERIFICATION_KEY_SIZE] pk, reg ptr u8[VERIFICATION_KEY_HASH_SIZE] out)
+    -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE] {
     // FIXME: This function is smelly and should check more consistently
     // whether the SHA3 buffer is full.
     stack u64[25] state;

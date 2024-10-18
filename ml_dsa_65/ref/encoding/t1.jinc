@@ -1,4 +1,5 @@
 require "../parameters.jinc"
+require "../constants.jinc"
 
 namespace t1 {
     fn encode_polynomial(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1, reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] buf)
@@ -117,4 +118,54 @@ namespace t1 {
 
         return encoded;
     }
+
+    fn decode_polynomial(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1, reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] buf)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 i i4 i5;
+        reg u32 x0 x1 x2 x3;
+        reg u32 xtmp1 xtmp2;
+
+        i = 0;
+        while (i < COEFFICIENTS_IN_POLYNOMIAL / 4) {
+            // FIXME: opt: make i4 loop counter
+            i4 = #LEA_64(4 * i); // i4 = 4 * i
+            i5 = #LEA_64(4 * i + i); // i5 = 5 * i
+
+            x0 = (32u)buf[(int) i5 + 0];
+            xtmp1 = (32u)buf[(int) i5 + 1];
+            xtmp2 = xtmp1;
+            xtmp1 <<= 8;
+            x0 |= xtmp1;
+            x0 &= 0x3FF;
+            t1[(int) i4 + 0] = x0;
+
+            x1 = xtmp2 >> 2;
+            xtmp1 = (32u)buf[(int) i5 + 2];
+            xtmp2 = xtmp1;
+            xtmp1 <<= 6;
+            x1 |= xtmp1;
+            x1 &= 0x3FF;
+            t1[(int) i4 + 1] = x1;
+
+            x2 = xtmp2 >> 4;
+            xtmp1 = (32u)buf[(int) i5 + 3];
+            xtmp2 = xtmp1;
+            xtmp1 <<= 4;
+            x2 |= xtmp1;
+            x2 &= 0x3FF;
+            t1[(int) i4 + 2] = x2;
+
+            x3 = xtmp2 >> 6;
+            xtmp1 = (32u)buf[(int) i5 + 4];
+            xtmp1 <<= 2;
+            x3 |= xtmp1;
+            x3 &= 0x3FF; // FIXME: opt: redundant operation
+            t1[(int) i4 + 3] = x3;
+
+            i += 1;
+        }
+        return t1;
+    }
+
 }

@@ -65,7 +65,7 @@ fn sample_mask_polynomial(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, reg ptr u8[
         output_squeeze_counter += 1;
     }
 
-    f = gamma1::decode(f, mask_polynomial_encoded[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);
+    f = gamma1::decode_polynomial(f, mask_polynomial_encoded[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);
 
     return f;
 }

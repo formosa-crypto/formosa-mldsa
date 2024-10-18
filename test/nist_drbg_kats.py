@@ -20,16 +20,16 @@ def generate_keypair(randomness):
 def sign(signing_key, message, randomness):
     signature = ctypes.create_string_buffer(3309)
 
-    # We append [0,0] to signal an empty domain separation context, see
-    # the comment above ml_dsa_65_sign in ml_dsa.jazz for as to why this is done
-    # here instead of inside the function.
-    message = bytearray([0, 0]) + message
-
     signing_attempts = _ml_dsa.ml_dsa_65_sign(signature, signing_key, bytearray_to_ctype(message), len(message), bytearray_to_ctype(randomness))
 
     assert signing_attempts > 0 and signing_attempts <= 814
 
     return signature
+
+def verify(verification_key, message, signature):
+    verification_result = _ml_dsa.ml_dsa_65_verify(verification_key, bytearray_to_ctype(message), len(message), signature)
+
+    assert verification_result == 0
 
 # ----- NIST KAT Tests -----
 with open("test/nist_drbg_kats_65.json", "r") as nistkats_65_raw:
@@ -47,10 +47,18 @@ with open("test/nist_drbg_kats_65.json", "r") as nistkats_65_raw:
         assert sha3_256_hash_of_signing_key == bytes.fromhex((nistkat['sha3_256_hash_of_signing_key']))
 
         # Then signing.
+
+        # We append [0,0] to signal an empty domain separation context, see
+        # the comment in ml_dsa.jazz for as to why this is done here instead
+        # of there.
+        message = bytearray([0, 0]) + bytearray.fromhex(nistkat['message'])
+
         signing_randomness = bytearray.fromhex(nistkat['signing_randomness'])
-        message = bytearray.fromhex(nistkat['message'])
 
         signature = sign(signing_key, message, signing_randomness)
 
         sha3_256_hash_of_signature = hashlib.sha3_256(signature.raw).digest()
         assert sha3_256_hash_of_signature == bytes.fromhex((nistkat['sha3_256_hash_of_signature']))
+
+        # And lastly, verification.
+        verify(verification_key, message, signature)

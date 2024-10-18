@@ -2,9 +2,9 @@ require "../parameters.jinc"
 require "gamma1.jinc"
 
 namespace signature {
-    param int START_OF_GAMMA1_IN_ENCODED_SIGNATURE = COMMITMENT_HASH_SIZE;
-    param int START_OF_HINT_IN_ENCODED_SIGNATURE = 
-        START_OF_GAMMA1_IN_ENCODED_SIGNATURE +
+    param int START_OF_GAMMA1 = COMMITMENT_HASH_SIZE;
+    param int START_OF_HINT = 
+        START_OF_GAMMA1 +
         GAMMA1_ENCODED_SIZE;
 
     inline
@@ -30,16 +30,16 @@ namespace signature {
         }
 
         for ii = 0 to COLUMNS_IN_MATRIX_A {
-            z_buf = signature[START_OF_GAMMA1_IN_ENCODED_SIGNATURE + ENCODED_GAMMA1_POLYNOMIAL_SIZE * ii : ENCODED_GAMMA1_POLYNOMIAL_SIZE];
+            z_buf = signature[START_OF_GAMMA1 + ENCODED_GAMMA1_POLYNOMIAL_SIZE * ii : ENCODED_GAMMA1_POLYNOMIAL_SIZE];
             z_to_pack = z[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
             z_buf = gamma1::encode_polynomial(z_buf, z_to_pack);
-            signature[START_OF_GAMMA1_IN_ENCODED_SIGNATURE + ENCODED_GAMMA1_POLYNOMIAL_SIZE * ii : ENCODED_GAMMA1_POLYNOMIAL_SIZE] = z_buf;
+            signature[START_OF_GAMMA1 + ENCODED_GAMMA1_POLYNOMIAL_SIZE * ii : ENCODED_GAMMA1_POLYNOMIAL_SIZE] = z_buf;
         }
 
         // Clear the hints buffer
         ?{}, i = #set0_64();
         while (i < MAX_ONES_IN_HINT + ROWS_IN_MATRIX_A) {
-            signature[(int) (START_OF_HINT_IN_ENCODED_SIGNATURE + i)] = 0;
+            signature[(int) (START_OF_HINT + i)] = 0;
             i += 1;
         }
 
@@ -54,15 +54,104 @@ namespace signature {
                 addr += j;
                 coeff = h[(int) addr];
                 if coeff != 0 {
-                    signature[(int) (START_OF_HINT_IN_ENCODED_SIGNATURE + k)] = (8u) j;
+                    signature[(int) (START_OF_HINT + k)] = (8u) j;
                     k += 1;
                 }
                 j += 1;
             }
-            signature[(int) (START_OF_HINT_IN_ENCODED_SIGNATURE + MAX_ONES_IN_HINT + i)] = (8u) k;
+            signature[(int) (START_OF_HINT + MAX_ONES_IN_HINT + i)] = (8u) k;
             i += 1;
         }
 
         return signature;
+    }
+
+    // This function is not inline, because I have had experiences with the
+    // register allocation failing (when it should be able to succeed) when
+    // this function was inlined.
+    inline
+    fn decode_hint(
+            reg ptr u8[MAX_ONES_IN_HINT + ROWS_IN_MATRIX_A] hint_encoded,
+            reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints)
+            -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
+               reg u8 {
+
+        reg u64 i j;
+        reg u8 done ill_formed_hint status;
+        reg bool tmp;
+        reg u32 zero;
+        reg u64 index idxtmp;
+        reg u64 hint_at_index_j hint_at_index_j_minus_one;
+        reg u64 previous_true_hints_seen current_true_hints_seen;
+        reg u64 hint_encoded_offset;
+
+        ill_formed_hint = 0;
+        previous_true_hints_seen = 0;
+        zero = 0;
+
+        i = 0;
+        while {
+            tmp = i >= ROWS_IN_MATRIX_A;
+            done = #SETcc(tmp);
+            done |= ill_formed_hint;
+        } (done == 0) {
+            hint_encoded_offset = i;
+            hint_encoded_offset <<= 8;
+            j = 0;
+
+            while (j < COEFFICIENTS_IN_POLYNOMIAL) {
+                index = #LEA_64(hint_encoded_offset + j);
+                hints[(int) index] = zero;
+                j += 1;
+            }
+
+            // if (sig[MAX_ONES_IN_HINT + i] < k ||
+            //     sig[MAX_ONES_IN_HINT + i] > MAX_ONES_IN_HINT) {
+            //     return 1;
+            // }
+            current_true_hints_seen = (64u)hint_encoded[(int) (MAX_ONES_IN_HINT + i)];
+            if (current_true_hints_seen < previous_true_hints_seen) {
+                ill_formed_hint = 1;
+            } else {
+                if (previous_true_hints_seen > MAX_ONES_IN_HINT) {
+                    ill_formed_hint = 1;
+                } else {
+                    j = previous_true_hints_seen;
+                    while {
+                        tmp = j >= current_true_hints_seen;
+                        done = #SETcc(tmp);
+                        done = done | ill_formed_hint;
+                    } (done == 0) {
+                        // Coefficients are ordered for strong unforgeability
+                        // if(j > previous_true_hints_seen && sig[j] <= sig[j-1]) return 1;
+
+                        hint_at_index_j = (64u)hint_encoded[(int) j];
+
+                        if (j > previous_true_hints_seen) {
+                            hint_at_index_j_minus_one = (64u)hint_encoded[(int) j-1];
+                            if (hint_at_index_j <= hint_at_index_j_minus_one) {
+                                ill_formed_hint = 1;
+                            }
+                        }
+
+                        if (ill_formed_hint == 0) {
+                            // h->vec[i].coeffs[sig[j]] = 1;
+                            idxtmp = #LEA_64(hint_encoded_offset + hint_at_index_j);
+                            hints[(int) idxtmp] = 1;
+
+                            j += 1;
+
+                        }
+                    }
+                }
+            }
+
+            previous_true_hints_seen = current_true_hints_seen;
+            i += 1;
+        }
+
+        // ill_formed_hint is `0` or `1`.  Map it to a `0` or `-1` status code.
+        status = -ill_formed_hint;
+        return hints, status;
     }
 }

@@ -7,20 +7,17 @@ fn shake256_absorb_commitment_hash(reg ptr u8[COMMITMENT_HASH_SIZE] in) -> stack
     reg u8 c;
     inline int i;
     stack u64[25] state;
-    reg ptr u64[25] state_rsp;
 
-    state_rsp = state;
-    state_rsp = st0(state_rsp);
+    state = st0(state);
     // TODO: Inefficient to load one byte at a time. Optimize this.
     for i = 0 to COMMITMENT_HASH_SIZE {
         c = in[i];
-        state_rsp[u8 i] ^= c;
+        state[u8 i] ^= c;
     }
 
-    state_rsp[u8 COMMITMENT_HASH_SIZE] ^= 0x1f;
-    state_rsp[u8 SHAKE256_RATE - 1] ^= 0x80;
+    state[u8 COMMITMENT_HASH_SIZE] ^= 0x1f;
+    state[u8 SHAKE256_RATE - 1] ^= 0x80;
 
-    state = state_rsp;
     return state;
 }
 
@@ -31,7 +28,6 @@ namespace sample {
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u64[25] state;
-        reg ptr u64[25] state_rsp;
 
         reg u64 i;
         reg u64 b;
@@ -43,12 +39,11 @@ namespace sample {
         reg u32 v32 fb;
 
         state = shake256_absorb_commitment_hash(seed);
-        state_rsp = state;
-        state_rsp = __keccakf1600_ref(state_rsp);
+        state = __keccakf1600_ref(state);
 
         signs = 0;
         for ii = 0 to 8 {
-            c = state_rsp[u8 ii];
+            c = state[u8 ii];
             v = (64u) c;
             v <<= 8 * ii;
             signs |= v;
@@ -67,10 +62,10 @@ namespace sample {
             // do-while
             while {
                 if(offset >= SHAKE256_RATE) {
-                    state_rsp = __keccakf1600_ref(state_rsp);
+                    state = __keccakf1600_ref(state);
                     offset = 0;
                 }
-                c = state_rsp[u8 (int) offset];
+                c = state[u8 (int) offset];
                 b = (64u) c;
                 offset += 1;
             } (b > i)
