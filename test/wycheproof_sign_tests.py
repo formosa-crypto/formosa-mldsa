@@ -39,7 +39,7 @@ with open("wycheproof/mldsa_65_standard_sign_test.json", "r") as wycheproof_sign
 
             if test['result'] == 'valid':
                     actual_decoded = bytearray.fromhex(test['sig'])
-                    assert signature.raw == actual_decoded, print("Test case ID: {}.\n First 10 bytes of expected signature: {}.\n First 10 bytes of actual signature: {}".format(test['tcId'], [hex(b) for b in actual_decoded[0:10]], [hex(b) for b in signature.raw[0:10]]))
+                    assert signature.raw == actual_decoded, print("Test case ID: {}.".format(test['tcId']))
 
             # TODO: else, the generated signature is invalid; we can
             # check that our own implementation agrees with this judgement,

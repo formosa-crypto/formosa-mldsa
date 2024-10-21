@@ -85,6 +85,34 @@ namespace coefficient {
         return result;
     }
 
+    inline
+    fn check_norm(reg u32 coefficient, inline int threshold)
+        -> stack u8
+    {
+        reg u32 sign;
+        stack u32 c;
+
+        stack u8 result;
+
+        result = 0;
+
+        sign = coefficient;
+        sign >>s= 31;
+
+        // Compute coefficient = coefficient - (sign & (2 * coefficient));
+        c = coefficient;
+        c <<= 1;
+        c &= sign;
+        coefficient = coefficient - c;
+
+        if(coefficient >= threshold) {
+            result = 1;
+        }
+        return result;
+    }
+
+
+
     fn use_hint(reg u32 a hint)
     -> reg u32
     {

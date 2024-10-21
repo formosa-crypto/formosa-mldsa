@@ -143,6 +143,7 @@ namespace row_vector {
         return vector;
     }
 
+    // TODO: Remove stack spilling here.
     inline
     fn check_infinity_norm(reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector, inline int threshold)
         -> stack u8
@@ -154,11 +155,11 @@ namespace row_vector {
         stack u8 r;
         reg u8 c;
 
-        inline int ii;
+        inline int i;
 
         result = 0;
-        for ii = 0 to COLUMNS_IN_MATRIX_A {
-            vector_elem = vector[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+        for i = 0 to COLUMNS_IN_MATRIX_A {
+            vector_elem = vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
             r = polynomial::check_infinity_norm(vector_elem, threshold);
             c = r;
             result |= c;

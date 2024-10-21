@@ -85,7 +85,7 @@ fn sign_internal(
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w0 w1;
     stack u8[ENCODED_COMMITMENT_SIZE] commitment_encoded;
-    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] r0;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w0_minus_cs2;
 
     stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
 
@@ -102,7 +102,7 @@ fn sign_internal(
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] cs1;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] cs2;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] ct0;
-    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] r0_plus_ct0;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w0_minus_cs2_plus_ct0;
 
     stack u32 ones_in_hint;
     stack u8 infinity_norm_check_result;
@@ -128,6 +128,9 @@ fn sign_internal(
     exit_rejection_sampling_loop = 0;
     signing_attempts = 0;
     while (exit_rejection_sampling_loop != 1) {
+        if (signing_attempts == 813) {
+            exit_rejection_sampling_loop = 1;
+        }
         signing_attempts += 1;
 
         mask, domain_separator_for_mask = sample::mask(seed_for_mask, domain_separator_for_mask);
@@ -157,9 +160,9 @@ fn sign_internal(
         if(infinity_norm_check_result == 0) {
             cs2 = column_vector::multiply_by_polynomial(s2, verifier_challenge);
             cs2 = column_vector::invert_ntt_montgomery(cs2);
-            r0 = column_vector::subtract(w0, cs2);
-            w0 = column_vector::reduce32(w0);
-            infinity_norm_check_result = column_vector::check_infinity_norm(r0, (int) (GAMMA2 - BETA));
+            w0_minus_cs2 = column_vector::subtract(w0, cs2);
+            w0_minus_cs2 = column_vector::reduce32(w0_minus_cs2);
+            infinity_norm_check_result = column_vector::check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
 
             if(infinity_norm_check_result == 0) {
                 ct0 = column_vector::multiply_by_polynomial(t0, verifier_challenge);
@@ -168,10 +171,10 @@ fn sign_internal(
                 infinity_norm_check_result = column_vector::check_infinity_norm(ct0, GAMMA2);
 
                 if(infinity_norm_check_result == 0) {
-                    r0_plus_ct0 = column_vector::add(r0, ct0);
+                    w0_minus_cs2_plus_ct0 = column_vector::add(w0_minus_cs2, ct0);
 
-                    ones_in_hint, hint = column_vector::make_hint(r0_plus_ct0, w1);
-                    if(ones_in_hint < MAX_ONES_IN_HINT) {
+                    ones_in_hint, hint = column_vector::make_hint(w0_minus_cs2_plus_ct0, w1);
+                    if(ones_in_hint <= MAX_ONES_IN_HINT) {
                         exit_rejection_sampling_loop = 1;
                     }
                 }

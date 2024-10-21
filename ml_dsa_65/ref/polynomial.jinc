@@ -103,22 +103,6 @@ namespace polynomial {
     }
 
     inline
-    fn check_coefficient_norm(reg u32 val, inline int threshold)
-        -> stack u8
-    {
-        stack u8 result;
-        result = 0;
-        if(val >=s threshold) {
-            result = 1;
-        }
-        if(val <=s -threshold) {
-            result = 1;
-        }
-        return result;
-    }
-
-
-    inline
     fn check_infinity_norm(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, inline int threshold)
         -> stack u8
     {
@@ -127,14 +111,14 @@ namespace polynomial {
         stack u8 result_s;
         reg u8 c;
         reg u64 i;
-        reg u32 val;
+        reg u32 coefficient;
 
         result = 0;
 
         ?{}, i = #set0_64();
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            val = f[(int) i];
-            r = check_coefficient_norm(val, threshold);
+            coefficient = f[(int) i];
+            r = coefficient::check_norm(coefficient, threshold);
             c = r;
             result |= c;
             i += 1;
