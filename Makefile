@@ -22,10 +22,10 @@ $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
 
 # --------------------------------------------------------------------
 .PHONY: test
-test: test/$(OUTPUT_FILE_NAME).so
-	python3 test/nist_drbg_kats.py
+test: $(OUTPUT_FILE_NAME).so
+	cd test && python3 test_nist_drbg_kats.py
 
-test/$(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
+$(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 	$(CC) $^ -fPIC -shared -o $@
 
 # --------------------------------------------------------------------
@@ -33,5 +33,4 @@ test/$(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 clean:
 	rm -fr \
 		$(TOP)/*.s \
-		$(TOP)/test/*.o \
-		$(TOP)/test/*.so
+		$(TOP)/*.so
