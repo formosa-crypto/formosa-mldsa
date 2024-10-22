@@ -1,6 +1,5 @@
 from ml_dsa import ML_DSA
 import json
-from tqdm import tqdm
 
 ml_dsa_65 = ML_DSA("ml_dsa_65_ref")
 
@@ -25,7 +24,7 @@ with open(
             continue
         signing_key = ml_dsa_65.bytearray_to_ctype(signing_key)
 
-        for test in tqdm(test_group["tests"]):
+        for test in test_group["tests"]:
             if "InvalidContext" in test["flags"]:
                 # TODO: We skip this since our implementation currently does
                 # not perform context validation and just assumes the context is

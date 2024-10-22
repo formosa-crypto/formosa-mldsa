@@ -1,6 +1,5 @@
 from ml_dsa import ML_DSA
 import json
-from tqdm import tqdm
 
 ml_dsa_65 = ML_DSA("ml_dsa_65_ref")
 

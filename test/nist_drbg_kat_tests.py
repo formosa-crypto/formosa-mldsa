@@ -5,7 +5,6 @@ from tqdm import tqdm
 
 ml_dsa_65 = ML_DSA("ml_dsa_65_ref")
 
-# ----- NIST KAT Tests -----
 with open("nist_drbg_kats/nist_drbg_kats_65.json", "r") as nistkats_65_raw:
     nistkats_65 = json.load(nistkats_65_raw)
 
