@@ -24,16 +24,18 @@ with open("wycheproof/mldsa_65_standard_sign_test.json", "r") as wycheproof_sign
             continue;
         signing_key = ml_dsa_65.bytearray_to_ctype(signing_key)
 
-        for test in test_group["tests"]:
-            if "ctx" in test and test["ctx"] != "":
+        for test in tqdm(test_group["tests"]):
+            if "InvalidContext" in test["flags"]:
                 # TODO: We skip this since our implementation currently does
-                # not validate the context.
+                # not perform context validation and just assumes the context is
+                # part of the message.
                 continue
 
-            # We append [0,0] to signal an empty domain separation context, see
-            # the comment in ml_dsa.jazz for as to why this is done here instead
-            # of there.
-            message = bytearray([0, 0]) + bytearray.fromhex(test['msg'])
+            if "ctx" in test:
+                ctx = bytearray.fromhex(test["ctx"])
+                message = bytearray([0, len(ctx)]) + ctx + bytearray.fromhex(test['msg'])
+            else:
+                message = bytearray([0, 0]) + bytearray.fromhex(test['msg'])
 
             signature, _ = ml_dsa_65.sign(signing_key, message, signing_seed)
 
@@ -41,7 +43,7 @@ with open("wycheproof/mldsa_65_standard_sign_test.json", "r") as wycheproof_sign
                     actual_decoded = bytearray.fromhex(test['sig'])
                     assert signature.raw == actual_decoded, print("Test case ID: {}.".format(test['tcId']))
 
-            # TODO: else, the generated signature is invalid; we can
+            # else, the generated signature is invalid; we can
             # check that our own implementation agrees with this judgement,
             # but in order to do so we'd need the verification key in the
             # wycheproof test file.

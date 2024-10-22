@@ -106,26 +106,22 @@ namespace polynomial {
     fn check_infinity_norm(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, inline int threshold)
         -> stack u8
     {
-        stack u8 r;
+        reg u8 ret;
         reg u8 result;
-        stack u8 result_s;
-        reg u8 c;
         reg u64 i;
         reg u32 coefficient;
 
         result = 0;
 
-        ?{}, i = #set0_64();
+        i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
             coefficient = f[(int) i];
-            r = coefficient::check_norm(coefficient, threshold);
-            c = r;
-            result |= c;
+            ret = coefficient::check_norm(coefficient, threshold);
+            result |= ret;
             i += 1;
         }
 
-        result_s = result;
-        return result_s;
+        return result;
     }
 
     inline

@@ -128,9 +128,6 @@ fn sign_internal(
     exit_rejection_sampling_loop = 0;
     signing_attempts = 0;
     while (exit_rejection_sampling_loop != 1) {
-        if (signing_attempts == 813) {
-            exit_rejection_sampling_loop = 1;
-        }
         signing_attempts += 1;
 
         mask, domain_separator_for_mask = sample::mask(seed_for_mask, domain_separator_for_mask);

@@ -82,11 +82,11 @@ export fn ml_dsa_65_sign(reg u64 signature_out signing_key message message_size 
     return signing_attempts;
 }
 
-export fn ml_dsa_65_verify(reg u64 verification_key message message_size signature) -> reg u8 {
+export fn ml_dsa_65_verify(reg u64 verification_key message message_size signature) -> reg u64 {
     stack u8[VERIFICATION_KEY_SIZE] verification_key_on_stack;
     stack u8[SIGNATURE_SIZE] signature_on_stack;
 
-    reg u8 verification_result;
+    reg u64 verification_result;
 
     reg u8 byte;
     reg u64 i;

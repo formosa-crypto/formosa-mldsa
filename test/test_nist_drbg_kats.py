@@ -35,4 +35,5 @@ with open("nist_drbg_kats/nist_drbg_kats_65.json", "r") as nistkats_65_raw:
         assert sha3_256_hash_of_signature == bytes.fromhex((kat['sha3_256_hash_of_signature']))
 
         # And lastly, verification.
-        ml_dsa_65.verify(verification_key, message, signature)
+        verification_result = ml_dsa_65.verify(verification_key, message, signature)
+        assert verification_result == 0

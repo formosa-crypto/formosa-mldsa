@@ -1,5 +1,6 @@
 import ctypes
 
+# TODO: Get these parameters directly from the source code.
 PARAMETERS = {
     "ml_dsa_65_ref": {
         "verification_key_size": 1952,
@@ -41,6 +42,4 @@ class ML_DSA:
         return (signature, signing_attempts)
 
     def verify(self, verification_key, message, signature):
-        verification_result = self.ml_dsa.ml_dsa_65_verify(verification_key, self.bytearray_to_ctype(message), len(message), signature)
-
-        assert verification_result == 0
+        return self.ml_dsa.ml_dsa_65_verify(verification_key, self.bytearray_to_ctype(message), len(message), signature)
