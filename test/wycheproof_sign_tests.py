@@ -1,17 +1,18 @@
 from ml_dsa import ML_DSA
 import json
-import hashlib
 from tqdm import tqdm
 
-ml_dsa_65 = ML_DSA('ml_dsa_65_ref')
+ml_dsa_65 = ML_DSA("ml_dsa_65_ref")
 
-with open("wycheproof/mldsa_65_standard_sign_test.json", "r") as wycheproof_sign_65_tests_raw:
+with open(
+    "wycheproof/mldsa_65_standard_sign_test.json", "r"
+) as wycheproof_sign_65_tests_raw:
     tests = json.load(wycheproof_sign_65_tests_raw)
 
     signing_seed = bytearray([0] * 32)
 
     for test_group in tests["testGroups"]:
-        signing_key = bytearray.fromhex(test_group['privateKey'])
+        signing_key = bytearray.fromhex(test_group["privateKey"])
         if len(signing_key) != ml_dsa_65.signing_key_size:
             # If the signing key size in the KAT does not match the
             # signing key size in our implementation, ensure that the KAT
@@ -21,7 +22,7 @@ with open("wycheproof/mldsa_65_standard_sign_test.json", "r") as wycheproof_sign
             assert len(test_group["tests"]) == 1
             assert "IncorrectPrivateKeyLength" in test_group["tests"][0]["flags"]
 
-            continue;
+            continue
         signing_key = ml_dsa_65.bytearray_to_ctype(signing_key)
 
         for test in tqdm(test_group["tests"]):
@@ -33,15 +34,19 @@ with open("wycheproof/mldsa_65_standard_sign_test.json", "r") as wycheproof_sign
 
             if "ctx" in test:
                 ctx = bytearray.fromhex(test["ctx"])
-                message = bytearray([0, len(ctx)]) + ctx + bytearray.fromhex(test['msg'])
+                message = (
+                    bytearray([0, len(ctx)]) + ctx + bytearray.fromhex(test["msg"])
+                )
             else:
-                message = bytearray([0, 0]) + bytearray.fromhex(test['msg'])
+                message = bytearray([0, 0]) + bytearray.fromhex(test["msg"])
 
             signature, _ = ml_dsa_65.sign(signing_key, message, signing_seed)
 
-            if test['result'] == 'valid':
-                    actual_decoded = bytearray.fromhex(test['sig'])
-                    assert signature.raw == actual_decoded, print("Test case ID: {}.".format(test['tcId']))
+            if test["result"] == "valid":
+                actual_decoded = bytearray.fromhex(test["sig"])
+                assert signature.raw == actual_decoded, print(
+                    "Test case ID: {}.".format(test["tcId"])
+                )
 
             # else, the generated signature is invalid; we can
             # check that our own implementation agrees with this judgement,

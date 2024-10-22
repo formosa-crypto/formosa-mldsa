@@ -43,7 +43,10 @@ def generate_nistkats(algorithm):
                 ).hex(),
             }
         )
-        with open("nist_drbg_kats_{}{}.json".format(algorithm.k, algorithm.l), "w") as f:
+        with open(
+            "nist_drbg_kats_{}{}.json".format(algorithm.k, algorithm.l), "w"
+        ) as f:
             json.dump(kats_formatted, f, ensure_ascii=False, indent=4)
+
 
 generate_nistkats(Dilithium3)
