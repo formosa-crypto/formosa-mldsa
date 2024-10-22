@@ -5,6 +5,7 @@ from aes256_ctr_drbg import AES256_CTR_DRBG
 
 import json
 import hashlib
+from tqdm import tqdm
 
 
 def generate_nistkats(algorithm):
@@ -16,20 +17,22 @@ def generate_nistkats(algorithm):
 
     print("Generating KATs for ML-DSA-{}{}.".format(algorithm.k, algorithm.l))
 
-    for i in range(1000):
+    for i in tqdm(range(1000)):
         seed = rng.random_bytes(48)
+        drbg = AES256_CTR_DRBG(seed)
 
-        algorithm.set_drbg_seed(seed)
-
-        vk, sk = algorithm.keygen()
+        zeta = drbg.random_bytes(32)
+        vk, sk = algorithm.keygen(zeta)
 
         msg_len = 33 * (i + 1)
         msg = rng.random_bytes(msg_len)
-        sig = algorithm.sign(sk, msg)
+
+        signing_randomness = drbg.random_bytes(32)
+        sig = algorithm.sign(sk, msg, signing_randomness)
 
         kats_formatted.append(
             {
-                "key_generation_seed": bytes(algorithm.keygen_seed).hex(),
+                "key_generation_seed": bytes(zeta).hex(),
                 "sha3_256_hash_of_verification_key": bytes(
                     hashlib.sha3_256(vk).digest()
                 ).hex(),
@@ -37,7 +40,7 @@ def generate_nistkats(algorithm):
                     hashlib.sha3_256(sk).digest()
                 ).hex(),
                 "message": bytes(msg).hex(),
-                "signing_randomness": bytes(algorithm.signing_randomness).hex(),
+                "signing_randomness": bytes(signing_randomness).hex(),
                 "sha3_256_hash_of_signature": bytes(
                     hashlib.sha3_256(sig).digest()
                 ).hex(),

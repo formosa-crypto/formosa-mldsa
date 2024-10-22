@@ -12,13 +12,6 @@ from shake_wrapper import Shake128, Shake256
 from utils import *
 from ntt_helper import NTTHelperDilithium
 
-try:
-    from aes256_ctr_drbg import AES256_CTR_DRBG
-except ImportError as e:
-    print("Error importing AES256 CTR DRBG. Have you tried installing requirements?")
-    print(f"ImportError: {e}\n")
-    print("Dilithium will work perfectly fine with system randomness")
-
 DEFAULT_PARAMETERS = {
     "dilithium2": {
         "n": 256,
@@ -84,40 +77,6 @@ class Dilithium:
 
         self.R = PolynomialRing(self.q, self.n, ntt_helper=NTTHelperDilithium)
         self.M = Module(self.R)
-
-        self.drbg = None
-        self.random_bytes = os.urandom
-
-    """
-    The following two methods allow us to use deterministic
-    randomness throughout all of Dilithium. This is helpful
-    for the KAT tests more than anything!
-    """
-
-    def set_drbg_seed(self, seed):
-        """
-        Setting the seed switches the entropy source
-        from os.urandom to AES256 CTR DRBG
-
-        Note: requires pycryptodome for AES impl.
-        (Seemed overkill to code my own AES for Kyber)
-        """
-        self.drbg = AES256_CTR_DRBG(seed)
-        self.random_bytes = self.drbg.random_bytes
-
-    def reseed_drbg(self, seed):
-        """
-        Reseeds the DRBG, errors if a DRBG is not set.
-
-        Note: requires pycryptodome for AES impl.
-        (Seemed overkill to code my own AES for Kyber)
-        """
-        if self.drbg is None:
-            raise Warning(
-                f"Cannot reseed DRBG without first initialising. Try using `set_drbg_seed`"
-            )
-        else:
-            self.drbg.reseed(seed)
 
     """
     H() uses Shake256 to hash data to 32 and 64 bytes in a
@@ -432,9 +391,7 @@ class Dilithium:
         h = self._unpack_h(h_bytes)
         return c_tilde, z, h
 
-    def keygen(self):
-        # Random seed (with domain separation)
-        zeta = self.random_bytes(32)
+    def keygen(self, zeta):
         domain_separated_zeta = (
             zeta + self.k.to_bytes(1, "little") + self.l.to_bytes(1, "little")
         )
@@ -473,7 +430,7 @@ class Dilithium:
 
         return self.sign_internal(sk_bytes, m_prime, rnd)
 
-    def sign(self, sk_bytes, m, ctx=b"", rnd=None):
+    def sign(self, sk_bytes, m, rnd, ctx=b""):
         m_prime = b"\x00" + len(ctx).to_bytes(1, "little") + ctx + m
         return self.sign_internal(sk_bytes, m_prime, rnd)
 
@@ -487,8 +444,6 @@ class Dilithium:
         # Set seeds and nonce (kappa)
         mu = self._h(tr + m, 64)
         kappa = 0
-        rnd = self.random_bytes(32)
-        self.signing_randomness = rnd
         rho_prime = self._h(K + rnd + mu, 64)
 
         # Precompute NTT representation
@@ -539,15 +494,6 @@ class Dilithium:
                 continue
 
             return self._pack_sig(c_tilde, z, h)
-
-    def verify_pre_hashed(self, pk_bytes, m, sig_bytes, ctx=b""):
-        shake128_oid = b"\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x0B"
-        m_hashed = Shake128.digest(m, 256)
-        m_prime = (
-            b"\x01" + len(ctx).to_bytes(1, "little") + ctx + shake128_oid + m_hashed
-        )
-
-        return self.verify_internal(sk_bytes, m_prime, rnd)
 
     def verify(self, pk_bytes, m, sig_bytes, ctx=b""):
         m_prime = b"\x00" + len(ctx).to_bytes(1, "little") + ctx + m
