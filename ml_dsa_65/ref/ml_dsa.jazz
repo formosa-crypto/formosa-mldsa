@@ -11,25 +11,17 @@ require "verify.jinc"
 // at 5 arguments for signing, and Jasmin does not currently support functions
 // that take more than 6 arguments.
 
-// TODO: Replace reg with reg ptr
-export fn ml_dsa_65_keygen(reg u64 verification_key_out signing_key_out randomness)
+export fn ml_dsa_65_keygen(
+    reg u64 verification_key_out signing_key_out,
+    reg ptr u8[32] randomness)
 {
-    stack u8[32] randomness_on_stack;
-
     stack u8[VERIFICATION_KEY_SIZE] verification_key;
     stack u8[SIGNING_KEY_SIZE] signing_key;
 
     reg u8 c;
     reg u64 i;
 
-    i = 0;
-    while (i < 32) {
-        c = (u8)[randomness + i];
-        randomness_on_stack[i] = c;
-        i += 1;
-    }
-
-    verification_key, signing_key = keygen_internal(randomness_on_stack);
+    verification_key, signing_key = keygen_internal(randomness);
 
     i = 0;
     while (i < VERIFICATION_KEY_SIZE) {
@@ -46,23 +38,18 @@ export fn ml_dsa_65_keygen(reg u64 verification_key_out signing_key_out randomne
     }
 }
 
-export fn ml_dsa_65_sign(reg u64 signature_out signing_key message message_size randomness) -> reg u16
+export fn ml_dsa_65_sign(
+    reg u64 signature_out signing_key message message_size,
+    reg ptr u8[32] randomness
+) -> reg u32
 {
-    stack u8[32] randomness_on_stack;
     stack u8[SIGNING_KEY_SIZE] signing_key_on_stack;
 
     stack u8[SIGNATURE_SIZE] signature;
-    reg u16 signing_attempts;
+    reg u32 signing_attempts;
 
     reg u8 c;
     reg u64 i;
-
-    i = 0;
-    while (i < 32) {
-        c = (u8)[randomness + i];
-        randomness_on_stack[i] = c;
-        i += 1;
-    }
 
     i = 0;
     while(i < SIGNING_KEY_SIZE) {
@@ -71,7 +58,7 @@ export fn ml_dsa_65_sign(reg u64 signature_out signing_key message message_size 
         i += 1;
     }
 
-    signature, signing_attempts = sign_internal(signing_key_on_stack, message, message_size, randomness_on_stack);
+    signature, signing_attempts = sign_internal(signing_key_on_stack, message, message_size, randomness);
 
     i = 0;
     while(i < SIGNATURE_SIZE) {

@@ -65,7 +65,7 @@ fn sign_internal(
         reg u64 message_size,
         reg ptr u8[32] randomness
 )
-        -> stack u8[SIGNATURE_SIZE], reg u16
+        -> stack u8[SIGNATURE_SIZE], reg u32
 {
     stack u8[SIGNATURE_SIZE] signature_encoded;
 
@@ -94,7 +94,7 @@ fn sign_internal(
     stack u8 exit_rejection_sampling_loop;
 
     // Count and return signing attempts; this is useful for testing.
-    stack u16 signing_attempts;
+    stack u32 signing_attempts;
 
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w;

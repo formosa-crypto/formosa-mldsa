@@ -24,7 +24,7 @@ int main(void) {
   uint8_t verification_key[VERIFICATION_KEY_SIZE];
   uint8_t signing_key[SIGNING_KEY_SIZE];
 
-  uint8_t message[SIGNATURE_SIZE] = {0};
+  uint8_t message[64] = {0};
   uint8_t signature[SIGNATURE_SIZE];
 
   uint64_t observations[DATA_POINTS], i;
