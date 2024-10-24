@@ -11,6 +11,7 @@ require "verify.jinc"
 // at 5 arguments for signing, and Jasmin does not currently support functions
 // that take more than 6 arguments.
 
+// TODO: Replace reg with reg ptr
 export fn ml_dsa_65_keygen(reg u64 verification_key_out signing_key_out randomness)
 {
     stack u8[32] randomness_on_stack;

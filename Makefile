@@ -23,10 +23,21 @@ $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
 # --------------------------------------------------------------------
 .PHONY: test
 test: $(OUTPUT_FILE_NAME).so
-	cd test && python3 test_nist_drbg_kats.py
+	cd test && \
+		python3 nist_drbg_kat_tests.py && \
+		python3 nist_acvp_tests.py && \
+		python3 wycheproof_verify_tests.py && \
+		python3 wycheproof_sign_tests.py
 
 $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 	$(CC) $^ -fPIC -shared -o $@
+
+# --------------------------------------------------------------------
+ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)_bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c
+	$(CC) -DVERIFICATION_KEY_SIZE=1952 \
+		  -DSIGNING_KEY_SIZE=4032 \
+		  -DSIGNATURE_SIZE=3309 \
+		  $^ -o $@
 
 # --------------------------------------------------------------------
 .PHONY: clean
