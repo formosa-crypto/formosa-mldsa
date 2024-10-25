@@ -9,13 +9,13 @@
 #define DATA_POINTS 10000
 
 extern void KEYGEN(uint8_t *verification_key, uint8_t *signing_key,
-                             const uint8_t key_generation_randomness[32]);
+                   const uint8_t key_generation_randomness[32]);
 extern void SIGN(uint8_t *signature, const uint8_t *signing_key,
-                           const uint8_t *message, const size_t message_size,
-                           const uint8_t randomness[32]);
-extern void VERIFY(const uint8_t *verification_key,
-                             const uint8_t *message, const size_t message_size,
-                             const uint8_t signature[SIGNATURE_SIZE]);
+                 const uint8_t *message, const size_t message_size,
+                 const uint8_t randomness[32]);
+extern void VERIFY(const uint8_t *verification_key, const uint8_t *message,
+                   const size_t message_size,
+                   const uint8_t signature[SIGNATURE_SIZE]);
 
 int main(void) {
   uint8_t key_generation_randomness[32];
@@ -50,8 +50,7 @@ int main(void) {
   // Test signing.
   for (i = 0; i < DATA_POINTS; i++) {
     observations[i] = cpucycles();
-    SIGN(signature, signing_key, message, sizeof(message),
-                   signing_randomness);
+    SIGN(signature, signing_key, message, sizeof(message), signing_randomness);
   }
   print_results("--- Signing ---", observations, DATA_POINTS);
 

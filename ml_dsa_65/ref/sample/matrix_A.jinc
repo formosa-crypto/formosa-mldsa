@@ -1,8 +1,12 @@
 require "../fips202.jinc"
 
 inline
-fn uniform_sample_polynomial(reg ptr u8[32] rho, inline int i, inline int j,
-    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+fn uniform_sample_polynomial(
+    reg ptr u8[32] rho,
+    inline int i,
+    inline int j,
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
 {
     stack u32 polynomial_offset;
     stack u8[3] vs;
@@ -64,7 +68,8 @@ fn uniform_sample_polynomial(reg ptr u8[32] rho, inline int i, inline int j,
 
 namespace sample {
     inline
-    fn matrix_A(stack u8[32] rho) -> stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    fn matrix_A(stack u8[32] rho) ->
+        stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg ptr u8[32] rho_rsp;
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly;
