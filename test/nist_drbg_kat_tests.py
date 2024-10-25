@@ -1,14 +1,13 @@
 from ml_dsa import ML_DSA
 import json
 import hashlib
-from tqdm import tqdm
 
 ml_dsa_65 = ML_DSA("ml_dsa_65_ref")
 
 with open("nist_drbg_kats/nist_drbg_kats_65.json", "r") as nistkats_65_raw:
     nistkats_65 = json.load(nistkats_65_raw)
 
-    for kat in tqdm(nistkats_65):
+    for kat in nistkats_65:
         # Test key generation.
         key_generation_seed = bytearray.fromhex(kat["key_generation_seed"])
         (verification_key, signing_key) = ml_dsa_65.generate_keypair(

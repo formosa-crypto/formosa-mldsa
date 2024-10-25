@@ -1,7 +1,6 @@
 from ml_dsa import ML_DSA
 import json
 from Crypto.Hash import SHAKE128
-from tqdm import tqdm
 
 ml_dsa_65 = ML_DSA("ml_dsa_65_ref")
 
@@ -20,7 +19,7 @@ class RNG:
 rng = RNG()
 kat_hasher = SHAKE128.new()
 
-for i in tqdm(range(KAT_ITERATIONS)):
+for i in range(KAT_ITERATIONS):
     key_generation_seed = bytearray(rng.read(32))
     (verification_key, signing_key) = ml_dsa_65.generate_keypair(key_generation_seed)
 

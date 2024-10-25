@@ -8,12 +8,12 @@
 
 #define DATA_POINTS 10000
 
-extern void ml_dsa_65_keygen(uint8_t *verification_key, uint8_t *signing_key,
+extern void KEYGEN(uint8_t *verification_key, uint8_t *signing_key,
                              const uint8_t key_generation_randomness[32]);
-extern void ml_dsa_65_sign(uint8_t *signature, const uint8_t *signing_key,
+extern void SIGN(uint8_t *signature, const uint8_t *signing_key,
                            const uint8_t *message, const size_t message_size,
                            const uint8_t randomness[32]);
-extern void ml_dsa_65_verify(const uint8_t *verification_key,
+extern void VERIFY(const uint8_t *verification_key,
                              const uint8_t *message, const size_t message_size,
                              const uint8_t signature[SIGNATURE_SIZE]);
 
@@ -43,14 +43,14 @@ int main(void) {
   // Test key-generation.
   for (i = 0; i < DATA_POINTS; i++) {
     observations[i] = cpucycles();
-    ml_dsa_65_keygen(verification_key, signing_key, key_generation_randomness);
+    KEYGEN(verification_key, signing_key, key_generation_randomness);
   }
   print_results("--- Key Generation ---", observations, DATA_POINTS);
 
   // Test signing.
   for (i = 0; i < DATA_POINTS; i++) {
     observations[i] = cpucycles();
-    ml_dsa_65_sign(signature, signing_key, message, sizeof(message),
+    SIGN(signature, signing_key, message, sizeof(message),
                    signing_randomness);
   }
   print_results("--- Signing ---", observations, DATA_POINTS);
@@ -58,7 +58,7 @@ int main(void) {
   // Test verification.
   for (i = 0; i < DATA_POINTS; i++) {
     observations[i] = cpucycles();
-    ml_dsa_65_verify(verification_key, message, sizeof(message), signature);
+    VERIFY(verification_key, message, sizeof(message), signature);
   }
   print_results("--- Verification ---", observations, DATA_POINTS);
 

@@ -1,13 +1,10 @@
-TOP = /home/efgh/repos/formosa-mldsa
-
 PARAMETER_SET = 65
 IMPLEMENTATION_TYPE = ref
 # --------------------------------------------------------------------
 JASMINC ?= jasminc
-JASMIN_COMMAND ?= $(JASMINC) $(JASMINC_FLAGS) $(INCLUDE)
 
 # --------------------------------------------------------------------
-IMPLEMENTATION = $(TOP)/ml_dsa_$(PARAMETER_SET)/$(IMPLEMENTATION_TYPE)
+IMPLEMENTATION = ml_dsa_$(PARAMETER_SET)/$(IMPLEMENTATION_TYPE)
 
 IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
 						 $(wildcard $(IMPLEMENTATION)/*.jinc) \
@@ -18,23 +15,29 @@ IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
 OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)
 
 $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
-	$(JASMIN_COMMAND) -o $@ $<
+	$(JASMINC) -o $@ $<
 
 # --------------------------------------------------------------------
-.PHONY: test
+.PHONY: test large-kat-test
 test: $(OUTPUT_FILE_NAME).so
-	cd test && \
-		python3 nist_drbg_kat_tests.py && \
-		python3 nist_acvp_tests.py && \
-		python3 wycheproof_verify_tests.py && \
-		python3 wycheproof_sign_tests.py
+	cd test && python3 nist_drbg_kat_tests.py && \
+			   python3 nist_acvp_tests.py && \
+			   python3 wycheproof_verify_tests.py && \
+			   python3 wycheproof_sign_tests.py
+
+.PHONY: large-kat-test
+large-kat-test: $(OUTPUT_FILE_NAME).so
+	cd test && python3 large_kat_test.py
 
 $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 	$(CC) $^ -fPIC -shared -o $@
 
 # --------------------------------------------------------------------
 ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)_bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c
-	$(CC) -DVERIFICATION_KEY_SIZE=1952 \
+	$(CC) -DKEYGEN=ml_dsa_$(PARAMETER_SET)_keygen \
+		  -DSIGN=ml_dsa_$(PARAMETER_SET)_sign \
+		  -DVERIFY=ml_dsa_$(PARAMETER_SET)_verify \
+		  -DVERIFICATION_KEY_SIZE=1952 \
 		  -DSIGNING_KEY_SIZE=4032 \
 		  -DSIGNATURE_SIZE=3309 \
 		  $^ -o $@
@@ -42,6 +45,5 @@ ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)_bench.o: $(OUTPUT_FILE_NAME).s be
 # --------------------------------------------------------------------
 .PHONY: clean
 clean:
-	rm -fr \
-		$(TOP)/*.s \
-		$(TOP)/*.so
+	rm -fr *.s \
+		   *.so
