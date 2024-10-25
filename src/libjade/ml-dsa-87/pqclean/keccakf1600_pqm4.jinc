@@ -279,9 +279,9 @@ inline fn __addparror (reg u32 r, reg u32 par, inline int dly)
                     -> reg u32 
 {
   if (dly >u 0) {
-    r = r ^ (par >>r (32 - dly));
+    r = par ^ (r >>r (32 - dly));
   } else {
-    r = r ^ par;
+    r = par ^ r;
   }
   return r;
 }
@@ -358,14 +358,14 @@ inline fn __KeccakThetaRhoPiChi(reg ptr u32[KECCAK_state] state,
     state = __xandnotlazystr(state, dst1, r3, r4, r5, rot1, rot2, rot3);
     state = __xandnotlazystr(state, dst2, r4, r5, r6, rot2, rot3, rot4);
     state = __xandnotlazystr(state, dst3, r5, r6, r7, rot3, rot4, rot5);
-    state = __xandnotlazystr(state, dst4, r6, r3, r3, rot4, rot5, rot1);
-    r1    = __xandnotlazy   (             r7, r4, r4, rot5, rot1, rot2);
+    state = __xandnotlazystr(state, dst4, r6, r7, r3, rot4, rot5, rot1);
+    r1    = __xandnotlazy   (             r7, r3, r4, rot5, rot1, rot2);
   } else {
     state = __xandnotstr    (state, dst1, r3, r4, r5, rot1, rot2, rot3);
     state = __xandnotstr    (state, dst2, r4, r5, r6, rot2, rot3, rot4);
     state = __xandnotstr    (state, dst3, r5, r6, r7, rot3, rot4, rot5);
-    state = __xandnotstr    (state, dst4, r6, r3, r3, rot4, rot5, rot1);
-    r1    = __xandnot       (             r7, r4, r4, rot5, rot1, rot2);
+    state = __xandnotstr    (state, dst4, r6, r7, r3, rot4, rot5, rot1);
+    r1    = __xandnot       (             r7, r3, r4, rot5, rot1, rot2);
   }
   return state, r1;
 }
@@ -391,14 +391,14 @@ inline fn __KeccakThetaRhoPiChi_nostr(reg ptr u32[KECCAK_state] state,
     state = __xandnotlazystr(state, dst1, r3, r4, r5, rot1, rot2, rot3);
     state = __xandnotlazystr(state, dst2, r4, r5, r6, rot2, rot3, rot4);
     state = __xandnotlazystr(state, dst3, r5, r6, r7, rot3, rot4, rot5);
-    state = __xandnotlazystr(state, dst4, r6, r3, r3, rot4, rot5, rot1);
-    r1    = __xandnotlazy   (             r7, r4, r4, rot5, rot1, rot2);
+    state = __xandnotlazystr(state, dst4, r6, r7, r3, rot4, rot5, rot1);
+    r1    = __xandnotlazy   (             r7, r3, r4, rot5, rot1, rot2);
   } else {
     state = __xandnotstr    (state, dst1, r3, r4, r5, rot1, rot2, rot3);
     state = __xandnotstr    (state, dst2, r4, r5, r6, rot2, rot3, rot4);
     state = __xandnotstr    (state, dst3, r5, r6, r7, rot3, rot4, rot5);
-    state = __xandnotstr    (state, dst4, r6, r3, r3, rot4, rot5, rot1);
-    r1    = __xandnot       (             r7, r4, r4, rot5, rot1, rot2);
+    state = __xandnotstr    (state, dst4, r6, r7, r3, rot4, rot5, rot1);
+    r1    = __xandnot       (             r7, r3, r4, rot5, rot1, rot2);
   }
   return state, r1;
 }
@@ -570,8 +570,8 @@ inline fn __KeccakRound1(reg ptr u32[KECCAK_state] state, stack u32[5] smD, stac
   smD, r4 = __xor5str_stk(state, Aki0, Asi0, Agi1, Ami0, Abi1,  7, 30,  9, 28,  1, r6, smD, mDa0);
   r6 = r3 ^ (r4 >>r (32 - 7));
   smD, r3 = __xor5str_stk(state, Amo1, Abo0, Ako1, Aso0, Ago1,  0, 14,  1, 14, 31, r6, smD, mDo1);
-  r2 = r3 ^ (r7 >>r (32-10)); 
-  r5 = __xor5(state, Aba0, Aka1, Asa0, Aga0, Ama1,  0,  2, 13,  5, 20);
+  r2 = r3 ^ (r7 >>r (32-10));
+  r7 = __xor5(state, Aba0, Aka1, Asa0, Aga0, Ama1,  0,  2, 13,  5, 20);
   r10 = __xorrol(r7, r4, 32-7);
   r4 = __xor5(state, Amo0, Abo1, Ako0, Aso1, Ago0,  0, 14,  0, 13, 31);
   r14 = r4 ^ r7;
@@ -877,35 +877,36 @@ inline fn __KeccakRound3(reg ptr u32[KECCAK_state] state, stack u32[5] smD, stac
 }
 
 u32[2 * 24] KeccakF1600_StatePermute_RoundConstantsWithTerminator =
-{ 0x00000000, 0x00000001,
-  0x00000089, 0x00000000,
-  0x8000008b, 0x00000000,
-  0x80008080, 0x00000000,
+{ 0x00000001,	0x00000000,
+  0x00000000,	0x00000089,
+  0x00000000,	0x8000008b,
+  0x00000000,	0x80008080,
 
-  0x0000008b, 0x00000001,
-  0x00008000, 0x00000001,
-  0x80008088, 0x00000001,
-  0x80000082, 0x00000001,
+  0x00000001,	0x0000008b,
+  0x00000001,	0x00008000,
+  0x00000001,	0x80008088,
+  0x00000001,	0x80000082,
 
-  0x0000000b, 0x00000000,
-  0x0000000a, 0x00000000,
-  0x00008082, 0x00000001,
-  0x00008003, 0x00000000,
+  0x00000000,	0x0000000b,
+  0x00000000,	0x0000000a,
+  0x00000001,	0x00008082,
+  0x00000000,	0x00008003,
 
-  0x0000808b, 0x00000001,
-  0x8000000b, 0x00000001,
-  0x8000008a, 0x00000001,
-  0x80000081, 0x00000001,
+  0x00000001,	0x0000808b,
+  0x00000001,	0x8000000b,
+  0x00000001,	0x8000008a,
+  0x00000001,	0x80000081,
 
-  0x80000081, 0x00000000,
-  0x80000008, 0x00000000,
-  0x00000083, 0x00000000,
-  0x80008003, 0x00000000,
+  0x00000000,	0x80000081,
+  0x00000000,	0x80000008,
+  0x00000000,	0x00000083,
+  0x00000000,	0x80008003,
 
-  0x80008088, 0x00000001,
-  0x80000088, 0x00000000,
-  0x00008000, 0x00000001,
-  0x80008082, 0x00000000 };
+  0x00000001,	0x80008088,
+  0x00000000,	0x80000088,
+  0x00000001,	0x00008000,
+  0x00000000,	0x80008082 };
+
 
 #[returnaddress=stack]
 fn KeccakRounds(reg ptr u32[KECCAK_state] state, reg ptr u32[8] RCWT_line) 
@@ -938,16 +939,13 @@ fn _KeccakF1600_StatePermute(reg ptr u32[KECCAK_state] state)
   return state;
 }
 
+/* 
 export fn KeccakF1600_StatePermute(reg ptr u32[KECCAK_state] state)
                              -> reg ptr u32[KECCAK_state] 
 {
   state = _KeccakF1600_StatePermute(state);
   return state;
 }
-
-
-/* 
-
 
 Keccak ~ to_interleave; Keccak_pqm4; from_interleave : ={state} ==> ={state}
 
@@ -1108,16 +1106,4 @@ __KeccakF1600_StateXORBytesInLane_Loop:
 	toBitInterleaving	r4, r5, r6, r7, r3, 0
 	strd	r6, r7, [r0], #8
 	bx		lr
-
-
-                                    
-
-
-
- 
-
-
-
-
-
 */
