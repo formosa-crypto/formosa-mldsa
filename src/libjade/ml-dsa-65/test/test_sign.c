@@ -48,8 +48,8 @@ void check_shake256_PUBLICKEYBYTES_SEEDBYTES() {
 void check_crypto_sign_signature_ctx() {
   size_t siglen = 0;
   size_t siglen_jazz = 0;
-  size_t mlen = 369;
-  size_t ctxlen = 0;
+  size_t mlen = 453;
+  size_t ctxlen = 239;
   uint8_t sig[PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES];
   uint8_t sig_jazz[PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES];
   uint8_t m[mlen];
@@ -69,11 +69,17 @@ void check_crypto_sign_signature_ctx() {
     }
     // Generates random message
     fillarrnu8(m, m_jazz, mlen);
+    // Generates random context
+    fillarrnu8(ctx, ctx_jazz, ctxlen);
     // Sign the random message
     int r = PQCLEAN_MLDSA65_CLEAN_crypto_sign_signature_ctx(sig, &siglen, m, mlen, ctx, ctxlen, sk);
+    if (r != 0) {
+      printf("Could not generate the signature with C code.");
+      exit(1);
+    }
     int r_jazz = JASMIN_MLDSA65_crypto_sign_signature_ctx(sig_jazz, &siglen_jazz, m_jazz, mlen, ctx_jazz, ctxlen, sk);
-    if (r != r_jazz) {
-      printf("FAIL: crypto_sign_signature_ctx\n");
+    if (r_jazz != 0) {
+      printf("Could not generate the signature with jasmin code.");
       exit(1);
     }
     eqarr(PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES, PRId8, sig, sig_jazz, "crypto_sign_signature_ctx");
@@ -83,9 +89,9 @@ void check_crypto_sign_signature_ctx() {
 
 void check_crypto_sign_verify_ctx() {
   size_t siglen = PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES;
-  size_t mlen = 67;
+  size_t mlen = 453;
+  size_t ctxlen = 239;
   uint8_t m[mlen];
-  size_t ctxlen = 823;
   uint8_t ctx[ctxlen];
   uint8_t sig[PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES];
   uint8_t pk[PQCLEAN_MLDSA65_CLEAN_CRYPTO_PUBLICKEYBYTES];
@@ -96,15 +102,17 @@ void check_crypto_sign_verify_ctx() {
     fillarr(uint8_t, 2 * SEEDBYTES + CRHBYTES, sb);
     int status = PQCLEAN_MLDSA65_CLEAN_crypto_sign_keypair_seed(pk, sk, sb);
     if (status != 0) {
-      printf("FAIL: crypto_sign_verify\n. Could not generate the key pair.");
+      printf("FAIL: crypto_sign_verify. Could not generate the key pair.\n");
       exit(1);
     }
     // Generates random message
     fillarr(uint8_t, mlen, m);
+    // Generates random context
+    fillarr(uint8_t, ctxlen, ctx);
     // Sign the random message
     status = PQCLEAN_MLDSA65_CLEAN_crypto_sign_signature_ctx(sig, &siglen, m, mlen, ctx, ctxlen, sk);
     if (status != 0) {
-      printf("FAIL: crypto_sign_verify\n. Could not generate the signature.");
+      printf("FAIL: crypto_sign_verify. Could not generate the signature.\n");
       exit(1);
     }
     // Verify the maching between the signature and the message

@@ -878,15 +878,12 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr 
         reg ptr u32[25*2] pstate;
         pstate = state;
 
-
         reg u32 m mlen ctx ctxlen t;
-
 
         // TRBYTES (64) + 2 < SHAKE256_RATE (136)
         pstate = __add_crh_ref(pstate, mu); // TRBYTES = CRHBYTES
 
         reg ptr u8[2] mu2;
-
         mu2 = mu[0 : 2];
         t = 0;
         mu2[0] = (8u)t;
@@ -898,29 +895,14 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr 
         pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
         pos = TRBYTES + 2;
 
-         ctxlen = ctxlen_mlen[0];
-         ctx = ctx_m[0];
-         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
-
-         mlen = ctxlen_mlen[1];
-         m = ctx_m[1];
-         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
-
-         pstate = _shake256_inc_finalize(pstate, pos);
-
-         pstate = _keccakf1600_ref(pstate);
-
-
-
-        // pstate = __add_crh_ref(pstate, mu);
-        // pstate = __add_zero_after_add(pstate, CRHBYTES);
-        // pos = CRHBYTES;
-        // () = #unspill(m, mlen);
-        // pstate, pos = _shake256_inc_absorb_mem(pstate, pos, m, mlen);
-        // pstate = _shake256_inc_finalize(pstate, pos);
-        // pstate = _keccakf1600_ref(pstate);
-
-
+        ctxlen = ctxlen_mlen[0];
+        ctx = ctx_m[0];
+        pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+        mlen = ctxlen_mlen[1];
+        m = ctx_m[1];
+        pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
+        pstate = _shake256_inc_finalize(pstate, pos);
+        pstate = _keccakf1600_ref(pstate);
 
         // FIXME define a function for that
         for i = 0 to CRHBYTES/4 {
@@ -952,7 +934,7 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr 
         pstate = state;
         pstate = __add_crh_ref(pstate, mu);
         pstate = __add_zero_after_add(pstate, CRHBYTES);
-        pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES(pstate, buf);
+        pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, buf);
         pstate = _shake256_inc_finalize(pstate, pos);
         pstate = _keccakf1600_ref(pstate);
         // FIXME define a function for that
