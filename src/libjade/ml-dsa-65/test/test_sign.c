@@ -48,16 +48,14 @@ void check_shake256_PUBLICKEYBYTES_SEEDBYTES() {
 void check_crypto_sign_signature_ctx() {
   size_t siglen = 0;
   size_t siglen_jazz = 0;
-  size_t mlen = SEEDBYTES;
-  size_t mlen_jazz = SEEDBYTES;
+  size_t mlen = 0;
   size_t ctxlen = 0;
-  size_t ctxlen_jazz = 0;
   uint8_t sig[PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES];
   uint8_t sig_jazz[PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES];
-  uint8_t m[SEEDBYTES];
-  uint8_t m_jazz[SEEDBYTES];
-  uint8_t ctx[0];
-  uint8_t ctx_jazz[0];
+  uint8_t m[mlen];
+  uint8_t m_jazz[mlen];
+  uint8_t ctx[ctxlen];
+  uint8_t ctx_jazz[ctxlen];
   uint8_t pk[PQCLEAN_MLDSA65_CLEAN_CRYPTO_PUBLICKEYBYTES];
   uint8_t sk[PQCLEAN_MLDSA65_CLEAN_CRYPTO_SECRETKEYBYTES];
   uint8_t sb[2 * SEEDBYTES + CRHBYTES];
@@ -73,7 +71,7 @@ void check_crypto_sign_signature_ctx() {
     fillarrnu8(m, m_jazz, SEEDBYTES);
     // Sign the random message
     int r = PQCLEAN_MLDSA65_CLEAN_crypto_sign_signature_ctx(sig, &siglen, m, mlen, ctx, ctxlen, sk);
-    int r_jazz = JASMIN_MLDSA65_crypto_sign_signature_ctx(sig_jazz, &siglen_jazz, m_jazz, mlen_jazz, ctx_jazz, ctxlen_jazz, sk);
+    int r_jazz = JASMIN_MLDSA65_crypto_sign_signature_ctx(sig_jazz, &siglen_jazz, m_jazz, mlen, ctx_jazz, ctxlen, sk);
     if (r != r_jazz) {
       printf("FAIL: crypto_sign_signature_ctx\n");
       exit(1);
@@ -130,5 +128,6 @@ int main ()
   check_crypto_sign_keypair_seed();
   check_crypto_sign_signature_ctx();
   check_crypto_sign_verify();
+
   return 0;
 }

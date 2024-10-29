@@ -87,18 +87,34 @@ inline fn __add_seedrndcrh_ref(reg ptr u32[25*2] state,
 
 
 inline fn __add_mu_ref(reg ptr u32[25*2] state,
+                         reg u32 pos,
                          reg ptr u8[2] in)
                       -> reg ptr u32[25*2]
 {
-  reg u32 i t0 inlen4;
+  reg u32 t0 i j;
+  j = 0;
 
-  inlen4 = 2 >> 2;
+  i = pos;
+  t0 = (32u)in[(int)j];
+  state[u8 (int)i] = (8u)t0;
 
-  i = 0;
-  while ( i < inlen4 )
-  {
-    t0 = in[u32 (int)i];
-    state[(int)i] = t0;
+  i += 1;
+  j = 1;
+  t0 = (32u)in[(int)j];
+  state[u8 (int)i] = (8u)t0;
+
+  return state;
+}
+
+inline fn __add_zero_after_add_naive(reg ptr u32[25*2] state, inline int pos) -> reg ptr u32[25*2]
+{
+  reg u32 i, zero;
+  zero = 0;
+
+  i = pos;
+
+  while (i < 25 * 2 * 4) {
+    state[u8 (int) i] = (8u)zero;
     i += 1;
   }
   return state;

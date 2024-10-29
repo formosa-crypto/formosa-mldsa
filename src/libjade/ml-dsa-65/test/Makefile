@@ -61,7 +61,7 @@ run: $(TESTS_OUT)
 	./$< || true # TODO: remove this for CI to fail || keep track of individual failures (this: when there is some time)
 
 $(TESTS_BIN):
-test_%: test_%.c ../%.jinc ../%.jazz
+test_%: test_%.c
 	$(CC) -o $@ $(CFLAGS) -static test_$*.c -I./ -I../pqclean/ -L./ -lml-dsa-65_clean -L../ -lml-dsa-65_jasmin_test_$(arch)
 
 #--

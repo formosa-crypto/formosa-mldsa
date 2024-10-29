@@ -350,7 +350,8 @@ fn _shake256_inc_absorb_mem
       pstate.[pos] = s;
       pos += 4; m += 4;
       mlen -= 4;      
-    } 
+    }
+
     while {
       () = #spill(m, mlen);
       pstate = _keccakf1600_ref(pstate);
@@ -370,6 +371,7 @@ fn _shake256_inc_absorb_mem
       mlen -= SHAKE256_RATE;
     }
   }
+
   // Invariant mlen < SHAKE256_RATE - pos 
   while (mlen > 0) {
     t = (32u)(u8)[m];
@@ -381,29 +383,38 @@ fn _shake256_inc_absorb_mem
   return pstate, pos;
 }
 
+
 /***
 * Precondition:
-  - pos is a multiple of 2
-  - pos is not a multiple of 4
+*
 ***/
-fn _shake256_inc_absorb_mem_2
+fn _shake256_inc_absorb_mem_naive
   (reg ptr u32[25*2] pstate,
    reg u32 pos,
    reg u32 m,
    reg u32 mlen) -> reg ptr u32[25*2], reg u32
 {
-  reg u32 aux;
-  reg u16 t s;
-  //TODO NEED CHECK NOT GREATER THAN SHAKE256_RATE
-  aux = __imm_sub_reg(SHAKE256_RATE, pos);
-  t = (u16)[m];
-  s = pstate.[pos];
-  s ^= t;
-  pstate.[pos] = (32u)s;
-  pos += 2; m += 2;
-  mlen -= 2;
+ reg u32 t s;
 
-  pstate, pos = _shake256_inc_absorb_mem(pstate, pos, m, mlen);
+  // While input is not consumed :
+  // Fill-in sponge part of the shake buffer byte by byte by xoring
+  // If sponge is filled : keccak the buffer
+  while (mlen != 0) {
+
+    t = (32u)(u8)[m];
+    s = (32u)pstate[u8 pos];
+    s ^= t;
+    pstate[u8 pos] = s;
+    pos += 1; m += 1; mlen -= 1;
+
+    if (pos == SHAKE256_RATE) {
+      () = #spill(m, mlen);
+      pstate = _keccakf1600_ref(pstate);
+      () = #unspill(m, mlen);
+      pos = 0;
+    }
+
+  }
 
   return pstate, pos;
 }
@@ -467,6 +478,40 @@ fn _shake256_inc_finalize(
   return state;
 }
 
+fn _shake(reg ptr u32[25*2] state, reg ptr u32[2] ctx_m, reg ptr u8[TRBYTES] tr, reg ptr u32[2] ctx_m_len) -> reg ptr u32[25*2]
+{
+  state = state; ctx_m = ctx_m; ctx_m_len = ctx_m_len; tr = tr;
+
+  reg u32 m m_len ctx ctx_len;
+  reg u32 pos t;
+
+  stack u8[2] s_mu;
+  reg ptr u8[2] mu;
+  mu = s_mu;
+
+  t = 0;
+  mu[0] = (8u)t;
+  t = ctx_m_len[0];
+  mu[1] = (8u)t;
+
+  // TRBYTES (64) + 2 < SHAKE256_RATE (136)
+  state = __add_crh_ref(state, tr); // TRBYTES = CRHBYTES
+  state = __add_mu_ref(state, TRBYTES, mu); // 2
+  state = __add_zero_after_add_naive(state, TRBYTES + 2);
+  pos = TRBYTES + 2;
+
+  ctx_len = ctx_m_len[0];
+  ctx = ctx_m[0];
+  state, pos = _shake256_inc_absorb_mem_naive(state, pos, ctx, ctx_len);
+
+  m_len = ctx_m_len[1];
+  m = ctx_m[1];
+  state, pos = _shake256_inc_absorb_mem_naive(state, pos, m, m_len);
+
+  state = _shake256_inc_finalize(state, pos);
+  return state;
+}
+
 /*************************************************
 * Name:        crypto_sign_signature_ctx
 *
@@ -484,13 +529,12 @@ fn _shake256_inc_finalize(
 **************************************************/
 fn _crypto_sign_signature_ctx
   (reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig,
-   reg u32 m,
-   reg u32 ctx,
-   reg ptr u32[3] siglen_mlen_ctxlen,
+   reg ptr u32[2] ctx_m,
+   reg ptr u32[3] ctxlen_mlen_siglen,
    reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] sk)
    -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES], reg u32
 {
-  sig = sig; siglen_mlen_ctxlen = siglen_mlen_ctxlen; sk = sk;
+  sig = sig; ctx_m = ctx_m; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
   reg u32 status;
   stack u8[SEEDBYTES] s_rho;
   stack u8[TRBYTES] s_tr;
@@ -506,7 +550,6 @@ fn _crypto_sign_signature_ctx
   reg ptr u8[RNDBYTES] rnd;
   reg ptr u8[CRHBYTES] mu rhoprime;
   reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] key_rnd_mu;
-  reg ptr u8[2] pmu;
 
   reg u32 pos mlen ctxlen;
   inline int i;
@@ -517,43 +560,40 @@ fn _crypto_sign_signature_ctx
   rho = s_rho; tr = s_tr; key = s_key_rnd_mu[0:SEEDBYTES];
   t0 = s_t0; s1 = s_s1; s2 = s_s2;
 
-  () = #spill(sig, siglen_mlen_ctxlen, m);
+  () = #spill(sig, ctx_m, ctxlen_mlen_siglen);
   (rho, tr, key, t0, s1, s2) = _unpack_sk(rho, tr, key, t0, s1, s2, sk);
   s_rho = rho; s_tr = tr; s_t0 = t0; s_s1 = s1; s_s2 = s2;
   s_key_rnd_mu[0:SEEDBYTES] = key;
-  /* Compute mu = CRH(tr, msg) */
 
   stack u32[25*2] state;
   reg ptr u32[25*2] pstate;
   pstate = state;
-  /***
-  *  shake256_inc_init(&state);
-  *  shake256_inc_absorb(&state, tr, TRBYTES);
-  ***/
-  // This should be
-  //   pstate = __add_tr_ref(pstate, tr);
-  // but CRHBYTES = TRBYTES = 64, so it is ok
-  pstate = __add_crh_ref(pstate, tr);
 
-  pstate = __add_zero_after_add(pstate, TRBYTES);
-  pos = TRBYTES;
-  () = #unspill(siglen_mlen_ctxlen, m);
-  //TODO WIP
-//  pmu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2];
-//  reg u32 f;
-//  f = 0;
-//  pmu[u32 f] = f;
-//  f = 1;
-//  ctxlen = siglen_mlen_ctxlen[2];
-//  pmu[f] = ctxlen;
-//  pstate = __add_mu_ref(pstate, pmu);
-//  pos += 2;
+  reg u32 m m_len ctx ctx_len t;
+  reg ptr u8[2] mu2;
 
-//  pstate, pos = _shake256_inc_absorb_mem_2(pstate, pos, ctx, ctxlen);
+  mu2 = s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2];
+  t = 0;
+  mu2[0] = (8u)t;
+  t = ctxlen_mlen_siglen[0];
+  mu2[1] = (8u)t;
 
-  mlen = siglen_mlen_ctxlen[1];
-  pstate, pos = _shake256_inc_absorb_mem(pstate, pos, m, mlen);
+  // TRBYTES (64) + 2 < SHAKE256_RATE (136)
+  pstate = __add_crh_ref(pstate, tr); // TRBYTES = CRHBYTES
+  pstate = __add_mu_ref(pstate, TRBYTES, mu2); // 2
+  pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
+  pos = TRBYTES + 2;
+
+  ctx_len = ctxlen_mlen_siglen[0];
+  ctx = ctx_m[0];
+  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctx_len);
+
+  m_len = ctxlen_mlen_siglen[1];
+  m = ctx_m[1];
+  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, m_len);
+
   pstate = _shake256_inc_finalize(pstate, pos);
+
   pstate = _keccakf1600_ref(pstate);
   // FIXME define a function for that
   mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
@@ -771,7 +811,7 @@ fn _crypto_sign_verify(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg u32 m, r
 
     status = 0;
     
-    // siglen != JASMIN_MLDSA65_CRYPTO_BYTES is checked in the C wrapper
+    // siglen != JASMIN_MLDSA65_CRYPTO_BYTES should / could be checked in the C wrapper
     
     () = #spill(m, mlen, status);
     
