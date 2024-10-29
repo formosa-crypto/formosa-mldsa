@@ -585,8 +585,13 @@ fn _crypto_sign_signature_ctx
   reg u32 pos mlen ctxlen;
   inline int i;
 
-  //TODO
-  //return if ctxlen > 255
+  status = 0;
+
+  ctxlen = ctxlen_mlen_siglen[0];
+
+  if (ctxlen > 255) { status = - 1; }
+
+  if (status == 0) {
 
   rho = s_rho; tr = s_tr; key = s_key_rnd_mu[0:SEEDBYTES];
   t0 = s_t0; s1 = s_s1; s2 = s_s2;
@@ -642,8 +647,6 @@ fn _crypto_sign_signature_ctx
     rnd[u32 i] = __store_imm(0);
   }
   s_key_rnd_mu[SEEDBYTES : RNDBYTES] = rnd;
-
-  // shake256(rhoprime, CRHBYTES, key, SEEDBYTES + RNDBYTES + CRHBYTES);
 
   key_rnd_mu = s_key_rnd_mu;
   pstate = __add_seedrndcrh_ref(pstate, key_rnd_mu);
@@ -785,6 +788,7 @@ fn _crypto_sign_signature_ctx
   } (continue == 1)
   status = 0;
   () = #unspill(sig);
+  }
   return sig, status;
 }
 
@@ -826,7 +830,7 @@ fn _crypto_sign(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sm, reg u8 m, reg ptr u3
 *
 * Returns 0 if signature could be verified correctly and -1 otherwise
 **************************************************/
-fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[2] ctxlen_mlen, reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
+fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
     reg u32 status;
 
     stack u8[SEEDBYTES] rho;
@@ -840,18 +844,22 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr 
     stack u32[N] cp;
     stack u8[K * POLYW1_PACKEDBYTES] buf;
 
+    reg u32 ctxlen siglen;
+
     reg u32 pos;
 
     inline int i;
 
     status = 0;
 
-    //TODO
-    //return if ctxlen > 255
+    ctxlen = ctxlen_mlen_siglen[0];
+    siglen = ctxlen_mlen_siglen[2];
 
-    // siglen != JASMIN_MLDSA65_CRYPTO_BYTES should / could be checked in the C wrapper
+    if (ctxlen > 255) { status = - 1; }
+
+    if (siglen != JASMIN_MLDSA65_CRYPTO_BYTES) { status = -1; }
     
-    () = #spill(ctx_m, ctxlen_mlen, status);
+    () = #spill(ctx_m, ctxlen_mlen_siglen, status);
     
     rho, t1 = _unpack_pk(rho, t1, pk);
 
@@ -878,7 +886,7 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr 
         reg ptr u32[25*2] pstate;
         pstate = state;
 
-        reg u32 m mlen ctx ctxlen t;
+        reg u32 m mlen ctx t;
 
         // TRBYTES (64) + 2 < SHAKE256_RATE (136)
         pstate = __add_crh_ref(pstate, mu); // TRBYTES = CRHBYTES
@@ -887,7 +895,7 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr 
         mu2 = mu[0 : 2];
         t = 0;
         mu2[0] = (8u)t;
-        t = ctxlen_mlen[0];
+        t = ctxlen_mlen_siglen[0];
         mu2[1] = (8u)t;
         mu[0 : 2] = mu2;
 
@@ -895,10 +903,9 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr 
         pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
         pos = TRBYTES + 2;
 
-        ctxlen = ctxlen_mlen[0];
         ctx = ctx_m[0];
         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
-        mlen = ctxlen_mlen[1];
+        mlen = ctxlen_mlen_siglen[1];
         m = ctx_m[1];
         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
         pstate = _shake256_inc_finalize(pstate, pos);

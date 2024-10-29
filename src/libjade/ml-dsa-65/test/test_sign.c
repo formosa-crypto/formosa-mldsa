@@ -74,12 +74,12 @@ void check_crypto_sign_signature_ctx() {
     // Sign the random message
     int r = PQCLEAN_MLDSA65_CLEAN_crypto_sign_signature_ctx(sig, &siglen, m, mlen, ctx, ctxlen, sk);
     if (r != 0) {
-      printf("Could not generate the signature with C code.");
+      printf("FAIL: crypto_sign_signature. Could not generate the signature with C code.");
       exit(1);
     }
     int r_jazz = JASMIN_MLDSA65_crypto_sign_signature_ctx(sig_jazz, &siglen_jazz, m_jazz, mlen, ctx_jazz, ctxlen, sk);
     if (r_jazz != 0) {
-      printf("Could not generate the signature with jasmin code.");
+      printf("FAIL: crypto_sign_signature. Could not generate the signature with jasmin code.");
       exit(1);
     }
     eqarr(PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES, PRId8, sig, sig_jazz, "crypto_sign_signature_ctx");
