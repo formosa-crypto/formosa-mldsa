@@ -1,49 +1,60 @@
 require "fips202.jinc"
 require "arithmetic/rounding.jinc"
 
-// Dilithium keygen inputs 32 bytes to SHAKE256
 inline
-fn shake256_absorb34(reg ptr u8[32] in, reg u8 num_rows, reg u8 num_cols) -> stack u64[25] {
-    reg u8 c;
-    inline int i;
+fn hash_verification_key(
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash
+) -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE] {
     stack u64[25] state;
-    reg ptr u64[25] state_rsp;
+    reg u64 verification_key_offset state_offset;
 
-    state_rsp = state;
-    state_rsp = st0(state_rsp);
-    // TODO: Inefficient to load one byte at a time. Optimize this.
-    for i = 0 to 32 {
-    c = in[i];
-    state_rsp[u8 i] ^= c;
-    }
-    state_rsp[u8 32] = num_rows;
-    state_rsp[u8 33] = num_cols;
+    reg u8 byte;
 
-    state_rsp[u8 34] ^= 0x1f;
-    state_rsp[u8 SHAKE256_RATE - 1] ^= 0x80;
+    verification_key_offset = 0;
 
-    state = state_rsp;
-    return state;
-}
+    // Absorb ...
 
-//Maybe should allow squeezing partial blocks
-//for performance?
-inline
-fn shake256_squeezeblock(stack u64[25] state, stack u8[SHAKE256_RATE] out)
-    -> stack u64[25], stack u8[SHAKE256_RATE] {
-  reg u8 c;
-  reg u64 i;
+    state = st0(state);
 
-  state = __keccakf1600_ref(state);
+    while(verification_key_offset < VERIFICATION_KEY_SIZE - SHAKE256_RATE) {
+        state_offset = 0;
+        while(state_offset < SHAKE256_RATE) {
+            byte = verification_key[verification_key_offset];
 
-    ?{}, i = #set0_64();
-    while(i < SHAKE256_RATE) {
-        c = state[u8 (int) i];
-        out[(int) i] = c;
-        i += 1;
+            state[u8 state_offset] ^= byte;
+
+            verification_key_offset += 1;
+            state_offset += 1;
+        }
+        state = __keccakf1600_ref(state);
     }
 
-  return state, out;
+    state_offset = 0;
+    while(verification_key_offset < VERIFICATION_KEY_SIZE) {
+        byte = verification_key[verification_key_offset];
+
+        state[u8 state_offset] ^= byte;
+
+        verification_key_offset += 1;
+        state_offset += 1;
+    }
+
+    state[u8 state_offset] ^= 0x1f;
+    state[u8 SHAKE256_RATE - 1] ^= 0x80;
+
+    // ... then squeeze.
+
+    state = __keccakf1600_ref(state);
+
+    state_offset = 0;
+    while(state_offset < 64) {
+        byte = state[u8 state_offset];
+        hash[state_offset] = byte;
+        state_offset += 1;
+    }
+
+    return hash;
 }
 
 inline
@@ -54,160 +65,116 @@ fn shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u
     }
     return state, offset;
 }
-
 inline
-fn hash_verification_key(reg ptr u8[VERIFICATION_KEY_SIZE] pk, reg ptr u8[VERIFICATION_KEY_HASH_SIZE] out)
-    -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE] {
-    // FIXME: This function is smelly and should check more consistently
-    // whether the SHA3 buffer is full.
+fn derive_message_representative(
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash_of_verification_key,
+    reg u64 message,
+    reg u64 message_size
+) -> stack u8[MESSAGE_REPRESENTATIVE_SIZE] {
+    stack u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative;
+
     stack u64[25] state;
-    reg ptr u64[25] state_rsp;
-    stack u64 ptr_pk;
-    stack u64 ptr_state;
 
-    reg u64 addr;
-    reg u8 c;
+    reg u8 byte;
+    reg u64 state_offset;
+    reg u64 message_offset;
 
-    state_rsp = state;
-    state_rsp = st0(state_rsp);
-
-    ptr_pk = 0;
-
-    while(ptr_pk < VERIFICATION_KEY_SIZE - SHAKE256_RATE) {
-        ptr_state = 0;
-        while(ptr_state < SHAKE256_RATE) {
-            addr = ptr_pk;
-            c = pk[(int) addr];
-
-            addr = ptr_state;
-            state_rsp[u8 (int) addr] ^= c;
-
-            ptr_pk += 1;
-            ptr_state += 1;
-        }
-        state_rsp = __keccakf1600_ref(state_rsp);
-    }
-
-    ptr_state = 0;
-    while(ptr_pk < VERIFICATION_KEY_SIZE) {
-        addr = ptr_pk;
-        c = pk[(int) addr];
-
-        addr = ptr_state;
-        state_rsp[u8 (int) addr] ^= c;
-
-        ptr_pk += 1;
-        ptr_state += 1;
-    }
-
-    addr = ptr_state;
-    state_rsp[u8 (int) addr] ^= 0x1f;
-    state_rsp[u8 SHAKE256_RATE-1] ^= 0x80;
-
-    state_rsp = __keccakf1600_ref(state_rsp);
-
-    // Extract...
-
-    addr = 0;
-    while(addr < 64) {
-        c = state_rsp[u8 (int) addr];
-        out[(int) addr] = c;
-        addr += 1;
-    }
-    return out;
-}
-
-inline
-fn derive_message_representative(reg ptr u8[64] tr, reg u64 message_size, reg u64 m)
-    -> stack u8[64]
-{
-    stack u8[64] mu;
-    stack u64[25] state;
-    reg u8 c;
-    reg u64 offset;
-    reg u64 m_loc;
+    // Absorb ...
 
     state = st0(state);
-    offset = 0;
-    while(offset < 64) {
-        c = tr[(int) offset];
-        state[u8 (int) offset] ^= c;
-        offset += 1;
+
+    state_offset = 0;
+    while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
+        byte = hash_of_verification_key[state_offset];
+        state[u8 state_offset] = byte;
+
+        state_offset += 1;
     }
 
-    m_loc = 0;
-    while(m_loc < message_size) {
-        state, offset = shake256_consider_permute(state, offset);
-        c = (u8) [m + m_loc];
-        state[u8 (int) offset] ^= c;
-        m_loc += 1;
-        offset += 1;
+    message_offset = 0;
+    while(message_offset < message_size) {
+        state, state_offset = shake256_consider_permute(state, state_offset);
+        byte = (u8) [message + message_offset];
+        message_offset += 1;
+
+        state[u8 state_offset] ^= byte;
+        state_offset += 1;
     }
+
     // Absorb separator byte
-    state, offset = shake256_consider_permute(state, offset);
-    state[u8 (int) offset] ^= 0x1f;
+    state, state_offset = shake256_consider_permute(state, state_offset);
+    state[u8 state_offset] ^= 0x1f;
 
     // Finish
-    state, offset = shake256_consider_permute(state, offset);
+    state, state_offset = shake256_consider_permute(state, state_offset);
     state[u8 SHAKE256_RATE-1] ^= 0x80;
 
     state = __keccakf1600_ref(state);
 
-    offset = 0;
-    while(offset < 64) {
-        c = state[u8 (int) offset];
-        mu[(int) offset] = c;
-        offset += 1;
+    state_offset = 0;
+    while(state_offset < MESSAGE_REPRESENTATIVE_SIZE) {
+        byte = state[u8 state_offset];
+        message_representative[state_offset] = byte;
+        state_offset += 1;
     }
-    return mu;
+
+    return message_representative;
 }
 
 inline
-fn derive_commitment_hash(reg ptr u8[64] mu, reg ptr u8[ENCODED_COMMITMENT_SIZE] w1_packed)
+fn derive_commitment_hash(reg ptr u8[64] message_representative_size, reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment)
     -> stack u8[COMMITMENT_HASH_SIZE]
 {
     stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
     stack u64[25] state;
-    reg u8 c;
-    reg u64 offset;
-    reg u64 w1_loc;
+    reg u8 byte;
+    reg u64 state_offset encoded_commitment_offset;
 
     state = st0(state);
-    ?{}, offset = #set0_64();
+    state_offset = 0;
 
-    // Absorb mu
-    while(offset < 64) {
-        state, offset = shake256_consider_permute(state, offset);
-        c = mu[(int) offset];
-        state[u8 (int) offset] ^= c;
-        offset += 1;
+    // Absorb message_representative_size
+    while (state_offset < MESSAGE_REPRESENTATIVE_SIZE) {
+        byte = message_representative_size[state_offset];
+        state[u8 state_offset] = byte;
+        state_offset += 1;
     }
 
-    // Absorb w1
-    ?{}, w1_loc = #set0_64();
-    while(w1_loc < ENCODED_COMMITMENT_SIZE) {
-        state, offset = shake256_consider_permute(state, offset);
-        c = w1_packed[(int) w1_loc];
-        state[u8 (int) offset] ^= c;
-        w1_loc += 1;
-        offset += 1;
+    // Absorb the encoded commitment
+    encoded_commitment_offset = 0;
+    while (encoded_commitment_offset < ENCODED_COMMITMENT_SIZE - SHAKE256_RATE) {
+        while(state_offset < SHAKE256_RATE) {
+            byte = encoded_commitment[encoded_commitment_offset];
+            encoded_commitment_offset += 1;
+
+            state[u8 state_offset] ^= byte;
+            state_offset += 1;
+        }
+        state = __keccakf1600_ref(state);
+        state_offset = 0;
     }
 
-    // Absorb separator byte
-    state, offset = shake256_consider_permute(state, offset);
-    state[u8 (int) offset] ^= 0x1f;
+    while(encoded_commitment_offset < ENCODED_COMMITMENT_SIZE) {
+        byte = encoded_commitment[encoded_commitment_offset];
+        encoded_commitment_offset += 1;
 
-    // Finish
-    state, offset = shake256_consider_permute(state, offset);
-    state[u8 SHAKE256_RATE-1] ^= 0x80;
+        state[u8 state_offset] ^= byte;
+        state_offset += 1;
+    }
+
+    // Absorb separator byte and finish
+    state[u8 state_offset] ^= 0x1f;
+    state[u8 SHAKE256_RATE - 1] ^= 0x80;
+
+    // Now extract
 
     state = __keccakf1600_ref(state);
-    ?{}, offset = #set0_64();
+    state_offset = 0;
 
-    while(offset < COMMITMENT_HASH_SIZE) {
-        c = state[u8 (int) offset];
-        commitment_hash[(int) offset] = c;
-        offset += 1;
+    while(state_offset < COMMITMENT_HASH_SIZE) {
+        byte = state[u8 state_offset];
+        commitment_hash[state_offset] = byte;
+        state_offset += 1;
     }
     return commitment_hash;
 }

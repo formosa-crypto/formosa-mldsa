@@ -3,89 +3,90 @@ require "../parameters.jinc"
 require "../encoding/gamma1.jinc"
 
 inline
-fn shake256_absorb_commitment_hash(reg ptr u8[COMMITMENT_HASH_SIZE] in) -> stack u64[25] {
-    reg u8 c;
+fn absorb_commitment_hash_for_shake256(
+    reg ptr u64[25] state,
+    reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash
+) -> stack u64[25] {
+    reg u8 byte;
+
     inline int i;
-    stack u64[25] state;
 
     state = st0(state);
-    // TODO: Inefficient to load one byte at a time. Optimize this.
-    for i = 0 to COMMITMENT_HASH_SIZE {
-        c = in[i];
-        state[u8 i] ^= c;
-    }
 
-    state[u8 COMMITMENT_HASH_SIZE] ^= 0x1f;
-    state[u8 SHAKE256_RATE - 1] ^= 0x80;
+    for i = 0 to COMMITMENT_HASH_SIZE {
+        byte = commitment_hash[i];
+        state[u8 i] = byte;
+    }
+    state[u8 COMMITMENT_HASH_SIZE] = 0x1f;
+    state[u8 SHAKE256_RATE - 1] = 0x80;
 
     return state;
 }
 
-
 namespace sample {
     inline
-    fn challenge(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, reg ptr u8[COMMITMENT_HASH_SIZE] seed)
-        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    fn challenge(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output_challenge,
+        reg ptr u8[COMMITMENT_HASH_SIZE] seed
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u64[25] state;
 
         reg u64 i;
-        reg u64 b;
-        reg u64 offset;
-        reg u64 signs;
-        inline int ii;
-        reg u8 c;
-        reg u64 v;
-        reg u32 v32 fb;
+        reg u64 sample_at;
+        reg u64 signs xof_offset;
+        reg u64 byte;
+        reg u32 coefficient shift;
 
-        state = shake256_absorb_commitment_hash(seed);
+        inline int j;
+
+        state = absorb_commitment_hash_for_shake256(state, seed);
         state = __keccakf1600_ref(state);
 
         signs = 0;
-        for ii = 0 to 8 {
-            c = state[u8 ii];
-            v = (64u) c;
-            v <<= 8 * ii;
-            signs |= v;
-        }
+        for j = 0 to 8 {
+            byte = (64u)state[u8 j];
+            byte <<= 8 * j;
 
-        offset = 8;
+            signs |= byte;
+        }
+        xof_offset = 8;
 
         i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            f[(int) i] = 0;
+            output_challenge[i] = 0;
             i += 1;
         }
 
         i = COEFFICIENTS_IN_POLYNOMIAL - ONES_IN_VERIFIER_CHALLENGE;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            // do-while
             while {
-                if(offset >= SHAKE256_RATE) {
+                if(xof_offset >= SHAKE256_RATE) {
                     state = __keccakf1600_ref(state);
-                    offset = 0;
+                    xof_offset = 0;
                 }
-                c = state[u8 (int) offset];
-                b = (64u) c;
-                offset += 1;
-            } (b > i)
+                sample_at = (64u) state[u8 xof_offset];
+                xof_offset += 1;
+            } (sample_at > i)
 
-            v32 = f[(int) b];
-            f[(int) i] = v32;
+            coefficient = output_challenge[sample_at];
+            output_challenge[i] = coefficient;
 
-            //f[(int) b] = 1 - 2 * (signs & 1);
-            v32 = (32u) signs;
-            v32 &= 1;
-            fb = 1;
-            fb -= v32;
-            fb -= v32;
-            f[(int) b] = fb;
+            // output_challenge[sample_at] = 1 - 2 * (signs & 1);
+            shift = (32u)signs;
+            shift &= 1;
+            shift <<= 1;
+
+            coefficient = 1;
+            coefficient -= shift;
+
+            output_challenge[sample_at] = coefficient;
 
             signs >>= 1;
 
             i += 1;
         }
 
-        return f;
+        return output_challenge;
     }
 }

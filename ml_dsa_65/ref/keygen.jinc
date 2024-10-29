@@ -12,6 +12,30 @@ require "sample/matrix_A.jinc"
 require "sample/error_vectors.jinc"
 
 inline
+fn prepare_state_for_shake256(
+    reg ptr u64[25] state,
+    reg ptr u8[32] randomness,
+    reg u8 number_of_rows,
+    reg u8 number_of_columns
+) -> stack u64[25] {
+    reg u8 byte;
+
+    inline int i;
+
+    state = st0(state);
+    for i = 0 to 32 {
+        byte = randomness[i];
+        state[u8 i] = byte;
+    }
+    state[u8 32] = number_of_rows;
+    state[u8 33] = number_of_columns;
+    state[u8 34] ^= 0x1f;
+    state[u8 SHAKE256_RATE - 1] ^= 0x80;
+
+    return state;
+}
+
+inline
 fn keygen_internal(reg ptr u8[32] randomness)
     -> stack u8[VERIFICATION_KEY_SIZE], stack u8[SIGNING_KEY_SIZE]
 {
@@ -20,7 +44,6 @@ fn keygen_internal(reg ptr u8[32] randomness)
 
     // PRF
     stack u64[25] state;
-    stack u8[SHAKE256_RATE] randomness_expanded;
 
     // PRF outputs
     stack u8[32] seed_for_matrix_A;
@@ -34,12 +57,12 @@ fn keygen_internal(reg ptr u8[32] randomness)
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t t1 t0;
 
-    state = shake256_absorb34(randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
-    state, randomness_expanded = shake256_squeezeblock(state, randomness_expanded);
+    state = prepare_state_for_shake256(state, randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
+    state = __keccakf1600_ref(state);
 
-    seed_for_matrix_A = randomness_expanded[0:SEED_FOR_MATRIX_A_SIZE];
-    seed_for_error_vectors = randomness_expanded[SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
-    seed_for_signing = randomness_expanded[SEED_FOR_MATRIX_A_SIZE + SEED_FOR_ERROR_VECTORS_SIZE:SEED_FOR_SIGNING_SIZE];
+    seed_for_matrix_A = state[u8 0:SEED_FOR_MATRIX_A_SIZE];
+    seed_for_error_vectors = state[u8 SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
+    seed_for_signing = state[u8 SEED_FOR_MATRIX_A_SIZE + SEED_FOR_ERROR_VECTORS_SIZE:SEED_FOR_SIGNING_SIZE];
 
     s1, s2 = sample::error_vectors(seed_for_error_vectors);
 

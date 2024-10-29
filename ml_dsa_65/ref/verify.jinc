@@ -78,10 +78,6 @@ fn reconstruct_signer_commitment(
     return commitment_encoded;
 }
 
-
-
-// TODO: Go through the code and check for all operators
-// whether they should be signed or unsigned.
 inline
 fn verify_internal(
     reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
@@ -136,7 +132,10 @@ fn verify_internal(
 
             // Compute the expected commitment hash
             verification_key_hash = hash_verification_key(verification_key, verification_key_hash);
-            message_representative = derive_message_representative(verification_key_hash, message_size, message);
+            message_representative = derive_message_representative(
+                verification_key_hash,
+                message,
+                message_size);
 
             expected_commitment_hash = derive_commitment_hash(message_representative, reconstructed_signer_commitment);
             result = compare_commitment_hashes(expected_commitment_hash, signature_encoded[0:COMMITMENT_HASH_SIZE]);

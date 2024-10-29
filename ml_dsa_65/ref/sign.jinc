@@ -13,34 +13,39 @@ require "sample/matrix_A.jinc"
 require "sample/challenge.jinc"
 
 inline
-fn derive_seed_for_mask(reg ptr u8[32] k, reg ptr u8[32] randomness, reg ptr u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative)
-    -> stack u8[MESSAGE_REPRESENTATIVE_SIZE]
-{
+fn derive_seed_for_mask(
+    reg ptr u8[32] k,
+    reg ptr u8[32] randomness,
+    reg ptr u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative
+) -> stack u8[MESSAGE_REPRESENTATIVE_SIZE] {
     stack u8[64] seed_for_mask;
-    reg u8 c;
-    reg u64 i;
+    reg u8 byte;
+
     stack u64[25] state;
-    reg u64 loc;
+
+    reg u64 offset;
+    reg u64 i;
 
     state = st0(state);
-    ?{}, i = #set0_64();
+
+    i = 0;
     while(i < 32) {
-        c = k[(int) i];
-        state[u8 (int) i] = c;
+        byte = k[i];
+        state[u8 i] = byte;
         i += 1;
     }
     while(i < 64) {
-        loc = i;
-        loc -= 32;
-        c = randomness[(int) loc];
-        state[u8 (int) i] = c;  
+        offset = i;
+        offset -= 32;
+        byte = randomness[offset];
+        state[u8 i] = byte;  
         i += 1;
     }
     while(i < 128) {
-        loc = i;
-        loc -= MESSAGE_REPRESENTATIVE_SIZE;
-        c = message_representative[(int) loc];
-        state[u8 (int) i] = c;
+        offset = i;
+        offset -= MESSAGE_REPRESENTATIVE_SIZE;
+        byte = message_representative[offset];
+        state[u8 i] = byte;
         i += 1;
     }
 
@@ -49,10 +54,10 @@ fn derive_seed_for_mask(reg ptr u8[32] k, reg ptr u8[32] randomness, reg ptr u8[
 
     state = __keccakf1600_ref(state);
 
-    ?{}, i = #set0_64();
+    i = 0;
     while(i < 64) {
-        c = state[u8 (int) i];
-        seed_for_mask[(int) i] = c;
+        byte = state[u8 i];
+        seed_for_mask[i] = byte;
         i += 1;
     }
     return seed_for_mask;
@@ -64,9 +69,7 @@ fn sign_internal(
         reg u64 pointer_to_message,
         reg u64 message_size,
         reg ptr u8[32] randomness
-)
-        -> stack u8[SIGNATURE_SIZE], reg u32
-{
+) -> stack u8[SIGNATURE_SIZE], reg u32 {
     stack u8[SIGNATURE_SIZE] signature_encoded;
 
     // parts of signing_key
@@ -112,7 +115,10 @@ fn sign_internal(
     t0 = t0::decode(t0, signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]);
 
     () = #spill(randomness);
-    message_representative = derive_message_representative(signing_key[64:MESSAGE_REPRESENTATIVE_SIZE], message_size, pointer_to_message);
+    message_representative = derive_message_representative(
+        signing_key[64:MESSAGE_REPRESENTATIVE_SIZE],
+        pointer_to_message,
+        message_size);
     () = #unspill(randomness);
 
     seed_for_mask = derive_seed_for_mask(signing_key[32:32], randomness, message_representative);

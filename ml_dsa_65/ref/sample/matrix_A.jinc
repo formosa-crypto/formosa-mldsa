@@ -15,13 +15,13 @@ fn absorb_for_shake128(
 
     for k = 0 to 32 {
         byte = rho[k];
-        state[u8 k] ^= byte;
+        state[u8 k] = byte;
     }
-    state[u8 32] ^= j;
-    state[u8 33] ^= i;
+    state[u8 32] = j;
+    state[u8 33] = i;
 
-    state[u8 34] ^= 0x1f;
-    state[u8 SHAKE128_RATE - 1] ^= 0x80;
+    state[u8 34] = 0x1f;
+    state[u8 SHAKE128_RATE - 1] = 0x80;
 
     return state;
 }
@@ -54,8 +54,8 @@ fn uniform_sample_polynomial(
         try_coefficient = 0;
         for k = 0 to 3 {
             byte = (32u)state[u8 xof_offset];
-            byte <<= (8 * k);
-            try_coefficient += byte;
+            byte <<= 8 * k;
+            try_coefficient |= byte;
 
             xof_offset += 1;
         }
