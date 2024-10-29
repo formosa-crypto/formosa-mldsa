@@ -53,10 +53,10 @@ export fn JASMIN_MLDSA65_crypto_sign(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sm,
   return sm, status;
 }
 
-export fn JASMIN_MLDSA65_crypto_sign_verify_internal(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg u32 m, reg u32 mlen, reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
-    sig = sig; m = m; mlen = mlen; pk = pk;
+export fn JASMIN_MLDSA65_crypto_sign_verify_ctx_internal(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[2] ctxlen_mlen, reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
+    sig = sig; ctx_m = ctx_m; ctxlen_mlen = ctxlen_mlen; pk = pk;
     reg u32 status;
-    status = _crypto_sign_verify(sig, m, mlen, pk);
+    status = _crypto_sign_verify_ctx(sig, ctx_m, ctxlen_mlen, pk);
     status = status;
     return status;
 }

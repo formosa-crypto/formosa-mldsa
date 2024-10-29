@@ -172,13 +172,19 @@ int PQCLEAN_MLDSA65_CLEAN_crypto_sign_signature_ctx(uint8_t *sig,
     shake256_inc_init(&state);
     shake256_inc_absorb(&state, tr, TRBYTES);
     shake256_inc_absorb(&state, mu, 2);
+
     shake256_inc_absorb(&state, ctx, ctxlen);
     shake256_inc_absorb(&state, m, mlen);
     shake256_inc_finalize(&state);
     shake256_inc_squeeze(mu, CRHBYTES, &state);
     shake256_inc_ctx_release(&state);
 
-    randombytes(rnd, RNDBYTES);
+
+    //Temporary changes to test the rest
+    for (n = 0; n < RNDBYTES; n++) {
+        rnd[n] = 0;
+    }
+//    randombytes(rnd, RNDBYTES);
     shake256(rhoprime, CRHBYTES, key, SEEDBYTES + RNDBYTES + CRHBYTES);
 
     /* Expand matrix and transform vectors */

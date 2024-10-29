@@ -812,7 +812,7 @@ fn _crypto_sign(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sm, reg u8 m, reg ptr u3
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_crypto_sign_verify
+* Name:        crypto_sign_verify
 *
 * Description: Verifies signature.
 *
@@ -820,11 +820,13 @@ fn _crypto_sign(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sm, reg u8 m, reg ptr u3
 *              - size_t siglen: length of signature
 *              - const uint8_t *m: pointer to message
 *              - size_t mlen: length of message
+*              - const uint8_t *ctx: pointer to context string
+*              - size_t ctxlen: length of context string
 *              - const uint8_t *pk: pointer to bit-packed public key
 *
 * Returns 0 if signature could be verified correctly and -1 otherwise
 **************************************************/
-fn _crypto_sign_verify(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg u32 m, reg u32 mlen, reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
+fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[2] ctxlen_mlen, reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
     reg u32 status;
 
     stack u8[SEEDBYTES] rho;
@@ -843,10 +845,13 @@ fn _crypto_sign_verify(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg u32 m, r
     inline int i;
 
     status = 0;
-    
+
+    //TODO
+    //return if ctxlen > 255
+
     // siglen != JASMIN_MLDSA65_CRYPTO_BYTES should / could be checked in the C wrapper
     
-    () = #spill(m, mlen, status);
+    () = #spill(ctx_m, ctxlen_mlen, status);
     
     rho, t1 = _unpack_pk(rho, t1, pk);
 
@@ -872,13 +877,51 @@ fn _crypto_sign_verify(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg u32 m, r
 	
         reg ptr u32[25*2] pstate;
         pstate = state;
-        pstate = __add_crh_ref(pstate, mu);
-        pstate = __add_zero_after_add(pstate, CRHBYTES);
-        pos = CRHBYTES;
-        () = #unspill(m, mlen);
-        pstate, pos = _shake256_inc_absorb_mem(pstate, pos, m, mlen);
-        pstate = _shake256_inc_finalize(pstate, pos);
-        pstate = _keccakf1600_ref(pstate);
+
+
+        reg u32 m mlen ctx ctxlen t;
+
+
+        // TRBYTES (64) + 2 < SHAKE256_RATE (136)
+        pstate = __add_crh_ref(pstate, mu); // TRBYTES = CRHBYTES
+
+        reg ptr u8[2] mu2;
+
+        mu2 = mu[0 : 2];
+        t = 0;
+        mu2[0] = (8u)t;
+        t = ctxlen_mlen[0];
+        mu2[1] = (8u)t;
+        mu[0 : 2] = mu2;
+
+        pstate = __add_mu_ref(pstate, TRBYTES, mu2); // 2
+        pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
+        pos = TRBYTES + 2;
+
+         ctxlen = ctxlen_mlen[0];
+         ctx = ctx_m[0];
+         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+
+         mlen = ctxlen_mlen[1];
+         m = ctx_m[1];
+         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
+
+         pstate = _shake256_inc_finalize(pstate, pos);
+
+         pstate = _keccakf1600_ref(pstate);
+
+
+
+        // pstate = __add_crh_ref(pstate, mu);
+        // pstate = __add_zero_after_add(pstate, CRHBYTES);
+        // pos = CRHBYTES;
+        // () = #unspill(m, mlen);
+        // pstate, pos = _shake256_inc_absorb_mem(pstate, pos, m, mlen);
+        // pstate = _shake256_inc_finalize(pstate, pos);
+        // pstate = _keccakf1600_ref(pstate);
+
+
+
         // FIXME define a function for that
         for i = 0 to CRHBYTES/4 {
           reg u32 t;

@@ -48,7 +48,7 @@ void check_shake256_PUBLICKEYBYTES_SEEDBYTES() {
 void check_crypto_sign_signature_ctx() {
   size_t siglen = 0;
   size_t siglen_jazz = 0;
-  size_t mlen = 0;
+  size_t mlen = 369;
   size_t ctxlen = 0;
   uint8_t sig[PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES];
   uint8_t sig_jazz[PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES];
@@ -68,7 +68,7 @@ void check_crypto_sign_signature_ctx() {
       exit(1);
     }
     // Generates random message
-    fillarrnu8(m, m_jazz, SEEDBYTES);
+    fillarrnu8(m, m_jazz, mlen);
     // Sign the random message
     int r = PQCLEAN_MLDSA65_CLEAN_crypto_sign_signature_ctx(sig, &siglen, m, mlen, ctx, ctxlen, sk);
     int r_jazz = JASMIN_MLDSA65_crypto_sign_signature_ctx(sig_jazz, &siglen_jazz, m_jazz, mlen, ctx_jazz, ctxlen, sk);
@@ -81,12 +81,12 @@ void check_crypto_sign_signature_ctx() {
   printf("PASS: crypto_sign_signature\n");
 }
 
-void check_crypto_sign_verify() {
+void check_crypto_sign_verify_ctx() {
   size_t siglen = PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES;
-  size_t mlen = SEEDBYTES;
-  uint8_t m[SEEDBYTES];
-  size_t ctxlen = 0;
-  uint8_t ctx[0];
+  size_t mlen = 67;
+  uint8_t m[mlen];
+  size_t ctxlen = 823;
+  uint8_t ctx[ctxlen];
   uint8_t sig[PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES];
   uint8_t pk[PQCLEAN_MLDSA65_CLEAN_CRYPTO_PUBLICKEYBYTES];
   uint8_t sk[PQCLEAN_MLDSA65_CLEAN_CRYPTO_SECRETKEYBYTES];
@@ -100,7 +100,7 @@ void check_crypto_sign_verify() {
       exit(1);
     }
     // Generates random message
-    fillarr(uint8_t, SEEDBYTES, m);
+    fillarr(uint8_t, mlen, m);
     // Sign the random message
     status = PQCLEAN_MLDSA65_CLEAN_crypto_sign_signature_ctx(sig, &siglen, m, mlen, ctx, ctxlen, sk);
     if (status != 0) {
@@ -108,12 +108,12 @@ void check_crypto_sign_verify() {
       exit(1);
     }
     // Verify the maching between the signature and the message
-    int r = PQCLEAN_MLDSA65_CLEAN_crypto_sign_verify(sig, PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES, m, SEEDBYTES, pk);
+    int r = PQCLEAN_MLDSA65_CLEAN_crypto_sign_verify_ctx(sig, PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES, m, mlen, ctx, ctxlen, pk);
     if (r != 0) {
       printf("Could not verify signature with C code.");
       exit(1);
     }
-    int r_jazz = JASMIN_MLDSA65_crypto_sign_verify(sig, PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES, m, SEEDBYTES, pk);
+    int r_jazz = JASMIN_MLDSA65_crypto_sign_verify_ctx(sig, PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES, m, mlen, ctx, ctxlen, pk);
     if (r != r_jazz) {
       printf("FAIL: crypto_sign_verify\n");
       exit(1);
@@ -127,7 +127,7 @@ int main ()
   check_shake256_PUBLICKEYBYTES_SEEDBYTES();
   check_crypto_sign_keypair_seed();
   check_crypto_sign_signature_ctx();
-  check_crypto_sign_verify();
+  check_crypto_sign_verify_ctx();
 
   return 0;
 }
