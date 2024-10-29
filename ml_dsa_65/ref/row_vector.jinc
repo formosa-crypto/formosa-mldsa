@@ -134,9 +134,9 @@ namespace row_vector {
 
         ?{}, i = #set0_64();
         while(i < COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
-            val = vector[(int) i];
+            val = vector[i];
             res = coefficient::reduce32(val);
-            vector[(int) i] = res;
+            vector[i] = res;
             i += 1;
         }
 

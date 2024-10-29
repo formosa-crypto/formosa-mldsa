@@ -166,7 +166,7 @@ fn derive_commitment_hash(reg ptr u8[64] message_representative_size, reg ptr u8
     state[u8 state_offset] ^= 0x1f;
     state[u8 SHAKE256_RATE - 1] ^= 0x80;
 
-    // Now extract
+    // Now squeeze
 
     state = __keccakf1600_ref(state);
     state_offset = 0;

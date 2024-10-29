@@ -1,9 +1,7 @@
 require "../parameters.jinc"
 
 namespace coefficient {
-    fn power2round(reg u32 r)
-        -> reg u32, reg u32
-    {
+    fn power2round(reg u32 r) -> reg u32, reg u32 {
         /*
         int32_t a1; //high bits
 
@@ -86,23 +84,22 @@ namespace coefficient {
     }
 
     inline
-    fn check_norm(reg u32 coefficient, inline int threshold)
-        -> stack u8
+    fn check_norm(reg u32 coefficient, inline int threshold) -> stack u8
     {
-        reg u32 sign;
+        reg u32 sign_mask;
         stack u32 c;
 
         stack u8 result;
 
         result = 0;
 
-        sign = coefficient;
-        sign >>s= 31;
+        sign_mask = coefficient;
+        sign_mask >>s= 31;
 
-        // Compute coefficient = coefficient - (sign & (2 * coefficient));
+        // Compute coefficient = coefficient - (sign_mask & (2 * coefficient));
         c = coefficient;
         c <<= 1;
-        c &= sign;
+        c &= sign_mask;
         coefficient = coefficient - c;
 
         if(coefficient >= threshold) {
@@ -111,11 +108,7 @@ namespace coefficient {
         return result;
     }
 
-
-
-    fn use_hint(reg u32 a hint)
-    -> reg u32
-    {
+    fn use_hint(reg u32 a hint) -> reg u32 {
         reg u32 a0;
         reg u32 a1;
         a0, a1 = decompose(a);

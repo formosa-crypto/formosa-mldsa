@@ -15,9 +15,3 @@ param int SEED_FOR_ERROR_VECTORS_SIZE = 64;
 param int SEED_FOR_SIGNING_SIZE = 32;
 param int VERIFICATION_KEY_HASH_SIZE = 64;
 param int MESSAGE_REPRESENTATIVE_SIZE = 64;
-
-// [FIPS 204, Appendix C] specifies that, when at least 814 attempts are made
-// to compute a signature, the probability of failure is 2⁻²⁵⁶ or less.
-//
-// [FIPS 204, Appendix C]: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.204.pdf#appendix.C
-param int MAX_SIGNING_ATTEMPTS = 814;

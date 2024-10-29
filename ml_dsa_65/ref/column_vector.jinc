@@ -4,50 +4,49 @@ require "arithmetic/ntt.jinc"
 
 // A column vector has dimensions ROWS_IN_MATRIX_A * 1
 namespace column_vector {
-    fn reduce32(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec)
-        -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
-    {
+    fn reduce32(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+        -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
         reg u64 i;
-        reg u32 val res;
+        reg u32 original reduced;
 
-        ?{}, i = #set0_64();
+        i = 0;
         while(i < ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
-            val = vec[(int) i];
-            res = coefficient::reduce32(val);
-            vec[(int) i] = res;
+            original = vector[i];
+            reduced = coefficient::reduce32(original);
+
+            vector[i] = reduced;
             i += 1;
         }
 
-        return vec;
+        return vector;
     }
 
-    fn ntt(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec)
-        -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
-    {
+    fn ntt(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+        -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
         inline int i;
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] entry;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] vector_element;
 
         for i = 0 to ROWS_IN_MATRIX_A {
-            entry = vec[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            entry = polynomial::ntt(entry);
-            vec[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = entry;
+            vector_element = vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+            vector_element = polynomial::ntt(vector_element);
+            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = vector_element;
         }
 
-        return vec;
+        return vector;
     }
-    fn invert_ntt_montgomery(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec)
+    fn invert_ntt_montgomery(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
     -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         inline int i;
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] entry;
 
         for i = 0 to ROWS_IN_MATRIX_A {
-            entry = vec[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+            entry = vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
             entry = polynomial::invert_ntt_montgomery(entry);
-            vec[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = entry;
+            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = entry;
         }
 
-        return vec;
+        return vector;
     }
 
     inline
@@ -60,10 +59,10 @@ namespace column_vector {
 
         ?{}, i = #set0_64();
         while(i < ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
-            x = v[(int) i];
+            x = v[i];
             y1, y2 = coefficient::power2round(x);
-            t1[(int) i] = y1;
-            t0[(int) i] = y2;
+            t1[i] = y1;
+            t0[i] = y2;
             i += 1;
         }
 
@@ -71,142 +70,145 @@ namespace column_vector {
     }
 
     inline
-    fn add(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] v1 v2)
+    fn add(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs)
         -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
-        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vsum;
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] sum;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs_term rhs_term sum_term;
+
         inline int i;
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] v1_term v2_term vsum_term;
 
         for i = 0 to ROWS_IN_MATRIX_A {
-            v1_term = v1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            v2_term = v2[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            vsum_term = vsum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            vsum_term = polynomial::add(v1_term, v2_term, vsum_term);
-            vsum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] = vsum_term;
+            lhs_term = lhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
+            rhs_term = rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
+
+            sum_term = sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
+            sum_term = polynomial::add(lhs_term, rhs_term, sum_term);
+
+            sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] = sum_term;
         }
-        return vsum;
+        return sum;
     }
 
     inline
-    fn conditionally_add_modulus(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec)
+    fn conditionally_add_modulus(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
         -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
-        inline int ii;
-        for ii = 0 to ROWS_IN_MATRIX_A {
-            vec[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
-                polynomial::conditionally_add_modulus(vec[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]);
+        inline int i;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::conditionally_add_modulus(vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]);
         }
-        return vec;
+
+        return vector;
     }
 
     inline
-    fn decompose(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec)
-    -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    fn decompose(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+    -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
+       stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
-        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec0 vec1;
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] low high;
+        reg u32 coefficient low_bits high_bits;
         reg u64 i;
-        reg u64 addr;
-        reg u32 a a0 a1;
 
-        ?{}, i = #set0_64();
+        i = 0;
         while(i < ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
-            addr = i;
-            a = vec[(int) addr];
+            coefficient = vector[i];
 
-            a0, a1 = coefficient::decompose(a);
+            low_bits, high_bits = coefficient::decompose(coefficient);
 
-            addr = i;
-            vec0[(int) addr] = a0;
-            vec1[(int) addr] = a1;
+            low[i] = low_bits;
+            high[i] = high_bits;
 
             i += 1;
         }
 
-        return vec0, vec1;
+        return low, high;
     }
 
     inline
-    fn multiply_by_polynomial(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
+    fn multiply_by_polynomial(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
         -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
-        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] fvec;
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] fvector;
 
         inline int ii;
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] fg g;
 
         for ii = 0 to ROWS_IN_MATRIX_A {
-            fg = fvec[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            g = vec[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+            fg = fvector[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+            g = vector[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
             fg = polynomial::pointwise_montgomery_product(f, g, fg);
-            fvec[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = fg;
+            fvector[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = fg;
         }
 
-        return fvec;
+        return fvector;
     }
 
     inline
-    fn subtract(stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] v1 v2)
+    fn subtract(stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs)
         -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
-        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vsum;
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] difference;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs_term rhs_term difference_term;
+
         inline int i;
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] v1_term v2_term vsum_term;
 
         for i = 0 to ROWS_IN_MATRIX_A {
-            v1_term = v1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            v2_term = v2[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            vsum_term = vsum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            vsum_term = polynomial::subtract(v1_term, v2_term, vsum_term);
-            vsum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] = vsum_term;
+            lhs_term = lhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
+            rhs_term = rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
+
+            difference_term = difference[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
+            difference_term = polynomial::subtract(lhs_term, rhs_term, difference_term);
+
+            difference[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] = difference_term;
         }
-        return vsum;
+
+        return difference;
     }
 
     inline
-    fn check_infinity_norm(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vec, inline int threshold)
-        -> stack u8
+    fn check_infinity_norm(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector,
+                           inline int threshold
+    ) -> reg u8
     {
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] vec_elem;
-        stack u8 result_s;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] vector_element;
+
+        reg u8 ret;
         reg u8 result;
 
-        stack u8 r;
-        reg u8 c;
-
-        inline int ii;
+        inline int i;
 
         result = 0;
-        for ii = 0 to ROWS_IN_MATRIX_A {
-            vec_elem = vec[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            r = polynomial::check_infinity_norm(vec_elem, threshold);
-            c = r;
-            result |= c;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            vector_element = vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+            ret = polynomial::check_infinity_norm(vector_element, threshold);
+            result |= ret;
         }
 
-        result_s = result;
-        return result_s;
+        return result;
     }
 
     inline
-    fn make_hint(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] v0 v1)
+    fn make_hint(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] v0 lhs)
         -> stack u32, stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32 total_weight weight_comp;
-        reg u32 reg_weight_comp;
-        reg u32 reg_total_weight;
+        reg u32 reg_weight_comp reg_total_weight;
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints;
 
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints_comp v0_comp lhs_comp;
+
         inline int i;
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints_comp v0_comp v1_comp;
 
         total_weight = 0;
         for i = 0 to ROWS_IN_MATRIX_A {
             v0_comp = v0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            v1_comp = v1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+            lhs_comp = lhs[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
             hints_comp = hints[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
 
-            weight_comp, hints_comp = polynomial::make_hint(v0_comp, v1_comp, hints_comp);
+            weight_comp, hints_comp = polynomial::make_hint(v0_comp, lhs_comp, hints_comp);
 
             reg_weight_comp = weight_comp;
             reg_total_weight = total_weight;
