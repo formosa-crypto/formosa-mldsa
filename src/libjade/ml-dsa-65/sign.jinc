@@ -385,8 +385,7 @@ fn _shake256_inc_absorb_mem
 
 
 /***
-* Precondition:
-*
+* No precondition
 ***/
 fn _shake256_inc_absorb_mem_naive
   (reg ptr u32[25*2] pstate,
@@ -419,7 +418,39 @@ fn _shake256_inc_absorb_mem_naive
   return pstate, pos;
 }
 
+/***
+* Precondition CRHBYTES should have been filled in pstate
+* CRHBYTES + K * POLYW1_PACKEDBYTES is dividable by 4 and 136
+***/
+inline fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive
+  (reg ptr u32[25*2] pstate,
+   reg u32 pos,
+   reg ptr u8[K * POLYW1_PACKEDBYTES] m
+  ) -> reg ptr u32[25*2], reg u32
+{
+ reg u32 t s;
+ reg u32 ctr;
+ ctr = 0;
 
+  // While input is not consumed :
+  // Fill-in sponge part of the shake buffer byte by byte by xoring
+  // If sponge is filled : keccak the buffer
+  while (ctr != K * POLYW1_PACKEDBYTES) {
+
+    t = (32u)m[ctr];
+    s = (32u)pstate[u8 pos];
+    s ^= t;
+    pstate[u8 pos] = s;
+    pos += 1; ctr += 1;
+
+    if (pos == SHAKE256_RATE) {
+      pstate = _keccakf1600_ref(pstate);
+      pos = 0;
+    }
+  }
+
+  return pstate, pos;
+}
 /***
 * Precondition CRHBYTES should have been filled in pstate
 * CRHBYTES + K * POLYW1_PACKEDBYTES is dividable by 4 and 136
@@ -569,7 +600,7 @@ fn _crypto_sign_signature_ctx
   reg ptr u32[25*2] pstate;
   pstate = state;
 
-  reg u32 m m_len ctx ctx_len t;
+  reg u32 m mlen ctx ctxlen t;
   reg ptr u8[2] mu2;
 
   mu2 = s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2];
@@ -577,6 +608,7 @@ fn _crypto_sign_signature_ctx
   mu2[0] = (8u)t;
   t = ctxlen_mlen_siglen[0];
   mu2[1] = (8u)t;
+  s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2] = mu2;
 
   // TRBYTES (64) + 2 < SHAKE256_RATE (136)
   pstate = __add_crh_ref(pstate, tr); // TRBYTES = CRHBYTES
@@ -584,17 +616,18 @@ fn _crypto_sign_signature_ctx
   pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
   pos = TRBYTES + 2;
 
-  ctx_len = ctxlen_mlen_siglen[0];
+  ctxlen = ctxlen_mlen_siglen[0];
   ctx = ctx_m[0];
-  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctx_len);
+  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
 
-  m_len = ctxlen_mlen_siglen[1];
+  mlen = ctxlen_mlen_siglen[1];
   m = ctx_m[1];
-  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, m_len);
+  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
 
   pstate = _shake256_inc_finalize(pstate, pos);
 
   pstate = _keccakf1600_ref(pstate);
+
   // FIXME define a function for that
   mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
   for i = 0 to CRHBYTES/4 {
@@ -611,6 +644,7 @@ fn _crypto_sign_signature_ctx
   s_key_rnd_mu[SEEDBYTES : RNDBYTES] = rnd;
 
   // shake256(rhoprime, CRHBYTES, key, SEEDBYTES + RNDBYTES + CRHBYTES);
+
   key_rnd_mu = s_key_rnd_mu;
   pstate = __add_seedrndcrh_ref(pstate, key_rnd_mu);
   pstate = __add_zero_after_add(pstate, SEEDBYTES + RNDBYTES + CRHBYTES);
@@ -674,7 +708,7 @@ fn _crypto_sign_signature_ctx
     pstate = state; mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
     pstate = __add_crh_ref(pstate, mu);
     pstate = __add_zero_after_add(pstate, CRHBYTES);
-    pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES(pstate, sig1);
+    pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, sig1);
     pstate = _shake256_inc_finalize(pstate, pos);
     pstate = _keccakf1600_ref(pstate);
     // FIXME define a function for that
@@ -689,7 +723,6 @@ fn _crypto_sign_signature_ctx
     }
     state = pstate;
     sig[0:CTILDEBYTES] = sigctilde;
-
 
     cp = s_cp;
     cp = _poly_challenge(cp, sigctilde);
