@@ -3,7 +3,7 @@ param int K = 8;
 param int L = 7;
 param int ETA = 2;
 param int TAU = 60;
-param int BETA = 196;
+param int BETA = 120;
 param int OMEGA = 75;
 param int CTILDEBYTES = 64;
 
