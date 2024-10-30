@@ -1,0 +1,198 @@
+require "poly.jinc"
+
+export fn JASMIN_MLDSA65_poly_reduce(reg ptr u32[N] rpa) -> reg ptr u32[N] {
+  rpa = rpa;
+  rpa = __poly_reduce(rpa);
+  rpa = rpa;
+  return rpa;
+}
+
+export fn JASMIN_MLDSA65_poly_caddq(reg ptr u32[N] rpa) -> reg ptr u32[N]{
+  rpa = rpa;
+  rpa = __poly_caddq(rpa);
+  rpa = rpa;
+  return rpa;
+  }     
+
+export fn JASMIN_MLDSA65_poly_add(reg ptr u32[N] rpc, reg ptr u32[N] rpa, reg ptr u32[N] rpb) -> reg ptr u32[N] {
+  rpa = rpa; rpb = rpb; rpc = rpc;
+  rpc = __poly_add(rpc, rpa, rpb);
+  rpc = rpc;
+  return rpc;
+}
+
+// Refactoring to discuss with B.G.
+export fn JASMIN_MLDSA65_poly_add_inplace(reg u32 pc, reg u32 pa, reg u32 pb) {
+  stack u32[N] a b;
+  reg ptr u32[N] rpa rpb; 
+  a = __mem_to_poly(pa);
+  b = __mem_to_poly(pb);
+  rpa = a; rpb = b;
+  a = __poly_add_inplace(rpa, rpb);
+  __poly_to_mem(a, pc);
+}
+
+export fn JASMIN_MLDSA65_poly_chknorm(reg ptr u32[N] rpa, reg u32 B)  -> reg u32 {
+  rpa = rpa;  
+  reg u32 r;
+  r = _poly_chknorm(rpa, B);
+  r = r;
+  return r;
+}
+
+export fn JASMIN_MLDSA65_poly_challenge(reg ptr u32[N] rpc, reg ptr u8[CTILDEBYTES] rpmu) -> reg ptr u32[N] {
+  rpc = rpc; rpmu = rpmu;
+  rpc = _poly_challenge(rpc, rpmu);
+  rpc = rpc;
+  return rpc;
+}
+
+export fn JASMIN_MLDSA65_poly_decompose(reg ptr u32[N] rpa1, reg ptr u32[N] rpa0, reg ptr u32[N] rpa) -> reg ptr u32[N], reg ptr u32[N] {
+  rpa1 = rpa1; rpa0 = rpa0; rpa = rpa;
+
+  rpa1, rpa0 = _poly_decompose(rpa1, rpa0, rpa);
+  rpa1 = rpa1; rpa0 = rpa0;
+  return rpa1, rpa0;
+}
+
+export fn JASMIN_MLDSA65_polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] rpr, reg ptr u32[N] rpa) -> reg ptr u8[POLYETA_PACKEDBYTES] {
+  rpr = rpr; rpa = rpa;
+  rpr = _polyeta_pack(rpr, rpa);
+  rpr = rpr;
+  return rpr;
+}  
+
+// Refactoring to discuss with B.G.
+export fn JASMIN_MLDSA65_polyeta_unpack(reg ptr u32[N] rpr, reg ptr u8[POLYETA_PACKEDBYTES] rpa) -> reg ptr u32[N] {
+  rpr = rpr; rpa = rpa;
+  rpr = _polyeta_unpack(rpr, rpa);
+  rpr = rpr;
+  return rpr;
+}
+
+export fn JASMIN_MLDSA65_poly_ntt(reg ptr u32[N] rpa) -> reg ptr u32[N] {
+  rpa = rpa;
+  rpa = _poly_ntt(rpa);
+  rpa = rpa;
+  return rpa;
+}
+
+export fn JASMIN_MLDSA65_poly_invntt_tomont(reg ptr u32[N] rpa) -> reg ptr u32[N] {
+  rpa = rpa;
+  rpa = _invntt_tomont(rpa);
+  rpa = rpa;
+  return rpa;
+}
+
+export fn JASMIN_MLDSA65_poly_pointwise_montgomery(reg ptr u32[N] rpc, reg ptr u32[N] rpa, reg ptr u32[N] rpb) -> reg ptr u32[N] {
+  rpc = rpc; rpa = rpa; rpb = rpb;
+  rpc = _poly_pointwise_montgomery(rpc, rpa, rpb);
+  rpc = rpc;
+  return rpc;
+}
+
+export fn JASMIN_MLDSA65_poly_make_hint(reg ptr u32[N] rph, reg ptr u32[N] rpa0, reg ptr u32[N] rpa1) -> reg ptr u32[N], reg u32 {
+  reg u32 s;
+  rph = rph; rpa0 = rpa0; rpa1 = rpa1;
+  s, rph = _poly_make_hint(rph, rpa0, rpa1);
+  s = s; rph = rph;
+  return rph, s;
+}
+
+export fn JASMIN_MLDSA65_poly_power2round(reg ptr u32[N] rpa1, reg ptr u32[N] rpa0, reg ptr u32[N] rpa) -> reg ptr u32[N], reg ptr u32[N] {
+  rpa = rpa; rpa0 = rpa0; rpa1 = rpa1;
+  rpa1, rpa0 = _poly_power2round(rpa1, rpa0, rpa);
+  rpa1 = rpa1; rpa0 = rpa0;
+  return rpa1, rpa0;
+}
+
+export fn JASMIN_MLDSA65_poly_shiftl(reg ptr u32[N] rpa) -> reg ptr u32[N] {
+  rpa = rpa;
+  rpa = _poly_shiftl(rpa);
+  rpa = rpa;
+  return rpa;
+}
+
+export fn JASMIN_MLDSA65_poly_sub(reg ptr u32[N] rpc, reg ptr u32[N] rpa, reg ptr u32[N] rpb) -> reg ptr u32[N] {
+  rpa = rpa; rpb = rpb; rpc = rpc;
+  rpc = _poly_sub(rpc, rpa, rpb);
+  rpc = rpc;
+  return rpc;
+}
+
+export fn JASMIN_MLDSA65_polyt0_pack(reg ptr u8[POLYT0_PACKEDBYTES] rpr, reg ptr u32[N] rpa) -> reg ptr u8[POLYT0_PACKEDBYTES] {
+  rpa = rpa; rpr = rpr;
+  rpr = _polyt0_pack(rpr, rpa);
+  rpr = rpr;
+  return rpr;
+}
+
+export fn JASMIN_MLDSA65_polyt0_unpack(reg ptr u32[N] rpr, reg ptr u8[POLYT0_PACKEDBYTES] rpa) -> reg ptr u32[N] {
+  rpa = rpa; rpr = rpr;
+  rpr = _polyt0_unpack(rpr, rpa);
+  rpr = rpr;
+  return rpr;
+}
+
+export fn JASMIN_MLDSA65_polyt1_pack(reg ptr u8[POLYT1_PACKEDBYTES] rpr, reg ptr u32[N] rpa) -> reg ptr u8[POLYT1_PACKEDBYTES] {
+  rpa = rpa; rpr = rpr;
+  rpr = _polyt1_pack(rpr, rpa);
+  rpr = rpr;
+  return rpr;
+}
+
+export fn JASMIN_MLDSA65_polyt1_unpack(reg ptr u32[N] rpr, reg ptr u8[POLYT1_PACKEDBYTES] rpa) -> reg ptr u32[N] {
+  rpa = rpa; rpr = rpr;
+  rpr = _polyt1_unpack(rpr, rpa);
+  rpr = rpr;
+  return rpr;
+}
+
+export fn JASMIN_MLDSA65_poly_use_hint(reg ptr u32[N] rpb, reg ptr u32[N] rpa, reg ptr u32[N] rph) -> reg ptr u32[N] {
+  rpb = rpb; rpa = rpa; rph = rph;
+  rpb = _poly_use_hint(rpb, rpa, rph);
+  rpb = rpb;
+  return rpb;
+}
+
+export fn JASMIN_MLDSA65_polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] rpr, reg ptr u32[N] rpa) -> reg ptr u8[POLYW1_PACKEDBYTES] {
+  rpa = rpa; rpr = rpr;
+  rpr = _polyw1_pack(rpr, rpa);
+  rpr = rpr;
+  return rpr;
+}
+
+export fn JASMIN_MLDSA65_polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] rpr, reg ptr u32[N] rpa) -> reg ptr u8[POLYZ_PACKEDBYTES] {
+  rpa = rpa; rpr = rpr;
+  rpr = _polyz_pack(rpr, rpa);
+  rpr = rpr;
+  return rpr;
+}
+
+export fn JASMIN_MLDSA65_polyz_unpack(reg ptr u32[N] rpr, reg ptr u8[POLYZ_PACKEDBYTES] rpa) -> reg ptr u32[N] {
+  rpa = rpa; rpr = rpr;
+  rpr = _polyz_unpack(rpr, rpa);
+  rpr = rpr;
+  return rpr;
+}
+
+export fn JASMIN_MLDSA65_poly_uniform(reg ptr u32[N] rpa, reg ptr u8[SEEDBYTES] rpseed, reg u32 nonce) -> reg ptr u32[N] {
+   rpseed = rpseed; rpa = rpa; nonce = nonce;
+   rpa = _poly_uniform(rpa, rpseed, nonce);
+   rpa = rpa;
+   return rpa;
+}
+
+export fn JASMIN_MLDSA65_poly_uniform_eta(reg ptr u32[N] rpa, reg ptr u8[CRHBYTES] rpseed, reg u32 nonce) -> reg ptr u32[N] {
+   rpseed = rpseed; rpa = rpa; nonce = nonce;
+   rpa = _poly_uniform_eta(rpa, rpseed, nonce);
+   rpa = rpa;
+   return rpa;
+}
+
+export fn JASMIN_MLDSA65_poly_uniform_gamma1(reg ptr u32[N] rpa, reg ptr u8[CRHBYTES] rpseed, reg u32 nonce) -> reg ptr u32[N] {
+  rpseed = rpseed; rpa = rpa; nonce = nonce;
+  rpa = _poly_uniform_gamma1(rpa, rpseed, nonce);
+  rpa = rpa;
+  return rpa;
+}
