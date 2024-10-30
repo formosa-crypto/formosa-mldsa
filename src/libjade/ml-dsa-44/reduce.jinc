@@ -6,7 +6,7 @@ fn _montgomery_reduce_8380417(reg u32 a_low a_high) -> reg u32
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_reduce32
+* Name:        JASMIN_MLDSA44_reduce32
 *
 * Description: For finite field element a with a <= 2^{31} - 2^{22} - 1,
 *              compute r \equiv a (mod Q) such that -6283009 <= r <= 6283007.
@@ -40,7 +40,7 @@ fn _reduce32_8380417(reg u32 a) -> reg u32
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_caddq
+* Name:        JASMIN_MLDSA44_caddq
 *
 * Description: Add Q if input coefficient is negative.
 *
@@ -71,7 +71,7 @@ fn _caddq(reg u32 a) -> reg u32
 
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_freeze
+* Name:        JASMIN_MLDSA44_freeze
 *
 * Description: For finite field element a, compute standard
 *              representative r = a mod^+ Q.

@@ -1,6 +1,6 @@
 require "polyvec.jinc"
 
-export fn JASMIN_MLDSA65_polyvecl_uniform_eta(reg ptr u32[polyvecl] v,
+export fn JASMIN_MLDSA44_polyvecl_uniform_eta(reg ptr u32[polyvecl] v,
   reg ptr u8[CRHBYTES] seed,
   reg u32 nonce
 ) -> reg ptr u32[polyvecl]
@@ -11,7 +11,7 @@ export fn JASMIN_MLDSA65_polyvecl_uniform_eta(reg ptr u32[polyvecl] v,
   return v;
 }
 
-export fn JASMIN_MLDSA65_polyvecl_uniform_gamma1(
+export fn JASMIN_MLDSA44_polyvecl_uniform_gamma1(
   reg ptr u32[polyvecl] v,
   reg ptr u8[CRHBYTES] seed,
   reg u32 nonce
@@ -23,7 +23,7 @@ export fn JASMIN_MLDSA65_polyvecl_uniform_gamma1(
   return v;
 }
 
-export fn JASMIN_MLDSA65_polyvecl_reduce(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl]
+export fn JASMIN_MLDSA44_polyvecl_reduce(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl]
 {
   v = v;
   v = _polyvecl_reduce(v);
@@ -31,7 +31,7 @@ export fn JASMIN_MLDSA65_polyvecl_reduce(reg ptr u32[polyvecl] v) -> reg ptr u32
   return v;
 }
 
-export fn JASMIN_MLDSA65_polyvecl_add(
+export fn JASMIN_MLDSA44_polyvecl_add(
   reg ptr u32[polyvecl] w,
   reg ptr u32[polyvecl] u,
   reg ptr u32[polyvecl] v
@@ -43,21 +43,21 @@ export fn JASMIN_MLDSA65_polyvecl_add(
   return w;
 }
 
-export fn JASMIN_MLDSA65_polyvecl_ntt(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl] {
+export fn JASMIN_MLDSA44_polyvecl_ntt(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl] {
    v = v;
    v = _polyvecl_ntt(v);
    v = v;
    return v;
 }
 
-export fn JASMIN_MLDSA65_polyvecl_invntt_tomont(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl] {
+export fn JASMIN_MLDSA44_polyvecl_invntt_tomont(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl] {
   v = v;
   v = _polyvecl_invntt_tomont(v);
   v = v;
   return v;
 }
 
-export fn JASMIN_MLDSA65_polyvecl_pointwise_poly_montgomery(
+export fn JASMIN_MLDSA44_polyvecl_pointwise_poly_montgomery(
   reg ptr u32[polyvecl] r,
   reg ptr u32[N] a,
   reg ptr u32[polyvecl] v
@@ -68,7 +68,7 @@ export fn JASMIN_MLDSA65_polyvecl_pointwise_poly_montgomery(
    return r;
 }
 
-export fn JASMIN_MLDSA65_polyvecl_pointwise_acc_montgomery(
+export fn JASMIN_MLDSA44_polyvecl_pointwise_acc_montgomery(
   reg ptr u32[N] w,
   reg ptr u32[polyvecl] u,
   reg ptr u32[polyvecl] v
@@ -79,7 +79,7 @@ export fn JASMIN_MLDSA65_polyvecl_pointwise_acc_montgomery(
   return w;
 }
 
-export fn JASMIN_MLDSA65_polyvecl_chknorm(reg ptr u32[polyvecl] v, reg u32 bound) -> reg u32 {
+export fn JASMIN_MLDSA44_polyvecl_chknorm(reg ptr u32[polyvecl] v, reg u32 bound) -> reg u32 {
   v = v; bound = bound;
   reg u32 r;
   r = _polyvecl_chknorm(v, bound);
@@ -91,7 +91,7 @@ export fn JASMIN_MLDSA65_polyvecl_chknorm(reg ptr u32[polyvecl] v, reg u32 bound
 /************ Vectors of polynomials of length K **************/
 /**************************************************************/
 
-export fn JASMIN_MLDSA65_polyveck_uniform_eta(
+export fn JASMIN_MLDSA44_polyveck_uniform_eta(
   reg ptr u32[polyveck] v, 
   reg ptr u8[CRHBYTES] seed, 
   reg u32 nonce
@@ -102,21 +102,21 @@ export fn JASMIN_MLDSA65_polyveck_uniform_eta(
   return v;
 }
 
-export fn JASMIN_MLDSA65_polyveck_reduce(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
+export fn JASMIN_MLDSA44_polyveck_reduce(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
   v = v;
   v = _polyveck_reduce(v);
   v = v;
   return v;
 }
 
-export fn JASMIN_MLDSA65_polyveck_caddq(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
+export fn JASMIN_MLDSA44_polyveck_caddq(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
   v = v;
   v = _polyveck_caddq(v);
   v = v;
   return v;
 }
 
-export fn JASMIN_MLDSA65_polyveck_add(
+export fn JASMIN_MLDSA44_polyveck_add(
   reg ptr u32[polyveck] w,
   reg ptr u32[polyveck] u,
   reg ptr u32[polyveck] v
@@ -128,7 +128,7 @@ export fn JASMIN_MLDSA65_polyveck_add(
   return w;
 }
 
-export fn JASMIN_MLDSA65_polyveck_sub(
+export fn JASMIN_MLDSA44_polyveck_sub(
   reg ptr u32[polyveck] w,
   reg ptr u32[polyveck] u,
   reg ptr u32[polyveck] v
@@ -140,28 +140,28 @@ export fn JASMIN_MLDSA65_polyveck_sub(
   return w;
 }
 
-export fn JASMIN_MLDSA65_polyveck_shiftl(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
+export fn JASMIN_MLDSA44_polyveck_shiftl(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
   v = v;
   v = _polyveck_shiftl(v);
   v = v;
   return v;
 }
 
-export fn JASMIN_MLDSA65_polyveck_ntt(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
+export fn JASMIN_MLDSA44_polyveck_ntt(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
   v = v;
   v = _polyveck_ntt(v);
   v = v;
   return v;
 }
 
-export fn JASMIN_MLDSA65_polyveck_invntt_tomont(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
+export fn JASMIN_MLDSA44_polyveck_invntt_tomont(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck] {
   v = v;
   v = _polyveck_invntt_tomont(v);
   v = v;
   return v;
 }
 
-export fn JASMIN_MLDSA65_polyveck_pointwise_poly_montgomery(
+export fn JASMIN_MLDSA44_polyveck_pointwise_poly_montgomery(
   reg ptr u32[polyveck] r,
   reg ptr u32[N] a,
   reg ptr u32[polyveck] v
@@ -172,7 +172,7 @@ export fn JASMIN_MLDSA65_polyveck_pointwise_poly_montgomery(
   return r;
 }
 
-export fn JASMIN_MLDSA65_polyveck_chknorm(reg ptr u32[polyveck] v, reg u32 bound) -> reg u32 {
+export fn JASMIN_MLDSA44_polyveck_chknorm(reg ptr u32[polyveck] v, reg u32 bound) -> reg u32 {
   v = v; bound = bound;
   reg u32 r;
   r = _polyveck_chknorm(v, bound);
@@ -180,7 +180,7 @@ export fn JASMIN_MLDSA65_polyveck_chknorm(reg ptr u32[polyveck] v, reg u32 bound
   return r;
 }
 
-export fn JASMIN_MLDSA65_polyveck_power2round(
+export fn JASMIN_MLDSA44_polyveck_power2round(
   reg ptr u32[polyveck] v1,
   reg ptr u32[polyveck] v0,
   reg ptr u32[polyveck] v
@@ -191,7 +191,7 @@ export fn JASMIN_MLDSA65_polyveck_power2round(
   return v1, v0;
 }
 
-export fn JASMIN_MLDSA65_polyveck_decompose(
+export fn JASMIN_MLDSA44_polyveck_decompose(
   reg ptr u32[polyveck] v1,
   reg ptr u32[polyveck] v0,
   reg ptr u32[polyveck] v
@@ -202,7 +202,7 @@ export fn JASMIN_MLDSA65_polyveck_decompose(
   return v1, v0;
 }
 
-export fn JASMIN_MLDSA65_polyveck_make_hint(
+export fn JASMIN_MLDSA44_polyveck_make_hint(
   reg ptr u32[polyveck] h,
   reg ptr u32[polyveck] v0,
   reg ptr u32[polyveck] v1
@@ -215,7 +215,7 @@ export fn JASMIN_MLDSA65_polyveck_make_hint(
   return h, s;
 }
 
-export fn JASMIN_MLDSA65_polyveck_use_hint
+export fn JASMIN_MLDSA44_polyveck_use_hint
 (
   reg ptr u32[polyveck] w,
   reg ptr u32[polyveck] u,
@@ -227,7 +227,7 @@ export fn JASMIN_MLDSA65_polyveck_use_hint
   return w;
 }
 
-export fn JASMIN_MLDSA65_polyveck_pack_w1(
+export fn JASMIN_MLDSA44_polyveck_pack_w1(
   reg ptr u8[K * POLYW1_PACKEDBYTES] r,
   reg ptr u32[polyveck] w1
 ) -> reg ptr u8[K * POLYW1_PACKEDBYTES] {
@@ -237,7 +237,7 @@ export fn JASMIN_MLDSA65_polyveck_pack_w1(
   return r;
 }
 
-export fn JASMIN_MLDSA65_polyvec_matrix_expand(
+export fn JASMIN_MLDSA44_polyvec_matrix_expand(
   reg ptr u32[matKL] mat,
   reg ptr u8[SEEDBYTES] rho
 ) -> reg ptr u32[matKL] {
@@ -245,7 +245,7 @@ export fn JASMIN_MLDSA65_polyvec_matrix_expand(
   return mat;
 }
 
-export fn JASMIN_MLDSA65_polyvec_matrix_pointwise_montgomery(
+export fn JASMIN_MLDSA44_polyvec_matrix_pointwise_montgomery(
   reg ptr u32[polyveck] t,
   reg ptr u32[matKL] mat,
   reg ptr u32[polyvecl] v

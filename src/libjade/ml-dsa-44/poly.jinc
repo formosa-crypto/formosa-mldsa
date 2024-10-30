@@ -55,7 +55,7 @@ inline fn shift_right(reg u32[2] x, inline int i) -> reg u32[2]
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_reduce
+* Name:        JASMIN_MLDSA44_poly_reduce
 *
 * Description: Inplace reduction of all coefficients of polynomial to
 *              representative in [-6283009,6283007].
@@ -75,7 +75,7 @@ fn _poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N] {
 
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_caddq
+* Name:        JASMIN_MLDSA44_poly_caddq
 *
 * Description: For all coefficients of in/out polynomial add Q if
 *              coefficient is negative.
@@ -96,7 +96,7 @@ fn _poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_add
+* Name:        JASMIN_MLDSA44_poly_add
 *
 * Description: Add polynomials. No modular reduction is performed.
 *
@@ -176,10 +176,10 @@ fn _poly_add2_inplace(reg ptr u32[N] a) -> reg ptr u32[N]
 
 
 /**************************************************
-* Name:        JASMIN_MLDSA65_poly_chknorm
+* Name:        JASMIN_MLDSA44_poly_chknorm
 *
 * Description: Check infinity norm of polynomial against given bound.
-*              Assumes input coefficients were reduced by JASMIN_MLDSA65_reduce32().
+*              Assumes input coefficients were reduced by JASMIN_MLDSA44_reduce32().
 *
 * Arguments:   - const poly *a: pointer to polynomial
 *              - int32_t B: norm bound
@@ -229,7 +229,7 @@ fn _poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
 }
 
 /**************************************************
-* Name:        JASMIN_MLDSA65_challenge
+* Name:        JASMIN_MLDSA44_challenge
 *
 * Description: Implementation of H. Samples polynomial with TAU nonzero
 *              coefficients in {-1,1} using the output stream of
@@ -306,7 +306,7 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[CTILDEBYTES] seed) -> reg ptr u3
 }
 
 /*************************************************                                                         
-* Name:        JASMIN_MLDSA65_poly_decompose
+* Name:        JASMIN_MLDSA44_poly_decompose
 *                                                                                                          
 * Description: For all coefficients c of the input polynomial,                                             
 *              compute high and low bits c0, c1 such c mod Q = c1*ALPHA + c0                               
@@ -358,7 +358,7 @@ fn _poly_decompose_inplace (reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_polyeta_pack
+* Name:        JASMIN_MLDSA44_polyeta_pack
 *
 * Description: Bit-pack polynomial with coefficients in [-ETA,ETA].
 *
@@ -410,7 +410,7 @@ fn _polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_polyeta_unpack
+* Name:        JASMIN_MLDSA44_polyeta_unpack
 *
 * Description: Unpack polynomial with coefficients in [-ETA,ETA].
 *
@@ -445,7 +445,7 @@ fn _polyeta_unpack(reg ptr u32[N] r, reg ptr u8[POLYETA_PACKEDBYTES] a) -> reg p
 
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_ntt
+* Name:        JASMIN_MLDSA44_poly_ntt
 *
 * Description: Inplace forward NTT. Coefficients can grow by
 *              8*Q in absolute value.
@@ -465,7 +465,7 @@ fn _poly_ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_invntt_tomont
+* Name:        JASMIN_MLDSA44_poly_invntt_tomont
 *
 * Description: Inplace inverse NTT and multiplication by 2^{32}.
 *              Input coefficients need to be less than Q in absolute
@@ -484,7 +484,7 @@ inline fn _poly_invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_pointwise_montgomery
+* Name:        JASMIN_MLDSA44_poly_pointwise_montgomery
 *
 * Description: Pointwise multiplication of polynomials in NTT domain
 *              representation and multiplication of resulting polynomial
@@ -532,7 +532,7 @@ fn _poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_make_hint
+* Name:        JASMIN_MLDSA44_poly_make_hint
 *
 * Description: Compute hint polynomial. The coefficients of which indicate
 *              whether the low bits of the corresponding coefficient of
@@ -568,7 +568,7 @@ fn _poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> re
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_power2round
+* Name:        JASMIN_MLDSA44_poly_power2round
 *
 * Description: For all coefficients c of the input polynomial,
 *              compute c0, c1 such that c mod Q = c1*2^D + c0
@@ -613,7 +613,7 @@ fn _poly_power2round_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u3
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_shiftl
+* Name:        JASMIN_MLDSA44_poly_shiftl
 *
 * Description: Multiply polynomial by 2^D without modular reduction. Assumes
 *              input coefficients to be less than 2^{31-D} in absolute value.
@@ -640,7 +640,7 @@ fn _poly_shiftl(reg ptr u32[N] a) -> reg ptr u32[N] {
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_sub
+* Name:        JASMIN_MLDSA44_poly_sub
 *
 * Description: Subtract polynomials. No modular reduction is
 *              performed.
@@ -690,7 +690,7 @@ fn _poly_sub_inplace(reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_polyt0_pack
+* Name:        JASMIN_MLDSA44_polyt0_pack
 *
 * Description: Bit-pack polynomial t0 with coefficients in ]-2^{D-1}, 2^{D-1}].
 *
@@ -784,7 +784,7 @@ fn _polyt0_pack(reg ptr u8[POLYT0_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_polyt0_unpack
+* Name:        JASMIN_MLDSA44_polyt0_unpack
 *
 * Description: Unpack polynomial t0 with coefficients in ]-2^{D-1}, 2^{D-1}].
 *
@@ -910,7 +910,7 @@ fn _polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) -> reg ptr
 }  
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_polyt1_pack
+* Name:        JASMIN_MLDSA44_polyt1_pack
 *
 * Description: Bit-pack polynomial t1 with coefficients fitting in 10 bits.
 *              Input coefficients are assumed to be standard representatives.
@@ -960,7 +960,7 @@ fn _polyt1_pack(reg ptr u8[POLYT1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u
 }	 
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_polyt1_unpack
+* Name:        JASMIN_MLDSA44_polyt1_unpack
 *
 * Description: Unpack polynomial t1 with 10-bit coefficients.
 *              Output coefficients are standard representatives.
@@ -1013,7 +1013,7 @@ fn _polyt1_unpack(reg ptr u32[N] r, reg ptr u8[POLYT1_PACKEDBYTES] a) -> reg ptr
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_use_hint
+* Name:        JASMIN_MLDSA44_poly_use_hint
 *
 * Description: Use hint polynomial to correct the high bits of a polynomial.
 *
@@ -1062,7 +1062,7 @@ fn _poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] 
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_polyw1_pack
+* Name:        JASMIN_MLDSA44_polyw1_pack
 *
 * Description: Bit-pack polynomial w1 with coefficients in [0,15] or [0,43].
 *              Input coefficients are assumed to be standard representatives.
@@ -1092,7 +1092,7 @@ fn _polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u
 
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_polyz_pack
+* Name:        JASMIN_MLDSA44_polyz_pack
 *
 * Description: Bit-pack polynomial with coefficients
 *              in [-(GAMMA1 - 1), GAMMA1].
@@ -1147,7 +1147,7 @@ fn _polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_polyz_unpack
+* Name:        JASMIN_MLDSA44_polyz_unpack
 *
 * Description: Unpack polynomial z with coefficients
 *              in [-(GAMMA1 - 1), GAMMA1].
@@ -1270,7 +1270,7 @@ fn _poly_uniform(reg ptr u32[N] a,
 } 
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_uniform_eta
+* Name:        JASMIN_MLDSA44_poly_uniform_eta
 *
 * Description: Sample polynomial with uniformly random coefficients
 *              in [-ETA,ETA] by performing rejection sampling on the

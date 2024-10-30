@@ -34,7 +34,7 @@ u32[N] ZETAS = {
 };
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_ntt
+* Name:        JASMIN_MLDSA44_ntt
 *
 * Description: Forward NTT, in-place. No modular reduction is performed after
 *              additions or subtractions. Output vector is in bitreversed order.
@@ -42,7 +42,7 @@ u32[N] ZETAS = {
 * Arguments:   - uint32_t p[N]: input/output coefficient array
 **************************************************/
 /*
-void JASMIN_MLDSA65_ntt(int32_t a[N]) {
+void JASMIN_MLDSA44_ntt(int32_t a[N]) {
     unsigned int len, start, j, k;
     int32_t zeta, t;
 
@@ -51,7 +51,7 @@ void JASMIN_MLDSA65_ntt(int32_t a[N]) {
         for (start = 0; start < N; start = j + len) {
             zeta = zetas[++k];
             for (j = start; j < start + len; ++j) {
-                t = JASMIN_MLDSA65_montgomery_reduce((int64_t)zeta * a[j + len]);
+                t = JASMIN_MLDSA44_montgomery_reduce((int64_t)zeta * a[j + len]);
                 a[j + len] = a[j] - t;
                 a[j] = a[j] + t;
             }
@@ -94,7 +94,7 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
        j_len = start_len;
        /* invariant j_len = j + len */
        while {
-         /* t = JASMIN_MLDSA65_montgomery_reduce((int64_t)zeta * a[j + len]); */
+         /* t = JASMIN_MLDSA44_montgomery_reduce((int64_t)zeta * a[j + len]); */
          aj_len = a[(int) j_len];
          t = __mul_montgomery_reduce_8380417(zeta, aj_len);
          /* a[j + len] = a[j] - t; */
@@ -122,7 +122,7 @@ fn _ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
 } 
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_invntt_tomont
+* Name:        JASMIN_MLDSA44_invntt_tomont
 *
 * Description: Inverse NTT and multiplication by Montgomery factor 2^32.
 *              In-place. No modular reductions after additions or
@@ -133,7 +133,7 @@ fn _ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
 * Arguments:   - uint32_t p[N]: input/output coefficient array
 **************************************************/
 /*
-void JASMIN_MLDSA65_invntt_tomont(int32_t a[N]) {
+void JASMIN_MLDSA44_invntt_tomont(int32_t a[N]) {
     unsigned int start, len, j, k;
     int32_t t, zeta;
     const int32_t f = 41978; // mont^2/256
@@ -146,13 +146,13 @@ void JASMIN_MLDSA65_invntt_tomont(int32_t a[N]) {
                 t = a[j];
                 a[j] = t + a[j + len];
                 a[j + len] = t - a[j + len];
-                a[j + len] = JASMIN_MLDSA65_montgomery_reduce((int64_t)zeta * a[j + len]);
+                a[j + len] = JASMIN_MLDSA44_montgomery_reduce((int64_t)zeta * a[j + len]);
             }
         }
     }
 
     for (j = 0; j < N; ++j) {
-        a[j] = JASMIN_MLDSA65_montgomery_reduce((int64_t)f * a[j]);
+        a[j] = JASMIN_MLDSA44_montgomery_reduce((int64_t)f * a[j]);
     }
 }
 */
@@ -188,7 +188,7 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
         aj_len = a[(int) j_len]; aj = t + aj_len; a[(int) j] = aj;
         /* a[j + len] = t - a[j + len]; */
         aj_len = t - aj_len;
-        /* a[j + len] = JASMIN_MLDSA65_montgomery_reduce((int64_t)zeta * a[j + len]); */
+        /* a[j + len] = JASMIN_MLDSA44_montgomery_reduce((int64_t)zeta * a[j + len]); */
         aj_len = __mul_montgomery_reduce_8380417(zeta, aj_len);
         a[(int) j_len] = aj_len;
         j += 1;
@@ -206,7 +206,7 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
   /* for (j = 0; j < N; ++j) */
   j = 0;
   while {
-    /*   a[j] = JASMIN_MLDSA65_montgomery_reduce((int64_t)f * a[j]); */
+    /*   a[j] = JASMIN_MLDSA44_montgomery_reduce((int64_t)f * a[j]); */
     aj = a[(int) j];
     aj = __mul_montgomery_reduce_8380417(f, aj);
     a[(int) j] = aj;
