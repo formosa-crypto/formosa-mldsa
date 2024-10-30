@@ -1,0 +1,166 @@
+/*************************************************
+* Name:        JASMIN_MLDSA65_power2round
+*
+* Description: For finite field element a, compute a0, a1 such that
+*              a mod^+ Q = a1*2^D + a0 with -2^{D-1} < a0 <= 2^{D-1}.
+*              Assumes a to be standard representative.
+*
+* Arguments:   - int32_t a: input element
+*              - int32_t *a0: pointer to output element a0
+*
+* Returns a1.
+**************************************************/
+inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32 
+{
+  reg u32 a0 a1;
+  a1 = __add_large_imm(a, (1 << (D - 1)) - 1);
+  a1 = a1 >>s D;
+  a0 = __sub_lsl(a, a1, D);
+  return (a0, a1);     
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA65_decompose
+*
+* Description: For finite field element a, compute high and low bits a0, a1 such
+*              that a mod^+ Q = a1*ALPHA + a0 with -ALPHA/2 < a0 <= ALPHA/2 except
+*              if a1 = (Q-1)/ALPHA where we set a1 = 0 and
+*              -ALPHA/2 <= a0 = a mod^+ Q - Q < 0. Assumes a to be standard
+*              representative.
+*
+* Arguments:   - int32_t a: input element
+*              - int32_t *a0: pointer to output element a0
+*
+* Returns a1.
+**************************************************/
+// precondition q = Q
+inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
+{
+  reg u32 a0 a1 aux;
+  
+  /* a1  = (a + 127) >> 7; */
+  a1 =  a + 127;
+  a1 >>s= 7;
+  
+  /* a1  = (a1 * 1025 + (1 << 21)) >> 22;
+     a1 &= 15; */
+
+  aux = __plus_lsl(a1, a1, 10); // aux = a1 * 1025;
+  aux = __add_large_imm(aux, 1 << 21);
+  a1 = __ubfx(aux, 22, 4);
+
+  /* *a0  = a - a1 * 2 * GAMMA2; */
+  /* - 2*GAMMA2 = (1 - 2 ^ 10) * 2^9 */
+  aux = __sub_lsl(a1, a1, 10);
+  a0 = __plus_lsl(a, aux, 9);
+  
+  /* *a0 -= (((Q - 1) / 2 - *a0) >> 31) & Q; */
+  /* (Q - 1) / 2 = 1023 * 2^12 */
+  aux = 1023;
+  // (Q - 1) / 2 - *a0
+  aux = __rsb_lsl_inplace(a0, aux, 12);
+  aux = __and_asr(q, aux, 31);
+  a0 -= aux;
+  
+  return a0, a1;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA65_make_hint
+*
+* Description: Compute hint bit indicating whether the low bits of the
+*              input element overflow into the high bits.
+*
+* Arguments:   - int32_t a0: low bits of input element
+*              - int32_t a1: high bits of input element
+*
+* Returns 1 if overflow.
+**************************************************/
+/*
+unsigned int JASMIN_MLDSA65_make_hint(int32_t a0, int32_t a1) {
+    if (a0 > GAMMA2 || a0 < -GAMMA2 || (a0 == -GAMMA2 && a1 != 0)) {
+        return 1;
+    }
+
+    return 0;
+}
+*/
+
+// gamma2 = GAMMA2
+inline fn __make_hint(reg u32 a0, reg u32 a1, reg u32 gamma2) -> reg u32
+{
+   reg u32 mgamma2 res;
+   inline bool lt eq;
+
+   res = 1;
+   if (a0 <=s gamma2) {
+     mgamma2 = -gamma2;
+
+     eq, lt = __cmp_eq_lt(a0, mgamma2);
+
+     if (!lt) {
+
+      if (!eq) {
+         res = 0;
+      }
+
+      if (a1 == 0) {
+         res = 0;
+       }
+
+     }
+   }
+   return res;
+}          
+
+
+
+
+/*************************************************
+* Name:        JASMIN_MLDSA65_use_hint
+*
+* Description: Correct high bits according to hint.
+*
+* Arguments:   - int32_t a: input element
+*              - unsigned int hint: hint bit
+*
+* Returns corrected high bits.
+**************************************************/
+/*
+int32_t JASMIN_MLDSA65_use_hint(int32_t a, unsigned int hint) {
+    int32_t a0, a1;
+
+    a1 = JASMIN_MLDSA65_decompose(&a0, a);
+    if (hint == 0) {
+        return a1;
+    }
+
+    if (a0 > 0) {
+        return (a1 + 1) & 15;
+    }
+    return (a1 - 1) & 15;
+}
+*/
+
+// Precondition q = Q
+inline fn __use_hint(reg u32 a, reg u32 hint, reg u32 q) -> reg u32 {
+  reg u32 a0 a1;
+  inline bool gt le;
+
+  a0, a1 = __decompose_a0a1(a, q);
+
+  if (hint != 0) {
+   gt, le = __cmp_gt_le_zero(a0);
+
+
+   if (gt) {
+      a1 += 1;
+   }
+   if (le) {
+     a1 -=1 ;
+   }
+
+    a1 &= 15;
+  }
+  return a1;
+}
