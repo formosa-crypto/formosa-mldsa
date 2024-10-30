@@ -10,26 +10,26 @@
 #define D 13
 #define ROOT_OF_UNITY 1753
 
-#define K 6
-#define L 5
-#define ETA 4
-#define TAU 49
-#define BETA 196
-#define GAMMA1 (1 << 19)
-#define GAMMA2 ((Q-1)/32)
-#define OMEGA 55
-#define CTILDEBYTES 48
+#define K 4
+#define L 4
+#define ETA 2
+#define TAU 39
+#define BETA 78
+#define GAMMA1 (1 << 17)
+#define GAMMA2 ((Q-1)/88)
+#define OMEGA 80
+#define CTILDEBYTES 32
 
 
 #define POLYT1_PACKEDBYTES  320
 #define POLYT0_PACKEDBYTES  416
 #define POLYVECH_PACKEDBYTES (OMEGA + K)
 
-#define POLYZ_PACKEDBYTES   640
+#define POLYZ_PACKEDBYTES   576
 
-#define POLYW1_PACKEDBYTES  128
+#define POLYW1_PACKEDBYTES  192
 
-#define POLYETA_PACKEDBYTES 128
+#define POLYETA_PACKEDBYTES 96
 
 #define JASMIN_MLDSA44_CRYPTO_PUBLICKEYBYTES (SEEDBYTES + K*POLYT1_PACKEDBYTES)
 #define JASMIN_MLDSA44_CRYPTO_SECRETKEYBYTES (2*SEEDBYTES \
