@@ -419,8 +419,7 @@ fn _shake256_inc_absorb_mem_naive
 }
 
 /***
-* Precondition CRHBYTES should have been filled in pstate
-* CRHBYTES + K * POLYW1_PACKEDBYTES is dividable by 4 and 136
+* No precondition
 ***/
 inline fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive
   (reg ptr u32[25*2] pstate,
