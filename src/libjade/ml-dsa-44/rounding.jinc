@@ -37,23 +37,28 @@ inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32
 inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
 {
   reg u32 a0 a1 aux;
-  
+
   /* a1  = (a + 127) >> 7; */
   a1 =  a + 127;
   a1 >>s= 7;
-  
-  /* a1  = (a1 * 1025 + (1 << 21)) >> 22;
-     a1 &= 15; */
 
-  aux = __plus_lsl(a1, a1, 10); // aux = a1 * 1025;
-  aux = __add_large_imm(aux, 1 << 21);
-  a1 = __ubfx(aux, 22, 4);
+  /*  a1  = (a1 * 11275 + (1 << 23)) >> 24;*/
+  aux = 11275;
+  a1 = aux * a1;
+  a1 = __add_large_imm(a1, 1 << 23);
+  a1 = a1 >>s 24;
+
+  /* a1 ^= ((43 - a1) >> 31) & a1; */
+  aux = __imm_sub_reg(43, a1);
+  aux = aux >>s 31;
+  aux = aux & a1;
+  a1 = a1 ^ aux;
 
   /* *a0  = a - a1 * 2 * GAMMA2; */
   /* - 2*GAMMA2 = (1 - 2 ^ 10) * 2^9 */
   aux = __sub_lsl(a1, a1, 10);
   a0 = __plus_lsl(a, aux, 9);
-  
+
   /* *a0 -= (((Q - 1) / 2 - *a0) >> 31) & Q; */
   /* (Q - 1) / 2 = 1023 * 2^12 */
   aux = 1023;
@@ -61,7 +66,7 @@ inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
   aux = __rsb_lsl_inplace(a0, aux, 12);
   aux = __and_asr(q, aux, 31);
   a0 -= aux;
-  
+
   return a0, a1;
 }
 
