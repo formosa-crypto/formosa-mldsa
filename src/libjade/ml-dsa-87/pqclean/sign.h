@@ -8,6 +8,8 @@
 
 int PQCLEAN_MLDSA87_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk);
 
+int PQCLEAN_MLDSA87_CLEAN_crypto_sign_keypair_seed(uint8_t *pk, uint8_t *sk, uint8_t *seedbuf);
+
 int PQCLEAN_MLDSA87_CLEAN_crypto_sign_signature_ctx(uint8_t *sig, size_t *siglen,
         const uint8_t *m, size_t mlen,
         const uint8_t *ctx, size_t ctxlen,
