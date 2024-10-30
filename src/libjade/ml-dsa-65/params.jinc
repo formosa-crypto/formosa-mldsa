@@ -1,41 +1,41 @@
-param int SEEDBYTES = 32;
-param int CRHBYTES = 64;
-param int TRBYTES = 64;
-param int RNDBYTES = 32;
-param int N = 256;
-param int iQ = 8380417;
-u32 Q = iQ;
-
+// Specific
 param int K = 6;
 param int L = 5;
 param int ETA = 4;
 param int TAU = 49;
 param int BETA = 196;
+param int OMEGA = 55;
+param int CTILDEBYTES = 48;
+
+param int POLYZ_PACKEDBYTES = 640; // N/2 * 5
+param int POLYW1_PACKEDBYTES = 128; // N/2
+param int POLYETA_PACKEDBYTES = 128;
+
+param int POLYT1_PACKEDBYTES  = 320; // N/4 * 5
+param int POLYT0_PACKEDBYTES = 416; // N/8 * 13
+
+// Generic
+param int N = 256;
+param int SEEDBYTES = 32;
+param int CRHBYTES = 64;
+param int TRBYTES = 64;
+param int RNDBYTES = 32;
+param int D = 13;
+
+param int iQ = 8380417;
+u32 Q = iQ;
 param int iGAMMA1 = (1 << 19);
 u32 GAMMA1 = iGAMMA1;
 param int iGAMMA2 = ((iQ-1)/32);
 u32 GAMMA2 = iGAMMA2;
 u32 MINUS_Q = -iQ; // this should be -Q
 u32 MINUS_GAMMA2 = -iGAMMA2;
-param int OMEGA = 55;
-param int CTILDEBYTES = 48;
 
-param int POLYT1_PACKEDBYTES  = 320; // N/4 * 5
-param int POLYT0_PACKEDBYTES = 416; // N/8 * 13
 param int POLYVECH_PACKEDBYTES = (OMEGA + K);
 
-param int POLYZ_PACKEDBYTES = 640; // N/2 * 5
-
-param int POLYW1_PACKEDBYTES = 128; // N/2
-
-param int POLYETA_PACKEDBYTES = 128; // N/8 * 3
-
 param int PQC_SHAKECTX_BYTES = 25;
-
-
 param int SHAKE256_RATE = 136;
 param int SHAKE128_RATE = 168;
-param int D = 13;
 
 param int JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES = (SEEDBYTES + K*POLYT1_PACKEDBYTES);
 param int JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES = (2*SEEDBYTES + TRBYTES + L*POLYETA_PACKEDBYTES + K*POLYETA_PACKEDBYTES + K*POLYT0_PACKEDBYTES);

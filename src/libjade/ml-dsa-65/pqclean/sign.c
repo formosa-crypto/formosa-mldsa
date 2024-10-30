@@ -67,7 +67,7 @@ int PQCLEAN_MLDSA65_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
 }
 
 /*************************************************
-* Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair
+* Name:        PQCLEAN_DILITHIUM5_CLEAN_crypto_sign_keypair_seed
 *
 * Description: Generates public and private key.
 *

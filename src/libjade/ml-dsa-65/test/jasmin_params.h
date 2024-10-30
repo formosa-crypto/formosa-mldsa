@@ -1,8 +1,6 @@
 #ifndef JASMIN_MLDSA65_PARAMS_H
 #define JASMIN_MLDSA65_PARAMS_H
 
-
-
 #define SEEDBYTES 32
 #define CRHBYTES 64
 #define TRBYTES 64
