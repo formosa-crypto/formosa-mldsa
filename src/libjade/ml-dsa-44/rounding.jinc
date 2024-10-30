@@ -132,41 +132,44 @@ inline fn __make_hint(reg u32 a0, reg u32 a1, reg u32 gamma2) -> reg u32
 *
 * Returns corrected high bits.
 **************************************************/
-/*
-int32_t JASMIN_MLDSA44_use_hint(int32_t a, unsigned int hint) {
-    int32_t a0, a1;
-
-    a1 = JASMIN_MLDSA44_decompose(&a0, a);
-    if (hint == 0) {
-        return a1;
-    }
-
-    if (a0 > 0) {
-        return (a1 + 1) & 15;
-    }
-    return (a1 - 1) & 15;
-}
-*/
-
 // Precondition q = Q
 inline fn __use_hint(reg u32 a, reg u32 hint, reg u32 q) -> reg u32 {
   reg u32 a0 a1;
   inline bool gt le;
+  reg u32 r;
+  r = 0;
 
   a0, a1 = __decompose_a0a1(a, q);
 
-  if (hint != 0) {
-   gt, le = __cmp_gt_le_zero(a0);
-
-
-   if (gt) {
-      a1 += 1;
-   }
-   if (le) {
-     a1 -=1 ;
-   }
-
-    a1 &= 15;
+  if (hint == 0) {
+    r = 1;
   }
+
+  if (r == 0) {
+    gt, le = __cmp_gt_le_zero(a0);
+
+    if (gt) {
+      if (a1 == 43) {
+        a1 = 0;
+      } else {
+        a1 += 1;
+      }
+      r = 1;
+    }
+
+    if (r == 0) {
+      if (a1 == 0) {
+        a1 = 43;
+        r = 1;
+      }
+    }
+
+    if (r == 0) {
+      if (le) {
+        a1 -=1 ;
+      }
+    }
+  }
+
   return a1;
 }
