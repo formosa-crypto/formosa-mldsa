@@ -62,26 +62,11 @@ inline fn __MINUS_Q() -> reg u32 {
   return mq;
 }
 
-inline fn __GAMMA2 () -> reg u32 {
- // GAMMA2 = ((iQ-1)/32) = 11 1111 1111 0000 0000
- reg u32 gamma2;
- gamma2 = 0x3FF;
- gamma2 = gamma2 << 8;
- return gamma2;
-}
-
-inline fn __MINUS_GAMMA2 () -> reg u32 {
- reg u32 gamma2, mgamma2;
- gamma2	= __GAMMA2();
- mgamma2 = gamma2;
- return	mgamma2;
-}
-
 inline fn __GAMMA1 () -> reg u32 {
- // GAMMA1 = 1 << 19
+ // GAMMA1 = 1 << 17
  reg u32 gamma1;
  gamma1 = 1;
- gamma1 = gamma1 << 19;
+ gamma1 = gamma1 << 17;
  return gamma1;
 }
 
