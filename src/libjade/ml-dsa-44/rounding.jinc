@@ -55,9 +55,10 @@ inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
   a1 = a1 ^ aux;
 
   /* *a0  = a - a1 * 2 * GAMMA2; */
-  /* - 2*GAMMA2 = (1 - 2 ^ 10) * 2^9 */
-  aux = __sub_lsl(a1, a1, 10);
-  a0 = __plus_lsl(a, aux, 9);
+  aux = GAMMA2;
+  aux = aux << 1; // * 2
+  aux = a1 * aux;
+  a0 = a - aux;
 
   /* *a0 -= (((Q - 1) / 2 - *a0) >> 31) & Q; */
   /* (Q - 1) / 2 = 1023 * 2^12 */
