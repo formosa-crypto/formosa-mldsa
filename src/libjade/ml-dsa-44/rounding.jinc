@@ -146,9 +146,7 @@ inline fn __use_hint(reg u32 a, reg u32 hint, reg u32 q) -> reg u32 {
   }
 
   if (r == 0) {
-    gt, le = __cmp_gt_le_zero(a0);
-
-    if (gt) {
+    if (a0 >s 0) {
       if (a1 == 43) {
         a1 = 0;
       } else {
@@ -165,7 +163,7 @@ inline fn __use_hint(reg u32 a, reg u32 hint, reg u32 q) -> reg u32 {
     }
 
     if (r == 0) {
-      if (le) {
+      if (a0 == 0) {
         a1 -=1 ;
       }
     }
