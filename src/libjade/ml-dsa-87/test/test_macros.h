@@ -705,14 +705,14 @@
   int32_t t1_jazz[N*K];						 \
   uint8_t rho[SEEDBYTES];						 \
   uint8_t rho_jazz[SEEDBYTES];		\
-  uint8_t pk[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES]; \
-  uint8_t pk_jazz[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES]; \
+  uint8_t pk[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES]; \
+  uint8_t pk_jazz[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES]; \
   for(int t=0; t<TESTS; t++) {	 \
     fillarrni32(t1, t1_jazz, N*K); \
     fillarrnu8(rho, rho_jazz, SEEDBYTES);	\
     FUNCTION_C(pk, rho, (polyveck *) t1); \
     FUNCTION_JASMIN(pk_jazz, rho_jazz, (polyveck *) t1_jazz); \
-    eqarr(JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES, PRId8, pk, pk_jazz, function_name) \
+    eqarr(JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES, PRId8, pk, pk_jazz, function_name) \
   } \
   printf("PASS: %s\n", function_name); \
   } 
@@ -723,10 +723,10 @@
   int32_t t1_jazz[N*K];						 \
   uint8_t rho[SEEDBYTES];						 \
   uint8_t rho_jazz[SEEDBYTES];		\
-  uint8_t pk[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES]; \
-  uint8_t pk_jazz[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES]; \
+  uint8_t pk[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES]; \
+  uint8_t pk_jazz[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES]; \
   for(int t=0; t<TESTS; t++) {	 \
-    fillarrnu8(pk, pk_jazz, JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES); \
+    fillarrnu8(pk, pk_jazz, JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES); \
     FUNCTION_C(rho, (polyveck *) t1, pk); \
     FUNCTION_JASMIN(rho_jazz, (polyveck *) t1_jazz, pk_jazz); \
     eqarr(N*K, PRId32, t1, t1_jazz, function_name) \
@@ -749,8 +749,8 @@
     uint8_t tr_jazz[TRBYTES];		\
     uint8_t key[SEEDBYTES];						 \
     uint8_t key_jazz[SEEDBYTES];		\
-    uint8_t sk[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES]; \
-    uint8_t sk_jazz[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES]; \
+    uint8_t sk[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES]; \
+    uint8_t sk_jazz[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES]; \
     for(int t=0; t<TESTS; t++) {	 \
         fillarrni32(t0, t0_jazz, N*K); \
         fillarrni32(s1, s1_jazz, N*L); \
@@ -760,7 +760,7 @@
         fillarrnu8(key, key_jazz, SEEDBYTES);	\
         FUNCTION_C(sk, rho, tr, key, (polyveck *) t0, (polyvecl *) s1, (polyveck *) s2); \
         FUNCTION_JASMIN(sk_jazz, rho_jazz, tr_jazz, key_jazz, (polyveck *) t0_jazz, (polyvecl *) s1_jazz, (polyveck *) s2_jazz); \
-        eqarr(JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES, PRId8, sk, sk_jazz, function_name) \
+        eqarr(JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES, PRId8, sk, sk_jazz, function_name) \
     } \
     printf("PASS: %s\n", function_name); \
   }
@@ -779,10 +779,10 @@
     uint8_t tr_jazz[TRBYTES];		\
     uint8_t key[SEEDBYTES];						 \
     uint8_t key_jazz[SEEDBYTES];		\
-    uint8_t sk[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES]; \
-    uint8_t sk_jazz[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES]; \
+    uint8_t sk[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES]; \
+    uint8_t sk_jazz[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES]; \
     for(int t=0; t<TESTS; t++) {	 \
-        fillarrnu8(sk, sk_jazz, JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES); \
+        fillarrnu8(sk, sk_jazz, JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES); \
         FUNCTION_C(rho, tr, key, (polyveck *) t0, (polyvecl *) s1, (polyveck *) s2, sk); \
         FUNCTION_JASMIN(rho_jazz, tr_jazz, key_jazz, (polyveck *) t0_jazz, (polyvecl *) s1_jazz, (polyveck *) s2_jazz, sk_jazz); \
         eqarr(N*K, PRId32, t0, t0_jazz, function_name) \

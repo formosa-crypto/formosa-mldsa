@@ -9,8 +9,8 @@
 #define TESTS 1000
 #endif
 
-int32_t PQCLEAN_MLDSA65_CLEAN_power2round(int32_t *a0, int32_t a);
-int32_t JASMIN_MLDSA65_power2round(int32_t *a0, int32_t a);
+int32_t PQCLEAN_MLDSA87_CLEAN_power2round(int32_t *a0, int32_t a);
+int32_t JASMIN_MLDSA87_power2round(int32_t *a0, int32_t a);
 
 int test_power2round()
 {
@@ -21,8 +21,8 @@ int test_power2round()
     // initialize 8 bytes of randomness
     randombytes((uint8_t*)(&arg), sizeof(int32_t));
 
-    a1_c = PQCLEAN_MLDSA65_CLEAN_power2round(&a0_c, arg);
-    a1_jazz = JASMIN_MLDSA65_power2round(&a0_jazz, arg);
+    a1_c = PQCLEAN_MLDSA87_CLEAN_power2round(&a0_c, arg);
+    a1_jazz = JASMIN_MLDSA87_power2round(&a0_jazz, arg);
 
     if (a0_c != a0_jazz) {
       printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", arg, a0_c, a0_jazz);
@@ -42,8 +42,8 @@ int test_power2round()
   return 0;
 }
 
-int32_t PQCLEAN_MLDSA65_CLEAN_decompose(int32_t *a0, int32_t a);
-int32_t JASMIN_MLDSA65_decompose(int32_t *a0, int32_t a);
+int32_t PQCLEAN_MLDSA87_CLEAN_decompose(int32_t *a0, int32_t a);
+int32_t JASMIN_MLDSA87_decompose(int32_t *a0, int32_t a);
 
 int test_decompose()
 {
@@ -54,8 +54,8 @@ int test_decompose()
     // initialize 8 bytes of randomness
     randombytes((uint8_t*)(&arg), sizeof(int32_t));
 
-    a1_c = PQCLEAN_MLDSA65_CLEAN_decompose(&a0_c, arg);
-    a1_jazz = JASMIN_MLDSA65_decompose(&a0_jazz, arg);
+    a1_c = PQCLEAN_MLDSA87_CLEAN_decompose(&a0_c, arg);
+    a1_jazz = JASMIN_MLDSA87_decompose(&a0_jazz, arg);
 
     if (a0_c != a0_jazz) {
       printf("%" PRId32 " -> %" PRId32 " != %" PRId32 "\n", arg, a0_c, a0_jazz);
@@ -75,19 +75,19 @@ int test_decompose()
   return 0;
 }
 
-int32_t PQCLEAN_MLDSA65_CLEAN_make_hint(int32_t a0, int32_t a1);
-int32_t JASMIN_MLDSA65_make_hint(int32_t a0, int32_t a1);
+int32_t PQCLEAN_MLDSA87_CLEAN_make_hint(int32_t a0, int32_t a1);
+int32_t JASMIN_MLDSA87_make_hint(int32_t a0, int32_t a1);
 
-int32_t PQCLEAN_MLDSA65_CLEAN_use_hint(int32_t a0, unsigned int hint);
-int32_t JASMIN_MLDSA65_use_hint(int32_t a0, unsigned int hint);
+int32_t PQCLEAN_MLDSA87_CLEAN_use_hint(int32_t a0, unsigned int hint);
+int32_t JASMIN_MLDSA87_use_hint(int32_t a0, unsigned int hint);
 
 
 int main ()
 {
   test_power2round();
   test_decompose();
-  check3232to32(PQCLEAN_MLDSA65_CLEAN_make_hint, JASMIN_MLDSA65_make_hint, "make_hint");
-  check3232to32(PQCLEAN_MLDSA65_CLEAN_use_hint, JASMIN_MLDSA65_use_hint, "use_hint");
+  check3232to32(PQCLEAN_MLDSA87_CLEAN_make_hint, JASMIN_MLDSA87_make_hint, "make_hint");
+  check3232to32(PQCLEAN_MLDSA87_CLEAN_use_hint, JASMIN_MLDSA87_use_hint, "use_hint");
   return 0;
 }
 
