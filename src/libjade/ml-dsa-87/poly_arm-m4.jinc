@@ -1,5 +1,5 @@
 /*************************************************
-* Name:        JASMIN_MLDSA65_poly_uniform
+* Name:        JASMIN_MLDSA87_poly_uniform
 *
 * Description: Sample polynomial with uniformly random coefficients
 *              in [0,Q-1] by performing rejection sampling on the

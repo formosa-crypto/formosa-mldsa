@@ -1,6 +1,6 @@
 require "rounding.jinc"
 
-export fn JASMIN_MLDSA65_power2round(reg u32 pa0, reg u32 a) -> reg u32
+export fn JASMIN_MLDSA87_power2round(reg u32 pa0, reg u32 a) -> reg u32
 {
   reg u32 a0 a1;
   a0, a1 = __power2round_a0a1(a);
@@ -9,7 +9,7 @@ export fn JASMIN_MLDSA65_power2round(reg u32 pa0, reg u32 a) -> reg u32
   return a1;
 }
 
-export fn JASMIN_MLDSA65_decompose(reg u32 pa0, reg u32 a) -> reg u32
+export fn JASMIN_MLDSA87_decompose(reg u32 pa0, reg u32 a) -> reg u32
 {
   reg u32 a0 a1 q;
   q = Q;
@@ -19,7 +19,7 @@ export fn JASMIN_MLDSA65_decompose(reg u32 pa0, reg u32 a) -> reg u32
   return a1;
 }
 
-export fn JASMIN_MLDSA65_make_hint(reg u32 a0, reg u32 a1) -> reg u32
+export fn JASMIN_MLDSA87_make_hint(reg u32 a0, reg u32 a1) -> reg u32
 {
   reg u32 res gamma2;
   gamma2 = GAMMA2;
@@ -28,7 +28,7 @@ export fn JASMIN_MLDSA65_make_hint(reg u32 a0, reg u32 a1) -> reg u32
   return res;
 }
 
-export fn JASMIN_MLDSA65_use_hint(reg u32 a, reg u32 hint) -> reg u32 {
+export fn JASMIN_MLDSA87_use_hint(reg u32 a, reg u32 hint) -> reg u32 {
   reg u32 res q;
   q = Q;
   res = __use_hint(a, hint, q);

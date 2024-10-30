@@ -1,5 +1,5 @@
 /*************************************************
-* Name:        JASMIN_MLDSA65_pack_pk
+* Name:        JASMIN_MLDSA87_pack_pk
 *
 * Description: Bit-pack public key pk = (rho, t1).
 *
@@ -7,7 +7,7 @@
 *              - const uint8_t rho[]: byte array containing rho
 *              - const polyveck *t1: pointer to vector t1
 **************************************************/
-fn _pack_pk(reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1) -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] {
+fn _pack_pk(reg ptr u8[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1) -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES] {
     pk = pk; rho = rho; t1 = t1;
 
     inline int i;
@@ -29,7 +29,7 @@ fn _pack_pk(reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[SEED
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_pack_sk
+* Name:        JASMIN_MLDSA87_pack_sk
 *
 * Description: Bit-pack secret key sk = (rho, tr, key, t0, s1, s2).
 *
@@ -41,7 +41,7 @@ fn _pack_pk(reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[SEED
 *              - const polyvecl *s1: pointer to vector s1
 *              - const polyveck *s2: pointer to vector s2
 **************************************************/
-fn _pack_sk(reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBYTES] rho, reg ptr u8[TRBYTES] tr, reg ptr u8[SEEDBYTES] key, reg ptr u32[polyveck] t0, reg ptr u32[polyvecl] s1, reg ptr u32[polyveck] s2) -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] {
+fn _pack_sk(reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBYTES] rho, reg ptr u8[TRBYTES] tr, reg ptr u8[SEEDBYTES] key, reg ptr u32[polyveck] t0, reg ptr u32[polyvecl] s1, reg ptr u32[polyveck] s2) -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES] {
     sk = sk; rho = rho; tr = tr; key = key; t0 = t0; s1 = s1; s2 = s2;
 
     inline int i;
@@ -107,16 +107,16 @@ fn _pack_sk(reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEED
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_pack_sig
+* Name:        JASMIN_MLDSA87_pack_sig
 *
 * Description: Bit-pack signature sig = (c, z, h).
 *
 * Arguments:   - uint8_t sig[]: output byte array
-*              - const uint8_t *c: pointer to JASMIN_MLDSA65_challenge hash length SEEDBYTES
+*              - const uint8_t *c: pointer to JASMIN_MLDSA87_challenge hash length SEEDBYTES
 *              - const polyvecl *z: pointer to vector z
 *              - const polyveck *h: pointer to hint vector h
 **************************************************/
-fn _pack_sig(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr u8[CTILDEBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] {
+fn _pack_sig(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr u8[CTILDEBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] {
     sig = sig; c = c; z = z; h = h;
     
     inline int i;
@@ -175,7 +175,7 @@ fn _pack_sig(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr u8[CTILDEBYTES
 }
 
 // Same as _pack_sig(sig, sig[0:SEEDBYTES], z, h)
-fn _pack_sig_nocopy(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] {
+fn _pack_sig_nocopy(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] {
     sig = sig; z = z; h = h;
     
     inline int i;
@@ -229,7 +229,7 @@ fn _pack_sig_nocopy(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr u32[pol
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_unpack_pk
+* Name:        JASMIN_MLDSA87_unpack_pk
 *
 * Description: Unpack public key pk = (rho, t1).
 *
@@ -237,7 +237,7 @@ fn _pack_sig_nocopy(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr u32[pol
 *              - const polyveck *t1: pointer to output vector t1
 *              - uint8_t pk[]: byte array containing bit-packed pk
 **************************************************/
-fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
+fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
     pk = pk; rho = rho; t1 = t1;
     
     inline int i;
@@ -258,7 +258,7 @@ fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[JA
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_unpack_sk
+* Name:        JASMIN_MLDSA87_unpack_sk
 *
 * Description: Unpack secret key sk = (rho, tr, key, t0, s1, s2).
 *
@@ -277,7 +277,7 @@ fn _unpack_sk
    reg ptr u32[polyveck] t0, 
    reg ptr u32[polyvecl] s1, 
    reg ptr u32[polyveck] s2, 
-   reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] sk)
+   reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES] sk)
   -> reg ptr u8[SEEDBYTES], reg ptr u8[TRBYTES], reg ptr u8[SEEDBYTES], 
      reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck] 
      // rho, tr, key, t0, s1, s2
@@ -347,11 +347,11 @@ fn _unpack_sk
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_unpack_sig
+* Name:        JASMIN_MLDSA87_unpack_sig
 *
 * Description: Unpack signature sig = (c, z, h).
 *
-* Arguments:   - uint8_t *c: pointer to output JASMIN_MLDSA65_challenge hash
+* Arguments:   - uint8_t *c: pointer to output JASMIN_MLDSA87_challenge hash
 *              - polyvecl *z: pointer to output vector z
 *              - polyveck *h: pointer to output hint vector h
 *              - const uint8_t sig[]: byte array containing
@@ -362,7 +362,7 @@ fn _unpack_sk
 fn _unpack_sig(reg ptr u8[CTILDEBYTES] c, 
                reg ptr u32[polyvecl] z, 
                reg ptr u32[polyveck] h, 
-               reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig) ->
+               reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig) ->
          reg ptr u8[CTILDEBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
     // fixme this should be in the export function not here
     sig = sig; c = c; z = z; h = h;
