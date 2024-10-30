@@ -3,5 +3,5 @@
 	url = https://github.com/PQClean/PQClean.git
 [submodule "ext/libjade"]
 	path = ext/libjade
-	url = https://github.com/formosa-crypto/libjade.git
-	branch = feature/armv7m
+	url = git@github.com:clebreto/libjade.git
+	branch = feature/riscv
