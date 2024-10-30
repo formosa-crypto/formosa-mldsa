@@ -1,8 +1,6 @@
 #ifndef JASMIN_MLDSA87_PARAMS_H
 #define JASMIN_MLDSA87_PARAMS_H
 
-
-
 #define SEEDBYTES 32
 #define CRHBYTES 64
 #define TRBYTES 64
@@ -12,15 +10,15 @@
 #define D 13
 #define ROOT_OF_UNITY 1753
 
-#define K 6
-#define L 5
-#define ETA 4
-#define TAU 49
-#define BETA 196
+#define K 8
+#define L 7
+#define ETA 2
+#define TAU 60
+#define BETA 120
 #define GAMMA1 (1 << 19)
 #define GAMMA2 ((Q-1)/32)
-#define OMEGA 55
-#define CTILDEBYTES 48
+#define OMEGA 75
+#define CTILDEBYTES 64
 
 
 #define POLYT1_PACKEDBYTES  320
@@ -31,7 +29,7 @@
 
 #define POLYW1_PACKEDBYTES  128
 
-#define POLYETA_PACKEDBYTES 128
+#define POLYETA_PACKEDBYTES 96
 
 #define JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES (SEEDBYTES + K*POLYT1_PACKEDBYTES)
 #define JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES (2*SEEDBYTES \

@@ -8,7 +8,7 @@ all : clean compile
 
 #-------------------------------------------------------------------------------
 
-JASMIN_LIB := libml-dsa-65_jasmin_test_$(arch).a
+JASMIN_LIB := libml-dsa-87_jasmin_test_$(arch).a
 JASMIN_OBJECTS := library_test_$(arch).o
 JASMIN_FILES := library_test_$(arch).jazz
 
@@ -30,7 +30,7 @@ $(JASMIN_LIB): $(JASMIN_OBJECTS)
 
 #-------------------------------------------------------------------------------
 
-PQCLEAN_LIB=libml-dsa-65_clean.a
+PQCLEAN_LIB=libml-dsa-87_clean.a
 PQCLEAN_HEADERS=../pqclean/api.h ../pqclean/ntt.h ../pqclean/packing.h ../pqclean/params.h ../pqclean/poly.h ../pqclean/polyvec.h ../pqclean/reduce.h ../pqclean/rounding.h ../pqclean/sign.h ../pqclean/symmetric.h
 PQCLEAN_OBJECTS=../pqclean/ntt.o ../pqclean/packing.o ../pqclean/poly.o ../pqclean/polyvec.o ../pqclean/reduce.o ../pqclean/rounding.o ../pqclean/sign.o ../pqclean/symmetric-shake.o ../pqclean/fips202.o
 
@@ -62,7 +62,7 @@ run: $(TESTS_OUT)
 
 $(TESTS_BIN):
 test_%: test_%.c
-	$(CC) -o $@ $(CFLAGS) -static test_$*.c -I./ -I../pqclean/ -L./ -lml-dsa-65_clean -L../ -lml-dsa-65_jasmin_test_$(arch)
+	$(CC) -o $@ $(CFLAGS) -static test_$*.c -I./ -I../pqclean/ -L./ -lml-dsa-87_clean -L../ -lml-dsa-87_jasmin_test_$(arch)
 
 #--
 .PHONY: clean
