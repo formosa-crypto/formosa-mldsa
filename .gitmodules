@@ -1,4 +1,4 @@
-[submodule "src/PQClean"]
+[submodule "ext/PQClean"]
 	path = ext/PQClean
 	url = https://github.com/PQClean/PQClean.git
 [submodule "ext/libjade"]
