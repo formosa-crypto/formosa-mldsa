@@ -1,7 +1,3 @@
-[submodule "ext/libjade"]
-	path = ext/libjade
-	url = https://github.com/clebreto/libjade.git
-	branch = feature/riscv
 [submodule "ext/PQClean"]
 	path = ext/PQClean
 	url = https://github.com/PQClean/PQClean.git
