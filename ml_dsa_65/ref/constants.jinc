@@ -1,6 +1,9 @@
 param int MODULUS = 8_380_417;
 
 param int BITS_IN_LOWER_PART_OF_T = 13;
+param int BITS_IN_LOWER_PART_OF_T_MASK = (1 << BITS_IN_LOWER_PART_OF_T) - 1;
+
+param int BITS_IN_UPPER_PART_OF_T_MASK = (1 << 10) - 1;
 
 param int COEFFICIENTS_IN_POLYNOMIAL = 256;
 param int LOG_2_COEFFICIENTS_IN_POLYNOMIAL = 8;

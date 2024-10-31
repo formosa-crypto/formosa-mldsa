@@ -2,158 +2,146 @@ require "../parameters.jinc"
 
 namespace gamma1 {
     inline
-    fn encode_polynomial(reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] r, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] a)
-        -> reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE]
+    fn encode_polynomial(
+        reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE]
     {
-        inline int gamma1;
         reg u64 i;
-        reg u32 x;
-        reg u8 c;
+        reg u32 encoded_bytes;
+        reg u8 byte;
         reg u32 t0 t1;
-        reg u64 dest_addr src_addr;
+        reg u64 encoded_offset;
 
-        gamma1 = 1 << 19;
-        ?{}, i = #set0_64();
-        ?{}, src_addr = #set0_64();
-        ?{}, dest_addr = #set0_64();
+        encoded_offset = 0;
+
+        i = 0;
         while (i < COEFFICIENTS_IN_POLYNOMIAL / 2) {
-            // t[0] = GAMMA1 - a->coeffs[2*i+0];
-            t0 = gamma1;
-            t0 -= a[(int) src_addr + 0];
+            // t0 = GAMMA1 - polynomial[2*i + 0];
+            t0 = GAMMA1;
+            t0 -= polynomial[2*i + 0];
 
-            // t[1] = GAMMA1 - a->coeffs[2*i+1];
-            t1 = gamma1;
-            t1 -= a[(int) src_addr + 1];
+            // t1 = GAMMA1 - polynomial[2*i+1];
+            t1 = GAMMA1;
+            t1 -= polynomial[2*i + 1];
 
-            // r[5*i+0]  = t[0];
-            x = t0;
-            r[(int) dest_addr] = (8u) x;
+            // encoded[5*i + 0] = t0;
+            encoded_bytes = t0;
+            encoded[encoded_offset] = (8u)encoded_bytes;
 
-            // r[5*i+1]  = t[0] >> 8;
-            x = t0;
-            x >>= 8;
-            r[(int) dest_addr + 1] = (8u) x;
+            // encoded[5*i + 1]  = t0 >> 8;
+            encoded_bytes = t0;
+            encoded_bytes >>= 8;
+            encoded[encoded_offset + 1] = (8u)encoded_bytes;
 
-            // r[5*i+2]  = t[0] >> 16;
-            x = t0;
-            x >>= 16;
-            c = (8u) x;
+            // encoded[5*i + 2]  = t0 >> 16;
+            encoded_bytes = t0;
+            encoded_bytes >>= 16;
+            byte = (8u)encoded_bytes;
 
-            // r[5*i+2] |= t[1] << 4;
-            x = t1;
-            x <<= 4;
-            c |= (8u) x;
-            r[(int) dest_addr + 2] = c;
+            // encoded[5*i + 2] |= t1 << 4;
+            encoded_bytes = t1;
+            encoded_bytes <<= 4;
+            byte |= (8u)encoded_bytes;
+            encoded[encoded_offset + 2] = byte;
 
-            // r[5*i+3]  = t[1] >> 4;
-            x = t1;
-            x >>= 4;
-            r[(int) dest_addr + 3] = (8u) x;
+            // encoded[5*i + 3]  = t1 >> 4;
+            encoded_bytes = t1;
+            encoded_bytes >>= 4;
+            encoded[encoded_offset + 3] = (8u)encoded_bytes;
 
-            // r[5*i+4]  = t[1] >> 12;
-            x = t1;
-            x >>= 12;
-            r[(int) dest_addr + 4] = (8u) x;
+            // encoded[5*i + 4]  = t1 >> 12;
+            encoded_bytes = t1;
+            encoded_bytes >>= 12;
+            encoded[encoded_offset + 4] = (8u)encoded_bytes;
 
+            encoded_offset += 5;
             i += 1;
-            src_addr += 2;
-            dest_addr += 5;
         }
-        return r;
+
+        return encoded;
     }
 
-    fn decode_polynomial(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] r, reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] a)
-        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    fn decode_to_polynomial(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] bytes
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u64 i;
-        reg u32 x c32;
-        reg u64 addr;
+        reg u32 coefficient temp;
+        reg u64 offset;
+
+        offset = 0;
 
         i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL / 2) {
-            // TODO: replace with: addr = #LEA_64(4*i + i);
-            addr = i;
-            addr *= 5;
+            // polynomial[2*i+0]  = bytes[5*i+0];
+            // polynomial[2*i+0] |= (uint32_t)bytes[5*i+1] << 8;
+            // polynomial[2*i+0] |= (uint32_t)bytes[5*i+2] << 16;
+            // polynomial[2*i+0] = GAMMA1 - polynomial[2*i+0];
 
-            //r->coeffs[2*i+0]  = a[5*i+0];
-            x = (32u) a[(int) addr];
+            coefficient = (32u) bytes[offset];
+            temp = (32u) bytes[offset + 1];
+            temp <<= 8;
+            coefficient |= temp;
 
-            //r->coeffs[2*i+0] |= (uint32_t)a[5*i+1] << 8;
-            addr = i;
-            addr *= 5;
-            addr += 1;
-            c32 = (32u) a[(int) addr];
-            c32 <<= 8;
-            x |= c32;
+            temp = (32u) bytes[offset + 2];
+            temp <<= 16;
+            coefficient |= temp;
 
-            //r->coeffs[2*i+0] |= (uint32_t)a[5*i+2] << 16;
-            addr = i;
-            addr *= 5;
-            addr += 2;
-            c32 = (32u) a[(int) addr];
-            c32 <<= 16;
-            x |= c32;
+            coefficient &= 0xFFFFF;
+            coefficient = -coefficient;
+            coefficient += GAMMA1;
+            polynomial[2*i + 0] = coefficient;
 
-            //r->coeffs[2*i+0] = GAMMA1 - r->coeffs[2*i+0];
+            // polynomial[2*i+1]  = bytes[5*i+2] >> 4;
+            // polynomial[2*i+1] |= (uint32_t)bytes[5*i+3] << 4;
+            // polynomial[2*i+1] |= (uint32_t)bytes[5*i+4] << 12;
+            // polynomial[2*i+1] = GAMMA1 - polynomial[2*i+1];
 
-            x &= 0xFFFFF;
-            x = -x;
-            x += 1 << 19;
-            addr = i;
-            addr *= 2;
-            r[(int) addr] = x;
+            coefficient = (32u) bytes[offset + 2];
+            coefficient >>= 4;
 
-            //r->coeffs[2*i+1]  = a[5*i+2] >> 4;
-            addr = i;
-            addr *= 5;
-            addr += 2;
-            x = (32u) a[(int) addr];
-            x >>= 4;
+            temp = (32u) bytes[offset + 3];
+            temp <<= 4;
+            coefficient |= temp;
 
-            //r->coeffs[2*i+1] |= (uint32_t)a[5*i+3] << 4;
-            addr = i;
-            addr *= 5;
-            addr += 3;
-            c32 = (32u) a[(int) addr];
-            c32 <<= 4;
-            x |= c32;
+            temp = (32u) bytes[offset + 4];
+            temp <<= 12;
+            coefficient |= temp;
 
-            //r->coeffs[2*i+1] |= (uint32_t)a[5*i+4] << 12;
-            addr = i;
-            addr *= 5;
-            addr += 4;
-            c32 = (32u) a[(int) addr];
-            c32 <<= 12;
-            x |= c32;
+            coefficient = -coefficient;
+            coefficient += GAMMA1;
+            polynomial[2*i + 1] = coefficient;
 
-            //r->coeffs[2*i+1] = GAMMA1 - r->coeffs[2*i+1];
-            x = -x;
-            x += 1 << 19;
-            addr = i;
-            addr *= 2;
-            addr += 1;
-            r[(int) addr] = x;
-
+            // Update counters
+            offset += 5;
             i += 1;
         }
 
-        return r;
+        return polynomial;
     }
 
     inline
     fn decode(
         reg ptr u8[GAMMA1_ENCODED_SIZE] encoded,
         reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] decoded
-    ) -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
-        inline int i;
+    ) -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
         reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] encoded_gamma1_polynomial;
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] decoded_gamma1_polynomial;
 
+        inline int i;
 
         for i = 0 to COLUMNS_IN_MATRIX_A {
             encoded_gamma1_polynomial = encoded[i * ENCODED_GAMMA1_POLYNOMIAL_SIZE : ENCODED_GAMMA1_POLYNOMIAL_SIZE];
+
             decoded_gamma1_polynomial = decoded[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            decoded_gamma1_polynomial = decode_polynomial(decoded_gamma1_polynomial, encoded_gamma1_polynomial);
+
+            () = #spill(decoded);
+            decoded_gamma1_polynomial = decode_to_polynomial(decoded_gamma1_polynomial, encoded_gamma1_polynomial);
+            () = #unspill(decoded);
+
             decoded[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = decoded_gamma1_polynomial;
         }
 

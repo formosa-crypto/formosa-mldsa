@@ -75,7 +75,7 @@ fn sample_mask_polynomial(
         block_being_squeezed += 1;
     }
 
-    mask = gamma1::decode_polynomial(mask, mask_encoded[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);
+    mask = gamma1::decode_to_polynomial(mask, mask_encoded[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);
 
     return mask;
 }

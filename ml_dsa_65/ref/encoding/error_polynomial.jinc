@@ -1,68 +1,72 @@
 require "../parameters.jinc"
 
+// Note: This implementation will have to be changed for other paramter sets.
+
 namespace error_polynomial {
-    fn encode(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial, reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] dest)
-        -> reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE]
+    fn encode(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+              reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
+    ) -> reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE]
     {
-        inline int _eta;
+        reg u32 low_nibble high_nibble;
+        reg u32 coefficient;
 
-        reg u32 lo hi;
-        reg u32 coeff;
+        reg u64 i out_offset;
 
-        reg u64 i addr;
-
-        _eta = 4;
-
-        ?{}, i = #set0_64();
+        i = 0;
         while (i < COEFFICIENTS_IN_POLYNOMIAL) {
-            coeff = polynomial[(int) i];
-            lo = _eta;
-            lo -= coeff;
+            coefficient = polynomial[i];
+            low_nibble = ETA;
+            low_nibble -= coefficient;
 
-            coeff = polynomial[(int) i + 1];
-            hi = _eta;
-            hi -= coeff;
+            coefficient = polynomial[i + 1];
+            high_nibble = ETA;
+            high_nibble -= coefficient;
 
-            hi <<= 4;
-            hi |= lo;
+            high_nibble <<= 4;
+            high_nibble |= low_nibble;
 
-            addr = i;
-            addr >>= 1;
-            dest[(int) addr] = hi;
+            out_offset = i;
+            out_offset >>= 1;
+            encoded[out_offset] = high_nibble;
 
             i += 2;
         }
-        return dest;
+
+        return encoded;
     }
 
-    fn decode(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] r, reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] a)
-    -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
-        inline int _eta;
+    fn decode(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] decoded,
+        reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u32 nibble;
+
         reg u64 i;
-        reg u32 x;
 
-        _eta = 4;
-
-        ?{}, i = #set0_64();
+        i = 0;
         while (i < COEFFICIENTS_IN_POLYNOMIAL / 2) {
-            // r->coeffs[2*i+0] = a[i] & 0x0F;
-            x = (32u) a[(int) i];
-            x &= 0x0F;
-            // r->coeffs[2*i+0] = ETA - r->coeffs[2*i+0];
-            x = -x;
-            x += _eta;
-            r[2 * ((int) i)] = x;
+            // low_nibble = encoded[i] & 0x0F;
+            // decoded[2*i + 0] = ETA - low_nibble;
+            nibble = (32u)encoded[i];
+            nibble &= 0x0F;
 
-            // r->coeffs[2*i+1] = a[i] >> 4;
-            x = (32u) a[(int) i];
-            x >>= 4;
-            // r->coeffs[2*i+1] = ETA - r->coeffs[2*i+1];
-            x = -x;
-            x += _eta;
-            r[2 * ((int) i) + 1] = x;
+            nibble = -nibble;
+            nibble += ETA;
+            decoded[2 * i] = nibble;
+
+            // high_nibble = encoded[i] >> 4;
+            // decoded[2*i+1] = ETA - high_nibble;
+            nibble = (32u)encoded[i];
+            nibble >>= 4;
+
+            nibble = -nibble;
+            nibble += ETA;
+            decoded[2*i + 1] = nibble;
 
             i += 1;
         }
-        return r;
+
+        return decoded;
     }
 }

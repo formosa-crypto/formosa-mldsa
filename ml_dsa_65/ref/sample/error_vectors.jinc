@@ -10,8 +10,6 @@ fn absorb_rho_prime_for_shake256(
     reg u16 index
 ) -> stack u64[25] {
     reg u8 byte;
-    reg u16 temp;
-
     reg u64 i;
 
     state = st0(state);
@@ -25,10 +23,9 @@ fn absorb_rho_prime_for_shake256(
 
     state[u8 64] = (8u)index;
 
-    // TODO: Write a test that would fail if this were set to 0.
-    temp = index;
-    temp >>= 8;
-    state[u8 65] = (8u)temp;
+    // This can be set to 0 since index is never greater than
+    // ROWS_IN_MATRIX_A + COLUMNS_IN_MATRIX_A.
+    state[u8 65] = 0;
 
     state[u8 66] = 0x1f;
     state[u8 SHAKE256_RATE - 1] = 0x80;

@@ -2,33 +2,38 @@ require "parameters.jinc"
 require "arithmetic/modular.jinc"
 
 namespace polynomial {
-    fn add(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f g sum)
+    fn add(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs sum)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
-        reg u32 result v32;
+        reg u32 lhs_coefficient rhs_coefficient;
 
         reg u64 i;
-        ?{}, i = #set0_64();
+
+        i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            result = f[(int) i];
-            v32 = g[(int) i];
-            result += v32;
-            sum[(int) i] = result;
+            lhs_coefficient = lhs[i];
+            rhs_coefficient = rhs[i];
+            lhs_coefficient += rhs_coefficient;
+
+            sum[i] = lhs_coefficient;
+
             i += 1;
         }
         return sum;
     }
 
-    fn subtract(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f g difference)
+    fn subtract(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs difference)
     -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
-        reg u32 result v32;
+        reg u32 lhs_coefficient rhs_coefficient;
 
         reg u64 i;
-        ?{}, i = #set0_64();
+
+        i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            result = f[(int) i];
-            v32 = g[(int) i];
-            result -= v32;
-            difference[(int) i] = result;
+            lhs_coefficient = lhs[i];
+            rhs_coefficient = rhs[i];
+
+            lhs_coefficient -= rhs_coefficient;
+            difference[i] = lhs_coefficient;
             i += 1;
         }
         return difference;
@@ -42,49 +47,49 @@ namespace polynomial {
         reg u64 i;
         ?{}, i = #set0_64();
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            v32 = f[(int) i];
-            result = sum[(int) i];
+            v32 = f[i];
+            result = sum[i];
             result += v32;
-            sum[(int) i] = result;
+            sum[i] = result;
             i += 1;
         }
         return sum;
     }
 
-    fn pointwise_montgomery_product(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] fft_f fft_g fft_prod)
-        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
-    {
+    fn pointwise_montgomery_product(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs product)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
+        reg u64 lhs_coefficient rhs_coefficient;
+        reg u32 product_reduced;
+
         reg u64 i;
-        reg u32 x1 x2;
-        reg u64 prod x2_64;
-        reg u32 prod_redc;
 
-        ?{}, i = #set0_64();
+        i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            x1 = fft_f[(int) i];
-            prod = (64s) x1;
-            x2 = fft_g[(int) i];
-            x2_64 = (64s) x2;
-            prod *= x2_64;
+            lhs_coefficient = (64s)lhs[i];
+            rhs_coefficient = (64s)rhs[i];
 
-            prod_redc = montgomery_reduce(prod);
-            fft_prod[(int) i] = prod_redc;
+            lhs_coefficient *= rhs_coefficient;
+            product_reduced = montgomery_reduce(lhs_coefficient);
+
+            product[i] = product_reduced;
             i += 1;
         }
-        return fft_prod;
+
+        return product;
     }
 
-    fn zero(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
-        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
-    {
+    fn zero(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
         reg u64 i;
-        ?{}, i = #set0_64();
+
+        i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
             // Montgomery of 0 is 0
-            f[(int) i] = 0;
+            polynomial[i] = 0;
             i += 1;
         }
-        return f;
+
+        return polynomial;
     }
 
     fn conditionally_add_modulus(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
@@ -94,28 +99,29 @@ namespace polynomial {
         reg u32 val;
         ?{}, i = #set0_64();
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            val = f[(int) i];
+            val = f[i];
             val = coefficient::conditionally_add_modulus(val);
-            f[(int) i] = val;
+            f[i] = val;
             i += 1;
         }
         return f;
     }
 
     inline
-    fn check_infinity_norm(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f, inline int threshold)
+    fn check_infinity_norm(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial, inline int threshold)
         -> stack u8
     {
         reg u8 ret;
         reg u8 result;
-        reg u64 i;
         reg u32 coefficient;
+
+        reg u64 i;
 
         result = 0;
 
         i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            coefficient = f[(int) i];
+            coefficient = polynomial[i];
             ret = coefficient::check_norm(coefficient, threshold);
             result |= ret;
             i += 1;
@@ -135,17 +141,17 @@ namespace polynomial {
 
         i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            hints[(int) i] = 0;
+            hints[i] = 0;
             i += 1;
         }
 
         weight = 0;
         i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            a0 = f0[(int) i];
-            a1 = f1[(int) i];
+            a0 = f0[i];
+            a1 = f1[i];
             h = coefficient::make_hint(a0, a1);
-            hints[(int) i] = h;
+            hints[i] = h;
             weight += h;
             i += 1;
         }
@@ -163,7 +169,7 @@ namespace polynomial {
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
             coeff = polynomial[i];
             reduced = coefficient::reduce32(coeff);
-            polynomial[(int) i] = reduced;
+            polynomial[i] = reduced;
 
             i += 1;
         }

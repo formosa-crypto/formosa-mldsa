@@ -10,7 +10,7 @@ namespace row_vector {
         inline int i;
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial;
 
-        for i = 0 to COLUMNS_IN_MATRIX_A {
+       for i = 0 to COLUMNS_IN_MATRIX_A {
             polynomial = vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
             polynomial = polynomial::ntt(polynomial);
             vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = polynomial;
@@ -75,8 +75,10 @@ namespace row_vector {
     }
 
     inline
-    fn multiply_by_polynomial(reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
-        -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    fn multiply_by_polynomial(
+        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f
+    ) -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] fvector;
 
@@ -95,7 +97,8 @@ namespace row_vector {
 
     // Compute A * NTT(vector)
     inline
-    fn multiply_with_matrix_A(reg ptr u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A,
+    fn multiply_with_matrix_A(
+        reg ptr u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A,
         reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
         -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -130,13 +133,14 @@ namespace row_vector {
         -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u64 i;
-        reg u32 val res;
+        reg u32 coefficient;
 
-        ?{}, i = #set0_64();
+        i = 0;
         while(i < COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
-            val = vector[i];
-            res = coefficient::reduce32(val);
-            vector[i] = res;
+            coefficient = vector[i];
+            coefficient = coefficient::reduce32(coefficient);
+            vector[i] = coefficient;
+
             i += 1;
         }
 
