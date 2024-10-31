@@ -163,9 +163,7 @@ inline fn __use_hint(reg u32 a, reg u32 hint, reg u32 q) -> reg u32 {
     }
 
     if (r == 0) {
-      if (a0 == 0) {
-        a1 -=1 ;
-      }
+      a1 -=1 ;
     }
   }
 
