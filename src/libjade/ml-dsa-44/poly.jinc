@@ -1260,10 +1260,16 @@ inline fn __polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> r
   inline int k;
   
   gamma1 = __GAMMA1();
+  () = #spill(gamma1);
+
   i = 0; j = 0;
+  () = #spill(j);
   while(i < N) {
+    () = #unspill(j);
     for k = 0 to 9 { t[k] = (32u) a[(int) j]; j += 1; }
-    
+    () = #spill(j);
+    () = #unspill(gamma1);
+
     /*  r->coeffs[4 * i + 0]  = a[9 * i + 0];
         r->coeffs[4 * i + 0] |= (uint32_t)a[9 * i + 1] << 8;
         r->coeffs[4 * i + 0] |= (uint32_t)a[9 * i + 2] << 16;

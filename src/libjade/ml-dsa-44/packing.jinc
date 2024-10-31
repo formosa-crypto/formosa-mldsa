@@ -385,7 +385,10 @@ fn _unpack_sig(reg ptr u8[CTILDEBYTES] c,
     for i = 0 to L {
       nz = z[i * N: N];
       nsig = sig[start_pos : POLYZ_PACKEDBYTES];
-      z[i * N: N] = _polyz_unpack(nz, nsig);
+      () = #spill(sig, z);
+      nz = _polyz_unpack(nz, nsig);
+      () = #unspill(sig, z);
+      z[i * N: N] = nz;
       start_pos += POLYZ_PACKEDBYTES;
     }
 

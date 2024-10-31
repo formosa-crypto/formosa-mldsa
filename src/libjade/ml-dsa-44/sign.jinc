@@ -828,7 +828,9 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA44_CRYPTO_BYTES] sig, reg ptr 
     rho, t1 = _unpack_pk(rho, t1, pk);
 
     reg u32 chk;
+    () = #spill(pk);
     c, z, h, chk = _unpack_sig(c, z, h, sig);
+    () = #unspill(pk);
     () = #unspill(status);
     () = #spill(sig);
 
