@@ -508,40 +508,6 @@ fn _shake256_inc_finalize(
   return state;
 }
 
-fn _shake(reg ptr u32[25*2] state, reg ptr u32[2] ctx_m, reg ptr u8[TRBYTES] tr, reg ptr u32[2] ctx_m_len) -> reg ptr u32[25*2]
-{
-  state = state; ctx_m = ctx_m; ctx_m_len = ctx_m_len; tr = tr;
-
-  reg u32 m m_len ctx ctx_len;
-  reg u32 pos t;
-
-  stack u8[2] s_mu;
-  reg ptr u8[2] mu;
-  mu = s_mu;
-
-  t = 0;
-  mu[0] = (8u)t;
-  t = ctx_m_len[0];
-  mu[1] = (8u)t;
-
-  // TRBYTES (64) + 2 < SHAKE256_RATE (136)
-  state = __add_crh_ref(state, tr); // TRBYTES = CRHBYTES
-  state = __add_mu_ref(state, TRBYTES, mu); // 2
-  state = __add_zero_after_add_naive(state, TRBYTES + 2);
-  pos = TRBYTES + 2;
-
-  ctx_len = ctx_m_len[0];
-  ctx = ctx_m[0];
-  state, pos = _shake256_inc_absorb_mem_naive(state, pos, ctx, ctx_len);
-
-  m_len = ctx_m_len[1];
-  m = ctx_m[1];
-  state, pos = _shake256_inc_absorb_mem_naive(state, pos, m, m_len);
-
-  state = _shake256_inc_finalize(state, pos);
-  return state;
-}
-
 /*************************************************
 * Name:        crypto_sign_signature_ctx
 *
