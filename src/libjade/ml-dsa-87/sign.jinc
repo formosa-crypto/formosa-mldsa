@@ -396,7 +396,7 @@ fn _shake256_inc_absorb_mem_naive
  reg u32 t s;
 
   // While input is not consumed :
-  // Fill-in sponge part of the shake buffer byte by byte by xoring
+  // Fill-in sponge part of the shake buffer byte by byte while xoring
   // If sponge is filled : keccak the buffer
   while (mlen != 0) {
 
@@ -441,9 +441,10 @@ inline fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive
     s ^= t;
     pstate[u8 pos] = s;
     pos += 1; ctr += 1;
-
     if (pos == SHAKE256_RATE) {
+      () = #spill(ctr, pos, m);
       pstate = _keccakf1600_ref(pstate);
+      () = #unspill(ctr, pos, m);
       pos = 0;
     }
   }
@@ -508,40 +509,6 @@ fn _shake256_inc_finalize(
   return state;
 }
 
-fn _shake(reg ptr u32[25*2] state, reg ptr u32[2] ctx_m, reg ptr u8[TRBYTES] tr, reg ptr u32[2] ctx_m_len) -> reg ptr u32[25*2]
-{
-  state = state; ctx_m = ctx_m; ctx_m_len = ctx_m_len; tr = tr;
-
-  reg u32 m m_len ctx ctx_len;
-  reg u32 pos t;
-
-  stack u8[2] s_mu;
-  reg ptr u8[2] mu;
-  mu = s_mu;
-
-  t = 0;
-  mu[0] = (8u)t;
-  t = ctx_m_len[0];
-  mu[1] = (8u)t;
-
-  // TRBYTES (64) + 2 < SHAKE256_RATE (136)
-  state = __add_crh_ref(state, tr); // TRBYTES = CRHBYTES
-  state = __add_mu_ref(state, TRBYTES, mu); // 2
-  state = __add_zero_after_add_naive(state, TRBYTES + 2);
-  pos = TRBYTES + 2;
-
-  ctx_len = ctx_m_len[0];
-  ctx = ctx_m[0];
-  state, pos = _shake256_inc_absorb_mem_naive(state, pos, ctx, ctx_len);
-
-  m_len = ctx_m_len[1];
-  m = ctx_m[1];
-  state, pos = _shake256_inc_absorb_mem_naive(state, pos, m, m_len);
-
-  state = _shake256_inc_finalize(state, pos);
-  return state;
-}
-
 /*************************************************
 * Name:        crypto_sign_signature_ctx
 *
@@ -572,6 +539,7 @@ fn _crypto_sign_signature_ctx
   stack u32[polyveck] s_t0, s_s2;
   stack u32[polyvecl] s_s1;
   stack u8[SEEDBYTES + RNDBYTES + CRHBYTES] s_key_rnd_mu;
+  stack u32[25*2] state;
 
   reg ptr u8[SEEDBYTES] rho, key;
   reg ptr u8[TRBYTES] tr;
@@ -580,8 +548,11 @@ fn _crypto_sign_signature_ctx
   reg ptr u8[RNDBYTES] rnd;
   reg ptr u8[CRHBYTES] mu rhoprime;
   reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] key_rnd_mu;
+  reg ptr u8[2] mu2;
+  reg ptr u32[25*2] pstate;
 
-  reg u32 pos mlen ctxlen;
+  reg u32 pos m mlen ctx ctxlen t;
+
   inline int i;
 
   status = 0;
@@ -595,17 +566,10 @@ fn _crypto_sign_signature_ctx
   rho = s_rho; tr = s_tr; key = s_key_rnd_mu[0:SEEDBYTES];
   t0 = s_t0; s1 = s_s1; s2 = s_s2;
 
-  () = #spill(sig, ctx_m, ctxlen_mlen_siglen);
+  () = #spill(sig, status);
   (rho, tr, key, t0, s1, s2) = _unpack_sk(rho, tr, key, t0, s1, s2, sk);
   s_rho = rho; s_tr = tr; s_t0 = t0; s_s1 = s1; s_s2 = s2;
   s_key_rnd_mu[0:SEEDBYTES] = key;
-
-  stack u32[25*2] state;
-  reg ptr u32[25*2] pstate;
-  pstate = state;
-
-  reg u32 m mlen ctx ctxlen t;
-  reg ptr u8[2] mu2;
 
   mu2 = s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2];
   t = 0;
@@ -614,28 +578,25 @@ fn _crypto_sign_signature_ctx
   mu2[1] = (8u)t;
   s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2] = mu2;
 
+  pstate = state;
   // TRBYTES (64) + 2 < SHAKE256_RATE (136)
   pstate = __add_crh_ref(pstate, tr); // TRBYTES = CRHBYTES
   pstate = __add_mu_ref(pstate, TRBYTES, mu2); // 2
   pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
   pos = TRBYTES + 2;
-
-  ctxlen = ctxlen_mlen_siglen[0];
   ctx = ctx_m[0];
+  () = #spill(ctx_m, ctxlen_mlen_siglen);
   pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
-
+  () = #unspill(ctx_m, ctxlen_mlen_siglen);
   mlen = ctxlen_mlen_siglen[1];
   m = ctx_m[1];
   pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
-
   pstate = _shake256_inc_finalize(pstate, pos);
-
   pstate = _keccakf1600_ref(pstate);
 
   // FIXME define a function for that
   mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
   for i = 0 to CRHBYTES/4 {
-    reg u32 t;
     t = pstate[i];
     mu[u32 i] = t;
   }
@@ -726,9 +687,11 @@ fn _crypto_sign_signature_ctx
     state = pstate;
     sig[0:CTILDEBYTES] = sigctilde;
 
+    reg ptr u8[SEEDBYTES] sigseed;
+    sigseed = sig[0:SEEDBYTES];
+    () = #spill(sig);
     cp = s_cp;
     cp = _poly_challenge(cp, sigctilde);
-    () = #spill(sig);
     cp = _poly_ntt(cp);
     /* Compute z, reject if it reveals secret */
     s1 = s_s1;
@@ -843,9 +806,9 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr 
     stack u32[N] cp;
     stack u8[K * POLYW1_PACKEDBYTES] buf;
 
-    reg u32 ctxlen siglen;
-
-    reg u32 pos;
+    reg u32 ctxlen siglen m mlen ctx t pos;
+    reg ptr u32[25*2] pstate;
+    reg ptr u8[2] mu2;
 
     inline int i;
 
@@ -857,15 +820,14 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr 
     if (ctxlen > 255) { status = - 1; }
 
     if (siglen != JASMIN_MLDSA87_CRYPTO_BYTES) { status = -1; }
-    
-    () = #spill(ctx_m, ctxlen_mlen_siglen, status);
-    
+
+    () = #spill(ctxlen_mlen_siglen, ctx_m, ctxlen);
     rho, t1 = _unpack_pk(rho, t1, pk);
 
     reg u32 chk;
     c, z, h, chk = _unpack_sig(c, z, h, sig);
+    () = #spill(sig);
 
-    () = #unspill(status);
     //FIXME for arm or improve riscv suport
     if (chk == 1) { status = -1; }
 
@@ -877,20 +839,14 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr 
 
       if (status == 0) {
         () = #spill(status);
-        // This should be
-        //   mu = _shake256_PUBLICKEYBYTES_CRHBYTES(mu, pk);
-        // but since TRBYTES = CRHBYTES = 64, we can reuse TRBYTES
         mu = _shake256_PUBLICKEYBYTES_TRBYTES(mu, pk);
-	
-        reg ptr u32[25*2] pstate;
-        pstate = state;
 
-        reg u32 m mlen ctx t;
+        pstate = state;
 
         // TRBYTES (64) + 2 < SHAKE256_RATE (136)
         pstate = __add_crh_ref(pstate, mu); // TRBYTES = CRHBYTES
 
-        reg ptr u8[2] mu2;
+        () = #unspill(ctxlen_mlen_siglen, ctx_m);
         mu2 = mu[0 : 2];
         t = 0;
         mu2[0] = (8u)t;
@@ -898,12 +854,16 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr 
         mu2[1] = (8u)t;
         mu[0 : 2] = mu2;
 
-        pstate = __add_mu_ref(pstate, TRBYTES, mu2); // 2
+        () = #spill(ctxlen_mlen_siglen, t, ctx_m, ctxlen_mlen_siglen);
+        pstate = __add_mu_ref(pstate, TRBYTES, mu2);
+        () = #spill(mu2);
         pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
         pos = TRBYTES + 2;
-
         ctx = ctx_m[0];
+        () = #spill(ctx_m, ctxlen_mlen_siglen);
+        () = #unspill(ctxlen);
         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+        () = #unspill(ctx_m, ctxlen_mlen_siglen);
         mlen = ctxlen_mlen_siglen[1];
         m = ctx_m[1];
         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
@@ -912,12 +872,12 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr 
 
         // FIXME define a function for that
         for i = 0 to CRHBYTES/4 {
-          reg u32 t;
           t = pstate[i];
           mu[u32 i] = t;
         }
         state = pstate;
-	
+        () = #spill(pstate);
+
         cp = _poly_challenge(cp, c[0:CTILDEBYTES]);
         mat = _polyvec_matrix_expand(mat, rho);
 
@@ -933,7 +893,7 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr 
         w1 = _polyveck_reduce(w1);
         w1 = _polyveck_invntt_tomont(w1);
 
-        w1 = _polyveck_caddq(w1);	
+        w1 = _polyveck_caddq(w1);
         w1 = _polyveck_use_hint_inplace(w1, h);
         buf = _polyveck_pack_w1(buf, w1);
 
