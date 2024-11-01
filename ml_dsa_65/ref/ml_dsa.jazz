@@ -18,22 +18,22 @@ export fn ml_dsa_65_keygen(
     stack u8[VERIFICATION_KEY_SIZE] verification_key;
     stack u8[SIGNING_KEY_SIZE] signing_key;
 
-    reg u8 c;
+    reg u8 byte;
     reg u64 i;
 
     verification_key, signing_key = keygen_internal(randomness);
 
     i = 0;
     while (i < VERIFICATION_KEY_SIZE) {
-        c = verification_key[i];
-        (u8)[verification_key_out + i] = c;
+        byte = verification_key[i];
+        (u8)[verification_key_out + i] = byte;
         i += 1;
     }
 
     i = 0;
     while(i < SIGNING_KEY_SIZE) {
-        c = signing_key[i];
-        (u8)[signing_key_out + i] = c;
+        byte = signing_key[i];
+        (u8)[signing_key_out + i] = byte;
         i += 1;
     }
 }
@@ -48,13 +48,13 @@ export fn ml_dsa_65_sign(
     stack u8[SIGNATURE_SIZE] signature;
     reg u32 signing_attempts;
 
-    reg u8 c;
+    reg u8 byte;
     reg u64 i;
 
     i = 0;
     while(i < SIGNING_KEY_SIZE) {
-        c = (u8)[signing_key + i];
-        signing_key_on_stack[i] = c;
+        byte = (u8)[signing_key + i];
+        signing_key_on_stack[i] = byte;
         i += 1;
     }
 
@@ -62,8 +62,8 @@ export fn ml_dsa_65_sign(
 
     i = 0;
     while(i < SIGNATURE_SIZE) {
-        c = signature[i];
-        (u8)[signature_out + i] = c;
+        byte = signature[i];
+        (u8)[signature_out + i] = byte;
         i += 1;
     }
 

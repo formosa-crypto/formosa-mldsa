@@ -3,7 +3,7 @@ require "gamma1.jinc"
 
 namespace signature {
     param int START_OF_GAMMA1 = COMMITMENT_HASH_SIZE;
-    param int START_OF_HINT = 
+    param int START_OF_HINT =
         START_OF_GAMMA1 +
         GAMMA1_ENCODED_SIZE;
 

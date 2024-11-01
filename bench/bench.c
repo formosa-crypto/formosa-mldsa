@@ -28,17 +28,11 @@ int main(void) {
   uint8_t signature[SIGNATURE_SIZE];
 
   uint64_t observations[DATA_POINTS], i;
-  size_t ri;
 
-  FILE *urandom = fopen("/dev/urandom", "r");
-
-  ri = fread(key_generation_randomness, 32, 1, urandom);
-  assert(ri == 1);
-
-  ri = fread(signing_randomness, 32, 1, urandom);
-  assert(ri == 1);
-
-  fclose(urandom);
+  for (size_t i = 0; i < 32; i++) {
+      key_generation_randomness[i] = i;
+      signing_randomness[i] = i;
+  }
 
   // Test key-generation.
   for (i = 0; i < DATA_POINTS; i++) {
