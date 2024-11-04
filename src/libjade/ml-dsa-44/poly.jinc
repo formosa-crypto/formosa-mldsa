@@ -1,3 +1,88 @@
+/*************************************************
+* Name:        JASMIN_MLDSA44_poly_use_hint
+*
+* Description: Use hint polynomial to correct the high bits of a polynomial.
+*
+* Arguments:   - poly *b: pointer to output polynomial with corrected high bits
+*              - const poly *a: pointer to input polynomial
+*              - const poly *h: pointer to input hint polynomial
+**************************************************/
+inline fn __poly_use_hint(reg ptr u32[N] b, reg ptr u32[N] a, reg ptr u32[N] h) -> reg ptr u32[N] {
+  reg u32 i, b_, a_, h_, q;       
+
+  q = __Q();
+  i = 0;
+  while(i < N) {
+    a_ = a[(int) i];
+    h_ = h[(int) i];
+    b_ = __use_hint(a_, h_, q);
+    b[(int) i] = b_;
+    i += 1;
+  }
+  return b;
+}
+
+inline fn __poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] {
+  reg u32 i, b_, h_, q;       
+
+  q = __Q();
+  i = 0;
+  while(i < N) {
+    b_ = b[(int) i];
+    h_ = h[(int) i];
+    b_ = __use_hint(b_, h_, q);
+    b[(int) i] = b_;
+    i += 1;
+  }
+  return b;
+}
+
+fn _poly_use_hint(reg ptr u32[N] b, reg ptr u32[N] a, reg ptr u32[N] h) -> reg ptr u32[N] {
+  b = __poly_use_hint(b, a, h);
+  return b;
+}
+
+fn _poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] {
+  b = __poly_use_hint_inplace(b, h);
+  return b;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA44_poly_make_hint
+*
+* Description: Compute hint polynomial. The coefficients of which indicate
+*              whether the low bits of the corresponding coefficient of
+*              the input polynomial overflow into the high bits.
+*
+* Arguments:   - poly *h: pointer to output hint polynomial
+*              - const poly *a0: pointer to low part of input polynomial
+*              - const poly *a1: pointer to high part of input polynomial
+*
+* Returns number of 1 bits.
+**************************************************/
+/* FIXME: is it constant time? Check __make_hint */
+inline fn __poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> reg u32, reg ptr u32[N]{
+  reg u32 i, s, a0_, a1_, h_, gamma2;
+  gamma2 = GAMMA2;
+  i = 0; s = 0;
+  while(i < N)
+  {
+    a0_ = a0[(int) i];
+    a1_ = a1[(int) i];
+    h_ = __make_hint(a0_, a1_, gamma2);
+    h[(int) i] = h_; 
+    s += h_;
+    i += 1;	 
+  }
+  return s, h;
+}
+
+fn _poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> reg u32, reg ptr u32[N] {
+  reg u32 s;
+  s, h = __poly_make_hint(h, a0, a1);
+  return s, h;
+}
+
 inline fn high(reg u32[2] x) -> reg u32
 {
     reg u32 h;
@@ -598,42 +683,6 @@ fn _poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA44_poly_make_hint
-*
-* Description: Compute hint polynomial. The coefficients of which indicate
-*              whether the low bits of the corresponding coefficient of
-*              the input polynomial overflow into the high bits.
-*
-* Arguments:   - poly *h: pointer to output hint polynomial
-*              - const poly *a0: pointer to low part of input polynomial
-*              - const poly *a1: pointer to high part of input polynomial
-*
-* Returns number of 1 bits.
-**************************************************/
-/* FIXME: is it constant time? Check __make_hint */
-inline fn __poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> reg u32, reg ptr u32[N]{
-  reg u32 i, s, a0_, a1_, h_, gamma2;
-  gamma2 = GAMMA2;
-  i = 0; s = 0;
-  while(i < N)
-  {
-    a0_ = a0[(int) i];
-    a1_ = a1[(int) i];
-    h_ = __make_hint(a0_, a1_, gamma2);
-    h[(int) i] = h_; 
-    s += h_;
-    i += 1;	 
-  }
-  return s, h;
-}
-
-fn _poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> reg u32, reg ptr u32[N] {
-  reg u32 s;
-  s, h = __poly_make_hint(h, a0, a1);
-  return s, h;
-}
-
-/*************************************************
 * Name:        JASMIN_MLDSA44_poly_power2round
 *
 * Description: For all coefficients c of the input polynomial,
@@ -1076,55 +1125,6 @@ inline fn __polyt1_unpack(reg ptr u32[N] r, reg ptr u8[POLYT1_PACKEDBYTES] a) ->
 fn _polyt1_unpack(reg ptr u32[N] r, reg ptr u8[POLYT1_PACKEDBYTES] a) -> reg ptr u32[N] {
   r = __polyt1_unpack(r, a);
   return r;
-}
-
-/*************************************************
-* Name:        JASMIN_MLDSA44_poly_use_hint
-*
-* Description: Use hint polynomial to correct the high bits of a polynomial.
-*
-* Arguments:   - poly *b: pointer to output polynomial with corrected high bits
-*              - const poly *a: pointer to input polynomial
-*              - const poly *h: pointer to input hint polynomial
-**************************************************/
-inline fn __poly_use_hint(reg ptr u32[N] b, reg ptr u32[N] a, reg ptr u32[N] h) -> reg ptr u32[N] {
-  reg u32 i, b_, a_, h_, q;       
-
-  q = __Q();
-  i = 0;
-  while(i < N) {
-    a_ = a[(int) i];
-    h_ = h[(int) i];
-    b_ = __use_hint(a_, h_, q);
-    b[(int) i] = b_;
-    i += 1;
-  }
-  return b;
-}
-
-inline fn __poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] {
-  reg u32 i, b_, h_, q;       
-
-  q = __Q();
-  i = 0;
-  while(i < N) {
-    b_ = b[(int) i];
-    h_ = h[(int) i];
-    b_ = __use_hint(b_, h_, q);
-    b[(int) i] = b_;
-    i += 1;
-  }
-  return b;
-}
-
-fn _poly_use_hint(reg ptr u32[N] b, reg ptr u32[N] a, reg ptr u32[N] h) -> reg ptr u32[N] {
-  b = __poly_use_hint(b, a, h);
-  return b;
-}
-
-fn _poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] {
-  b = __poly_use_hint_inplace(b, h);
-  return b;
 }
 
 /*************************************************
