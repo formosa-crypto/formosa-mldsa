@@ -1,0 +1,19 @@
+name: amd64-linux
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - amd64
+  pull_request:
+
+jobs:
+
+  make:
+    runs-on: [self-hosted, linux, X64, amd64-main]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: make
+        run: make
+
