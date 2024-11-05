@@ -1,22 +1,23 @@
 require "../wrappers_arm-m4.jinc"
 require "../params.jinc"
 require "helpers.jinc"
-
 require "../reduce_arm-m4.jinc"
-require "../reduce.jazz"
-
-require "../ntt.jazz"
-
-require "../rounding.jazz"
-
+require "../reduce.jinc"
+require "../rounding.jinc"
+require "../poly_arm-m4.jinc"
 require "../../../../ext/libjade/src/common/keccak/keccak1600/armv7m/ref/keccakf1600.jinc"
+require "../ntt.jinc"
 require "../map.jinc"
 require "../fips202.jinc"
-require "../poly_arm-m4.jinc"
-require "../poly.jazz"
+require "../poly.jinc"
+require "../polyvec.jinc"
+require "../packing.jinc"
 
-require "../packing.jazz"
-
-require "../polyvec.jazz"
-
+// Temporary disable exports until FAR GLOBAL DATA is handled with arm-m4
+// require "../reduce.jazz"
+// require "../ntt.jazz"
+// require "../rounding.jazz"
+// require "../poly.jazz"
+// require "../packing.jazz"
+// require "../polyvec.jazz"
 require "../sign.jazz"
