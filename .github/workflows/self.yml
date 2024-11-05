@@ -5,11 +5,12 @@ on:
 
 jobs:
 
-  build:
+  check:
     runs-on: [self-hosted, Linux, X64, amd64-main]
+    timeout-minutes: 7200
     steps:
       - name: checkout
         uses: actions/checkout@v4
-      - name: make
-        run: make
+      - name: check keygen
+        run: jasminc ml_dsa_65/ref/ml_dsa.jazz -checksafety -slice ml_dsa_65_keygen
 
