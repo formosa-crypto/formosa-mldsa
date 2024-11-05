@@ -1,5 +1,6 @@
 require "../wrappers_risc-v.jinc"
 require "../params.jinc"
+require "helpers.jinc"
 
 require "../reduce_risc-v.jinc"
 require "../reduce.jazz"

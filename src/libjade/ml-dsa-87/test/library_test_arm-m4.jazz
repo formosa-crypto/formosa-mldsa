@@ -1,5 +1,6 @@
 require "../wrappers_arm-m4.jinc"
 require "../params.jinc"
+require "helpers.jinc"
 
 require "../reduce_arm-m4.jinc"
 require "../reduce.jazz"
