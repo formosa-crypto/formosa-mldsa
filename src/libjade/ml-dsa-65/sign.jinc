@@ -291,8 +291,10 @@ fn _crypto_sign_keypair(reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk, reg
     s2 = _polyveck_uniform_eta(s2, rhoprime, nonce);
 
     /* Matrix-vector multiplication */
-    s1 = _polyvecl_ntt(s1);
-    t1 = _polyvec_matrix_pointwise_montgomery(t1, mat, s1);
+    s1hat = copy_polyvecl(s1hat, s1);
+
+    s1hat = _polyvecl_ntt(s1hat);
+    t1 = _polyvec_matrix_pointwise_montgomery(t1, mat, s1hat);
     t1 = _polyveck_reduce(t1);
     t1 = _polyveck_invntt_tomont(t1);
 
