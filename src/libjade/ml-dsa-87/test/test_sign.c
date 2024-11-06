@@ -45,7 +45,7 @@ void check_shake256_PUBLICKEYBYTES_SEEDBYTES() {
   printf("PASS: shake256_PUBLICKEYBYTES_SEEDBYTES\n");
 }
 
-void check_crypto_sign_signature_ctx() {
+void check_crypto_sign_signature_ctx_seed() {
   size_t siglen = 0;
   size_t siglen_jazz = 0;
   size_t mlen = 453;
@@ -59,32 +59,36 @@ void check_crypto_sign_signature_ctx() {
   uint8_t pk[PQCLEAN_MLDSA87_CLEAN_CRYPTO_PUBLICKEYBYTES];
   uint8_t sk[PQCLEAN_MLDSA87_CLEAN_CRYPTO_SECRETKEYBYTES];
   uint8_t sb[SEEDBYTES];
+  uint8_t rand[RNDBYTES];
+  uint8_t rand_jazz[RNDBYTES];
   for(int t=0; t<TESTS; t++) {
     // Generates a keypair from random seed    
     fillarr(uint8_t, SEEDBYTES, sb);
     int status = PQCLEAN_MLDSA87_CLEAN_crypto_sign_keypair_seed(pk, sk, sb);
     if (status != 0) {
-      printf("FAIL: crypto_sign_signature\n. Could not generate the key pair.");
+      printf("FAIL: crypto_sign_signature_ctx_seed\n. Could not generate the key pair.");
       exit(1);
     }
     // Generates random message
     fillarrnu8(m, m_jazz, mlen);
     // Generates random context
     fillarrnu8(ctx, ctx_jazz, ctxlen);
+    // Generates random randomness
+    fillarrnu8(rand, rand_jazz, RNDBYTES);
     // Sign the random message
-    int r = PQCLEAN_MLDSA87_CLEAN_crypto_sign_signature_ctx(sig, &siglen, m, mlen, ctx, ctxlen, sk);
+    int r = PQCLEAN_MLDSA87_CLEAN_crypto_sign_signature_ctx_seed(sig, &siglen, m, mlen, ctx, ctxlen, sk, rand);
     if (r != 0) {
-      printf("FAIL: crypto_sign_signature. Could not generate the signature with C code.");
+      printf("FAIL: crypto_sign_signature_ctx_seed. Could not generate the signature with C code.");
       exit(1);
     }
-    int r_jazz = JASMIN_MLDSA87_crypto_sign_signature_ctx(sig_jazz, &siglen_jazz, m_jazz, mlen, ctx_jazz, ctxlen, sk);
+    int r_jazz = JASMIN_MLDSA87_crypto_sign_signature_ctx_seed(sig_jazz, &siglen_jazz, m_jazz, mlen, ctx_jazz, ctxlen, sk, rand_jazz);
     if (r_jazz != 0) {
-      printf("FAIL: crypto_sign_signature. Could not generate the signature with jasmin code.");
+      printf("FAIL: crypto_sign_signature_ctx_seed. Could not generate the signature with jasmin code.");
       exit(1);
     }
-    eqarr(PQCLEAN_MLDSA87_CLEAN_CRYPTO_BYTES, PRId8, sig, sig_jazz, "crypto_sign_signature_ctx");
+    eqarr(PQCLEAN_MLDSA87_CLEAN_CRYPTO_BYTES, PRId8, sig, sig_jazz, "crypto_sign_signature_ctx_seed");
   }
-  printf("PASS: crypto_sign_signature\n");
+  printf("PASS: crypto_sign_signature_ctx_seed\n");
 }
 
 void check_crypto_sign_verify_ctx() {
@@ -134,7 +138,7 @@ int main ()
 {
   check_shake256_PUBLICKEYBYTES_SEEDBYTES();
   check_crypto_sign_keypair_seed();
-  check_crypto_sign_signature_ctx();
+  check_crypto_sign_signature_ctx_seed();
   check_crypto_sign_verify_ctx();
 
   return 0;

@@ -39,6 +39,15 @@ export fn JASMIN_MLDSA87_crypto_sign_signature_ctx_internal(reg ptr u8[JASMIN_ML
   return sig, status;
 }
 
+export fn JASMIN_MLDSA87_crypto_sign_signature_ctx_seed_internal(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr u32[3] ctx_m_rand, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES], reg u32
+{
+  sig = sig; ctx_m_rand = ctx_m_rand; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
+  reg u32 status;
+  sig, status = _crypto_sign_signature_ctx_seed(sig, ctx_m_rand, ctxlen_mlen_siglen, sk);
+  sig = sig; status = status;
+  return sig, status;
+}
+
 export fn JASMIN_MLDSA87_crypto_sign(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sm, reg u8 m, reg ptr u32[2] smlen_mlen, reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES], reg u32 {
   sm = sm; m = m; smlen_mlen = smlen_mlen; sk = sk;
   reg u32 status;

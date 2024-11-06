@@ -601,8 +601,255 @@ fn _crypto_sign_signature_ctx
   s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES] = mu;
 
   rnd = s_key_rnd_mu[SEEDBYTES : RNDBYTES];
+  rnd = #randombytes(rnd);
+  s_key_rnd_mu[SEEDBYTES : RNDBYTES] = rnd;
+
+  key_rnd_mu = s_key_rnd_mu;
+  pstate = __add_seedrndcrh_ref(pstate, key_rnd_mu);
+  pstate = __add_zero_after_add(pstate, SEEDBYTES + RNDBYTES + CRHBYTES);
+  pstate = __add_block_end(pstate, SEEDBYTES + RNDBYTES + CRHBYTES, SHAKE256_RATE);
+  pstate = _keccakf1600_ref(pstate);
+  state = pstate;
+  rhoprime = s_rhoprime;
+  for i = 0 to CRHBYTES/4 {
+    reg u32 t;
+    t = pstate[i];
+    rhoprime[u32 i] = t;
+  }
+  s_rhoprime = rhoprime;
+
+  stack u32[matKL] s_mat;
+  stack u32[polyvecl] s_y, s_z;
+  stack u32[polyveck] s_h;
+  reg ptr u32[matKL] mat;
+  reg ptr u32[polyveck] h;
+  stack u32[polyveck] s_w1 s_w0;
+  stack u32[N] s_cp;
+  reg ptr u32[polyveck] w1 w0;
+  reg ptr u32[N] cp;
+  mat = s_mat; rho = s_rho;
+  mat = _polyvec_matrix_expand(mat, rho); s_mat = mat;
+  s1 = s_s1; s1 = _polyvecl_ntt(s1); s_s1 = s1;
+  s2 = s_s2; s2 = _polyveck_ntt(s2); s_s2 = s2;
+  t0 = s_t0; t0 = _polyveck_ntt(t0); s_t0 = t0;
+
+  reg u32 continue nonce r0;
+  stack u32 s_nonce;
+  r0 = 0;
+  s_nonce = r0;
+  while {
+    /* Sample intermediate vector y */
+    rhoprime = s_rhoprime;
+    nonce = s_nonce;
+    s_y = _polyvecl_uniform_gamma1(s_y, rhoprime, nonce);
+    nonce = s_nonce; nonce += 1; s_nonce = nonce;
+
+    /* Matrix-vector multiplication */
+    s_z = copy_polyvecl(s_z, s_y);
+    s_z = _polyvecl_ntt(s_z);
+    mat = s_mat;
+    w1 = s_w1; w1 = _polyvec_matrix_pointwise_montgomery(w1, mat, s_z);
+    w1 = _polyveck_reduce(w1);
+    w1 = _polyveck_invntt_tomont(w1);
+
+    /* Decompose w and call the random oracle */
+    w1 = _polyveck_caddq(w1);
+    w0 = s_w0;
+    w1, s_w0 = _polyveck_decompose_inplace(w1, w0);
+    s_w1 = w1;
+    () = #unspill(sig);
+    reg ptr u8[K * POLYW1_PACKEDBYTES] sig1;
+    sig1 = sig[0: K * POLYW1_PACKEDBYTES];
+    sig1 = _polyveck_pack_w1(sig1, w1);
+    sig[0: K * POLYW1_PACKEDBYTES] = sig1;
+    () = #spill(sig);
+    // SHAKE256
+    pstate = state; mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
+    pstate = __add_crh_ref(pstate, mu);
+    pstate = __add_zero_after_add(pstate, CRHBYTES);
+    pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, sig1);
+    pstate = _shake256_inc_finalize(pstate, pos);
+    pstate = _keccakf1600_ref(pstate);
+    // FIXME define a function for that
+
+    reg ptr u8[CTILDEBYTES] sigctilde;
+    () = #unspill(sig);
+    sigctilde = sig[0:CTILDEBYTES];
+    for i = 0 to CTILDEBYTES/4 {
+      reg u32 t;
+      t = pstate[i];
+      sigctilde[u32 i] = t;
+    }
+    state = pstate;
+    sig[0:CTILDEBYTES] = sigctilde;
+
+    reg ptr u8[SEEDBYTES] sigseed;
+    sigseed = sig[0:SEEDBYTES];
+    () = #spill(sig);
+    cp = s_cp;
+    cp = _poly_challenge(cp, sigctilde);
+    cp = _poly_ntt(cp);
+    /* Compute z, reject if it reveals secret */
+    s1 = s_s1;
+    s_z = _polyvecl_pointwise_poly_montgomery(s_z, cp, s1); s_cp = cp;
+    s_z = _polyvecl_invntt_tomont(s_z);
+    s_z = _polyvecl_add_inplace(s_z, s_y);
+    s_z = _polyvecl_reduce(s_z);
+
+    reg u32 chknorm bound;
+    bound = iGAMMA1 - BETA;
+    chknorm = _polyvecl_chknorm(s_z, bound);
+    () = #spill(sig);
+    if (chknorm != 0) {
+      continue = 1;
+    } else {
+      s2 = s_s2; h = s_h;
+      h = _polyveck_pointwise_poly_montgomery(h, cp, s2);
+      h = _polyveck_invntt_tomont(h); s_h = h;
+      w0 = s_w0;
+      w0 = _polyveck_sub_inplace(w0, h);
+      w0 = _polyveck_reduce(w0);
+      s_w0 = w0;
+      bound = iGAMMA2 - BETA;
+      chknorm = _polyveck_chknorm(w0, bound);
+      if (chknorm != 0) {
+        continue = 1;
+      } else {
+        cp = s_cp; t0 = s_t0;
+        h = h;  // Needed for regalloc
+        h = _polyveck_pointwise_poly_montgomery(h, cp, t0);
+        h = _polyveck_invntt_tomont(h);
+        h = h; // Needed for regalloc
+        h = _polyveck_reduce(h); s_h = h;
+
+        bound = iGAMMA2;
+        chknorm = _polyveck_chknorm(h, bound);
+        if (chknorm != 0) {
+          continue = 1;
+        } else {
+          w0 = s_w0;
+          w0 = _polyveck_add_inplace(w0, h);
+          s_w0 = w0; w1 = s_w1;
+          reg u32 n;
+          n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
+          if (n > OMEGA) {
+            continue = 1;
+          } else {
+            () = #unspill(sig);
+            sig = _pack_sig_nocopy(sig, s_z, h);
+            () = #spill(sig);
+            continue = 0;
+          }
+        }
+      }
+    }
+  } (continue == 1)
+  status = 0;
+  () = #unspill(sig);
+  }
+  return sig, status;
+}
+
+/*************************************************
+* Name:        crypto_sign_signature_ctx_seed
+*
+* Description: Computes signature.
+*
+* Arguments:   - uint8_t *sig:   pointer to output signature (of length PQCLEAN_MLDSA87_CLEAN_CRYPTO_BYTES)
+*              - size_t *siglen: pointer to output length of signature
+*              - uint8_t *m:     pointer to message to be signed
+*              - size_t mlen:    length of message
+*              - uint8_t *ctx:   pointer to context string
+*              - size_t ctxlen:  length of context string
+*              - uint8_t *sk:    pointer to bit-packed secret key
+*              - uint8_t *rand:  pointer to randomness (of length RNDBYTES)
+*
+* Returns 0 (success) or -1 (context string too long)
+**************************************************/
+fn _crypto_sign_signature_ctx_seed
+  (reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig,
+   reg ptr u32[3] ctx_m_rand,
+   reg ptr u32[3] ctxlen_mlen_siglen,
+   reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES] sk)
+   -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES], reg u32
+{
+  sig = sig; ctx_m_rand = ctx_m_rand; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
+  reg u32 status;
+  stack u8[SEEDBYTES] s_rho;
+  stack u8[TRBYTES] s_tr;
+  stack u8[CRHBYTES] s_rhoprime;
+  stack u32[polyveck] s_t0, s_s2;
+  stack u32[polyvecl] s_s1;
+  stack u8[SEEDBYTES + RNDBYTES + CRHBYTES] s_key_rnd_mu;
+  stack u32[25*2] state;
+
+  reg ptr u8[SEEDBYTES] rho, key;
+  reg ptr u8[TRBYTES] tr;
+  reg ptr u32[polyveck] t0, s2;
+  reg ptr u32[polyvecl] s1;
+  reg ptr u8[RNDBYTES] rnd;
+  reg ptr u8[CRHBYTES] mu rhoprime;
+  reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] key_rnd_mu;
+  reg ptr u8[2] mu2;
+  reg ptr u32[25*2] pstate;
+
+  reg u32 pos m mlen ctx ctxlen t;
+
+  inline int i;
+
+  status = 0;
+
+  ctxlen = ctxlen_mlen_siglen[0];
+
+  if (ctxlen > 255) { status = - 1; }
+
+  if (status == 0) {
+
+  rho = s_rho; tr = s_tr; key = s_key_rnd_mu[0:SEEDBYTES];
+  t0 = s_t0; s1 = s_s1; s2 = s_s2;
+
+  () = #spill(sig, status, ctxlen);
+  (rho, tr, key, t0, s1, s2) = _unpack_sk(rho, tr, key, t0, s1, s2, sk);
+  s_rho = rho; s_tr = tr; s_t0 = t0; s_s1 = s1; s_s2 = s2;
+  s_key_rnd_mu[0:SEEDBYTES] = key;
+
+  mu2 = s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2];
+  t = 0;
+  mu2[0] = (8u)t;
+  t = ctxlen_mlen_siglen[0];
+  mu2[1] = (8u)t;
+  s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2] = mu2;
+
+  pstate = state;
+  // TRBYTES (64) + 2 < SHAKE256_RATE (136)
+  pstate = __add_crh_ref(pstate, tr); // TRBYTES = CRHBYTES
+  pstate = __add_mu_ref(pstate, TRBYTES, mu2); // 2
+  pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
+  pos = TRBYTES + 2;
+  ctx = ctx_m_rand[0];
+  () = #spill(ctx_m_rand, ctxlen_mlen_siglen);
+  () = #unspill(ctxlen);
+  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+  () = #unspill(ctx_m_rand, ctxlen_mlen_siglen);
+  mlen = ctxlen_mlen_siglen[1];
+  m = ctx_m_rand[1];
+  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
+  pstate = _shake256_inc_finalize(pstate, pos);
+  pstate = _keccakf1600_ref(pstate);
+
+  // FIXME define a function for that
+  mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
+  for i = 0 to CRHBYTES/4 {
+    t = pstate[i];
+    mu[u32 i] = t;
+  }
+  s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES] = mu;
+
+  rnd = s_key_rnd_mu[SEEDBYTES : RNDBYTES];
+  reg u32 rand = ctx_m_rand[2];
   for i = 0 to RNDBYTES/4 {
-    rnd[u32 i] = __store_imm(0);
+    t = (u32)[rand + 4*i];
+    rnd[u32 i] = t;
   }
   s_key_rnd_mu[SEEDBYTES : RNDBYTES] = rnd;
 
