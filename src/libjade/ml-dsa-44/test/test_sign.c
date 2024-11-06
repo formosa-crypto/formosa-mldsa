@@ -9,10 +9,52 @@
 #define TESTS 5
 #endif
 
+void JASMIN_MLDSA44_crypto_sign_keypair(uint8_t *pk, uint8_t *sk);
 void JASMIN_MLDSA44_crypto_sign_keypair_seed(uint8_t *pk, uint8_t *sk, uint8_t *sb);
 void shake256_PUBLICKEYBYTES_SEEDBYTES(uint8_t *output, const uint8_t *input);
 
 #include "sign_wrap.h"
+
+void check_crypto_sign_keypair() {
+  uint8_t pk_jazz[JASMIN_MLDSA44_CRYPTO_PUBLICKEYBYTES];
+  uint8_t sk_jazz[JASMIN_MLDSA44_CRYPTO_SECRETKEYBYTES];
+  size_t siglen = 0;
+  uint8_t sig[JASMIN_MLDSA44_CRYPTO_BYTES];
+
+  for (int t=0; t<TESTS; t++) {
+
+    uint8_t mlen;
+    randombytes(&mlen, sizeof(mlen));
+    uint8_t ctxlen;
+    randombytes(&ctxlen, sizeof(ctxlen));
+
+    uint8_t m[mlen];
+    uint8_t ctx[ctxlen];
+
+    JASMIN_MLDSA44_crypto_sign_keypair(pk_jazz, sk_jazz);
+
+    // Generates random message
+    fillarr(uint8_t, mlen, m);
+    // Generates random context
+    fillarr(uint8_t, ctxlen, ctx);
+
+    // Sign the random message
+    int r_sign = PQCLEAN_MLDSA44_CLEAN_crypto_sign_signature_ctx(sig, &siglen, m, mlen, ctx, ctxlen, sk_jazz);
+    if (r_sign != 0) {
+      printf("FAIL: crypto_sign_signature. Could not generate the signature with C code.");
+      exit(1);
+    }
+
+    // Verify the maching between the signature and the message
+    int r_verify = PQCLEAN_MLDSA44_CLEAN_crypto_sign_verify_ctx(sig, PQCLEAN_MLDSA44_CLEAN_CRYPTO_BYTES, m, mlen, ctx, ctxlen, pk_jazz);
+    if (r_verify != 0) {
+      printf("Could not verify signature with C code.");
+      exit(1);
+    }
+
+  }
+  printf("PASS: crypto_sign_keypair\n");
+}
 
 void check_crypto_sign_keypair_seed() {
   uint8_t pk[PQCLEAN_MLDSA44_CLEAN_CRYPTO_PUBLICKEYBYTES];
@@ -137,6 +179,7 @@ void check_crypto_sign_verify_ctx() {
 int main ()
 {
   check_shake256_PUBLICKEYBYTES_SEEDBYTES();
+  check_crypto_sign_keypair();
   check_crypto_sign_keypair_seed();
   check_crypto_sign_signature_ctx_seed();
   check_crypto_sign_verify_ctx();
