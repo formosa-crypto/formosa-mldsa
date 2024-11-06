@@ -185,7 +185,11 @@ inline fn __SHAKE256_init_seed_ref(
 {
   state = __add_seed_ref(state, seed);
   state = __add_zero_after_add(state, SEEDBYTES);
-  state = __add_block_end(state, SEEDBYTES, SHAKE256_RATE);
+  reg u32 k = K;
+  state[u8 SEEDBYTES] = k;
+  reg u32 l = L;
+  state[u8 SEEDBYTES+1] = l;
+  state = __add_block_end(state, SEEDBYTES + 2, SHAKE256_RATE);
   state = _keccakf1600_ref(state);
   return state;
 }

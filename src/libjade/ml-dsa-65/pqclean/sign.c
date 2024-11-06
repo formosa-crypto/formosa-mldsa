@@ -88,7 +88,9 @@ int PQCLEAN_MLDSA65_CLEAN_crypto_sign_keypair_seed(uint8_t *pk, uint8_t *sk, uin
     polyveck s2, t1, t0;
 
     /* Get randomness for rho, rhoprime and key */
-    shake256(seedbuf, 2 * SEEDBYTES + CRHBYTES, seedbuf, SEEDBYTES);
+    seedbuf[SEEDBYTES + 0] = K;
+    seedbuf[SEEDBYTES + 1] = L;
+    shake256(seedbuf, 2 * SEEDBYTES + CRHBYTES, seedbuf, SEEDBYTES + 2);
     rho = seedbuf;
     rhoprime = rho + SEEDBYTES;
     key = rhoprime + CRHBYTES;
