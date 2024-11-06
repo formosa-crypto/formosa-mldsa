@@ -21,22 +21,17 @@ void check_crypto_sign_keypair() {
   size_t siglen = 0;
   uint8_t sig[JASMIN_MLDSA87_CRYPTO_BYTES];
 
-  uint8_t sb[2 * SEEDBYTES + CRHBYTES];
-  uint8_t sb_jazz[2 * SEEDBYTES + CRHBYTES];
-
   for (int t=0; t<TESTS; t++) {
-    fillarrnu8(sb, sb_jazz, 2 * SEEDBYTES + CRHBYTES);
     uint8_t mlen;
     randombytes(&mlen, sizeof(mlen));
     uint8_t ctxlen;
     randombytes(&ctxlen, sizeof(ctxlen));
-    printf("%i\n", mlen);
-    printf("%i\n", ctxlen);
 
     uint8_t m[mlen];
     uint8_t ctx[ctxlen];
 
     JASMIN_MLDSA87_crypto_sign_keypair(pk_jazz, sk_jazz);
+
     // Generates random message
     fillarr(uint8_t, mlen, m);
     // Generates random context
