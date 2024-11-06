@@ -833,9 +833,11 @@ fn _crypto_sign_signature_ctx_seed
   () = #unspill(ctx_m_rand, ctxlen_mlen_siglen);
   mlen = ctxlen_mlen_siglen[1];
   m = ctx_m_rand[1];
+  () = #spill(ctx_m_rand);
   pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
   pstate = _shake256_inc_finalize(pstate, pos);
   pstate = _keccakf1600_ref(pstate);
+  () = #unspill(ctx_m_rand);
 
   // FIXME define a function for that
   mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
