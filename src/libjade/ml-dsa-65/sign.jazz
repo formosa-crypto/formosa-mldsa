@@ -22,7 +22,7 @@ export fn JASMIN_MLDSA65_crypto_sign_keypair(reg ptr u8[JASMIN_MLDSA65_CRYPTO_PU
   return pk, sk, status;
 }
 
-export fn JASMIN_MLDSA65_crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[2 * SEEDBYTES + CRHBYTES] sb) -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES], reg u32 {
+export fn JASMIN_MLDSA65_crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBYTES] sb) -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES], reg u32 {
   pk = pk; sk = sk; sb = sb;
   reg u32 status;
   pk, sk, status = _crypto_sign_keypair_seed(pk, sk, sb);

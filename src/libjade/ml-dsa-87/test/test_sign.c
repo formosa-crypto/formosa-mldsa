@@ -19,10 +19,10 @@ void check_crypto_sign_keypair_seed() {
   uint8_t pk_jazz[PQCLEAN_MLDSA87_CLEAN_CRYPTO_PUBLICKEYBYTES];
   uint8_t sk[PQCLEAN_MLDSA87_CLEAN_CRYPTO_SECRETKEYBYTES];
   uint8_t sk_jazz[PQCLEAN_MLDSA87_CLEAN_CRYPTO_SECRETKEYBYTES];
-  uint8_t sb[2 * SEEDBYTES + CRHBYTES];
-  uint8_t sb_jazz[2 * SEEDBYTES + CRHBYTES];
+  uint8_t sb[SEEDBYTES];
+  uint8_t sb_jazz[SEEDBYTES];
   for (int t=0; t<TESTS; t++) {
-    fillarrnu8(sb, sb_jazz, 2 * SEEDBYTES + CRHBYTES);
+    fillarrnu8(sb, sb_jazz, SEEDBYTES);
     PQCLEAN_MLDSA87_CLEAN_crypto_sign_keypair_seed(pk, sk, sb);
     JASMIN_MLDSA87_crypto_sign_keypair_seed(pk_jazz, sk_jazz, sb_jazz);
     eqarr(PQCLEAN_MLDSA87_CLEAN_CRYPTO_PUBLICKEYBYTES, PRId8, pk, pk_jazz, "crypto_sign_keypair_seed: wrong pk");
@@ -58,10 +58,10 @@ void check_crypto_sign_signature_ctx() {
   uint8_t ctx_jazz[ctxlen];
   uint8_t pk[PQCLEAN_MLDSA87_CLEAN_CRYPTO_PUBLICKEYBYTES];
   uint8_t sk[PQCLEAN_MLDSA87_CLEAN_CRYPTO_SECRETKEYBYTES];
-  uint8_t sb[2 * SEEDBYTES + CRHBYTES];
+  uint8_t sb[SEEDBYTES];
   for(int t=0; t<TESTS; t++) {
     // Generates a keypair from random seed    
-    fillarr(uint8_t, 2 * SEEDBYTES + CRHBYTES, sb);
+    fillarr(uint8_t, SEEDBYTES, sb);
     int status = PQCLEAN_MLDSA87_CLEAN_crypto_sign_keypair_seed(pk, sk, sb);
     if (status != 0) {
       printf("FAIL: crypto_sign_signature\n. Could not generate the key pair.");
@@ -96,10 +96,10 @@ void check_crypto_sign_verify_ctx() {
   uint8_t sig[PQCLEAN_MLDSA87_CLEAN_CRYPTO_BYTES];
   uint8_t pk[PQCLEAN_MLDSA87_CLEAN_CRYPTO_PUBLICKEYBYTES];
   uint8_t sk[PQCLEAN_MLDSA87_CLEAN_CRYPTO_SECRETKEYBYTES];
-  uint8_t sb[2 * SEEDBYTES + CRHBYTES];  
+  uint8_t sb[SEEDBYTES];
   for(int t=0; t<TESTS; t++) {
     // Generates a keypair from random seed
-    fillarr(uint8_t, 2 * SEEDBYTES + CRHBYTES, sb);
+    fillarr(uint8_t, SEEDBYTES, sb);
     int status = PQCLEAN_MLDSA87_CLEAN_crypto_sign_keypair_seed(pk, sk, sb);
     if (status != 0) {
       printf("FAIL: crypto_sign_verify. Could not generate the key pair.\n");

@@ -175,7 +175,7 @@ inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -
 /***
 *  FIXME: share the code with next function
 ***/
-fn _crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA44_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA44_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[2 * SEEDBYTES + CRHBYTES] seedbuf) -> reg ptr u8[JASMIN_MLDSA44_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA44_CRYPTO_SECRETKEYBYTES], reg u32 {
+fn _crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA44_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA44_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBYTES] seedbuf) -> reg ptr u8[JASMIN_MLDSA44_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA44_CRYPTO_SECRETKEYBYTES], reg u32 {
     reg u32 status;
 
     stack u8[TRBYTES] tr;
@@ -190,11 +190,8 @@ fn _crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA44_CRYPTO_PUBLICKEYBYTES] pk
     reg ptr u32[PQC_SHAKECTX_BYTES*2] pstate;
     pstate = state;
 
-    reg ptr u8[32] pseedbuf;
-    pseedbuf = seedbuf[0:SEEDBYTES];
-
     () = #spill(pk, sk);
-    pstate = __SHAKE256_init_seed_ref(pstate, pseedbuf);
+    pstate = __SHAKE256_init_seed_ref(pstate, seedbuf);
     state = pstate;
     /***/
 

@@ -6,6 +6,7 @@
 #include "randombytes.h"
 #include "sign.h"
 #include "symmetric.h"
+#include <string.h>
 #include <stdint.h>
 
 /*************************************************
@@ -81,7 +82,8 @@ int PQCLEAN_MLDSA87_CLEAN_crypto_sign_keypair(uint8_t *pk, uint8_t *sk) {
 *
 * Returns 0 (success)
 **************************************************/
-int PQCLEAN_MLDSA87_CLEAN_crypto_sign_keypair_seed(uint8_t *pk, uint8_t *sk, uint8_t *seedbuf) {
+int PQCLEAN_MLDSA87_CLEAN_crypto_sign_keypair_seed(uint8_t *pk, uint8_t *sk, uint8_t *seed) {
+    uint8_t seedbuf[2 * SEEDBYTES + CRHBYTES];
     uint8_t tr[TRBYTES];
     const uint8_t *rho, *rhoprime, *key;
     polyvecl mat[K];
@@ -89,6 +91,7 @@ int PQCLEAN_MLDSA87_CLEAN_crypto_sign_keypair_seed(uint8_t *pk, uint8_t *sk, uin
     polyveck s2, t1, t0;
 
     /* Get randomness for rho, rhoprime and key */
+    memcpy(seedbuf, seed, SEEDBYTES);
     seedbuf[SEEDBYTES + 0] = K;
     seedbuf[SEEDBYTES + 1] = L;
     shake256(seedbuf, 2 * SEEDBYTES + CRHBYTES, seedbuf, SEEDBYTES + 2);
