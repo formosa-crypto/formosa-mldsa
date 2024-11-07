@@ -18,3 +18,4 @@ jobs:
     - run: nix-shell --run 'echo Installed dependencies.'
     - run: nix-shell --run 'make test'
     - run: nix-shell --run 'make large-kat-test'
+    - run: nix-shell --run 'make check-ct'

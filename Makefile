@@ -2,6 +2,7 @@ PARAMETER_SET = 65
 IMPLEMENTATION_TYPE = ref
 # --------------------------------------------------------------------
 JASMINC ?= jasminc
+JASMINCT ?= jasmin-ct
 
 # --------------------------------------------------------------------
 IMPLEMENTATION = ml_dsa_$(PARAMETER_SET)/$(IMPLEMENTATION_TYPE)
@@ -18,7 +19,7 @@ $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
 	$(JASMINC) -o $@ $<
 
 # --------------------------------------------------------------------
-.PHONY: test large-kat-test
+.PHONY: test
 test: $(OUTPUT_FILE_NAME).so
 	cd test && python3 nist_drbg_kat_tests.py && \
 			   python3 nist_acvp_tests.py && \
@@ -31,6 +32,10 @@ large-kat-test: $(OUTPUT_FILE_NAME).so
 
 $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 	$(CC) $^ -fPIC -shared -o $@
+
+.PHONY: check-ct
+check-ct: $(IMPLEMENTATION)/ml_dsa.jazz
+	$(JASMINCT) $^
 
 # --------------------------------------------------------------------
 ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)_bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c
