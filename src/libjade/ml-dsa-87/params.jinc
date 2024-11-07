@@ -12,3 +12,12 @@ param int POLYETA_PACKEDBYTES = 96; // N/8 * 3
 
 param int POLYT1_PACKEDBYTES  = 320; // N/4 * 5
 param int POLYT0_PACKEDBYTES = 416; // N/8 * 13
+
+
+inline fn __GAMMA1 () -> reg u32 {
+ // GAMMA1 = 1 << 19
+ reg u32 gamma1;
+ gamma1 = 1;
+ gamma1 = gamma1 << 19;
+ return gamma1;
+}

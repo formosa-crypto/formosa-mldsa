@@ -93,11 +93,3 @@ inline fn __MINUS_GAMMA2 () -> reg u32 {
  mgamma2 = gamma2;
  return	mgamma2;
 }
-
-inline fn __GAMMA1 () -> reg u32 {
- // GAMMA1 = 1 << 17
- reg u32 gamma1;
- gamma1 = 1;
- gamma1 = gamma1 << 17;
- return gamma1;
-}
