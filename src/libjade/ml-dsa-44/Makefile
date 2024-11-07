@@ -7,7 +7,7 @@ all: clean compile
 
 #-------------------------------------------------------------------------------
 
-JASMIN_LIB := libml-dsa-65_jasmin_$(arch).a
+JASMIN_LIB := libml-dsa-44_jasmin_$(arch).a
 JASMIN_OBJECTS := library_$(arch).o
 JASMIN_FILES := library_$(arch).jazz
 
