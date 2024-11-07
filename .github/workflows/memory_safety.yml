@@ -1,4 +1,4 @@
-name: self
+name: "Memory safety checking"
 
 on:
   workflow_dispatch:
@@ -11,6 +11,5 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
-      - name: check keygen
+      - name: Check the memory safety of key-generation
         run: jasminc ml_dsa_65/ref/ml_dsa.jazz -checksafety -slice ml_dsa_65_keygen
-
