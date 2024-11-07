@@ -1,3 +1,10 @@
+#define _STRINGIFY(x) #x
+#define STRINGIFY(x) _STRINGIFY(x)
+
+#define PASTER(x, y) x##_##y
+#define EVALUATOR(x, y) PASTER(x, y)
+#define FORMATTED_NAME(fun) EVALUATOR(fun, IMPLEMENTATION_TYPE)
+
 static inline uint64_t cpucycles(void) {
   uint64_t result;
 

@@ -38,8 +38,9 @@ check-ct: $(IMPLEMENTATION)/ml_dsa.jazz
 	$(JASMINCT) $^
 
 # --------------------------------------------------------------------
-ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)_bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c
-	$(CC) -DKEYGEN=ml_dsa_$(PARAMETER_SET)_keygen \
+bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c
+	$(CC) -DIMPLEMENTATION_TYPE=$(IMPLEMENTATION_TYPE) \
+		  -DKEYGEN=ml_dsa_$(PARAMETER_SET)_keygen \
 		  -DSIGN=ml_dsa_$(PARAMETER_SET)_sign \
 		  -DVERIFY=ml_dsa_$(PARAMETER_SET)_verify \
 		  -DVERIFICATION_KEY_SIZE=1952 \
@@ -51,4 +52,5 @@ ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)_bench.o: $(OUTPUT_FILE_NAME).s be
 .PHONY: clean
 clean:
 	rm -fr *.s \
-		   *.so
+		   *.so \
+		   *.o

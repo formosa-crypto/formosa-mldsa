@@ -30,8 +30,8 @@ int main(void) {
   uint64_t observations[DATA_POINTS], i;
 
   for (size_t i = 0; i < 32; i++) {
-      key_generation_randomness[i] = i;
-      signing_randomness[i] = i;
+    key_generation_randomness[i] = i;
+    signing_randomness[i] = i;
   }
 
   // Test key-generation.
@@ -39,21 +39,21 @@ int main(void) {
     observations[i] = cpucycles();
     KEYGEN(verification_key, signing_key, key_generation_randomness);
   }
-  print_results("--- Key Generation ---", observations, DATA_POINTS);
+  print_results(STRINGIFY(FORMATTED_NAME(KEYGEN)), observations, DATA_POINTS);
 
   // Test signing.
   for (i = 0; i < DATA_POINTS; i++) {
     observations[i] = cpucycles();
     SIGN(signature, signing_key, message, sizeof(message), signing_randomness);
   }
-  print_results("--- Signing ---", observations, DATA_POINTS);
+  print_results(STRINGIFY(FORMATTED_NAME(SIGN)), observations, DATA_POINTS);
 
   // Test verification.
   for (i = 0; i < DATA_POINTS; i++) {
     observations[i] = cpucycles();
     VERIFY(verification_key, message, sizeof(message), signature);
   }
-  print_results("--- Verification ---", observations, DATA_POINTS);
+  print_results(STRINGIFY(FORMATTED_NAME(VERIFY)), observations, DATA_POINTS);
 
   return EXIT_SUCCESS;
 }
