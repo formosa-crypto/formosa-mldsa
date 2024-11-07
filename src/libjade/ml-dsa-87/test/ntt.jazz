@@ -1,5 +1,3 @@
-require "ntt.jinc"
-
 export fn JASMIN_MLDSA87_mul_montgomery_reduce(reg u32 x y) -> reg u32
 {
   reg u32 r;

@@ -1,5 +1,3 @@
-require "poly.jinc"
-
 export fn JASMIN_MLDSA87_poly_reduce(reg ptr u32[N] rpa) -> reg ptr u32[N] {
   rpa = rpa;
   rpa = __poly_reduce(rpa);
