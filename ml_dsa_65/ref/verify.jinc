@@ -120,7 +120,7 @@ fn verify_internal(
             () = #unspill(signature_encoded);
 
             () = #spill(verification_key);
-            challenge = sample::challenge(challenge, signature_encoded[0:COMMITMENT_HASH_SIZE]);
+            #declassify challenge = sample::challenge(challenge, signature_encoded[0:COMMITMENT_HASH_SIZE]);
             challenge = polynomial::ntt(challenge);
             () = #unspill(verification_key);
 
@@ -137,7 +137,7 @@ fn verify_internal(
                 message,
                 message_size);
 
-            expected_commitment_hash = derive_commitment_hash(message_representative, reconstructed_signer_commitment);
+            #declassify expected_commitment_hash = derive_commitment_hash(message_representative, reconstructed_signer_commitment);
             result = compare_commitment_hashes(expected_commitment_hash, signature_encoded[0:COMMITMENT_HASH_SIZE]);
         }
     }

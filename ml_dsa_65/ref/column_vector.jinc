@@ -57,7 +57,7 @@ namespace column_vector {
         reg u64 i;
         reg u32 x y1 y2;
 
-        ?{}, i = #set0_64();
+        i = 0;
         while(i < ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
             x = v[i];
             y1, y2 = coefficient::power2round(x);

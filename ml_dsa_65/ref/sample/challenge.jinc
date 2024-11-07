@@ -26,9 +26,9 @@ fn absorb_commitment_hash_for_shake256(
 namespace sample {
     inline
     fn challenge(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output_challenge,
+        #secret reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output_challenge,
         reg ptr u8[COMMITMENT_HASH_SIZE] seed
-    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    ) -> #secret reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u64[25] state;
 

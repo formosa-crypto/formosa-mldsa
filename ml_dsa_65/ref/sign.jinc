@@ -65,7 +65,7 @@ fn derive_seed_for_mask(
 
 inline
 fn sign_internal(
-        reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+        #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key,
         reg u64 pointer_to_message,
         reg u64 message_size,
         reg ptr u8[32] randomness
@@ -73,6 +73,7 @@ fn sign_internal(
     stack u8[SIGNATURE_SIZE] signature_encoded;
 
     // parts of signing_key
+    reg ptr u8[SEED_FOR_MATRIX_A_SIZE] seed_for_matrix_A;
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0;
@@ -123,7 +124,8 @@ fn sign_internal(
 
     seed_for_mask = derive_seed_for_mask(signing_key[32:32], randomness, message_representative);
 
-    matrix_A = sample::matrix_A(signing_key[0:32]);
+    #declassify seed_for_matrix_A = signing_key[0:32];
+    matrix_A = sample::matrix_A(seed_for_matrix_A);
 
     s1 = row_vector::ntt(s1);
     s2 = column_vector::ntt(s2);
@@ -133,6 +135,16 @@ fn sign_internal(
 
     exit_rejection_sampling_loop = 0;
     signing_attempts = 0;
+
+    // WARNING WARNING WARNING
+    //
+    // The |#declassify|s in this loop body are only present to allow the
+    // constant-time checker to go over the whole code without erroring out and
+    // validate those parts whose constant-timedness can be established through
+    // type-checking alone.
+    //
+    // The security of this rejection sampling loop CANNOT be established through
+    // type-checking alone, and requires proving work in EasyCrypt.
     while (exit_rejection_sampling_loop != 1) {
         signing_attempts += 1;
 
@@ -145,11 +157,11 @@ fn sign_internal(
         w = column_vector::invert_ntt_montgomery(w);
 
         w = column_vector::conditionally_add_modulus(w);
-        w0, w1 = column_vector::decompose(w);
+        #declassify w0, w1 = column_vector::decompose(w);
 
         commitment_encoded = commitment::encode(w1);
 
-        commitment_hash = derive_commitment_hash(message_representative, commitment_encoded);
+        #declassify commitment_hash = derive_commitment_hash(message_representative, commitment_encoded);
 
         verifier_challenge = sample::challenge(verifier_challenge, commitment_hash);
         verifier_challenge = polynomial::ntt(verifier_challenge);
@@ -157,20 +169,20 @@ fn sign_internal(
         cs1 = row_vector::multiply_by_polynomial(s1, verifier_challenge);
         cs1 = row_vector::invert_ntt_montgomery(cs1);
         signer_response = row_vector::add(cs1, mask);
-        signer_response = row_vector::reduce32(signer_response);
+        #declassify signer_response = row_vector::reduce32(signer_response);
         infinity_norm_check_result = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
 
         if(infinity_norm_check_result == 0) {
             cs2 = column_vector::multiply_by_polynomial(s2, verifier_challenge);
             cs2 = column_vector::invert_ntt_montgomery(cs2);
             w0_minus_cs2 = column_vector::subtract(w0, cs2);
-            w0_minus_cs2 = column_vector::reduce32(w0_minus_cs2);
+            #declassify w0_minus_cs2 = column_vector::reduce32(w0_minus_cs2);
             infinity_norm_check_result = column_vector::check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
 
             if(infinity_norm_check_result == 0) {
                 ct0 = column_vector::multiply_by_polynomial(t0, verifier_challenge);
                 ct0 = column_vector::invert_ntt_montgomery(ct0);
-                ct0 = column_vector::reduce32(ct0);
+                #declassify ct0 = column_vector::reduce32(ct0);
                 infinity_norm_check_result = column_vector::check_infinity_norm(ct0, GAMMA2);
 
                 if(infinity_norm_check_result == 0) {

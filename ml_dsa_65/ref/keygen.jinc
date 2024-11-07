@@ -36,31 +36,32 @@ fn prepare_state_for_shake256(
 }
 
 inline
-fn keygen_internal(reg ptr u8[32] randomness)
-    -> stack u8[VERIFICATION_KEY_SIZE], stack u8[SIGNING_KEY_SIZE]
+fn keygen_internal(#secret reg ptr u8[32] randomness)
+    -> #public stack u8[VERIFICATION_KEY_SIZE], 
+       #secret stack u8[SIGNING_KEY_SIZE]
 {
-    stack u8[VERIFICATION_KEY_SIZE] verification_key;
-    stack u8[SIGNING_KEY_SIZE] signing_key;
+    #public stack u8[VERIFICATION_KEY_SIZE] verification_key;
+    #secret stack u8[SIGNING_KEY_SIZE] signing_key;
 
     // PRF
     stack u64[25] state;
 
     // PRF outputs
-    stack u8[32] seed_for_matrix_A;
-    stack u8[64] seed_for_error_vectors;
-    stack u8[32] seed_for_signing;
+    #public stack u8[32] seed_for_matrix_A;
+    #secret stack u8[64] seed_for_error_vectors;
+    #secret stack u8[32] seed_for_signing;
 
     // Matrices and vectors
     stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
 
-    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t t1 t0;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t t0 t1;
 
     state = prepare_state_for_shake256(state, randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
     state = __keccakf1600_ref(state);
 
-    seed_for_matrix_A = state[u8 0:SEED_FOR_MATRIX_A_SIZE];
+    #declassify seed_for_matrix_A = state[u8 0:SEED_FOR_MATRIX_A_SIZE];
     seed_for_error_vectors = state[u8 SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
     seed_for_signing = state[u8 SEED_FOR_MATRIX_A_SIZE + SEED_FOR_ERROR_VECTORS_SIZE:SEED_FOR_SIGNING_SIZE];
 
@@ -92,7 +93,7 @@ fn keygen_internal(reg ptr u8[32] randomness)
 
     // Serialize the verification key.
     verification_key[0:32] = #copy(seed_for_matrix_A);
-    verification_key[32: T1_ENCODED_SIZE]
+    #declassify verification_key[32: T1_ENCODED_SIZE]
     = t1::encode(verification_key[32: T1_ENCODED_SIZE], t1);
 
     // ... and finish serializing the signing key.

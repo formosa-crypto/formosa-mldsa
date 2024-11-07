@@ -11,12 +11,18 @@ require "verify.jinc"
 // at 5 arguments for signing, and Jasmin does not currently support functions
 // that take more than 6 arguments.
 
+// We expect that:
+//
+// - |verification_key_out| points to a buffer of 1952 bytes.
+// - |signing_key_out| points to a buffer of 4032 bytes.
+//
 export fn ml_dsa_65_keygen(
-    reg u64 verification_key_out signing_key_out,
-    reg ptr u8[32] randomness)
+    #public reg u64 verification_key_out,
+    #public reg u64 signing_key_out,
+    #secret reg ptr u8[32] randomness)
 {
-    stack u8[VERIFICATION_KEY_SIZE] verification_key;
-    stack u8[SIGNING_KEY_SIZE] signing_key;
+    #public stack u8[VERIFICATION_KEY_SIZE] verification_key;
+    #secret stack u8[SIGNING_KEY_SIZE] signing_key;
 
     reg u8 byte;
     reg u64 i;
@@ -38,17 +44,25 @@ export fn ml_dsa_65_keygen(
     }
 }
 
+// We expect that:
+//
+// - |signature_out| points to a buffer of 3309 bytes.
+// - |signing_key| points to a buffer of 4032 bytes.
+// - |message| points to a buffer of |message_size| bytes.
+//
 export fn ml_dsa_65_sign(
-    reg u64 signature_out signing_key message message_size,
-    reg ptr u8[32] randomness
-) -> reg u32
+    #public reg u64 signature_out,
+    #public reg u64 signing_key,
+    #public reg u64 message message_size,
+    #secret reg ptr u8[32] randomness
+) -> #secret reg u32
 {
-    stack u8[SIGNING_KEY_SIZE] signing_key_on_stack;
+    #secret stack u8[SIGNING_KEY_SIZE] signing_key_on_stack;
 
     stack u8[SIGNATURE_SIZE] signature;
     reg u32 signing_attempts;
 
-    reg u8 byte;
+    #flexible reg u8 byte;
     reg u64 i;
 
     i = 0;
@@ -70,25 +84,35 @@ export fn ml_dsa_65_sign(
     return signing_attempts;
 }
 
-export fn ml_dsa_65_verify(reg u64 verification_key message message_size signature) -> reg u64 {
-    stack u8[VERIFICATION_KEY_SIZE] verification_key_on_stack;
-    stack u8[SIGNATURE_SIZE] signature_on_stack;
+// We expect that:
+//
+// - |verification_key| points to a buffer of 1952 bytes.
+// - |message| points to a buffer of |message_size| bytes.
+// - |signature| points to a buffer of 3309 bytes.
+//
+export fn ml_dsa_65_verify(
+    #public reg u64 verification_key,
+    #public reg u64 message message_size,
+    #public reg u64 signature
+) -> #public reg u64 {
+    #public stack u8[VERIFICATION_KEY_SIZE] verification_key_on_stack;
+    #public stack u8[SIGNATURE_SIZE] signature_on_stack;
 
-    reg u64 verification_result;
+    #public reg u64 verification_result;
 
-    reg u8 byte;
+    #public reg u8 byte;
     reg u64 i;
 
     i = 0;
     while(i < VERIFICATION_KEY_SIZE) {
-        byte = (u8)[verification_key + i];
+        #declassify byte = (u8)[verification_key + i];
         verification_key_on_stack[i] = byte;
         i += 1;
     }
 
     i = 0;
     while(i < SIGNATURE_SIZE) {
-        byte = (u8)[signature + i];
+        #declassify byte = (u8)[signature + i];
         signature_on_stack[i] = byte;
         i += 1;
     }
