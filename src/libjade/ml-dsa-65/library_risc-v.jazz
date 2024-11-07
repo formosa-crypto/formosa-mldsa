@@ -9,6 +9,7 @@ require "../../../ext/libjade/src/common/keccak/keccak1600/risc-v/ref/keccakf160
 require "ntt.jinc"
 require "map.jinc"
 require "fips202.jinc"
+require "../ml-dsa-any/poly.jinc"
 require "poly.jinc"
 require "../ml-dsa-any/polyvec.jinc"
 require "../ml-dsa-any/packing.jinc"
