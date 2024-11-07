@@ -1,18 +1,18 @@
 /*************************************************
-* Name:        JASMIN_MLDSA65_crypto_sign_keypair
+* Name:        JASMIN_MLDSA_crypto_sign_keypair
 *
 * Description: Generates public and private key.
 *
 * Arguments:   - uint8_t *pk: pointer to output public key (allocated
-*                             array of JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES bytes)
+*                             array of JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES bytes)
 *              - uint8_t *sk: pointer to output private key (allocated
-*                             array of JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES bytes)
+*                             array of JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES bytes)
 *
 * Returns 0 (success)
 **************************************************/
 
 fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
-                                     reg ptr u8[ JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] inp) -> reg ptr u8[SEEDBYTES]
+                                     reg ptr u8[ JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] inp) -> reg ptr u8[SEEDBYTES]
 {
   stack u32[25*2] state;
   reg ptr u32[25*2] pstate;
@@ -25,7 +25,7 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
 
   i = 0;
   while {
-    last = (JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES >> 2) - (SHAKE256_RATE >> 2);
+    last = (JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES >> 2) - (SHAKE256_RATE >> 2);
   }
   (i < last)
   {
@@ -44,7 +44,7 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
   }
 
   j = 0;
-  while(i < JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES >> 2) {
+  while(i < JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES >> 2) {
     t = inp[u32 (int)i];
     s = pstate[(int)j];
     t ^= s;
@@ -79,7 +79,7 @@ fn _shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp,
 
 // TODO: factorize, this is almost a copy of the previous function
 fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
-                                     reg ptr u8[ JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] inp) -> reg ptr u8[TRBYTES]
+                                     reg ptr u8[ JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] inp) -> reg ptr u8[TRBYTES]
 {
   stack u32[25*2] state;
   reg ptr u32[25*2] pstate;
@@ -92,7 +92,7 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
 
   i = 0;
   while {
-    last = (JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES >> 2) - (SHAKE256_RATE >> 2);
+    last = (JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES >> 2) - (SHAKE256_RATE >> 2);
   }
   (i < last)
   {
@@ -111,7 +111,7 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
   }
 
   j = 0;
-  while(i < JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES >> 2) {
+  while(i < JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES >> 2) {
     t = inp[u32 (int)i];
     s = pstate[(int)j];
     t ^= s;
@@ -147,14 +147,14 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
 
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_crypto_sign_keypair_seed
+* Name:        JASMIN_MLDSA_crypto_sign_keypair_seed
 *
 * Description: Generates public and private key.
 *
 * Arguments:   - uint8_t *pk: pointer to output public key (allocated
-*                             array of JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES bytes)
+*                             array of JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES bytes)
 *              - uint8_t *sk: pointer to output private key (allocated
-*                             array of JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES bytes)
+*                             array of JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES bytes)
 *              - uint8_t *seed: pointer to input seed (allocated
 *                             array of 2 * SEEDBYTES + CRHBYTES bytes)*
 *
@@ -175,7 +175,7 @@ inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -
 /***
 *  FIXME: share the code with next function
 ***/
-fn _crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBYTES] seedbuf) -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES], reg u32 {
+fn _crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBYTES] seedbuf) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES], reg u32 {
     reg u32 status;
 
     stack u8[TRBYTES] tr;
@@ -249,7 +249,7 @@ fn _crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk
     return pk, sk, status;
 }
 
-fn _crypto_sign_keypair(reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES], reg u32 {
+fn _crypto_sign_keypair(reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES], reg u32 {
     reg u32 status;
 
     stack u8[SEEDBYTES] seedbuf;
@@ -513,7 +513,7 @@ fn _shake256_inc_finalize(
 *
 * Description: Computes signature.
 *
-* Arguments:   - uint8_t *sig:   pointer to output signature (of length PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES)
+* Arguments:   - uint8_t *sig:   pointer to output signature (of length PQCLEAN_MLDSA_CLEAN_CRYPTO_BYTES)
 *              - size_t *siglen: pointer to output length of signature
 *              - uint8_t *m:     pointer to message to be signed
 *              - size_t mlen:    length of message
@@ -524,11 +524,11 @@ fn _shake256_inc_finalize(
 * Returns 0 (success) or -1 (context string too long)
 **************************************************/
 fn _crypto_sign_signature_ctx
-  (reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig,
+  (reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig,
    reg ptr u32[2] ctx_m,
    reg ptr u32[3] ctxlen_mlen_siglen,
-   reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] sk)
-   -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES], reg u32
+   reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk)
+   -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], reg u32
 {
   sig = sig; ctx_m = ctx_m; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
   reg u32 status;
@@ -757,7 +757,7 @@ fn _crypto_sign_signature_ctx
 *
 * Description: Computes signature.
 *
-* Arguments:   - uint8_t *sig:   pointer to output signature (of length PQCLEAN_MLDSA65_CLEAN_CRYPTO_BYTES)
+* Arguments:   - uint8_t *sig:   pointer to output signature (of length PQCLEAN_MLDSA_CLEAN_CRYPTO_BYTES)
 *              - size_t *siglen: pointer to output length of signature
 *              - uint8_t *m:     pointer to message to be signed
 *              - size_t mlen:    length of message
@@ -769,11 +769,11 @@ fn _crypto_sign_signature_ctx
 * Returns 0 (success) or -1 (context string too long)
 **************************************************/
 fn _crypto_sign_signature_ctx_seed
-  (reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig,
+  (reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig,
    reg ptr u32[3] ctx_m_rand,
    reg ptr u32[3] ctxlen_mlen_siglen,
-   reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] sk)
-   -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES], reg u32
+   reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk)
+   -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], reg u32
 {
   sig = sig; ctx_m_rand = ctx_m_rand; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
   reg u32 status;
@@ -1004,12 +1004,12 @@ fn _crypto_sign_signature_ctx_seed
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_crypto_sign
+* Name:        JASMIN_MLDSA_crypto_sign
 *
 * Description: Compute signed message.
 *
 * Arguments:   - uint8_t *sm: pointer to output signed message (allocated
-*                             array with JASMIN_MLDSA65_CRYPTO_BYTES + mlen bytes),
+*                             array with JASMIN_MLDSA_CRYPTO_BYTES + mlen bytes),
 *                             can be equal to m
 *              - size_t *smlen: pointer to output length of signed
 *                               message
@@ -1019,7 +1019,7 @@ fn _crypto_sign_signature_ctx_seed
 *
 * Returns 0 (success)
 **************************************************/
-fn _crypto_sign(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sm, reg u8 m, reg ptr u32[2] smlen_mlen, reg ptr u8[JASMIN_MLDSA65_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES], reg u32 {
+fn _crypto_sign(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sm, reg u8 m, reg ptr u32[2] smlen_mlen, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], reg u32 {
     reg u32 status;
     status = -1;
     //TODO
@@ -1041,7 +1041,7 @@ fn _crypto_sign(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sm, reg u8 m, reg ptr u3
 *
 * Returns 0 if signature could be verified correctly and -1 otherwise
 **************************************************/
-fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
+fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
     reg u32 status;
 
     stack u8[SEEDBYTES] rho;
@@ -1069,14 +1069,16 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr 
     if (ctxlen > 255) { status = - 1; }
 
     reg u32 tmp;
-    tmp = JASMIN_MLDSA65_CRYPTO_BYTES;
+    tmp = JASMIN_MLDSA_CRYPTO_BYTES;
     if (siglen != tmp) { status = -1; }
 
     () = #spill(ctxlen_mlen_siglen, ctx_m, ctxlen, status);
     rho, t1 = _unpack_pk(rho, t1, pk);
 
     reg u32 chk;
+    () = #spill(pk);
     c, z, h, chk = _unpack_sig(c, z, h, sig);
+    () = #unspill(pk);
     () = #unspill(status);
     () = #spill(sig);
 
@@ -1181,7 +1183,7 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr 
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA65_crypto_sign_open
+* Name:        JASMIN_MLDSA_crypto_sign_open
 *
 * Description: Verify signed message.
 *
@@ -1194,7 +1196,7 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA65_CRYPTO_BYTES] sig, reg ptr 
 *
 * Returns 0 if signed message could be verified correctly and -1 otherwise
 **************************************************/
-fn _crypto_sign_open(reg u32 pm, reg u32 sm, reg ptr u32[2] mlen_smlen, reg ptr u8[JASMIN_MLDSA65_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
+fn _crypto_sign_open(reg u32 pm, reg u32 sm, reg ptr u32[2] mlen_smlen, reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
     reg u32 status;
     status = -1;
     //TODO

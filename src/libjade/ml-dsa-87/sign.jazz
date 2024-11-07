@@ -1,5 +1,3 @@
-require "sign.jinc"
-
 //NO IMPLEMENTATION AVAILABLE in sign.c
 export fn JASMIN_MLDSA87_challenge(reg ptr u32[N] c, reg ptr u8[SEEDBYTES] seed) -> reg ptr u32[N] {
   c = c; seed = seed;
@@ -7,14 +5,14 @@ export fn JASMIN_MLDSA87_challenge(reg ptr u32[N] c, reg ptr u8[SEEDBYTES] seed)
   return c;
 }
 
-export fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp, reg ptr u8[ JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES] inp) -> reg ptr u8[SEEDBYTES]
+export fn shake256_PUBLICKEYBYTES_SEEDBYTES(reg ptr u8[SEEDBYTES] outp, reg ptr u8[ JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] inp) -> reg ptr u8[SEEDBYTES]
 {
   outp = outp; inp = inp;  
   outp = _shake256_PUBLICKEYBYTES_SEEDBYTES(outp, inp);
   return outp;
 }
 
-export fn JASMIN_MLDSA87_crypto_sign_keypair(reg ptr u8[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES], reg u32 {
+export fn JASMIN_MLDSA87_crypto_sign_keypair(reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES], reg u32 {
   pk = pk; sk = sk;
   reg u32 status;
   pk, sk, status = _crypto_sign_keypair(pk, sk);
@@ -22,7 +20,7 @@ export fn JASMIN_MLDSA87_crypto_sign_keypair(reg ptr u8[JASMIN_MLDSA87_CRYPTO_PU
   return pk, sk, status;
 }
 
-export fn JASMIN_MLDSA87_crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBYTES] sb) -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES], reg u32 {
+export fn JASMIN_MLDSA87_crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBYTES] sb) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES], reg u32 {
   pk = pk; sk = sk; sb = sb;
   reg u32 status;
   pk, sk, status = _crypto_sign_keypair_seed(pk, sk, sb);
@@ -30,7 +28,7 @@ export fn JASMIN_MLDSA87_crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA87_CRYP
   return pk, sk, status;
 }
 
-export fn JASMIN_MLDSA87_crypto_sign_signature_ctx_internal(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES], reg u32
+export fn JASMIN_MLDSA87_crypto_sign_signature_ctx_internal(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], reg u32
 {
   sig = sig; ctx_m = ctx_m; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
   reg u32 status;
@@ -39,7 +37,7 @@ export fn JASMIN_MLDSA87_crypto_sign_signature_ctx_internal(reg ptr u8[JASMIN_ML
   return sig, status;
 }
 
-export fn JASMIN_MLDSA87_crypto_sign_signature_ctx_seed_internal(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr u32[3] ctx_m_rand, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES], reg u32
+export fn JASMIN_MLDSA87_crypto_sign_signature_ctx_seed_internal(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u32[3] ctx_m_rand, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], reg u32
 {
   sig = sig; ctx_m_rand = ctx_m_rand; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
   reg u32 status;
@@ -48,7 +46,7 @@ export fn JASMIN_MLDSA87_crypto_sign_signature_ctx_seed_internal(reg ptr u8[JASM
   return sig, status;
 }
 
-export fn JASMIN_MLDSA87_crypto_sign(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sm, reg u8 m, reg ptr u32[2] smlen_mlen, reg ptr u8[JASMIN_MLDSA87_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES], reg u32 {
+export fn JASMIN_MLDSA87_crypto_sign(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sm, reg u8 m, reg ptr u32[2] smlen_mlen, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], reg u32 {
   sm = sm; m = m; smlen_mlen = smlen_mlen; sk = sk;
   reg u32 status;
   sm, status = _crypto_sign(sm, m, smlen_mlen, sk);
@@ -56,7 +54,7 @@ export fn JASMIN_MLDSA87_crypto_sign(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sm,
   return sm, status;
 }
 
-export fn JASMIN_MLDSA87_crypto_sign_verify_ctx_internal(reg ptr u8[JASMIN_MLDSA87_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
+export fn JASMIN_MLDSA87_crypto_sign_verify_ctx_internal(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
     sig = sig; ctx_m = ctx_m; ctxlen_mlen_siglen = ctxlen_mlen_siglen; pk = pk;
     reg u32 status;
     status = _crypto_sign_verify_ctx(sig, ctx_m, ctxlen_mlen_siglen, pk);
@@ -64,7 +62,7 @@ export fn JASMIN_MLDSA87_crypto_sign_verify_ctx_internal(reg ptr u8[JASMIN_MLDSA
     return status;
 }
 
-export fn JASMIN_MLDSA87_crypto_sign_open(reg u32 pm, reg u32 sm, reg ptr u32[2] mlen_smlen, reg ptr u8[JASMIN_MLDSA87_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
+export fn JASMIN_MLDSA87_crypto_sign_open(reg u32 pm, reg u32 sm, reg ptr u32[2] mlen_smlen, reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
   pm = pm; sm = sm; mlen_smlen = mlen_smlen; pk = pk;
   reg u32 status;
   status = _crypto_sign_open(pm, sm, mlen_smlen, pk);
