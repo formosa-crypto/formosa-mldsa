@@ -39,12 +39,8 @@ u32[N] ZETAS = {
     -2939036, -2235985,  -420899, -2286327,   183443,  -976891,  1612842, -3545687,
     -554416,  3919660,   -48306, -1362209,  3937738,  1400424,  -846154,  1976782
 };
-param int iQ = 8380417;
+
 u32 Q = iQ;
-param int iGAMMA1 = (1 << 17);
-u32 GAMMA1 = iGAMMA1;
-param int iGAMMA2 = ((iQ-1)/88);
-u32 GAMMA2 = iGAMMA2;
 u32 MINUS_Q = -iQ; // this should be -Q
 u32 MINUS_GAMMA2 = -iGAMMA2;
 
@@ -79,17 +75,3 @@ inline fn __MINUS_Q() -> reg u32 {
   return mq;
 }
 
-inline fn __GAMMA2 () -> reg u32 {
- // GAMMA2 = ((iQ-1)/32) = 11 1111 1111 0000 0000
- reg u32 gamma2;
- gamma2 = 0x3FF;
- gamma2 = gamma2 << 8;
- return gamma2;
-}
-
-inline fn __MINUS_GAMMA2 () -> reg u32 {
- reg u32 gamma2, mgamma2;
- gamma2	= __GAMMA2();
- mgamma2 = gamma2;
- return	mgamma2;
-}
