@@ -20,7 +20,7 @@ export fn JASMIN_MLDSA87_decompose(reg u32 pa0, reg u32 a) -> reg u32
 export fn JASMIN_MLDSA87_make_hint(reg u32 a0, reg u32 a1) -> reg u32
 {
   reg u32 res gamma2;
-  gamma2 = GAMMA2;
+  gamma2 = iGAMMA2;
   res = __make_hint(a0, a1, gamma2);
   res = res;
   return res;
