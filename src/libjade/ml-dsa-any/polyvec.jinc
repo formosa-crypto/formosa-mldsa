@@ -67,21 +67,6 @@ fn _polyvecl_reduce(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl]
   return v;
 }
 
-fn _polyvecl_add(
-  reg ptr u32[polyvecl] w,
-  reg ptr u32[polyvecl] u,
-  reg ptr u32[polyvecl] v
-) -> reg ptr u32[polyvecl] 
-{
-  inline int i;
-  reg ptr u32[N] pw pu pv;
-  for i = 0 to L {
-    pw = w[i * N : N]; pu = u[i * N : N]; pv = v[i * N : N];
-    w[i * N : N] = _poly_add(pw, pu, pv);
-  }
-  return w;
-}
-
 fn _polyvecl_add_inplace(
   reg ptr u32[polyvecl] z,
   reg ptr u32[polyvecl] y  
@@ -242,21 +227,6 @@ fn _polyveck_caddq(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
 * This can certainly be generalized in most functions of this file 
 ***/
 
-fn _polyveck_add(
-  reg ptr u32[polyveck] w,
-  reg ptr u32[polyveck] u,
-  reg ptr u32[polyveck] v
-) -> reg ptr u32[polyveck] 
-{
-  inline int i;
-  reg ptr u32[N] pw pu pv;
-  for i = 0 to K {
-    pw = w[i * N : N]; pu = u[i * N : N]; pv = v[i * N : N];
-    w[i * N : N] = _poly_add(pw, pu, pv);
-  }
-  return w;
-}
-
 fn _polyveck_add_inplace(
   reg ptr u32[polyveck] u,
   reg ptr u32[polyveck] v
@@ -269,21 +239,6 @@ fn _polyveck_add_inplace(
     u[i * N : N] = _poly_add_inplace(pu, pv);
   }
   return u;
-}
-
-fn _polyveck_sub(
-  reg ptr u32[polyveck] w,
-  reg ptr u32[polyveck] u,
-  reg ptr u32[polyveck] v
-) -> reg ptr u32[polyveck] 
-{
-  inline int i;
-  reg ptr u32[N] pw pu pv;
-  for i = 0 to K {
-    pw = w[i * N : N]; pu = u[i * N : N]; pv = v[i * N : N];
-    w[i * N : N] = _poly_sub(pw, pu, pv);
-  }
-  return w;
 }
 
 fn _polyveck_sub_inplace(
@@ -382,21 +337,6 @@ fn _polyveck_chknorm(reg ptr u32[polyveck] v, reg u32 bound) -> reg u32
   return b;
 }
 
-fn _polyveck_power2round(
-  reg ptr u32[polyveck] v1,
-  reg ptr u32[polyveck] v0,
-  reg ptr u32[polyveck] v
-) -> reg ptr u32[polyveck], reg ptr u32[polyveck]
-{
-  inline int i;
-  reg ptr u32[N] pv1 pv0 pv;
-  for i = 0 to K {
-    pv1 = v1[i * N : N]; pv0 = v0[i * N : N]; pv = v[i * N : N];
-    v1[i * N : N], v0[i * N : N] = _poly_power2round(pv1, pv0, pv);
-  }
-  return v1, v0;
-}
-
 fn _polyveck_power2round_inplace(
   reg ptr u32[polyveck] v1,
   reg ptr u32[polyveck] v0
@@ -407,21 +347,6 @@ fn _polyveck_power2round_inplace(
   for i = 0 to K {
     pv1 = v1[i * N : N]; pv0 = v0[i * N : N]; 
     v1[i * N : N], v0[i * N : N] = _poly_power2round_inplace(pv1, pv0);
-  }
-  return v1, v0;
-}
-
-fn _polyveck_decompose(
-  reg ptr u32[polyveck] v1,
-  reg ptr u32[polyveck] v0,
-  reg ptr u32[polyveck] v
-) -> reg ptr u32[polyveck], reg ptr u32[polyveck] 
-{
-  inline int i;
-  reg ptr u32[N] pv1 pv0 pv;
-  for i = 0 to K {
-    pv1 = v1[i * N : N]; pv0 = v0[i * N : N]; pv = v[i * N : N];
-    v1[i * N : N], v0[i * N : N] = _poly_decompose(pv1, pv0, pv);
   }
   return v1, v0;
 }
@@ -458,21 +383,6 @@ fn _polyveck_make_hint(
     s += tmp;
   }
   return s, h;
-}
-
-fn _polyveck_use_hint(
-  reg ptr u32[polyveck] w,
-  reg ptr u32[polyveck] u,
-  reg ptr u32[polyveck] h
-) -> reg ptr u32[polyveck] 
-{
-  inline int i;
-  reg ptr u32[N] pw pu ph;
-  for i = 0 to K {
-    pw = w[i * N : N]; pu = u[i * N : N]; ph = h[i * N : N];
-    w[i * N : N] = _poly_use_hint(pw, pu, ph);
-  }
-  return w;
 }
 
 fn _polyveck_use_hint_inplace(

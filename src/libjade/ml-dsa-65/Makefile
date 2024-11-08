@@ -9,7 +9,7 @@ all: clean compile
 
 JASMIN_LIB := libml-dsa-65_jasmin_$(arch).a
 JASMIN_OBJECTS := library_$(arch).o
-JASMIN_FILES := library_$(arch).jazz
+JASMIN_FILES := library_export_$(arch).jazz
 
 PRE_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%.jpp)
 ASM_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%.s)

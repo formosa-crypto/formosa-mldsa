@@ -44,9 +44,7 @@ $(PQCLEAN_LIB): $(PQCLEAN_OBJECTS)
 
 #-------------------------------------------------------------------------------
 
-# Temporary until FAR GLOBAL DATA is handled in arm-m4
-# TESTS_C := $(subst ./,,$(shell find . -name 'test_*.c'))
-TESTS_C := $(subst ./,,$(shell find . -name 'test_sign.c'))
+TESTS_C := $(notdir $(wildcard ../../ml-dsa-any/test/test_*.c))
 TESTS_BIN := $(subst .c,, $(TESTS_C))
 TESTS_OUT := $(addsuffix .out, $(TESTS_BIN))
 
@@ -63,8 +61,8 @@ run: $(TESTS_OUT)
 	./$< || true # TODO: remove this for CI to fail || keep track of individual failures (this: when there is some time)
 
 $(TESTS_BIN):
-test_%: test_%.c
-	$(CC) -o $@ $(CFLAGS) -static test_$*.c -I./ -I../pqclean/ -L./ -lml-dsa-44_clean -L../ -lml-dsa-44_jasmin_test_$(arch)
+test_%:  ../../ml-dsa-any/test/test_%.c
+	$(CC) -o $@ $(CFLAGS) -static ../../ml-dsa-any/test/test_$*.c -I./ -I../pqclean/ -L./ -lml-dsa-44_clean -L../ -lml-dsa-44_jasmin_test_$(arch)
 
 #--
 .PHONY: clean

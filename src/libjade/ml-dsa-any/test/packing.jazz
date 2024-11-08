@@ -1,0 +1,191 @@
+ export fn JASMIN_MLDSA_pack_pk(reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] {
+    pk = pk; rho = rho; t1 = t1;
+    pk = _pack_pk(pk, rho, t1);
+    pk = pk;
+    return pk;
+}
+
+inline fn __polyvecl_to_mem(reg u32 p, reg ptr u32[polyvecl] v) {
+  reg u32 i, t;
+  i = 0;
+
+  while (i < polyvecl) {
+    t = v[(int) i];
+    (u32)[p + 4 * i] = t;
+    i += 1;
+  }     
+}
+
+fn _polyvecl_to_mem(reg u32 p, reg ptr u32[polyvecl] v) { 
+  __polyvecl_to_mem(p, v);
+}
+
+inline fn __mem_to_polyvecl(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
+  reg u32 i, t;
+  i = 0;
+  while (i < polyvecl) {
+    t = (u32)[p + 4 * i];
+    v[(int) i] = t;
+    i += 1;
+  }
+  return v;
+}
+
+fn _mem_to_polyvecl(reg ptr u32[polyvecl] v, reg u32 p) -> reg ptr u32[polyvecl] {
+  v = __mem_to_polyvecl(v, p);
+  return v;
+}
+
+inline fn __polyveck_to_mem(reg u32 p, reg ptr u32[polyveck] v) {
+  reg u32 i, t;
+  i = 0;
+  while (i < polyveck) {
+    t = v[(int) i];
+    (u32)[p + 4 * i] = t;
+    i += 1;
+  }     
+}
+
+fn _polyveck_to_mem(reg u32 p, reg ptr u32[polyveck] v) { 
+  __polyveck_to_mem(p, v);
+}
+
+inline fn __mem_to_polyveck(reg ptr u32[polyveck] v, reg u32 p) -> reg ptr u32[polyveck] {
+  reg u32 i, t;
+  i = 0;
+
+  while (i < polyveck) {
+    t = (u32)[p + 4 * i];
+    v[(int) i] = t;
+    i += 1;
+  }
+  return v;
+}
+
+fn _mem_to_polyveck(reg ptr u32[polyveck] v, reg u32 p) -> reg ptr u32[polyveck] {
+  v = __mem_to_polyveck(v, p);
+  return v;
+}
+
+export fn JASMIN_MLDSA_pack_sk_internal(reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk, reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] {
+    sk = sk; rho_tr_key = rho_tr_key; pt0_ps1_ps2 = pt0_ps1_ps2;
+    
+    reg ptr u8[SEEDBYTES] rprho;
+    stack u8[SEEDBYTES] rho;
+    rho = __mem_to_seed(rho_tr_key[0]);
+    rprho = rho;
+    
+    reg ptr u8[TRBYTES] rptr;
+    stack u8[TRBYTES] tr;    
+    // This should be
+    //   tr = __mem_to_trbytes(rho_tr_key[1]);
+    // but since CRHBYTES = TRBYTES = 64, it is ok
+    tr = __mem_to_crhseed(rho_tr_key[1]);
+    rptr = tr;
+   
+    reg ptr u8[SEEDBYTES] rpkey;
+    stack u8[SEEDBYTES] key;
+    key = __mem_to_seed(rho_tr_key[2]);
+    rpkey = key;
+
+    reg ptr u32[polyveck] rpt0;
+    stack u32[polyveck] t0;
+    t0 = __mem_to_polyveck(t0, pt0_ps1_ps2[0]);
+    rpt0 = t0;
+    
+    reg ptr u32[polyvecl] rps1;
+    stack u32[polyvecl] s1;    
+    s1 = __mem_to_polyvecl(s1, pt0_ps1_ps2[1]);
+    rps1 = s1;
+    
+    reg ptr u32[polyveck] rps2;
+    stack u32[polyveck] s2;
+    s2 = __mem_to_polyveck(s2, pt0_ps1_ps2[2]);
+    rps2 = s2;
+    
+    sk = _pack_sk(sk, rprho, rptr, rpkey, rpt0, rps1, rps2);
+    sk = sk;
+    
+    return sk;
+}
+
+export fn JASMIN_MLDSA_pack_sig(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u8[CTILDEBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] {
+    sig = sig; c = c; z = z; h = h;
+    sig = _pack_sig(sig, c, z, h);
+    sig = sig;
+    return sig;
+}
+
+// Due to https://github.com/jasmin-lang/jasmin/issues/837, the returned values of _unpack_pk are not removed, and this triggers a reg alloc error.
+// We circumvent the issue by spilling, but then we encounter https://github.com/jasmin-lang/jasmin/issues/850, which explains why we don't use #spill and #unspill
+export fn JASMIN_MLDSA_unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
+    stack ptr u8[SEEDBYTES] s_rho;
+    stack ptr u32[polyveck] s_t1;
+
+    rho = rho; t1 = t1; pk = pk;
+    s_rho = rho; s_t1 = t1;
+    rho, t1 = _unpack_pk(rho, t1, pk);
+    s_rho[0:SEEDBYTES] = rho; s_t1[0:polyveck] = t1; // for the checker, this updates s_rho and s_t1, but will be compiled into a nop
+    rho = s_rho; t1 = s_t1;
+    return rho, t1;
+}
+
+export fn JASMIN_MLDSA_unpack_sk_internal(reg ptr u32[3] rho_tr_key, reg ptr u32[3] pt0_ps1_ps2, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u32[3], reg ptr u32[3] {
+    sk = sk; rho_tr_key = rho_tr_key; pt0_ps1_ps2 = pt0_ps1_ps2;
+    
+    reg ptr u8[SEEDBYTES] rprho;
+    stack u8[SEEDBYTES] rho;
+    rho = __mem_to_seed(rho_tr_key[0]);
+    rprho = rho;
+    
+    reg ptr u8[TRBYTES] rptr;
+    stack u8[TRBYTES] tr;    
+    // This should be
+    //   tr = __mem_to_trbytes(rho_tr_key[1]);
+    // but since CRHBYTES = TRBYTES = 64, it is ok
+    tr = __mem_to_crhseed(rho_tr_key[1]);
+    rptr = tr;
+   
+    reg ptr u8[SEEDBYTES] rpkey;
+    stack u8[SEEDBYTES] key;
+    key = __mem_to_seed(rho_tr_key[2]);
+    rpkey = key;
+
+    reg ptr u32[polyveck] rpt0;
+    stack u32[polyveck] t0;
+    t0 = __mem_to_polyveck(t0, pt0_ps1_ps2[0]);
+    rpt0 = t0;
+    
+    reg ptr u32[polyvecl] rps1;
+    stack u32[polyvecl] s1;    
+    s1 = __mem_to_polyvecl(s1, pt0_ps1_ps2[1]);
+    rps1 = s1;
+    
+    reg ptr u32[polyveck] rps2;
+    stack u32[polyveck] s2;
+    s2 = __mem_to_polyveck(s2, pt0_ps1_ps2[2]);
+    rps2 = s2;
+
+    rprho, rptr, rpkey, rpt0, rps1, rps2 = _unpack_sk(rprho, rptr, rpkey, rpt0, rps1, rps2, sk);
+
+    __seed_to_mem(rprho, rho_tr_key[0]);
+    // This should be
+    //   __trbytes_to_mem(rptr, rho_tr_key[1]);
+    // but since CRHBYTES = TRBYTES = 64, it is ok
+    __crhseed_to_mem(rptr, rho_tr_key[1]);
+    __seed_to_mem(rpkey, rho_tr_key[2]);
+    
+    __polyveck_to_mem(pt0_ps1_ps2[0], rpt0);
+    __polyvecl_to_mem(pt0_ps1_ps2[1], rps1);
+    __polyveck_to_mem(pt0_ps1_ps2[2], rps2);
+    
+    return rho_tr_key, pt0_ps1_ps2;
+}
+
+export fn JASMIN_MLDSA_unpack_sig(reg ptr u8[CTILDEBYTES] c, reg ptr u32[polyvecl] z, reg ptr u32[polyveck] h, reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig) -> reg ptr u8[CTILDEBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
+    sig = sig; c = c; z = z; h = h;
+    reg u32 status;
+    c, z, h, status = _unpack_sig(c, z, h, sig);
+    c = c; z = z; h = h; status = status;
+    return c, z, h, status;
+}

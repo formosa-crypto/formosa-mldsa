@@ -1,9 +1,10 @@
 require "../library_arm-m4.jazz"
 
-// Temporary disable exports until FAR GLOBAL DATA is handled with arm-m4
-// require "reduce.jazz"
-// require "ntt.jazz"
-// require "rounding.jazz"
-// require "poly.jazz"
-// require "packing.jazz"
-// require "polyvec.jazz"
+require "../../ml-dsa-any/test/helpers.jinc"
+require "../../ml-dsa-any/test/reduce.jazz"
+require "../../ml-dsa-any/test/ntt.jazz"
+require "../../ml-dsa-any/test/rounding.jazz"
+require "../../ml-dsa-any/test/poly.jazz"
+require "../../ml-dsa-any/test/packing.jazz"
+require "../../ml-dsa-any/test/polyvec.jazz"
+require "../../ml-dsa-any/test/sign.jazz"
