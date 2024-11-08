@@ -14,16 +14,7 @@ param int POLYT1_PACKEDBYTES  = 320; // N/4 * 5
 param int POLYT0_PACKEDBYTES = 416; // N/8 * 13
 
 param int iGAMMA1 = (1 << 19);
-u32 GAMMA1 = iGAMMA1;
-inline fn __GAMMA1 () -> reg u32 {
- // GAMMA1 = 1 << 19
- reg u32 gamma1;
- gamma1 = 1;
- gamma1 = gamma1 << 19;
- return gamma1;
-}
 
 param int iQ = 8380417;
 
 param int iGAMMA2 = ((iQ-1)/32);
-u32 GAMMA2 = iGAMMA2;

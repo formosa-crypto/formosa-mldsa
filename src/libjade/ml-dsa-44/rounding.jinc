@@ -55,7 +55,7 @@ inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
   a1 = a1 ^ aux;
 
   /* *a0  = a - a1 * 2 * GAMMA2; */
-  aux = GAMMA2;
+  aux = iGAMMA2;
   aux = aux << 1; // * 2
   aux = a1 * aux;
   a0 = a - aux;

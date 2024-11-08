@@ -523,7 +523,7 @@ inline fn __polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg
   reg u32[4] t;
   inline int k;
 
-  gamma1 = __GAMMA1();
+  gamma1 = iGAMMA1;
 
   i = 0; j = 0;
   while (i < N) {
@@ -597,7 +597,7 @@ inline fn __polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> r
   reg u32[9] t;
   inline int k;
   
-  gamma1 = __GAMMA1();
+  gamma1 = iGAMMA1;
   () = #spill(gamma1);
 
   i = 0; j = 0;
