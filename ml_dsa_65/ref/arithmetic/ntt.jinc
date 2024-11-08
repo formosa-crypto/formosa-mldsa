@@ -22,189 +22,151 @@ u32[256] ZETAS_TIMES_MONTGOMERY_R = {
 };
 
 namespace polynomial {
-    fn ntt(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    inline
+    fn ntt_at_layer(
+        inline int LAYER,
+        reg u64 zeta_i,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg u64, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        inline int log_len;
-        inline int len;
-        stack u32 start j k;
-        stack u32 zeta;
-        reg u64 zeta_reg;
-        reg u32 t;
+        inline int STEP = 1 << LAYER;
+        inline int ROUNDS = 128 >> LAYER;
 
-        //inner loop bound
-        stack u32 bound;
-        reg u32 rbound;
+        reg u64 round offset bound;
 
-        //temps
-        reg u32 v32;
-        reg u64 v64 addr;
-        reg ptr u32[256] zetas;
+        reg u64 t64 zeta;
+        reg u32 t left;
 
-        stack u32 left right;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] zetas = ZETAS_TIMES_MONTGOMERY_R;
 
-        /*
-        k = 0;
-        for(len = 128; len > 0; len >>= 1) {
-        */
-        k = 0;
-        for log_len = 7 downto -1 {
-            len = 1 << log_len;
+        round = 0;
+        while (round < ROUNDS) {
+            zeta_i += 1;
 
-            //for(start = 0; start < N; start = j + len) {
-            start = 0;
-            while(start < COEFFICIENTS_IN_POLYNOMIAL) {
+            offset = round;
+            offset *= STEP;
+            offset *= 2;
 
-                //zeta = zetas[k++];
-                zetas = ZETAS_TIMES_MONTGOMERY_R;
-                addr = (64u) k;
-                v32 = zetas[(int) addr];
-                zeta = v32;
-                k += 1;
+            bound = offset;
+            bound += STEP;
 
-                //for(j = start; j < start + len; ++j) {
-                j = start;
-                bound = start;
-                bound += len;
-                while {
-                    addr = (64u) j;
-                    v32 = f[(int) addr];
-                    left = v32;
-                    addr += len;
-                    v32 = f[(int) addr];
-                    right = v32;
+            while (offset < bound) {
+                // TODO: Loading these values as a 64u will result in the
+                // wrong answer, maybe this should be reflected in the types?
+                t64 = (64s)polynomial[offset + STEP];
+                zeta = (64s)zetas[zeta_i];
 
-                    //t = montgomery_reduce((int64_t)zeta * a[j + len]);
-                    v64 = (64s) right;
-                    zeta_reg = (64s) zeta;
-                    v64 *= zeta_reg;
-                    t = montgomery_reduce(v64);
+                t64 *= zeta;
+                t = montgomery_reduce(t64);
 
-                    // a[j + len] = a[j] - t;
-                    v32 = left;
-                    v32 -= t;
-                    right = v32;
+                left = polynomial[offset];
+                left -= t;
+                polynomial[offset + STEP] = left;
 
-                    // a[j] = a[j] + t;
-                    v32 = left;
-                    v32 += t;
-                    left = v32;
+                left = polynomial[offset];
+                left += t;
+                polynomial[offset] = left;
 
-                    addr = (64u) j;
-                    v32 = left;
-                    f[(int) addr] = v32;
-                    addr += len;
-                    v32 = right;
-                    f[(int) addr] = v32;
-
-                    j += 1;
-                    rbound = bound;
-                } (j < rbound)
-
-                v64 = (64u) j;
-                v64 += len;
-                start = v64;
+                offset += 1;
             }
+
+            round += 1;
         }
 
-        return f;
+        return zeta_i, polynomial;
+    }
+    fn ntt(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 zeta_i = -1;
+
+        inline int LAYER;
+        for LAYER = 7 downto -1 {
+            zeta_i, polynomial = ntt_at_layer(LAYER, zeta_i, polynomial);
+        }
+
+        return polynomial;
     }
 
-    fn invert_ntt_montgomery(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    inline
+    fn invert_ntt_at_layer(
+        inline int LAYER,
+        reg u64 zeta_i,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg u64, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        inline int log_len;
-        inline int len;
-        stack u32 start j k;
-        stack u32 zeta t;
-        reg u64 zeta_reg;
+        inline int STEP = 1 << LAYER;
+        inline int ROUNDS = 128 >> LAYER;
 
-        //inner loop bound
-        stack u32 bound;
-        reg u32 rbound;
+        reg u64 round offset bound;
 
-        //temps
-        reg u32 v32;
-        reg u64 v64 addr;
-        reg ptr u32[256] zetas;
+        reg u64 t64 zeta;
+        reg u32 t left right;
 
-        stack u32 left right;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] zetas = ZETAS_TIMES_MONTGOMERY_R;
 
-        k = 255;
-        for log_len = 0 to 8 {
-            len = 1 << log_len;
-            start = 0;
-            while(start < COEFFICIENTS_IN_POLYNOMIAL) {
-                k -= 1;
+        round = 0;
+        while (round < ROUNDS) {
+            zeta_i -= 1;
 
-                zetas = ZETAS_TIMES_MONTGOMERY_R;
-                addr = (64u) k;
-                v32 = zetas[(int) addr];
-                v32 *= -1;
-                zeta = v32;
+            offset = round;
+            offset *= STEP;
+            offset *= 2;
 
-                j = start;
-                bound = start;
-                bound += len;
-                while {
-                    addr = (64u) j;
-                    v32 = f[(int) addr];
-                    left = v32;
-                    addr += len;
-                    v32 = f[(int) addr];
-                    right = v32;
+            bound = offset;
+            bound += STEP;
 
-                    // t = a[j];
-                    v32 = left;
-                    t = v32;
+            while (offset < bound) {
+                t = polynomial[offset + STEP];
+                t -= polynomial[offset];
 
-                    //a[j] = t + a[j + len];
-                    v32 = t;
-                    v32 += right;
-                    left = v32;
+                left = polynomial[offset];
+                right = polynomial[offset + STEP];
+                left += right;
+                polynomial[offset] = left;
 
-                    //a[j + len] = t - a[j + len];
-                    v32 = t;
-                    v32 -= right;
-                    right = v32;
+                zeta = (64s)zetas[zeta_i];
+                t64 = (64s)t;
 
-                    //a[j + len] = montgomery_reduce((int64_t)zeta * a[j + len]);
-                    v64 = (64s) right;
-                    zeta_reg = (64s) zeta;
-                    v64 *= zeta_reg;
-                    v32 = montgomery_reduce(v64);
-                    right = v32;
+                t64 *= zeta;
+                t = montgomery_reduce(t64);
+                polynomial[offset + STEP] = t;
 
-                    addr = (64u) j;
-                    v32 = left;
-                    f[(int) addr] = v32;
-                    addr += len;
-                    v32 = right;
-                    f[(int) addr] = v32;
-
-                    j += 1;
-                    rbound = bound;
-                } (j < rbound)
-
-                v32 = j;
-                v32 += len;
-                start = v32;
+                offset += 1;
             }
+
+            round += 1;
+        }
+
+        return zeta_i, polynomial;
+    }
+
+    fn invert_ntt_montgomery(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 zeta_i coefficient64;
+        reg u32 coefficient;
+
+        reg u64 j;
+
+        inline int LAYER;
+
+        zeta_i = 255;
+        for LAYER = 0 to 8 {
+            zeta_i, polynomial = invert_ntt_at_layer(LAYER, zeta_i, polynomial);
         }
 
         j = 0;
         while(j < COEFFICIENTS_IN_POLYNOMIAL) {
-            //a[j] = montgomery_reduce((int64_t)f * a[j]);
-            addr = (64u) j;
-            v32 = f[(int) addr];
+            coefficient64 = (64s)polynomial[j];
+            coefficient64 *= 41_978;
 
-            v64 = (64s) v32;
-            v64 *= 41_978;
-            v32 = montgomery_reduce(v64);
+            coefficient = montgomery_reduce(coefficient64);
+            polynomial[j] = coefficient;
 
-            f[(int) addr] = v32;
             j += 1;
         }
 
-        return f;
+        return polynomial;
     }
 }
-
