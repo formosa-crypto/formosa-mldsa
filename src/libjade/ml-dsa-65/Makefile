@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-include common.mk
+include ../ml-dsa-any/common.mk
 
 #-------------------------------------------------------------------------------
 
@@ -8,7 +8,7 @@ all: clean compile
 #-------------------------------------------------------------------------------
 
 JASMIN_LIB := libml-dsa-65_jasmin_$(arch).a
-JASMIN_OBJECTS := library_$(arch).o
+JASMIN_OBJECTS := library_export_$(arch).o
 JASMIN_FILES := library_export_$(arch).jazz
 
 PRE_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%.jpp)
@@ -17,7 +17,7 @@ OBJ_JASMIN_FILES := $(JASMIN_FILES:%.jazz=%_jazz.o)
 
 #-------------------------------------------------------------------------------
 
-$(JASMIN_OBJECTS): library_$(arch).s
+$(JASMIN_OBJECTS): library_export_$(arch).s
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 $(ASM_JASMIN_FILES):
