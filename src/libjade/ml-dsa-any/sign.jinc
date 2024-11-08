@@ -548,7 +548,6 @@ fn _crypto_sign_signature_ctx
   state = pstate;
   rhoprime = s_rhoprime;
   for i = 0 to CRHBYTES/4 {
-    reg u32 t;
     t = pstate[i];
     rhoprime[u32 i] = t;
   }
@@ -612,7 +611,6 @@ fn _crypto_sign_signature_ctx
     () = #unspill(sig);
     sigctilde = sig[0:CTILDEBYTES];
     for i = 0 to CTILDEBYTES/4 {
-      reg u32 t;
       t = pstate[i];
       sigctilde[u32 i] = t;
     }
@@ -799,7 +797,6 @@ fn _crypto_sign_signature_ctx_seed
   state = pstate;
   rhoprime = s_rhoprime;
   for i = 0 to CRHBYTES/4 {
-    reg u32 t;
     t = pstate[i];
     rhoprime[u32 i] = t;
   }
@@ -863,7 +860,6 @@ fn _crypto_sign_signature_ctx_seed
     () = #unspill(sig);
     sigctilde = sig[0:CTILDEBYTES];
     for i = 0 to CTILDEBYTES/4 {
-      reg u32 t;
       t = pstate[i];
       sigctilde[u32 i] = t;
     }
@@ -1093,7 +1089,6 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u3
         pstate = _keccakf1600_ref(pstate);
         // FIXME define a function for that
         for i = 0 to CTILDEBYTES/4 {
-          reg u32 t;
           t = pstate[i];
           c2[u32 i] = t;
         }
@@ -1103,8 +1098,8 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u3
         reg u32 ci c2i;
         for i = 0 to CTILDEBYTES {
           if (status == 0) {
-	    ci = (32u)c[i];
-	    c2i = (32u)c2[i];
+            ci = (32u)c[i];
+            c2i = (32u)c2[i];
             if (ci != c2i) {
               status = i + 1;
             }
