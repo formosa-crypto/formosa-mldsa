@@ -26,13 +26,13 @@ int32_t JASMIN_VERSION(freeze)(int32_t a);
 
 int main ()
 {
-  check64to32(PQCLEAN_VERSION(montgomery_reduce), JASMIN_VERSION(montgomery_reduce), "PQCLEAN_VERSION(montgomery_reduce");
+  check64to32(PQCLEAN_VERSION(montgomery_reduce), JASMIN_VERSION(montgomery_reduce), "montgomery_reduce");
   
-  check32to32(PQCLEAN_VERSION(reduce32), JASMIN_VERSION(reduce32), "PQCLEAN_VERSION(reduce32");
+  check32to32(PQCLEAN_VERSION(reduce32), JASMIN_VERSION(reduce32), "reduce32");
 
-  check32to32(PQCLEAN_VERSION(caddq), JASMIN_VERSION(caddq), "PQCLEAN_VERSION(caddq");
+  check32to32(PQCLEAN_VERSION(caddq), JASMIN_VERSION(caddq), "caddq");
   
-  check32to32(PQCLEAN_VERSION(freeze), JASMIN_VERSION(freeze), "PQCLEAN_VERSION(freeze");
+  check32to32(PQCLEAN_VERSION(freeze), JASMIN_VERSION(freeze), "freeze");
   
   return 0;
 }
