@@ -170,20 +170,20 @@ fn sign_internal(
         cs1 = row_vector::invert_ntt_montgomery(cs1);
         signer_response = row_vector::add(cs1, mask);
         #declassify signer_response = row_vector::reduce32(signer_response);
-        infinity_norm_check_result = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
+        #declassify infinity_norm_check_result = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
 
         if(infinity_norm_check_result == 0) {
             cs2 = column_vector::multiply_by_polynomial(s2, verifier_challenge);
             cs2 = column_vector::invert_ntt_montgomery(cs2);
             w0_minus_cs2 = column_vector::subtract(w0, cs2);
             #declassify w0_minus_cs2 = column_vector::reduce32(w0_minus_cs2);
-            infinity_norm_check_result = column_vector::check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
+            #declassify infinity_norm_check_result = column_vector::check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
 
             if(infinity_norm_check_result == 0) {
                 ct0 = column_vector::multiply_by_polynomial(t0, verifier_challenge);
                 ct0 = column_vector::invert_ntt_montgomery(ct0);
                 #declassify ct0 = column_vector::reduce32(ct0);
-                infinity_norm_check_result = column_vector::check_infinity_norm(ct0, GAMMA2);
+                #declassify infinity_norm_check_result = column_vector::check_infinity_norm(ct0, GAMMA2);
 
                 if(infinity_norm_check_result == 0) {
                     w0_minus_cs2_plus_ct0 = column_vector::add(w0_minus_cs2, ct0);

@@ -107,7 +107,7 @@ fn verify_internal(
 
     signer_response = gamma1::decode(signature_encoded[COMMITMENT_HASH_SIZE: GAMMA1_ENCODED_SIZE], signer_response);
 
-    signer_response_outside_bounds = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
+    #declassify signer_response_outside_bounds = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
     if (signer_response_outside_bounds == 0) {
         hints, result = signature::decode_hint(signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE], hints);
 

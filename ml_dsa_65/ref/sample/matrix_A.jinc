@@ -28,13 +28,13 @@ fn absorb_for_shake128(
 
 inline
 fn uniform_sample_polynomial(
-    #public reg ptr u8[32] rho,
+    reg ptr u8[32] rho,
     inline int i,
     inline int j,
     reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
 {
-    reg u32 try_coefficient byte;
+    #public reg u32 try_coefficient byte;
     reg u64 xof_offset polynomial_offset;
     stack u64[25] state;
 
@@ -53,7 +53,7 @@ fn uniform_sample_polynomial(
 
         try_coefficient = 0;
         for k = 0 to 3 {
-            byte = (32u)state[u8 xof_offset];
+            #declassify byte = (32u)state[u8 xof_offset];
             byte <<= 8 * k;
             try_coefficient |= byte;
 
@@ -72,10 +72,10 @@ fn uniform_sample_polynomial(
 
 namespace sample {
     inline
-    fn matrix_A(stack u8[32] rho) ->
+    fn matrix_A(#public stack u8[32] rho) ->
         stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly;
+        #public reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly;
         stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix;
 
         inline int i j;
