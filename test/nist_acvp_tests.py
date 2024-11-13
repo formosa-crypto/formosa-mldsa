@@ -68,7 +68,7 @@ with open("acvp-1_1_0_36/siggen/prompt.json", "r") as tests_raw, open(
             else:
                 signing_randomness = bytearray.fromhex(test["rnd"])
 
-            signature, _ = ml_dsa_65.sign(signing_key, message, signing_randomness)
+            signature = ml_dsa_65.sign(signing_key, message, signing_randomness)
 
             expected_result = find_expected_result(
                 expected_results["testGroups"][test_group_id - 1]["tests"], test_id

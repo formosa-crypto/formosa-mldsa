@@ -24,10 +24,12 @@ export fn ml_dsa_65_keygen(
     #public stack u8[VERIFICATION_KEY_SIZE] verification_key;
     #secret stack u8[SIGNING_KEY_SIZE] signing_key;
 
+    reg u64 msf = #init_msf();
+
     reg u8 byte;
     reg u64 i;
 
-    verification_key, signing_key = keygen_internal(randomness);
+    verification_key, signing_key, msf = keygen_internal(randomness, msf);
 
     i = 0;
     while (i < VERIFICATION_KEY_SIZE) {
@@ -55,15 +57,16 @@ export fn ml_dsa_65_sign(
     #public reg u64 signing_key,
     #public reg u64 message message_size,
     #secret reg ptr u8[32] randomness
-) -> #secret reg u32
+)
 {
     #secret stack u8[SIGNING_KEY_SIZE] signing_key_on_stack;
 
     stack u8[SIGNATURE_SIZE] signature;
-    reg u32 signing_attempts;
 
     #flexible reg u8 byte;
-    reg u64 i;
+    reg u64 i = 0;
+
+    reg u64 msf = #init_msf();
 
     i = 0;
     while(i < SIGNING_KEY_SIZE) {
@@ -72,7 +75,7 @@ export fn ml_dsa_65_sign(
         i += 1;
     }
 
-    signature, signing_attempts = sign_internal(signing_key_on_stack, message, message_size, randomness);
+    signature, msf = sign_internal(signing_key_on_stack, message, message_size, randomness, msf);
 
     i = 0;
     while(i < SIGNATURE_SIZE) {
@@ -80,8 +83,6 @@ export fn ml_dsa_65_sign(
         (u8)[signature_out + i] = byte;
         i += 1;
     }
-
-    return signing_attempts;
 }
 
 // We expect that:

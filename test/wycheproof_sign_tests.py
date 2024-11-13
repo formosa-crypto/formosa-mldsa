@@ -39,7 +39,7 @@ with open(
             else:
                 message = bytearray([0, 0]) + bytearray.fromhex(test["msg"])
 
-            signature, _ = ml_dsa_65.sign(signing_key, message, signing_seed)
+            signature = ml_dsa_65.sign(signing_key, message, signing_seed)
 
             if test["result"] == "valid":
                 actual_decoded = bytearray.fromhex(test["sig"])

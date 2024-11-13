@@ -68,8 +68,9 @@ fn sign_internal(
         #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key,
         reg u64 pointer_to_message,
         reg u64 message_size,
-        reg ptr u8[32] randomness
-) -> stack u8[SIGNATURE_SIZE], reg u32 {
+        reg ptr u8[32] randomness,
+        reg u64 msf
+) -> stack u8[SIGNATURE_SIZE], reg u64 {
     stack u8[SIGNATURE_SIZE] signature_encoded;
 
     // parts of signing_key
@@ -97,9 +98,6 @@ fn sign_internal(
 
     stack u8 exit_rejection_sampling_loop;
 
-    // Count and return signing attempts; this is useful for testing.
-    stack u32 signing_attempts;
-
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w;
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask_as_ntt;
@@ -125,7 +123,7 @@ fn sign_internal(
     seed_for_mask = derive_seed_for_mask(signing_key[32:32], randomness, message_representative);
 
     #declassify seed_for_matrix_A = signing_key[0:32];
-    matrix_A = sample::matrix_A(seed_for_matrix_A);
+    matrix_A, msf = sample::matrix_A(seed_for_matrix_A, msf);
 
     s1 = row_vector::ntt(s1);
     s2 = column_vector::ntt(s2);
@@ -134,7 +132,6 @@ fn sign_internal(
     domain_separator_for_mask = 0;
 
     exit_rejection_sampling_loop = 0;
-    signing_attempts = 0;
 
     // WARNING WARNING WARNING
     //
@@ -146,8 +143,6 @@ fn sign_internal(
     // The security of this rejection sampling loop CANNOT be established through
     // type-checking alone, and requires proving work in EasyCrypt.
     while (exit_rejection_sampling_loop != 1) {
-        signing_attempts += 1;
-
         mask, domain_separator_for_mask = sample::mask(seed_for_mask, domain_separator_for_mask);
 
         mask_as_ntt = #copy(mask);
@@ -198,5 +193,5 @@ fn sign_internal(
     }
 
     signature_encoded = signature::encode(commitment_hash, signer_response, hint);
-    return signature_encoded, signing_attempts;
+    return signature_encoded, msf;
 }

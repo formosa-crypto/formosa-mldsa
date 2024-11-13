@@ -35,7 +35,7 @@ with open("nist_drbg_kats/nist_drbg_kats_65.json", "r") as nistkats_65_raw:
 
         signing_randomness = bytearray.fromhex(kat["signing_randomness"])
 
-        signature, _ = ml_dsa_65.sign(signing_key, message, signing_randomness)
+        signature = ml_dsa_65.sign(signing_key, message, signing_randomness)
 
         sha3_256_hash_of_signature = hashlib.sha3_256(signature.raw).digest()
         assert sha3_256_hash_of_signature == bytes.fromhex(

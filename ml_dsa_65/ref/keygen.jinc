@@ -36,9 +36,10 @@ fn prepare_state_for_shake256(
 }
 
 inline
-fn keygen_internal(#secret reg ptr u8[32] randomness)
+fn keygen_internal(#secret reg ptr u8[32] randomness, reg u64 msf)
     -> #public stack u8[VERIFICATION_KEY_SIZE], 
-       #secret stack u8[SIGNING_KEY_SIZE]
+       #secret stack u8[SIGNING_KEY_SIZE],
+       reg u64
 {
     #public stack u8[VERIFICATION_KEY_SIZE] verification_key;
     #secret stack u8[SIGNING_KEY_SIZE] signing_key;
@@ -81,7 +82,7 @@ fn keygen_internal(#secret reg ptr u8[32] randomness)
 
     s1 = row_vector::ntt(s1);
 
-    matrix_A = sample::matrix_A(seed_for_matrix_A);
+    matrix_A, msf = sample::matrix_A(seed_for_matrix_A, msf);
     t = row_vector::multiply_with_matrix_A(matrix_A, s1);
     t = column_vector::reduce32(t);
     t = column_vector::invert_ntt_montgomery(t);
@@ -102,5 +103,5 @@ fn keygen_internal(#secret reg ptr u8[32] randomness)
     signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]
     = t0::encode(signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE], t0);
 
-    return verification_key, signing_key;
+    return verification_key, signing_key, msf;
 }

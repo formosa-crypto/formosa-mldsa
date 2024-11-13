@@ -38,7 +38,7 @@ class ML_DSA:
         assert len(randomness) == 32
         signature = ctypes.create_string_buffer(self.signature_size)
 
-        signing_attempts = self.ml_dsa.ml_dsa_65_sign(
+        self.ml_dsa.ml_dsa_65_sign(
             signature,
             signing_key,
             self.bytearray_to_ctype(message),
@@ -46,9 +46,7 @@ class ML_DSA:
             self.bytearray_to_ctype(randomness),
         )
 
-        assert signing_attempts > 0 and signing_attempts <= 814
-
-        return (signature, signing_attempts)
+        return signature
 
     def verify(self, verification_key, message, signature):
         return self.ml_dsa.ml_dsa_65_verify(

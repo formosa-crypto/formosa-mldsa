@@ -85,7 +85,7 @@ fn verify_internal(
     reg ptr u8[SIGNATURE_SIZE] signature_encoded
 ) -> reg u64 {
     // 0 indicates success, -1 indicates failure.
-    reg u64 result;
+    reg u64 result = -1;
 
     stack u8 signer_response_outside_bounds;
 
@@ -103,7 +103,7 @@ fn verify_internal(
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints;
 
-    result = -1;
+    reg u64 msf = #init_msf();
 
     signer_response = gamma1::decode(signature_encoded[COMMITMENT_HASH_SIZE: GAMMA1_ENCODED_SIZE], signer_response);
 
@@ -113,7 +113,7 @@ fn verify_internal(
 
         if (result == 0) {
             () = #spill(signature_encoded);
-            matrix_A = sample::matrix_A(verification_key[0:SEED_FOR_MATRIX_A_SIZE]);
+            matrix_A, msf = sample::matrix_A(verification_key[0:SEED_FOR_MATRIX_A_SIZE], msf);
 
             signer_response = row_vector::ntt(signer_response);
             A_times_signer_response = row_vector::multiply_with_matrix_A(matrix_A, signer_response);
