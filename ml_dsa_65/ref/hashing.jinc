@@ -27,7 +27,10 @@ fn hash_verification_key(
             verification_key_offset += 1;
             state_offset += 1;
         }
+
+        () = #spill(verification_key_offset, verification_key, hash);
         state = __keccakf1600_ref(state);
+        () = #unspill(verification_key_offset, verification_key, hash);
     }
 
     state_offset = 0;
@@ -45,10 +48,12 @@ fn hash_verification_key(
 
     // ... then squeeze.
 
+    () = #spill(hash);
     state = __keccakf1600_ref(state);
+    () = #unspill(hash);
 
     state_offset = 0;
-    while(state_offset < 64) {
+    while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
         byte = state[u8 state_offset];
         hash[state_offset] = byte;
         state_offset += 1;
@@ -93,7 +98,14 @@ fn derive_message_representative(
 
     message_offset = 0;
     while(message_offset < message_size) {
-        state, state_offset = shake256_consider_permute(state, state_offset);
+        if (state_offset >= SHAKE256_RATE) {
+            () = #spill(message, message_offset, message_size);
+            state = __keccakf1600_ref(state);
+            () = #unspill(message, message_offset, message_size);
+
+            ?{}, state_offset = #set0_64();
+        }
+
         byte = (u8) [message + message_offset];
         message_offset += 1;
 
@@ -150,7 +162,11 @@ fn derive_commitment_hash(reg ptr u8[64] message_representative_size, reg ptr u8
             state[u8 state_offset] ^= byte;
             state_offset += 1;
         }
+
+        () = #spill(encoded_commitment, encoded_commitment_offset);
         state = __keccakf1600_ref(state);
+        () = #unspill(encoded_commitment, encoded_commitment_offset);
+
         state_offset = 0;
     }
 

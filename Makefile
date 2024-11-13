@@ -16,7 +16,7 @@ IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
 OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)
 
 $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
-	$(JASMINC) -o $@ $<
+	$(JASMINC) -lazy-regalloc -o $@ $<
 
 # --------------------------------------------------------------------
 .PHONY: test

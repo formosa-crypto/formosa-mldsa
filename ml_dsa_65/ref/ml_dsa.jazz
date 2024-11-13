@@ -29,7 +29,9 @@ export fn ml_dsa_65_keygen(
     reg u8 byte;
     reg u64 i;
 
+    () = #spill(verification_key_out, signing_key_out);
     verification_key, signing_key, msf = keygen_internal(randomness, msf);
+    () = #unspill(verification_key_out, signing_key_out);
 
     i = 0;
     while (i < VERIFICATION_KEY_SIZE) {
@@ -75,7 +77,9 @@ export fn ml_dsa_65_sign(
         i += 1;
     }
 
+    () = #spill(signature_out);
     signature, msf = sign_internal(signing_key_on_stack, message, message_size, randomness, msf);
+    () = #unspill(signature_out);
 
     i = 0;
     while(i < SIGNATURE_SIZE) {

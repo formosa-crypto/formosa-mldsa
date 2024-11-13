@@ -35,9 +35,9 @@ fn absorb_rho_prime_for_shake256(
 
 inline
 fn sample_error_polynomial(
-    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
     #secret reg ptr u8[64] rho_prime,
-    reg u16 index
+    reg u16 index,
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error
 ) -> #secret reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
 {
     reg u64 coefficients_sampled;
@@ -50,13 +50,18 @@ fn sample_error_polynomial(
     reg u32 temp;
 
     state = absorb_rho_prime_for_shake256(state, rho_prime, index);
+
+    () = #spill(error);
     #declassify state = __keccakf1600_ref(state);
+    () = #unspill(error);
 
     coefficients_sampled = 0;
     xof_offset = 0;
     while (coefficients_sampled < COEFFICIENTS_IN_POLYNOMIAL) {
         if(xof_offset >= SHAKE256_RATE) {
+            () = #spill(coefficients_sampled, error);
             state = __keccakf1600_ref(state);
+            () = #unspill(coefficients_sampled, error);
             xof_offset = 0;
         }
 
@@ -94,22 +99,29 @@ namespace sample {
     fn error_vectors(#secret stack u8[64] rho_prime)
         -> #secret stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
            #secret stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] entry;
         stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
 
         inline int i;
 
         for i = 0 to COLUMNS_IN_MATRIX_A {
-            entry = s1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            entry = sample_error_polynomial(entry, rho_prime, i);
-            s1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] = entry;
+            s1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
+                sample_error_polynomial
+                (
+                    rho_prime,
+                    i,
+                    s1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
+                );
         }
 
         for i = 0 to ROWS_IN_MATRIX_A {
-            entry = s2[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            entry = sample_error_polynomial(entry, rho_prime, COLUMNS_IN_MATRIX_A + i);
-            s2[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] = entry;
+            s2[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
+                sample_error_polynomial
+                (
+                    rho_prime,
+                    COLUMNS_IN_MATRIX_A + i,
+                    s2[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
+                );
         }
 
         return s1, s2;

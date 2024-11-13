@@ -63,8 +63,8 @@ namespace gamma1 {
     }
 
     fn decode_to_polynomial(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
-        reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] bytes
+        reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] bytes,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u64 i;
@@ -139,7 +139,7 @@ namespace gamma1 {
             decoded_gamma1_polynomial = decoded[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
 
             () = #spill(decoded);
-            decoded_gamma1_polynomial = decode_to_polynomial(decoded_gamma1_polynomial, encoded_gamma1_polynomial);
+            decoded_gamma1_polynomial = decode_to_polynomial(encoded_gamma1_polynomial, decoded_gamma1_polynomial);
             () = #unspill(decoded);
 
             decoded[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = decoded_gamma1_polynomial;

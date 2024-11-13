@@ -80,8 +80,8 @@ fn reconstruct_signer_commitment(
 
 inline
 fn verify_internal(
-    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    reg u64 message, reg u64 message_size,
+    stack u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg u64 message message_size,
     reg ptr u8[SIGNATURE_SIZE] signature_encoded
 ) -> reg u64 {
     // 0 indicates success, -1 indicates failure.
@@ -112,6 +112,8 @@ fn verify_internal(
         hints, result = signature::decode_hint(signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE], hints);
 
         if (result == 0) {
+            () = #spill(message, message_size);
+
             () = #spill(signature_encoded);
             matrix_A, msf = sample::matrix_A(verification_key[0:SEED_FOR_MATRIX_A_SIZE], msf);
 
@@ -119,10 +121,8 @@ fn verify_internal(
             A_times_signer_response = row_vector::multiply_with_matrix_A(matrix_A, signer_response);
             () = #unspill(signature_encoded);
 
-            () = #spill(verification_key);
             #declassify challenge = sample::challenge(challenge, signature_encoded[0:COMMITMENT_HASH_SIZE]);
             challenge = polynomial::ntt(challenge);
-            () = #unspill(verification_key);
 
             reconstructed_signer_commitment = reconstruct_signer_commitment(
                                                     verification_key[SEED_FOR_MATRIX_A_SIZE: T1_ENCODED_SIZE],
@@ -132,12 +132,15 @@ fn verify_internal(
 
             // Compute the expected commitment hash
             verification_key_hash = hash_verification_key(verification_key, verification_key_hash);
+            () = #unspill(message, message_size);
+
             message_representative = derive_message_representative(
                 verification_key_hash,
                 message,
                 message_size);
 
             #declassify expected_commitment_hash = derive_commitment_hash(message_representative, reconstructed_signer_commitment);
+
             result = compare_commitment_hashes(expected_commitment_hash, signature_encoded[0:COMMITMENT_HASH_SIZE]);
         }
     }

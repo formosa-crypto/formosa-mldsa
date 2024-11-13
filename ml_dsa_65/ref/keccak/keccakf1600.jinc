@@ -1,3 +1,6 @@
+// N.B.: This implementation has been taken from:
+// https://github.com/formosa-crypto/libjade/blob/dev/src/common/keccak/keccak1600/amd64/ref1/keccakf1600.jinc
+
 require "keccakf1600_globals.jinc" // KECCAK1600_RC
 require "keccakf1600_spec.jinc" // __rhotates_spec
 
