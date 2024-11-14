@@ -4,7 +4,7 @@
 
 ### To all platforms
 
-#### Retrieve appropriate keccakf1600 implementations from libjade (for risc-v)
+#### Retrieve appropriate keccakf1600 implementations from libjade (only required for RISC-V)
 
 ``` shell
 cd *path-to*dilithium-arm
@@ -27,9 +27,11 @@ make -j
 export JASMINC=*path-to*jasminc;
 ```
 
-### macOS
+### Install tools for cross compilation
 
-#### Install tools for risc-v cross compilation
+### RISC-V
+
+#### macOS
 
 ``` shell
 brew install riscv64-elf-binutils
@@ -40,14 +42,19 @@ brew install riscv64-elf-binutils
 As an example, to build the jasmin library of ML-DSA-87 for arm-m4:
 
 `cd ml-dsa-87;`
+
 `make arch=arm-m4;`
 
 which produces `libml-dsa-87_jasmin_arm-m4.a`.
 
 This library exposes a subset of the crypto_sign API :
+
     - JASMIN_MLDSA87_crypto_sign_keypair
+    
     - JASMIN_MLDSA87_crypto_sign_keypair_seed
+    
     - JASMIN_MLDSA87_crypto_sign_signature_ctx
+    
     - JASMIN_MLDSA87_crypto_sign_verify_ctx
 
 ## Code organization
@@ -60,13 +67,13 @@ This library exposes a subset of the crypto_sign API :
 Generic implementations with regard to ml-dsa version are located in ml-dsa-any directory.
 Specific implementations are located in ml-dsa-$(version) directories.
 
-Implementation variants for arm-m4 and risc-v are provided in these repositories.
+Implementation variants for arm-m4 and RISC-V are provided in these repositories.
 
 The ML-DSA jasmin libraries are built by combining version / architecture generic and specific files according to rules specified in the library-export-$(architecture).jazz located in their respective folders.
 
-# Testing the libraries through emulation (RISC-V)
+# Testing the libraries through emulation
 
-## Testing prerequisites
+## Testing prerequisites for RISC-V
 
 ### Spike emulator installation
 
@@ -87,14 +94,15 @@ make
 make install
 ```
 
-## Tests compilation
+## Testing compilation
 
 `cd ml-dsa-87/test;`
+
 `make arch=risc-v;`
 
 which produces tests executables, `test_sign` among others.
 
-## Tests execution (on OS-X)
+## Tests execution (on macOS for RISC-V)
 
 As an example, one can run tests overs the `sign` API:
 
