@@ -7,5 +7,5 @@ in pkgs.mkShell {
     ]))
   ];
   JASMINC = "${pkgs.jasmin-compiler.bin}/bin/jasminc";
-  JASMINCT = "${pkgs.jasmin-compiler.bin}/bin/jasminc";
+  JASMINCT = "${pkgs.jasmin-compiler.bin}/bin/jasmin-ct";
 }
