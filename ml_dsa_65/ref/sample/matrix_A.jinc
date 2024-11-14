@@ -1,4 +1,4 @@
-require "../fips202.jinc"
+require "../hashing.jinc"
 
 inline
 fn absorb_for_shake128(
@@ -11,7 +11,7 @@ fn absorb_for_shake128(
     reg u8 byte;
     inline int k;
 
-    state = st0(state);
+    state = __keccak_init_ref1(state);
 
     for k = 0 to 32 {
         byte = rho[k];
@@ -44,7 +44,7 @@ fn uniform_sample_polynomial(
     state = absorb_for_shake128(state, rho, i, j);
 
     () = #spill(result);
-    state = __keccakf1600_ref(state);
+    state = _keccakf1600_ref1(state);
     () = #unspill(result);
 
 
@@ -54,7 +54,7 @@ fn uniform_sample_polynomial(
     while(polynomial_offset < COEFFICIENTS_IN_POLYNOMIAL) {
         if(xof_offset >= SHAKE128_RATE) {
             () = #spill(result, polynomial_offset);
-            state = __keccakf1600_ref(state);
+            state = _keccakf1600_ref1(state);
             () = #unspill(result, polynomial_offset);
             xof_offset = 0;
         }

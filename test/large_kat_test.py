@@ -28,7 +28,7 @@ for i in range(KAT_ITERATIONS):
     message = bytearray([0, 0]) + bytearray(message)
 
     signing_randomness = bytearray(rng.read(32))
-    signature, attempts = ml_dsa_65.sign(signing_key, message, signing_randomness)
+    signature = ml_dsa_65.sign(signing_key, message, signing_randomness)
 
     verification_result = ml_dsa_65.verify(verification_key, message, signature)
     assert verification_result == 0

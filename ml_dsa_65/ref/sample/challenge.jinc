@@ -1,4 +1,4 @@
-require "../fips202.jinc"
+require "../hashing.jinc"
 require "../parameters.jinc"
 require "../encoding/gamma1.jinc"
 
@@ -11,7 +11,7 @@ fn absorb_commitment_hash_for_shake256(
 
     inline int i;
 
-    state = st0(state);
+    state = __keccak_init_ref1(state);
 
     for i = 0 to COMMITMENT_HASH_SIZE {
         byte = commitment_hash[i];
@@ -43,7 +43,7 @@ namespace sample {
         state = absorb_commitment_hash_for_shake256(state, seed);
 
         () = #spill(output_challenge);
-        state = __keccakf1600_ref(state);
+        state = _keccakf1600_ref1(state);
         () = #unspill(output_challenge);
 
         signs = 0;
@@ -66,7 +66,7 @@ namespace sample {
             while {
                 if(xof_offset >= SHAKE256_RATE) {
                     () = #spill(output_challenge, i, signs);
-                    state = __keccakf1600_ref(state);
+                    state = _keccakf1600_ref1(state);
                     () = #unspill(output_challenge, i, signs);
 
                     xof_offset = 0;

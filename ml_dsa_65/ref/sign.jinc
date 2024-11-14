@@ -1,4 +1,4 @@
-require "fips202.jinc"
+require "hashing.jinc"
 require "hashing.jinc"
 require "constants.jinc"
 require "parameters.jinc"
@@ -25,7 +25,7 @@ fn derive_seed_for_mask(
     reg u64 offset;
     reg u64 i;
 
-    state = st0(state);
+    state = __keccak_init_ref1(state);
 
     i = 0;
     while(i < 32) {
@@ -52,7 +52,7 @@ fn derive_seed_for_mask(
     state[u8 SHAKE256_RATE - 1] ^= 0x80;
 
     () = #spill(seed_for_mask);
-    state = __keccakf1600_ref(state);
+    state = _keccakf1600_ref1(state);
     () = #unspill(seed_for_mask);
 
     i = 0;

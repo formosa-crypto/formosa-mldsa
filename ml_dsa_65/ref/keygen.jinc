@@ -1,4 +1,4 @@
-require "fips202.jinc"
+require "hashing.jinc"
 require "hashing.jinc"
 require "row_vector.jinc"
 require "column_vector.jinc"
@@ -22,7 +22,7 @@ fn prepare_state_for_shake256(
 
     inline int i;
 
-    state = st0(state);
+    state = __keccak_init_ref1(state);
     for i = 0 to 32 {
         byte = randomness[i];
         state[u8 i] = byte;
@@ -60,7 +60,7 @@ fn keygen_internal(#secret reg ptr u8[32] randomness, reg u64 msf)
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t t0 t1;
 
     state = prepare_state_for_shake256(state, randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
-    state = __keccakf1600_ref(state);
+    state = _keccakf1600_ref1(state);
 
     #declassify seed_for_matrix_A = state[u8 0:SEED_FOR_MATRIX_A_SIZE];
     seed_for_error_vectors = state[u8 SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];

@@ -1,5 +1,5 @@
 require "../constants.jinc"
-require "../fips202.jinc"
+require "../hashing.jinc"
 
 // N.B.: ETA is 4.
 
@@ -12,7 +12,7 @@ fn absorb_rho_prime_for_shake256(
     reg u8 byte;
     reg u64 i;
 
-    state = st0(state);
+    state = __keccak_init_ref1(state);
 
     i = 0;
     while(i < 64) {
@@ -52,7 +52,7 @@ fn sample_error_polynomial(
     state = absorb_rho_prime_for_shake256(state, rho_prime, index);
 
     () = #spill(error);
-    #declassify state = __keccakf1600_ref(state);
+    #declassify state = _keccakf1600_ref1(state);
     () = #unspill(error);
 
     coefficients_sampled = 0;
@@ -60,7 +60,7 @@ fn sample_error_polynomial(
     while (coefficients_sampled < COEFFICIENTS_IN_POLYNOMIAL) {
         if(xof_offset >= SHAKE256_RATE) {
             () = #spill(coefficients_sampled, error);
-            state = __keccakf1600_ref(state);
+            state = _keccakf1600_ref1(state);
             () = #unspill(coefficients_sampled, error);
             xof_offset = 0;
         }

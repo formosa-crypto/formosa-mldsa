@@ -1,4 +1,4 @@
-require "../fips202.jinc"
+require "../hashing.jinc"
 require "../parameters.jinc"
 require "../encoding/gamma1.jinc"
 
@@ -13,7 +13,7 @@ fn absorb_for_shake256(
 
     reg u64 i;
 
-    state = st0(state);
+    state = __keccak_init_ref1(state);
 
     i = 0;
     while(i < 64) {
@@ -64,7 +64,7 @@ fn sample_mask_polynomial(
     block_being_squeezed = 0;
     while(block_being_squeezed < SHAKE256_BLOCKS_FOR_GAMMA1_ENCODED_POLYNOMIAL) {
         () = #spill(mask, mask_encoded_offset);
-        state = __keccakf1600_ref(state);
+        state = _keccakf1600_ref1(state);
         () = #unspill(mask, mask_encoded_offset);
 
         i = 0;

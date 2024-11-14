@@ -1,5 +1,8 @@
-require "fips202.jinc"
+require "keccak/keccak1600.jinc"
 require "arithmetic/rounding.jinc"
+
+param int SHAKE128_RATE = 168;
+param int SHAKE256_RATE = 136;
 
 inline
 fn hash_verification_key(
@@ -15,7 +18,7 @@ fn hash_verification_key(
 
     // Absorb ...
 
-    state = st0(state);
+    state = __keccak_init_ref1(state);
 
     while(verification_key_offset < VERIFICATION_KEY_SIZE - SHAKE256_RATE) {
         state_offset = 0;
@@ -29,7 +32,7 @@ fn hash_verification_key(
         }
 
         () = #spill(verification_key_offset, verification_key, hash);
-        state = __keccakf1600_ref(state);
+        state = _keccakf1600_ref1(state);
         () = #unspill(verification_key_offset, verification_key, hash);
     }
 
@@ -49,7 +52,7 @@ fn hash_verification_key(
     // ... then squeeze.
 
     () = #spill(hash);
-    state = __keccakf1600_ref(state);
+    state = _keccakf1600_ref1(state);
     () = #unspill(hash);
 
     state_offset = 0;
@@ -65,7 +68,7 @@ fn hash_verification_key(
 inline
 fn shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u64[25], reg u64 {
     if (offset >= SHAKE256_RATE) {
-        state = __keccakf1600_ref(state);
+        state = _keccakf1600_ref1(state);
         ?{}, offset = #set0_64();
     }
     return state, offset;
@@ -86,7 +89,7 @@ fn derive_message_representative(
 
     // Absorb ...
 
-    state = st0(state);
+    state = __keccak_init_ref1(state);
 
     state_offset = 0;
     while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
@@ -100,7 +103,7 @@ fn derive_message_representative(
     while(message_offset < message_size) {
         if (state_offset >= SHAKE256_RATE) {
             () = #spill(message, message_offset, message_size);
-            state = __keccakf1600_ref(state);
+            state = _keccakf1600_ref1(state);
             () = #unspill(message, message_offset, message_size);
 
             ?{}, state_offset = #set0_64();
@@ -121,7 +124,7 @@ fn derive_message_representative(
     state, state_offset = shake256_consider_permute(state, state_offset);
     state[u8 SHAKE256_RATE-1] ^= 0x80;
 
-    state = __keccakf1600_ref(state);
+    state = _keccakf1600_ref1(state);
 
     state_offset = 0;
     while(state_offset < MESSAGE_REPRESENTATIVE_SIZE) {
@@ -142,7 +145,7 @@ fn derive_commitment_hash(reg ptr u8[64] message_representative_size, reg ptr u8
     reg u8 byte;
     reg u64 state_offset encoded_commitment_offset;
 
-    state = st0(state);
+    state = __keccak_init_ref1(state);
     state_offset = 0;
 
     // Absorb message_representative_size
@@ -164,7 +167,7 @@ fn derive_commitment_hash(reg ptr u8[64] message_representative_size, reg ptr u8
         }
 
         () = #spill(encoded_commitment, encoded_commitment_offset);
-        state = __keccakf1600_ref(state);
+        state = _keccakf1600_ref1(state);
         () = #unspill(encoded_commitment, encoded_commitment_offset);
 
         state_offset = 0;
@@ -184,7 +187,7 @@ fn derive_commitment_hash(reg ptr u8[64] message_representative_size, reg ptr u8
 
     // Now squeeze
 
-    state = __keccakf1600_ref(state);
+    state = _keccakf1600_ref1(state);
     state_offset = 0;
 
     while(state_offset < COMMITMENT_HASH_SIZE) {
