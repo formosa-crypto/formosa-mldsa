@@ -6,11 +6,13 @@ param int SHAKE256_RATE = 136;
 
 inline
 fn hash_verification_key(
-    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash
-) -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE] {
+    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash
+) -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE]
+{
     stack u64[25] state;
-    reg u64 verification_key_offset state_offset;
+    #spill_to_mmx reg u64 verification_key_offset;
+    reg u64 state_offset;
 
     reg u8 byte;
 
@@ -76,16 +78,17 @@ fn shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u
 inline
 fn derive_message_representative(
     reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash_of_verification_key,
-    reg u64 message,
-    reg u64 message_size
-) -> stack u8[MESSAGE_REPRESENTATIVE_SIZE] {
+    #spill_to_mmx reg u64 message,
+    #spill_to_mmx reg u64 message_size
+) -> stack u8[MESSAGE_REPRESENTATIVE_SIZE]
+{
     stack u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative;
 
     stack u64[25] state;
 
     reg u8 byte;
     reg u64 state_offset;
-    reg u64 message_offset;
+    #spill_to_mmx reg u64 message_offset;
 
     // Absorb ...
 
@@ -137,13 +140,16 @@ fn derive_message_representative(
 }
 
 inline
-fn derive_commitment_hash(reg ptr u8[64] message_representative_size, reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment)
-    -> stack u8[COMMITMENT_HASH_SIZE]
+fn derive_commitment_hash(
+    reg ptr u8[64] message_representative_size,
+    #spill_to_mmx reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment
+    ) -> stack u8[COMMITMENT_HASH_SIZE]
 {
     stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
     stack u64[25] state;
     reg u8 byte;
-    reg u64 state_offset encoded_commitment_offset;
+    reg u64 state_offset;
+    #spill_to_mmx reg u64 encoded_commitment_offset;
 
     state = __keccak_init_ref1(state);
     state_offset = 0;

@@ -24,13 +24,11 @@ export fn ml_dsa_65_keygen(
     #public stack u8[VERIFICATION_KEY_SIZE] verification_key;
     #secret stack u8[SIGNING_KEY_SIZE] signing_key;
 
-    reg u64 msf = #init_msf();
-
     reg u8 byte;
     reg u64 i;
 
     () = #spill(verification_key_out, signing_key_out);
-    verification_key, signing_key, msf = keygen_internal(randomness, msf);
+    verification_key, signing_key = keygen_internal(randomness);
     () = #unspill(verification_key_out, signing_key_out);
 
     i = 0;
@@ -96,9 +94,9 @@ export fn ml_dsa_65_sign(
 // - |signature| points to a buffer of 3309 bytes.
 //
 export fn ml_dsa_65_verify(
-    #public reg u64 verification_key,
-    #public reg u64 message message_size,
-    #public reg u64 signature
+    #transient reg u64 verification_key,
+    #transient reg u64 message message_size,
+    #transient reg u64 signature
 ) -> #public reg u64 {
     #public stack u8[VERIFICATION_KEY_SIZE] verification_key_on_stack;
     #public stack u8[SIGNATURE_SIZE] signature_on_stack;
@@ -107,6 +105,8 @@ export fn ml_dsa_65_verify(
 
     #public reg u8 byte;
     reg u64 i;
+
+    _ = #init_msf();
 
     i = 0;
     while(i < VERIFICATION_KEY_SIZE) {

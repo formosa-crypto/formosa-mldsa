@@ -117,7 +117,7 @@ fn sign_internal(
         message_size);
 
     #declassify seed_for_matrix_A = signing_key[0:32];
-    matrix_A, msf = sample::matrix_A(seed_for_matrix_A, msf);
+    matrix_A = sample::matrix_A(seed_for_matrix_A);
     () = #unspill(randomness);
 
     seed_for_mask = derive_seed_for_mask(signing_key[32:32], randomness, message_representative, seed_for_mask);

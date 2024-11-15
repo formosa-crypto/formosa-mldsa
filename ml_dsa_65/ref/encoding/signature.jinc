@@ -98,6 +98,8 @@ namespace signature {
             }
 
             current_true_hints_seen = (64u)hint_encoded[MAX_ONES_IN_HINT + encoded_offset];
+            _ = #init_msf();
+
             if (current_true_hints_seen < previous_true_hints_seen) {
                 ill_formed_hint = 1;
             } else {
@@ -113,9 +115,12 @@ namespace signature {
                     } (done == 0) {
                         // Coefficients are ordered for strong unforgeability
                         hint_at_j = (64u)hint_encoded[j];
+                        _ = #init_msf();
 
                         if (j > previous_true_hints_seen) {
                             hint_at_j_minus_one = (64u)hint_encoded[j - 1];
+                            _ = #init_msf();
+
                             if (hint_at_j <= hint_at_j_minus_one) {
                                 ill_formed_hint = 1;
                             }
@@ -146,6 +151,8 @@ namespace signature {
             done |= ill_formed_hint;
         } (done == 0) {
             hint = (64u)hint_encoded[encoded_offset];
+            _ = #init_msf();
+
             if(hint != 0) {
                 ill_formed_hint = 1;
             }

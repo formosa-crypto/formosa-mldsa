@@ -124,18 +124,32 @@ namespace coefficient {
         return result;
     }
 
-    fn use_hint(reg u32 a hint) -> reg u32 {
+    fn use_hint(reg u32 a hint, reg u64 msf) -> reg u32, #msf reg u64 {
         reg u32 a0;
         reg u32 a1;
+
+        inline bool b;
+
         a0, a1 = decompose(a);
-        if (hint == 0) {}
-        else if (a0 >s 0) {
-            a1 += 1;
-            a1 &= 15;
+
+        b = hint != 0;
+        if (b) {
+            msf = #update_msf(b, msf);
+
+            b = a0 >s 0;
+            if (b) {
+                msf = #update_msf(b, msf);
+                a1 += 1;
+                a1 &= 15;
+            } else {
+                msf = #update_msf(!b, msf);
+                a1 -= 1;
+                a1 &= 15;
+            }
         } else {
-            a1 -= 1;
-            a1 &= 15;
+            msf = #update_msf(!b, msf);
         }
-        return a1;
+
+        return a1, msf;
     }
 }

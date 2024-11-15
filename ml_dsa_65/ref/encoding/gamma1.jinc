@@ -125,7 +125,7 @@ namespace gamma1 {
     inline
     fn decode(
         reg ptr u8[GAMMA1_ENCODED_SIZE] encoded,
-        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] decoded
+        #spill_to_mmx reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] decoded
     ) -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] encoded_gamma1_polynomial;
