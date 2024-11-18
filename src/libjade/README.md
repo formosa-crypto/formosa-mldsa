@@ -7,12 +7,9 @@
 #### Retrieve appropriate keccakf1600 implementations from libjade (only required for RISC-V)
 
 ``` shell
-cd *path-to*dilithium-arm
+cd *path-to*formosa-mldsa
+git submodule init
 git submodule update
-cd ext/libjade
-git remote add clebreto git@github.com:clebreto/libjade.git
-git fetch clebreto
-git checkout -b feature/riscv clebreto/feature/riscv
 ```
 
 #### Retrieve appropriate version of jasmin compiler, compile it, export it
