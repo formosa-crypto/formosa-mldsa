@@ -39,7 +39,8 @@ check-ct: $(IMPLEMENTATION)/ml_dsa.jazz
 
 # --------------------------------------------------------------------
 bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c
-	$(CC) -DIMPLEMENTATION_TYPE=$(IMPLEMENTATION_TYPE) \
+	$(CC) -Wall -Werror \
+		  -DIMPLEMENTATION_TYPE=$(IMPLEMENTATION_TYPE) \
 		  -DKEYGEN=ml_dsa_$(PARAMETER_SET)_keygen \
 		  -DSIGN=ml_dsa_$(PARAMETER_SET)_sign \
 		  -DVERIFY=ml_dsa_$(PARAMETER_SET)_verify \

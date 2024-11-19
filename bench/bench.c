@@ -34,21 +34,23 @@ int main(void) {
     signing_randomness[i] = i;
   }
 
-  // Test key-generation.
+  printf("name, median (cycles/ticks), average (cycles/ticks)\n");
+
+  // Benchmark key-generation.
   for (i = 0; i < DATA_POINTS; i++) {
     observations[i] = cpucycles();
     KEYGEN(verification_key, signing_key, key_generation_randomness);
   }
   print_results(STRINGIFY(FORMATTED_NAME(KEYGEN)), observations, DATA_POINTS);
 
-  // Test signing.
+  // Benchmark signing.
   for (i = 0; i < DATA_POINTS; i++) {
     observations[i] = cpucycles();
     SIGN(signature, signing_key, message, sizeof(message), signing_randomness);
   }
   print_results(STRINGIFY(FORMATTED_NAME(SIGN)), observations, DATA_POINTS);
 
-  // Test verification.
+  // Benchmark verification.
   for (i = 0; i < DATA_POINTS; i++) {
     observations[i] = cpucycles();
     VERIFY(verification_key, message, sizeof(message), signature);
