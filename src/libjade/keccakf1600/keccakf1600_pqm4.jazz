@@ -1,4 +1,4 @@
-require "fips202.jinc"
+require "../../../ext/libjade/src/common/keccak/keccak1600/armv7m/ref/keccakf1600.jinc"
 require "keccakf1600_pqm4.jinc"
 
 fn _toBitInterleaving(reg u32 x0 x1 s0 s1) 
@@ -62,7 +62,3 @@ export fn KeccakF1600_StatePermute_ref(reg ptr u32[KECCAK_state] state)
   state = _keccakf1600_ref(state);
   return state;
 }
-
-
-
-

@@ -13,8 +13,9 @@ ifeq ($(arch), risc-v)
 else ifeq ($(arch), arm-m4)
 	CC := arm-none-eabi-gcc
 	CFLAGS ?= -Wall -O1 -fPIC -mcpu=cortex-m4 -mlittle-endian -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 --specs=nosys.specs
-	AR := arm-none-eabi-ar
 	#-mcpu=cortex-m4 # not working - TODO: check why (same for test/)
+	AR := arm-none-eabi-ar
+	QEMU ?=qemu-arm -L /usr/arm-linux-gnueabi/
 else
 	$(error arch must be set to risc-v or arm-m4)
 endif

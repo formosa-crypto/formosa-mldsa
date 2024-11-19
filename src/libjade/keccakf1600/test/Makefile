@@ -1,3 +1,8 @@
+#-------------------------------------------------------------------------------
+
+include ../../ml-dsa-any/common.mk
+
+
 # NOTES:
 # - after clone: git submodule init && git submodule update (this test needs libjade code)
 # - JASMINC must be set to 'https://github.com/jasmin-lang/jasmin/pull/921'
@@ -15,15 +20,10 @@
 #OK
 #
 
-JASMINC ?=jasminc
-QEMU ?=qemu-arm -L /usr/arm-linux-gnueabi/
-ARMCC ?=arm-linux-gnueabi-gcc
-ARMFLAGS ?=-Wall -march=armv7
 TESTS ?=1000000
 
 #--
 
-COMPILE ?=$(ARMCC) $(ARMFLAGS)
 RUN ?=$(QEMU)
 
 #--
@@ -36,9 +36,9 @@ run: test
 	$(RUN) ./$<
 
 test: test.c keccakf1600_armv7m_pqm4.s
-	$(COMPILE) -DTESTS=$(TESTS) -o $@ $^
+	$(CC) $(CFLAGS) -c -DTESTS=$(TESTS) -o $@ $<
 
-keccakf1600_armv7m_pqm4.s: ../../keccakf1600_pqm4.jazz
+keccakf1600_armv7m_pqm4.s: ../keccakf1600_pqm4.jazz
 	$(JASMINC) -arch arm-m4 -o $@ $<
 
 #--
@@ -46,4 +46,3 @@ keccakf1600_armv7m_pqm4.s: ../../keccakf1600_pqm4.jazz
 clean:
 	rm -f test
 	rm -f keccakf1600_armv7m_pqm4.s
-
