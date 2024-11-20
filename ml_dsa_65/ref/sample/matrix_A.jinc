@@ -26,7 +26,6 @@ fn absorb_for_shake128(
     return state;
 }
 
-inline
 fn rejection_sample_less_than_field_modulus(
     reg ptr u64[25] state,
     #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result,

@@ -16,16 +16,19 @@ require "verify.jinc"
 // - |verification_key_out| points to a buffer of 1952 bytes.
 // - |signing_key_out| points to a buffer of 4032 bytes.
 //
+#[sct="transient * transient * {ptr: transient, val: secret} -> ()"]
 export fn ml_dsa_65_keygen(
-    #public reg u64 verification_key_out,
-    #public reg u64 signing_key_out,
-    #secret reg ptr u8[32] randomness)
+    #spill_to_mmx reg u64 verification_key_out,
+    #spill_to_mmx reg u64 signing_key_out,
+    reg ptr u8[32] randomness)
 {
     #public stack u8[VERIFICATION_KEY_SIZE] verification_key;
     #secret stack u8[SIGNING_KEY_SIZE] signing_key;
 
     reg u8 byte;
     reg u64 i;
+
+    _ = #init_msf();
 
     () = #spill(verification_key_out, signing_key_out);
     verification_key, signing_key = keygen_internal(randomness);

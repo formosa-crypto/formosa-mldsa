@@ -6,7 +6,7 @@
 
 #include "util.h"
 
-#define DATA_POINTS 10000
+#define DATA_POINTS 50000
 
 extern void KEYGEN(uint8_t *verification_key, uint8_t *signing_key,
                    const uint8_t key_generation_randomness[32]);

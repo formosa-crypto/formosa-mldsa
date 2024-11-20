@@ -20,12 +20,16 @@ fn prepare_state_for_shake256(
 ) -> stack u64[25] {
     reg u8 byte;
 
-    inline int i;
+    reg u64 i;
 
     state = __keccak_init_ref1(state);
-    for i = 0 to 32 {
+
+    i = 0;
+    while (i < 32) {
         byte = randomness[i];
         state[u8 i] = byte;
+
+        i += 1;
     }
     state[u8 32] = number_of_rows;
     state[u8 33] = number_of_columns;
@@ -35,10 +39,11 @@ fn prepare_state_for_shake256(
     return state;
 }
 
+#[sct="{ptr: public, val: secret} -> transient * secret"]
 inline
-fn keygen_internal(#secret reg ptr u8[32] randomness)
-    -> #public stack u8[VERIFICATION_KEY_SIZE], 
-       #secret stack u8[SIGNING_KEY_SIZE]
+fn keygen_internal(reg ptr u8[32] randomness)
+    -> stack u8[VERIFICATION_KEY_SIZE],
+       stack u8[SIGNING_KEY_SIZE]
 {
     #public stack u8[VERIFICATION_KEY_SIZE] verification_key;
     #secret stack u8[SIGNING_KEY_SIZE] signing_key;
@@ -62,6 +67,7 @@ fn keygen_internal(#secret reg ptr u8[32] randomness)
     state = _keccakf1600_ref1(state);
 
     #declassify seed_for_matrix_A = state[u8 0:SEED_FOR_MATRIX_A_SIZE];
+
     seed_for_error_vectors = state[u8 SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
     seed_for_signing = state[u8 SEED_FOR_MATRIX_A_SIZE + SEED_FOR_ERROR_VECTORS_SIZE:SEED_FOR_SIGNING_SIZE];
 
@@ -81,7 +87,9 @@ fn keygen_internal(#secret reg ptr u8[32] randomness)
 
     s1 = row_vector::ntt(s1);
 
+    _ = #init_msf();
     matrix_A = sample::matrix_A(seed_for_matrix_A);
+
     t = row_vector::multiply_with_matrix_A(matrix_A, s1);
     t = column_vector::reduce32(t);
     t = column_vector::invert_ntt_montgomery(t);

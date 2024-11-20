@@ -30,8 +30,12 @@ def parse_bench_output(output):
 
 def shell(command, expect=0, cwd=None):
     completed = subprocess.run(command, cwd=cwd, capture_output=True)
+
+
     if completed.returncode != expect:
-        raise Exception("Error {}. Expected {}.".format(ret, expect))
+        print(completed.stderr.decode("utf-8"))
+        raise Exception("Error {}. Expected {}.".format(completed.returncode, expect))
+
     return completed.stdout.decode("utf-8")
 
 
@@ -45,7 +49,8 @@ parser.add_argument(
 )
 parser.add_argument(
     "--new",
-    help="the commit whose performance we want to measure relative to the baseline.",
+    help="the commit whose performance we want to measure relative to the baseline. If left empty, measure the current state of the code.",
+    default='HEAD',
 )
 args = parser.parse_args()
 
