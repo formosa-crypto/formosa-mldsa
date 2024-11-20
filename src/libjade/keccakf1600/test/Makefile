@@ -36,7 +36,7 @@ run: test
 	$(RUN) ./$<
 
 test: test.c keccakf1600_armv7m_pqm4.s
-	$(CC) $(CFLAGS) -c -DTESTS=$(TESTS) -o $@ $<
+	$(CC) $(CFLAGS) -DTESTS=$(TESTS) -o $@ $^
 
 keccakf1600_armv7m_pqm4.s: ../keccakf1600_pqm4.jazz
 	$(JASMINC) -arch arm-m4 -o $@ $<
