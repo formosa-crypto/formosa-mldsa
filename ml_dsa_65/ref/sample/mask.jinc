@@ -8,29 +8,18 @@ fn absorb_for_shake256(
     reg u16 domain_separator,
     stack u64[25] state
 ) -> stack u64[25] {
-    reg u8 byte;
     reg u16 v;
 
-    reg u64 i;
-
     state = __keccak_init_ref1(state);
-
-    i = 0;
-    while(i < 64) {
-        byte = rho_prime[i];
-        state[u8 i] = byte;
-        i += 1;
-    }
+    state[u8 0:64] = #copy(rho_prime);
 
     v = domain_separator;
     v &= 0xFF;
-    byte = (8u)v;
-    state[u8 64] = byte;
+    state[u8 64] = (8u)v;
 
     v = domain_separator;
     v >>= 8;
-    byte = (8u)v;
-    state[u8 65] = byte;
+    state[u8 65] = (8u)v;
 
     state[u8 66] ^= 0x1f;
     state[u8 SHAKE256_RATE - 1] ^= 0x80;
@@ -56,16 +45,18 @@ fn sample_mask_polynomial(
     reg u8 byte;
     stack u64[25] state;
     stack u8[SHAKE256_BLOCKS_FOR_GAMMA1_ENCODED_POLYNOMIAL * SHAKE256_RATE] mask_encoded;
-    stack u64 block_being_squeezed;
+
+    inline int block_being_squeezed;
 
     state = absorb_for_shake256(rho_prime, domain_separator, state);
 
     mask_encoded_offset = 0;
-    block_being_squeezed = 0;
-    while(block_being_squeezed < SHAKE256_BLOCKS_FOR_GAMMA1_ENCODED_POLYNOMIAL) {
+    for block_being_squeezed = 0 to SHAKE256_BLOCKS_FOR_GAMMA1_ENCODED_POLYNOMIAL {
         () = #spill(mask, mask_encoded_offset);
         state = _keccakf1600_ref1(state);
         () = #unspill(mask, mask_encoded_offset);
+
+        _ = #init_msf();
 
         i = 0;
         while(i < SHAKE256_RATE) {

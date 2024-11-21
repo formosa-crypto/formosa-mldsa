@@ -109,7 +109,7 @@ namespace polynomial {
 
     inline
     fn check_infinity_norm(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial, inline int threshold)
-        -> stack u8
+        -> reg u8
     {
         reg u8 ret;
         reg u8 result;
@@ -132,27 +132,29 @@ namespace polynomial {
 
     inline
     fn make_hint(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f0 f1 hints)
-        -> stack u32, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+        -> reg u32, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        stack u32 weight;
+        reg u32 weight a0 a1 hint;
         reg u64 i;
-        reg u32 a0 a1;
-        reg u32 h;
 
-        i = 0;
-        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            hints[i] = 0;
-            i += 1;
-        }
+        reg u64 msf = #init_msf();
+
+        inline bool condition;
 
         weight = 0;
         i = 0;
-        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+        while {condition = i < COEFFICIENTS_IN_POLYNOMIAL;} (condition) {
+            msf = #update_msf(condition, msf);
+
             a0 = f0[i];
+            a0 = #protect_32(a0, msf);
+
             a1 = f1[i];
-            h = coefficient::make_hint(a0, a1);
-            hints[i] = h;
-            weight += h;
+            a1 = #protect_32(a1, msf);
+
+            hint, msf = coefficient::make_hint(a0, a1, msf);
+            hints[i] = hint;
+            weight += hint;
             i += 1;
         }
 

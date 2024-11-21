@@ -21,15 +21,18 @@ namespace signature {
         reg u64 i j hints_written hint_offset;
         reg u32 hint_coefficient;
 
-        inline int ii;
+        reg u64 msf;
+
+        inline int k;
+        inline bool condition;
 
         signature[0:48] = #copy(commitment_hash);
 
-        for ii = 0 to COLUMNS_IN_MATRIX_A {
-            polynomial_encoded = signature[START_OF_GAMMA1 + (ii * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE];
-            polynomial = signer_response[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+        for k = 0 to COLUMNS_IN_MATRIX_A {
+            polynomial_encoded = signature[START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE];
+            polynomial = signer_response[k * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
             polynomial_encoded = gamma1::encode_polynomial(polynomial_encoded, polynomial);
-            signature[START_OF_GAMMA1 + (ii * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE] = polynomial_encoded;
+            signature[START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE] = polynomial_encoded;
         }
 
         // Clear the hints buffer
@@ -39,24 +42,40 @@ namespace signature {
             i += 1;
         }
 
-        // Write hints
+
+        // Write out hints
+        msf = #init_msf();
+
         hints_written = 0;
         i = 0;
-        while (i < ROWS_IN_MATRIX_A) {
+        while {condition = i < ROWS_IN_MATRIX_A;} (condition) {
+            msf = #update_msf(condition, msf);
+
             j = 0;
-            while (j < COEFFICIENTS_IN_POLYNOMIAL) {
+            while {condition = j < COEFFICIENTS_IN_POLYNOMIAL;} (condition) {
+                msf = #update_msf(condition, msf);
+
                 hint_offset = i;
                 hint_offset <<= LOG_2_COEFFICIENTS_IN_POLYNOMIAL;
                 hint_offset += j;
 
                 hint_coefficient = hint[hint_offset];
+                hint_coefficient = #protect_32(hint_coefficient, msf);
 
-                if hint_coefficient != 0 {
+                condition = hint_coefficient != 0;
+                if (condition) {
+                    msf = #update_msf(condition, msf);
+
                     signature[START_OF_HINT + hints_written] = (8u)j;
                     hints_written += 1;
+                } else {
+                    msf = #update_msf(!condition, msf);
                 }
+
                 j += 1;
             }
+            msf = #update_msf(!condition, msf);
+
             signature[START_OF_HINT + MAX_ONES_IN_HINT + i] = (8u) hints_written;
             i += 1;
         }

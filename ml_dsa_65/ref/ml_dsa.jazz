@@ -2,6 +2,11 @@ require "keygen.jinc"
 require "sign.jinc"
 require "verify.jinc"
 
+// N.B.: If it seems that some functions seemingly lack annotations to guide the
+// constant-time (CT) checker, it is because it looks for #[sct=...] annotations
+// and ignores speculative-constant-time (SCT) related information; this is to say,
+// the annotation given to the SCT checker can suffice for the CT checker as well.
+
 // N.B.: Signing and verification assume the domain separation context has already
 // been appended to the message; they do NOT validate whether this was done in
 // accordance with the FIPS-204 specification.

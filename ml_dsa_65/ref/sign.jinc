@@ -16,38 +16,15 @@ fn derive_seed_for_mask(
     reg ptr u8[32] k,
     reg ptr u8[32] randomness,
     reg ptr u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative,
-    reg ptr u8[64] seed_for_mask
+    #spill_to_mmx reg ptr u8[64] seed_for_mask
 ) -> reg ptr u8[64] {
-    reg u8 byte;
-
     stack u64[25] state;
-
-    reg u64 offset;
-    reg u64 i;
 
     state = __keccak_init_ref1(state);
 
-    i = 0;
-    while(i < 32) {
-        byte = k[i];
-        state[u8 i] = byte;
-        i += 1;
-    }
-    while(i < 64) {
-        offset = i;
-        offset -= 32;
-        byte = randomness[offset];
-        state[u8 i] = byte;  
-        i += 1;
-    }
-    while(i < 128) {
-        offset = i;
-        offset -= MESSAGE_REPRESENTATIVE_SIZE;
-        byte = message_representative[offset];
-        state[u8 i] = byte;
-        i += 1;
-    }
-
+    state[u8 0:32] = #copy(k);
+    state[u8 32:32] = #copy(randomness);
+    state[u8 64:MESSAGE_REPRESENTATIVE_SIZE] = #copy(message_representative);
     state[u8 128] ^= 0x1f;
     state[u8 SHAKE256_RATE - 1] ^= 0x80;
 
@@ -55,12 +32,8 @@ fn derive_seed_for_mask(
     state = _keccakf1600_ref1(state);
     () = #unspill(seed_for_mask);
 
-    i = 0;
-    while(i < 64) {
-        byte = state[u8 i];
-        seed_for_mask[i] = byte;
-        i += 1;
-    }
+    seed_for_mask = #copy(state[u8 0:64]);
+
     return seed_for_mask;
 }
 
@@ -69,7 +42,7 @@ fn sign_internal(
         #secret stack u8[SIGNING_KEY_SIZE] signing_key,
         reg u64 pointer_to_message,
         reg u64 message_size,
-        reg ptr u8[32] randomness,
+        #spill_to_mmx reg ptr u8[32] randomness,
         reg u64 msf
 ) -> stack u8[SIGNATURE_SIZE], reg u64 {
     stack u8[SIGNATURE_SIZE] signature_encoded;
@@ -107,7 +80,7 @@ fn sign_internal(
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] ct0;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w0_minus_cs2_plus_ct0;
 
-    stack u32 ones_in_hint;
+    reg u32 ones_in_hint;
     stack u8 infinity_norm_check_result;
 
     () = #spill(randomness);
@@ -117,6 +90,8 @@ fn sign_internal(
         message_size);
 
     #declassify seed_for_matrix_A = signing_key[0:32];
+
+    _ = #init_msf();
     matrix_A = sample::matrix_A(seed_for_matrix_A);
     () = #unspill(randomness);
 
