@@ -1,52 +1,6 @@
 require "../../../ext/libjade/src/common/keccak/keccak1600/armv7m/ref/keccakf1600.jinc"
 require "keccakf1600_pqm4.jinc"
 
-fn _toBitInterleaving(reg u32 x0 x1 s0 s1) 
-                           -> reg u32, reg u32 
-{
-  s0, s1 = __toBitInterleaving(x0,x1,s0,s1);
-  return s0, s1;
-}
-
-fn _stateTopqm4(reg ptr u32[KECCAK_state] state) 
-   -> reg ptr u32[KECCAK_state] 
-{
-  reg u32 s0 s1 d0 d1;
-  inline int i;
-  for i = 0 to 25 {
-    s0 = 0;
-    s1 = 0;
-    d0 = state[2*i];
-    d1 = state[2*i+1];
-    s0, s1 = _toBitInterleaving(d0, d1, s0, s1);
-    state[2*i] = s0;
-    state[2*i+1] = s1;
-  }
-  return state;
-} 
-
-fn _fromBitInterleaving(reg u32 x0 x1)
-                             -> reg u32, reg u32
-{
-  x0, x1 = __fromBitInterleaving(x0, x1);
-  return x0, x1;
-}
-
-fn _pqm4Tostate(reg ptr u32[KECCAK_state] state) 
-   -> reg ptr u32[KECCAK_state] 
-{
-  reg u32 s0 s1;
-  inline int i;
-  for i = 0 to 25 {
-    s0 = state[2*i];
-    s1 = state[2*i+1];
-    s0, s1 = _fromBitInterleaving(s0, s1);
-    state[2*i] = s0;
-    state[2*i+1] = s1;
-  }
-  return state;
-} 
-
 export fn KeccakF1600_StatePermute_pqm4(reg ptr u32[KECCAK_state] state)
                              -> reg ptr u32[KECCAK_state] 
 {
