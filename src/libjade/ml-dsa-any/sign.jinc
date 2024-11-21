@@ -40,7 +40,7 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
       j += 1;
     }
     () = #spill(i, inp);
-    pstate = _keccakf1600_ref(pstate);
+    pstate = _keccakf1600(pstate);
     () = #unspill(i, inp);
   }
 
@@ -64,7 +64,7 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
   s ^= 128;
   pstate[u8 (SHAKE256_RATE - 1)] = s;
 
-  pstate = _keccakf1600_ref(pstate);
+  pstate = _keccakf1600(pstate);
 
   () = #unspill(outp);
   // FIXME this copy is not necessary if we return pstate, in that case it should be taken as argument
@@ -261,97 +261,6 @@ fn _crypto_sign_keypair(reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk, reg p
 }
 
 /***
-* Precondition:
-  - pos is a multiple of 4
-***/
-fn _shake256_inc_absorb_mem
-  (reg ptr u32[25*2] pstate,
-   reg u32 pos,
-   reg u32 m,
-   reg u32 mlen) -> reg ptr u32[25*2], reg u32
-{
-  reg u32 t s aux;
-
-  aux = __imm_sub_reg(SHAKE256_RATE, pos);
-  if (aux <= mlen) {
-  // for (i = 0; i < r - (uint32_t)s_inc[25]; i++) {
-    while (pos < SHAKE256_RATE) {
-    // s_inc[(s_inc[25] + i) >> 3] ^= (uint64_t)m[i] << (8 * ((s_inc[25] + i) & 0x07));
-      t = (u32)[m];
-      s = pstate.[pos];
-      s ^= t;
-      pstate.[pos] = s;
-      pos += 4; m += 4;
-      mlen -= 4;
-    }
-
-    while {
-      () = #spill(m, mlen);
-      pstate = _keccakf1600_ref(pstate);
-      () = #unspill(m, mlen);
-      pos = 0;
-    }
-    // FIXME: it will be good to be able to write (SHAKE256_RATE < mlen)
-    (mlen > SHAKE256_RATE)
-    {
-      while (pos < SHAKE256_RATE) {
-        t = (u32)[m];
-        s = pstate.[pos];
-        s ^= t;
-        pstate.[pos] = s;
-        pos += 4; m += 4;
-      }
-      mlen -= SHAKE256_RATE;
-    }
-  }
-
-  // Invariant mlen < SHAKE256_RATE - pos
-  while (mlen > 0) {
-    t = (32u)(u8)[m];
-    s = (32u)pstate[u8 pos];
-    s ^= t;
-    pstate[u8 pos] = s;
-    pos += 1; m += 1; mlen -= 1;
-  }
-  return pstate, pos;
-}
-
-
-/***
-* No precondition
-***/
-fn _shake256_inc_absorb_mem_naive
-  (reg ptr u32[25*2] pstate,
-   reg u32 pos,
-   reg u32 m,
-   reg u32 mlen) -> reg ptr u32[25*2], reg u32
-{
- reg u32 t s;
-
-  // While input is not consumed :
-  // Fill-in sponge part of the shake buffer byte by byte while xoring
-  // If sponge is filled : keccak the buffer
-  while (mlen != 0) {
-
-    t = (32u)(u8)[m];
-    s = (32u)pstate[u8 pos];
-    s ^= t;
-    pstate[u8 pos] = s;
-    pos += 1; m += 1; mlen -= 1;
-
-    if (pos == SHAKE256_RATE) {
-      () = #spill(m, mlen);
-      pstate = _keccakf1600_ref(pstate);
-      () = #unspill(m, mlen);
-      pos = 0;
-    }
-
-  }
-
-  return pstate, pos;
-}
-
-/***
 * No precondition
 ***/
 inline fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive
@@ -376,7 +285,7 @@ inline fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive
     pos += 1; ctr += 1;
     if (pos == SHAKE256_RATE) {
       () = #spill(ctr, pos, m);
-      pstate = _keccakf1600_ref(pstate);
+      pstate = _keccakf1600(pstate);
       () = #unspill(ctr, pos, m);
       pos = 0;
     }
@@ -404,7 +313,7 @@ fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES
 
   while {
     () = #spill(m, i);
-    pstate = _keccakf1600_ref(pstate);
+    pstate = _keccakf1600(pstate);
     () = #unspill(m, i);
     pos = 0;
   }
@@ -526,7 +435,7 @@ fn _crypto_sign_signature_ctx
   m = ctx_m[1];
   pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
   pstate = _shake256_inc_finalize(pstate, pos);
-  pstate = _keccakf1600_ref(pstate);
+  pstate = _keccakf1600(pstate);
 
   // FIXME define a function for that
   mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
@@ -544,7 +453,7 @@ fn _crypto_sign_signature_ctx
   pstate = __add_seedrndcrh_ref(pstate, key_rnd_mu);
   pstate = __add_zero_after_add(pstate, SEEDBYTES + RNDBYTES + CRHBYTES);
   pstate = __add_block_end(pstate, SEEDBYTES + RNDBYTES + CRHBYTES, SHAKE256_RATE);
-  pstate = _keccakf1600_ref(pstate);
+  pstate = _keccakf1600(pstate);
   state = pstate;
   rhoprime = s_rhoprime;
   for i = 0 to CRHBYTES/4 {
@@ -604,7 +513,7 @@ fn _crypto_sign_signature_ctx
     pstate = __add_zero_after_add(pstate, CRHBYTES);
     pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, sig1);
     pstate = _shake256_inc_finalize(pstate, pos);
-    pstate = _keccakf1600_ref(pstate);
+    pstate = _keccakf1600(pstate);
     // FIXME define a function for that
 
     reg ptr u8[CTILDEBYTES] sigctilde;
@@ -770,7 +679,7 @@ fn _crypto_sign_signature_ctx_seed
   () = #spill(ctx_m_rand);
   pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
   pstate = _shake256_inc_finalize(pstate, pos);
-  pstate = _keccakf1600_ref(pstate);
+  pstate = _keccakf1600(pstate);
   () = #unspill(ctx_m_rand);
 
   // FIXME define a function for that
@@ -793,7 +702,7 @@ fn _crypto_sign_signature_ctx_seed
   pstate = __add_seedrndcrh_ref(pstate, key_rnd_mu);
   pstate = __add_zero_after_add(pstate, SEEDBYTES + RNDBYTES + CRHBYTES);
   pstate = __add_block_end(pstate, SEEDBYTES + RNDBYTES + CRHBYTES, SHAKE256_RATE);
-  pstate = _keccakf1600_ref(pstate);
+  pstate = _keccakf1600(pstate);
   state = pstate;
   rhoprime = s_rhoprime;
   for i = 0 to CRHBYTES/4 {
@@ -853,7 +762,7 @@ fn _crypto_sign_signature_ctx_seed
     pstate = __add_zero_after_add(pstate, CRHBYTES);
     pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, sig1);
     pstate = _shake256_inc_finalize(pstate, pos);
-    pstate = _keccakf1600_ref(pstate);
+    pstate = _keccakf1600(pstate);
     // FIXME define a function for that
 
     reg ptr u8[CTILDEBYTES] sigctilde;
@@ -1052,7 +961,7 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u3
         m = ctx_m[1];
         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
         pstate = _shake256_inc_finalize(pstate, pos);
-        pstate = _keccakf1600_ref(pstate);
+        pstate = _keccakf1600(pstate);
 
         // FIXME define a function for that
         for i = 0 to CRHBYTES/4 {
@@ -1086,7 +995,7 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u3
         pstate = __add_zero_after_add(pstate, CRHBYTES);
         pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, buf);
         pstate = _shake256_inc_finalize(pstate, pos);
-        pstate = _keccakf1600_ref(pstate);
+        pstate = _keccakf1600(pstate);
         // FIXME define a function for that
         for i = 0 to CTILDEBYTES/4 {
           t = pstate[i];

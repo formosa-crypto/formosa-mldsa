@@ -1,0 +1,5 @@
+fn _keccakf1600(reg ptr u32[25*2] state) -> reg ptr u32[25*2]
+{
+  state = _keccakf1600_ref(state);
+  return state;
+}

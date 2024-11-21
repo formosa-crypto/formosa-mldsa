@@ -767,7 +767,7 @@ fn _poly_uniform_gamma1(reg ptr u32[N] a,
     bufb = buf_[SHAKE256_RATE * k : SHAKE256_RATE];
     bufb = _stream256_full_squeeze(bufb, state);
     buf_[SHAKE256_RATE * k : SHAKE256_RATE] = bufb;
-    state = _keccakf1600_ref(state);
+    state = _keccakf1600(state);
   }
 
   reg ptr u8[POLYZ_LAST_SZ] bufc;

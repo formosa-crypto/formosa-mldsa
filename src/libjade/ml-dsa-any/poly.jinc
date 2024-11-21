@@ -257,7 +257,7 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[CTILDEBYTES] seed) -> reg ptr u3
       if (pos >= SHAKE256_RATE) {
           // save j pbuf c, signs
           js = j; cs = c; s_signs = #copy(signs);
-          state = _keccakf1600_ref(state);
+          state = _keccakf1600(state);
           j = js; c = cs;  signs = #copy(s_signs);
           pos = 0;
       }

@@ -1,0 +1,183 @@
+fn _keccakf1600(reg ptr u32[25*2] state) -> reg ptr u32[25*2]
+{
+  state = _stateTopqm4(state);
+  state = _KeccakF1600_StatePermute(state);
+  state = _pqm4Tostate(state);
+  return state;
+}
+
+/***
+* No precondition
+***/
+fn _shake256_inc_absorb_mem
+  (reg ptr u32[25*2] pstate,
+   reg u32 pos,
+   reg u32 m,
+   reg u32 mlen) -> reg ptr u32[25*2], reg u32
+{
+  reg u32 t s i;
+
+  // In case pos is not a multiple of 8 bytes
+  // Bytes are absorbed one by one
+  i = pos & 7; // <=> mod 8
+  i = __imm_sub_reg(8, i);
+  // Retrieve the min between i and mlen
+  // FIXME : constant time checking
+  if (mlen < i) {
+     i = mlen;
+  }
+  while (i != 0) {
+    t = (32u)(u8)[m];
+    s = (32u)pstate[u8 pos];
+    s ^= t;
+    pstate[u8 pos] = s;
+    i -= 1; pos += 1; m += 1; mlen -= 1;
+  }
+
+  // Number of 8 bytes that can be absorbed in what remains in m (i.e. mlen)
+  i = mlen >> 3; // <=> div 8, number of absorption of 8 bytes at once
+
+  // At this point pos is a multiple 8 bytes, which can be 136 and need keccaking
+  if (pos == SHAKE256_RATE) {
+    () = #spill(m, mlen, i);
+    pstate = _keccakf1600(pstate);
+    () = #unspill(m, mlen, i);
+    pos = 0;
+  }
+
+  // While input is not consumed :
+  // Fill-in sponge part of the shake buffer byte by byte while xoring
+  // If sponge is filled : keccak the buffer
+  while (i != 0) {
+    t = (u32)[m];
+    s = pstate.[pos];
+    s ^= t;
+    pstate.[pos] = s;
+    pos += 4; m += 4; mlen -= 4;
+
+    t = (u32)[m];
+    s = pstate.[pos];
+    s ^= t;
+    pstate.[pos] = s;
+    pos += 4; m += 4; mlen -= 4;
+
+    i -= 1;
+
+    if (pos == SHAKE256_RATE) {
+      () = #spill(m, mlen, i);
+      pstate = _keccakf1600(pstate);
+      () = #unspill(m, mlen, i);
+      pos = 0;
+    }
+
+  }
+
+  while(mlen != 0) {
+    t = (32u)(u8)[m];
+    s = (32u)pstate[u8 pos];
+    s ^= t;
+    pstate[u8 pos] = s;
+    i -= 1; pos += 1; m += 1; mlen -= 1;
+  }
+
+  // No need to keccak at this point since pos + mlen was not a multiple of 8 bytes and therefore cannot be 136 bytes
+
+  return pstate, pos;
+}
+
+
+// /***
+// * No precondition
+// ***/
+// fn _shake256_inc_absorb_mem_pqm4
+//   (reg ptr u32[25*2] pstate,
+//    reg u32 pos,
+//    reg u32 m,
+//    reg u32 mlen) -> reg ptr u32[25*2], reg u32
+// {
+//   reg u32 t s i;
+
+//   stack u8[8] buf;
+//   buf[u32 0] = 0;
+//   buf[u32 1] = 0;
+
+//   // FIXME : Turn ref state to pqm4 here ?
+
+//   // In case pos is not a multiple of 8 bytes
+//   // Bytes are absorbed one by one
+//   i = pos & 7; // <=> mod 8
+//   i = __imm_sub_reg(8, i);
+
+//   // FIXME : constant time checking
+//   if (mlen < i) { i = mlen; }  // Retrieve the min between i and mlen
+
+//   while (i != 0) {
+//     t = (32u)(u8)[m + i];
+//     // s = (32u)pstate[u8 pos];
+//     // s ^= t;
+//     // pstate[u8 pos] = s;
+//     buf[i] = (8u)t;
+
+//     i -= 1;  m += 1; mlen -= 1; pos += 1;
+//   }
+
+//   reg u32 s0 = pstate.[pos];
+//   reg u32 s1 = pstate.[pos + 4];
+//   reg u32 d0 = buf[u32 0];
+//   reg u32 d1 = buf[u32 1];
+//   s0, s1 = _toBitInterleaving(d0, d1, s0, s1); // ? Is s0 / s1 pqm4 or ref ?
+//   pstate.[pos] = s0;
+//   pstate.[pos + 4] = s1;
+//   pos += 8;
+//   // FIXME handle case where mlen < i
+
+//   // Number of 8 bytes that can be absorbed in what remains in m (i.e. mlen)
+//   i = mlen >> 3; // <=> div 8, number of absorption of 8 bytes at once
+
+//   // At this point pos is a multiple 8 bytes, which can be 136 and need keccaking
+//   if (pos == SHAKE256_RATE) {
+//     () = #spill(m, mlen, i);
+//     state = _KeccakF1600_StatePermute(state); // permute pqm4 state
+//     () = #unspill(m, mlen, i);
+//     pos = 0;
+//   }
+
+//   // While input is not consumed :
+//   // Fill-in sponge part of the shake buffer byte by byte while xoring
+//   // If sponge is filled : keccak the buffer
+//   while (i != 0) {
+//     reg u32 s0 = pstate.[pos];
+//     reg u32 s1 = pstate.[pos + 4];
+//     reg u32 d0 = (u32)[m];
+//     reg u32 d1 = (u32)[m + 4];
+//     s0, s1 = _toBitInterleaving(d0, d1, s0, s1); // ? Is s0 / s1 pqm4 or ref ?
+//     pstate.[pos] = s0;
+//     pstate.[pos + 4] = s1;
+//     pos += 8;   m  += 8;
+
+//     i -= 1;
+
+//     if (pos == SHAKE256_RATE) {
+//       () = #spill(m, mlen, i);
+//       state = _KeccakF1600_StatePermute(state); // permute pqm4 state
+//       () = #unspill(m, mlen, i);
+//       pos = 0;
+//     }
+
+//   }
+
+//   buf[u32 0] = 0;
+//   buf[u32 1] = 0;
+
+//   while(mlen != 0) {
+//     t = (32u)(u8)[m];
+//     s = (32u)pstate[u8 pos];
+//     s ^= t;
+//     pstate[u8 pos] = s;
+//     i -= 1; pos += 1; m += 1; mlen -= 1;
+//   }
+
+//   // No need to keccak at this point since pos + mlen was not a multiple of 8 bytes and therefore cannot be 136 bytes
+
+//   return pstate, pos;
+// }

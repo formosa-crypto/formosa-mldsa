@@ -190,7 +190,7 @@ inline fn __SHAKE256_init_seed_ref(
   reg u32 l = L;
   state[u8 SEEDBYTES+1] = l;
   state = __add_block_end(state, SEEDBYTES + 2, SHAKE256_RATE);
-  state = _keccakf1600_ref(state);
+  state = _keccakf1600(state);
   return state;
 }
 
@@ -202,7 +202,7 @@ inline fn __SHAKE256_init_ctilde_ref(
   state = __add_ctilde_ref(state, seed);
   state = __add_zero_after_add(state, CTILDEBYTES);
   state = __add_block_end(state, CTILDEBYTES, SHAKE256_RATE);
-  state = _keccakf1600_ref(state);
+  state = _keccakf1600(state);
   return state;
 }
 
@@ -216,7 +216,7 @@ fn _stream128_init(
   state = __add_nonce_ref(state, SEEDBYTES >> 1, nonce);
   state = __add_zero_after_add(state, SEEDBYTES + 2);
   state = __add_block_end(state, SEEDBYTES + 2, SHAKE128_RATE);
-  state = _keccakf1600_ref(state);
+  state = _keccakf1600(state);
   return state;
 }
 
@@ -232,7 +232,7 @@ fn _stream128_refill_buffer(
     stack u32 sctr;
     stack ptr u32[N] sa;
     sctr = ctr; sa = a;
-    state = _keccakf1600_ref(state); 
+    state = _keccakf1600(state);
     a = sa; pos = 0; ctr = sctr; q = __Q();
   }
   reg u32[3] buf;
@@ -251,7 +251,7 @@ fn _stream256_init(
   state = __add_nonce_ref(state, CRHBYTES >> 1, nonce);
   state = __add_zero_after_add(state, CRHBYTES + 2);
   state = __add_block_end(state, CRHBYTES + 2, SHAKE256_RATE);
-  state = _keccakf1600_ref(state);
+  state = _keccakf1600(state);
   return state;
 }
 
@@ -267,7 +267,7 @@ fn _stream256_refill_buffer(
     stack u32 sctr;
     stack ptr u32[N] sa;
     sctr = ctr; sa = a;
-    state = _keccakf1600_ref(state); 
+    state = _keccakf1600(state);
     a = sa; pos = 0; ctr = sctr; n205 = 205;
   }
   reg u32 buf;
@@ -289,27 +289,37 @@ fn _stream256_full_squeeze (
   }
   return buf;
 }
-         
-   
 
+/***
+* No precondition
+***/
+fn _shake256_inc_absorb_mem_naive
+  (reg ptr u32[25*2] pstate,
+   reg u32 pos,
+   reg u32 m,
+   reg u32 mlen) -> reg ptr u32[25*2], reg u32
+{
+ reg u32 t s;
 
+  // While input is not consumed :
+  // Fill-in sponge part of the shake buffer byte by byte while xoring
+  // If sponge is filled : keccak the buffer
+  while (mlen != 0) {
 
+    t = (32u)(u8)[m];
+    s = (32u)pstate[u8 pos];
+    s ^= t;
+    pstate[u8 pos] = s;
+    pos += 1; m += 1; mlen -= 1;
 
+    if (pos == SHAKE256_RATE) {
+      () = #spill(m, mlen);
+      pstate = _keccakf1600(pstate);
+      () = #unspill(m, mlen);
+      pos = 0;
+    }
 
+  }
 
-
-
-
-
-  
-   
-
-
-
-
-
-
-
-
-
-
+  return pstate, pos;
+}
