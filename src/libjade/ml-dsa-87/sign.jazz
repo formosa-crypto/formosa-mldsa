@@ -53,3 +53,27 @@ export fn JASMIN_MLDSA87_crypto_sign_open(reg u32 pm, reg u32 sm, reg ptr u32[2]
   status = status;
   return status;
 }
+
+export fn JASMIN_MLDSA87_shake_inc_0(reg ptr u32[25*2] state, reg u32 pos, reg u32 m, reg u32 mlen) -> reg ptr u32[25*2], reg u32
+{
+  state = state; pos = pos; m = m; mlen = mlen;
+  state, pos = _shake256_inc_absorb_mem_0(state, pos, m, mlen);
+  state = state; pos = pos;
+  return state, pos;
+}
+
+export fn JASMIN_MLDSA87_shake_inc_1(reg ptr u32[25*2] state, reg u32 pos, reg u32 m, reg u32 mlen) -> reg ptr u32[25*2], reg u32
+{
+  state = state; pos = pos; m = m; mlen = mlen;
+  state, pos = _shake256_inc_absorb_mem_1(state, pos, m, mlen);
+  state = state; pos = pos;
+  return state, pos;
+}
+
+export fn JASMIN_MLDSA87_shake_inc_2(reg ptr u32[25*2] state, reg u32 pos, reg u32 m, reg u32 mlen) -> reg ptr u32[25*2], reg u32
+{
+  state = state; pos = pos; m = m; mlen = mlen;
+  state, pos = _shake256_inc_absorb_mem_2(state, pos, m, mlen);
+  state = state; pos = pos;
+  return state, pos;
+}

@@ -429,11 +429,11 @@ fn _crypto_sign_signature_ctx
   ctx = ctx_m[0];
   () = #spill(ctx_m, ctxlen_mlen_siglen);
   () = #unspill(ctxlen);
-  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+  pstate, pos = _shake256_inc_absorb_mem_2(pstate, pos, ctx, ctxlen);
   () = #unspill(ctx_m, ctxlen_mlen_siglen);
   mlen = ctxlen_mlen_siglen[1];
   m = ctx_m[1];
-  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
+  pstate, pos = _shake256_inc_absorb_mem_2(pstate, pos, m, mlen);
   pstate = _shake256_inc_finalize(pstate, pos);
   pstate = _keccakf1600(pstate);
 
@@ -672,12 +672,12 @@ fn _crypto_sign_signature_ctx_seed
   ctx = ctx_m_rand[0];
   () = #spill(ctx_m_rand, ctxlen_mlen_siglen);
   () = #unspill(ctxlen);
-  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+  pstate, pos = _shake256_inc_absorb_mem_2(pstate, pos, ctx, ctxlen);
   () = #unspill(ctx_m_rand, ctxlen_mlen_siglen);
   mlen = ctxlen_mlen_siglen[1];
   m = ctx_m_rand[1];
   () = #spill(ctx_m_rand);
-  pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
+  pstate, pos = _shake256_inc_absorb_mem_2(pstate, pos, m, mlen);
   pstate = _shake256_inc_finalize(pstate, pos);
   pstate = _keccakf1600(pstate);
   () = #unspill(ctx_m_rand);
@@ -955,11 +955,11 @@ fn _crypto_sign_verify_ctx(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u3
         ctx = ctx_m[0];
         () = #spill(ctx_m, ctxlen_mlen_siglen);
         () = #unspill(ctxlen);
-        pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+        pstate, pos = _shake256_inc_absorb_mem_2(pstate, pos, ctx, ctxlen);
         () = #unspill(ctx_m, ctxlen_mlen_siglen);
         mlen = ctxlen_mlen_siglen[1];
         m = ctx_m[1];
-        pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
+        pstate, pos = _shake256_inc_absorb_mem_2(pstate, pos, m, mlen);
         pstate = _shake256_inc_finalize(pstate, pos);
         pstate = _keccakf1600(pstate);
 

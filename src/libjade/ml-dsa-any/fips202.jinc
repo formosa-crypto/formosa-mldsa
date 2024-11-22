@@ -293,7 +293,7 @@ fn _stream256_full_squeeze (
 /***
 * No precondition
 ***/
-fn _shake256_inc_absorb_mem_naive
+fn _shake256_inc_absorb_mem_0
   (reg ptr u32[25*2] pstate,
    reg u32 pos,
    reg u32 m,
