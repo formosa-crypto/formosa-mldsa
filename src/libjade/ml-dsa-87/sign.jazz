@@ -77,3 +77,11 @@ export fn JASMIN_MLDSA87_shake_inc_2(reg ptr u32[25*2] state, reg u32 pos, reg u
   state = state; pos = pos;
   return state, pos;
 }
+
+export fn JASMIN_MLDSA87_shake_inc_3(reg ptr u32[25*2] state, reg u32 pos, reg u32 m, reg u32 mlen) -> reg ptr u32[25*2], reg u32
+{
+  state = state; pos = pos; m = m; mlen = mlen;
+  state, pos = _shake256_inc_absorb_mem_3(state, pos, m, mlen);
+  state = state; pos = pos;
+  return state, pos;
+}

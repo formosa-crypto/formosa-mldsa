@@ -98,73 +98,22 @@ fn _shake256_inc_absorb_mem_2
 {
   reg u32 t s i j;
 
-
-  reg u32 zero = 0;
-  stack u8[8] buf;
-  reg ptr u8[8] pbuf;
-
   // In case pos is not a multiple of 8 bytes
   // Bytes are absorbed one by one
   j = pos & 7; // <=> mod 8
-//  if (j != 0) { // CHECKME : Can be avoided if always done once
-    // CHECKME : constant time ?
-    reg u32 stop = j + mlen;
-    if (stop > 8) { stop = 8; }
+  reg u32 stop = j + mlen;
+  if (stop > 8) { stop = 8; }
 
-    // pos -= j;
-    // reg u32 d0 = pstate.[u32 pos];
-    // pos += 4;
-    // reg u32 d1 = pstate.[u32 pos];
-    // pos -= 4;
-    // pos += j;
+  // Update buffer in normal state
+  while (j < stop) {
+    t = (32u)(u8)[m];
+    s = (32u)pstate[u8 pos];
+    s ^= t;
+    pstate[u8 pos] = s;
+    j += 1;  m += 1; mlen -= 1; pos += 1;
+  }
 
-    // // Retrieve buf in normal state
-    // d0, d1 = _fromBitInterleaving(d0, d1);
-    // buf[u32 0] = d0;
-    // buf[u32 1] = d1;
-    // pbuf = buf;
-
-    // Update buffer in normal state
-    while (j < stop) {
-      t = (32u)(u8)[m];
-      s = (32u)pstate[u8 pos];
-      s ^= t;
-      pstate[u8 pos] = s;
-
-      // t = (32u)(u8)[m];
-      // s = (32u)pbuf.[u8 j];
-      // s ^= t;
-      // pbuf.[u8 j] = (8u)s;
-      j += 1;  m += 1; mlen -= 1; pos += 1;
-    }
-//    buf = pbuf;
-
-   //  // Convert buffer to pqm4 state
-//     d0 = buf[u32 0];
-//     d1 = buf[u32 1];
-//     reg u32 s0 = 0;
-//     reg u32 s1 = 0;
-//     s0, s1 = _toBitInterleaving(d0, d1, s0, s1);
-
-//     //  Update state with buffer in pqm4 state
-//     // pos -= j;
-//     // pstate.[u32 pos] = s0;
-//     // pos += 4;
-//     // pstate.[u32 pos] = s1;
-//     // pos += 4;
-//     // pos += j;
-//     buf[u32 0] = s0;
-//     buf[u32 1] = s1;
-//     pbuf = buf;
-//     j = pos & 7;
-//     while(j < stop) {
-//       t = (32u)pbuf[j];
-//       pstate.[u8 pos] = (8u)t;
-//       pos += 1;
-//       j += 1;
-//     }
-// //  }
-
+  // Convert buffer to pqm4 state
   pstate =_stateTopqm4(pstate);
 
   // Number of 8 bytes that can be absorbed in what remains in m (i.e. mlen)
@@ -210,41 +159,143 @@ fn _shake256_inc_absorb_mem_2
 
   pstate =_pqm4Tostate(pstate);
 
-  // reg u32 zero = 0;
-  // buf[u32 0] = zero;
-  // buf[u32 1] = zero;
-  // pbuf = buf;
-
-//  i = 0;
   while(mlen != 0) {
     t = (32u)(u8)[m];
     s = (32u)pstate[u8 pos];
     s ^= t;
     pstate[u8 pos] = s;
     pos += 1; m += 1; mlen -= 1;
-
-    // t = (32u)(u8)[m];
-    // pbuf[i] = (8u)t;
-    // i += 1; m += 1; mlen -= 1;
   }
-  // buf = pbuf;
-
-  // reg u32 s0 = pstate.[pos];
-  // pos += 4;
-  // reg u32 s1 = pstate.[pos];
-  // reg u32 d0 = buf[u32 0];
-  // reg u32 d1 = buf[u32 1];
-  // s0, s1 = _toBitInterleaving(d0, d1, s0, s1); // ? Is s0 / s1 pqm4 or ref ?
-  // pos -= 4;
-
-  // pstate.[pos] = s0;
-  // pos += 4;
-  // pstate.[pos] = s1;
-  // pos += 4;
-  // FIXME : should we update state after ?
 
   // No need to keccak at this point since pos + mlen was not a multiple of 8 bytes and therefore cannot be 136 bytes
 
+  return pstate, pos;
+}
+
+/***
+* No precondition
+***/
+fn _shake256_inc_absorb_mem_3
+  (reg ptr u32[25*2] pstate,
+   reg u32 pos,
+   reg u32 m,
+   reg u32 mlen) -> reg ptr u32[25*2], reg u32
+{
+  reg u32 t s i j;
+
+  pstate =_stateTopqm4(pstate);
+
+  reg u32 zero = 0;
+  stack u8[8] buf;
+  reg ptr u8[8] pbuf;
+
+  // In case pos is not a multiple of 8 bytes
+  // Bytes are absorbed one by one
+  i = pos & 7; // <=> mod 8
+  reg u32 stop = i + mlen;
+  // CHECKME : constant time ?
+  if (stop > 8) { stop = 8; }
+
+  buf[u32 0] = zero;
+  buf[u32 1] = zero;
+  pbuf = buf;
+
+  j = i;
+  while (j < stop) {
+    t = (32u)(u8)[m];
+    pbuf[u8 j] = (8u)t;
+    j += 1;  m += 1; mlen -= 1;
+  }
+  buf = pbuf;
+
+  pos -= i;
+  reg u32 s0 = pstate.[pos];
+  pos += 4;
+  reg u32 s1 = pstate.[pos];
+  pos -= 4;
+
+  reg u32 d0 = buf[u32 0];
+  reg u32 d1 = buf[u32 1];
+  s0, s1 = _toBitInterleaving(d0, d1, s0, s1); // ? Is s0 / s1 pqm4 or ref ?
+
+  pstate.[pos] = s0;
+  pos += 4;
+  pstate.[pos] = s1;
+  pos -= 4;
+  pos += i;
+
+  t = stop - i;
+  pos += t;
+
+  // Number of 8 bytes that can be absorbed in what remains in m (i.e. mlen)
+  i = mlen >> 3; // <=> div 8, number of absorption of 8 bytes at once
+
+  // At this point pos is a multiple 8 bytes, which can be 136 and need keccaking
+  if (pos == SHAKE256_RATE) {
+    () = #spill(m, mlen, i);
+    pstate = _KeccakF1600_StatePermute(pstate); // permute pqm4 state
+    () = #unspill(m, mlen, i);
+    pos = 0;
+  }
+
+  // While input is not consumed :
+  // Fill-in sponge part of the shake buffer byte by byte while xoring
+  // If sponge is filled : keccak the buffer
+  while (i != 0) {
+    reg u32 s0 = pstate.[pos];
+    pos += 4;
+    reg u32 s1 = pstate.[pos];
+    pos -= 4;
+
+    reg u32 d0 = (u32)[m];
+    reg u32 m_1 = 0;
+    m_1 = m + 4;
+    reg u32 d1 = (u32)[m_1];
+    s0, s1 = _toBitInterleaving(d0, d1, s0, s1);
+    pstate.[pos] = s0;
+    pos += 4;
+    pstate.[pos] = s1;
+    pos += 4; m += 8; mlen -= 8;
+
+    i -= 1;
+
+    if (pos == SHAKE256_RATE) {
+      () = #spill(m, mlen, i);
+      pstate = _KeccakF1600_StatePermute(pstate); // permute pqm4 state
+      () = #unspill(m, mlen, i);
+      pos = 0;
+    }
+
+  }
+
+  reg u32 zero = 0;
+  buf[u32 0] = zero;
+  buf[u32 1] = zero;
+  pbuf = buf;
+
+  i = 0;
+  while(mlen != 0) {
+    t = (32u)(u8)[m];
+    pbuf[i] = (8u)t;
+    i += 1; m += 1; mlen -= 1;
+  }
+  buf = pbuf;
+
+  reg u32 s0 = pstate.[pos];
+  pos += 4;
+  reg u32 s1 = pstate.[pos];
+  reg u32 d0 = buf[u32 0];
+  reg u32 d1 = buf[u32 1];
+  s0, s1 = _toBitInterleaving(d0, d1, s0, s1); // ? Is s0 / s1 pqm4 or ref ?
+  pos -= 4;
+  pstate.[pos] = s0;
+  pos += 4;
+  pstate.[pos] = s1;
+  pos += 4;
+  // FIXME : should we update state after ?
+
+  // No need to keccak at this point since pos + mlen was not a multiple of 8 bytes and therefore cannot be 136 bytes
+  pstate =_pqm4Tostate(pstate);
 
   return pstate, pos;
 }
