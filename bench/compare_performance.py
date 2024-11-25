@@ -31,7 +31,6 @@ def parse_bench_output(output):
 def shell(command, expect=0, cwd=None):
     completed = subprocess.run(command, cwd=cwd, capture_output=True)
 
-
     if completed.returncode != expect:
         print(completed.stderr.decode("utf-8"))
         raise Exception("Error {}. Expected {}.".format(completed.returncode, expect))
@@ -50,17 +49,17 @@ parser.add_argument(
 parser.add_argument(
     "--new",
     help="the commit whose performance we want to measure relative to the baseline. If left empty, measure the current state of the code.",
-    default='HEAD',
+    default="HEAD",
 )
 args = parser.parse_args()
 
 repo = git.Repo(".")
 
-if repo.is_dirty():
-    sys.exit("Cannot proceed: you have uncommitted changes.")
+if repo.is_dirty(path="ml_dsa_65/ref"):
+    sys.exit("Cannot proceed: you have uncommitted changes in ml_dsa_65/ref.")
 
 # Now measure the old performance
-repo.git.checkout(args.old, 'ml_dsa_65/ref')
+repo.git.checkout(args.old, "ml_dsa_65/ref")
 
 shell(["make", "bench.o"])
 
@@ -68,7 +67,7 @@ old = shell(["./bench.o"])
 old = parse_bench_output(old)
 
 # Measure new performance
-repo.git.checkout(args.new, 'ml_dsa_65/ref')
+repo.git.checkout(args.new, "ml_dsa_65/ref")
 
 shell(["make", "bench.o"])
 
@@ -92,5 +91,5 @@ print(
     )
 )
 
-# Revert to the original repository state
-repo.git.reset('--hard')
+# Revert to the original state
+repo.git.checkout("HEAD", "ml_dsa_65/ref")

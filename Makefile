@@ -37,8 +37,12 @@ $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 check-ct: $(IMPLEMENTATION)/ml_dsa.jazz
 	$(JASMINCT) $^
 
+.PHONY: check-sct
+check-sct: $(IMPLEMENTATION)/ml_dsa.jazz
+	$(JASMINCT) --speculative $^
+
 # --------------------------------------------------------------------
-bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c
+bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c bench/notrandombytes.c
 	$(CC) -Wall -Werror \
 		  -DIMPLEMENTATION_TYPE=$(IMPLEMENTATION_TYPE) \
 		  -DKEYGEN=ml_dsa_$(PARAMETER_SET)_keygen \
