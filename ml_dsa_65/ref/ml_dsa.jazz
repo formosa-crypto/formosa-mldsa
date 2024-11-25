@@ -60,11 +60,13 @@ export fn ml_dsa_65_keygen(
 // - |signing_key| points to a buffer of 4032 bytes.
 // - |message| points to a buffer of |message_size| bytes.
 //
+#[sct="transient * transient * transient * transient * {ptr: transient, val: secret} -> ()"]
 export fn ml_dsa_65_sign(
-    #public reg u64 signature_out,
-    #public reg u64 signing_key,
-    #public reg u64 message message_size,
-    #secret reg ptr u8[32] randomness
+    #spill_to_mmx reg u64 signature_out,
+    reg u64 signing_key,
+    reg u64 message,
+    reg u64 message_size,
+    reg ptr u8[32] randomness
 )
 {
     #secret stack u8[SIGNING_KEY_SIZE] signing_key_on_stack;
@@ -74,7 +76,7 @@ export fn ml_dsa_65_sign(
     #flexible reg u8 byte;
     reg u64 i = 0;
 
-    reg u64 msf = #init_msf();
+    _ = #init_msf();
 
     i = 0;
     while(i < SIGNING_KEY_SIZE) {
@@ -84,7 +86,7 @@ export fn ml_dsa_65_sign(
     }
 
     () = #spill(signature_out);
-    signature, msf = sign_internal(signing_key_on_stack, message, message_size, randomness, msf);
+    signature = sign_internal(signing_key_on_stack, message, message_size, randomness);
     () = #unspill(signature_out);
 
     i = 0;

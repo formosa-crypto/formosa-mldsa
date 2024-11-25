@@ -42,9 +42,8 @@ fn sign_internal(
         #secret stack u8[SIGNING_KEY_SIZE] signing_key,
         reg u64 pointer_to_message,
         reg u64 message_size,
-        #spill_to_mmx reg ptr u8[32] randomness,
-        reg u64 msf
-) -> stack u8[SIGNATURE_SIZE], reg u64 {
+        #spill_to_mmx reg ptr u8[32] randomness
+) -> stack u8[SIGNATURE_SIZE] {
     stack u8[SIGNATURE_SIZE] signature_encoded;
 
     // parts of signing_key
@@ -168,6 +167,7 @@ fn sign_internal(
                     w0_minus_cs2_plus_ct0 = column_vector::add(w0_minus_cs2, ct0);
 
                     ones_in_hint, hint = column_vector::make_hint(w0_minus_cs2_plus_ct0, w1);
+                    _ = #init_msf();
                     if(ones_in_hint <= MAX_ONES_IN_HINT) {
                         exit_rejection_sampling_loop = 1;
                     }
@@ -176,6 +176,7 @@ fn sign_internal(
         }
     }
 
+
     signature_encoded = signature::encode(commitment_hash, signer_response, hint);
-    return signature_encoded, msf;
+    return signature_encoded;
 }
