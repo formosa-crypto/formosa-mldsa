@@ -47,6 +47,7 @@ int main(void) {
   for (i = 0; i < DATA_POINTS; i++) {
     observations[i] = cpucycles();
     SIGN(signature, signing_key, message, sizeof(message), signing_randomness);
+    signing_randomness[0] = signing_randomness[0] + 1;
   }
   print_results(STRINGIFY(FORMATTED_NAME(SIGN)), observations, DATA_POINTS);
 
