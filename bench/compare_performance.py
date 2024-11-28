@@ -1,7 +1,15 @@
+import atexit
 import argparse
 import git
 import subprocess
 import sys
+
+@atexit.register
+def cleanup():
+    """Revert ml_dsa_65/ref back to its original state."""
+    print("Reverting ml_dsa_65/ref back to original state.",
+          file=sys.stderr)
+    repo.git.checkout("HEAD", "ml_dsa_65/ref")
 
 
 def percent_change(old, new):
@@ -90,6 +98,3 @@ print(
         percent_change(old["verify_median"], new["verify_median"])
     )
 )
-
-# Revert to the original state
-repo.git.checkout("HEAD", "ml_dsa_65/ref")

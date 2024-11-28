@@ -3,7 +3,7 @@ require "../parameters.jinc"
 require "../encoding/gamma1.jinc"
 
 inline
-fn absorb_commitment_hash_for_shake256(
+fn absorb_to_generate_challenges(
     reg ptr u64[25] state,
     reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash
 ) -> stack u64[25] {
@@ -40,7 +40,7 @@ namespace sample {
 
         inline int j;
 
-        state = absorb_commitment_hash_for_shake256(state, seed);
+        state = absorb_to_generate_challenges(state, seed);
 
         () = #spill(output_challenge);
         state = _keccakf1600_ref1(state);
