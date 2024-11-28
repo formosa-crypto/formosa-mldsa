@@ -1,18 +1,26 @@
-from ml_dsa import ML_DSA
+import pytest
+
+from pathlib import Path
 import json
 import hashlib
 
-ml_dsa_65 = ML_DSA("ml_dsa_65_ref")
 
-with open("nist_drbg_kats/nist_drbg_kats_65.json", "r") as nistkats_65_raw:
-    nistkats_65 = json.load(nistkats_65_raw)
+@pytest.fixture()
+def kats(ml_dsa):
+    kat_file = (
+        Path(__file__).parent
+        / "nist_drbg"
+        / "nist_drbg_kats_{}.json".format(ml_dsa.parameter_set)
+    )
+    with open(kat_file, "r") as kats_raw:
+        return json.load(kats_raw)
 
-    for kat in nistkats_65:
+
+def test_against_kats(ml_dsa, kats):
+    for kat in kats:
         # Test key generation.
         key_generation_seed = bytearray.fromhex(kat["key_generation_seed"])
-        (verification_key, signing_key) = ml_dsa_65.generate_keypair(
-            key_generation_seed
-        )
+        (verification_key, signing_key) = ml_dsa.generate_keypair(key_generation_seed)
 
         sha3_256_hash_of_verification_key = hashlib.sha3_256(
             verification_key.raw
@@ -35,13 +43,13 @@ with open("nist_drbg_kats/nist_drbg_kats_65.json", "r") as nistkats_65_raw:
 
         signing_randomness = bytearray.fromhex(kat["signing_randomness"])
 
-        signature = ml_dsa_65.sign(signing_key, message, signing_randomness)
+        signature = ml_dsa.sign(signing_key.raw, message, signing_randomness)
 
-        sha3_256_hash_of_signature = hashlib.sha3_256(signature.raw).digest()
+        sha3_256_hash_of_signature = hashlib.sha3_256(signature).digest()
         assert sha3_256_hash_of_signature == bytes.fromhex(
             (kat["sha3_256_hash_of_signature"])
         )
 
         # And lastly, verification.
-        verification_result = ml_dsa_65.verify(verification_key, message, signature)
+        verification_result = ml_dsa.verify(verification_key.raw, message, signature)
         assert verification_result == 0

@@ -1,22 +1,23 @@
 import ctypes
-
-# TODO: Get these parameters directly from the source code.
-PARAMETERS = {
-    "ml_dsa_65_ref": {
-        "verification_key_size": 1952,
-        "signing_key_size": 4032,
-        "signature_size": 3309,
-    },
-}
+from pathlib import Path
 
 
 class ML_DSA:
-    def __init__(self, parameter_set):
-        self.verification_key_size = PARAMETERS[parameter_set]["verification_key_size"]
-        self.signing_key_size = PARAMETERS[parameter_set]["signing_key_size"]
-        self.signature_size = PARAMETERS[parameter_set]["signature_size"]
+    def __init__(self, implementation_type, parameter_set):
+        # TODO: Get these parameters directly from the source code.
+        if parameter_set == "65":
+            self.verification_key_size = 1952
+            self.signing_key_size = 4032
+            self.signature_size = 3309
+        else:
+            sys.exit("Parameter set not yet implemented.")
 
-        self.ml_dsa = ctypes.PyDLL("../{}.so".format(parameter_set))
+        self.parameter_set = parameter_set
+
+        ml_dsa_so = Path(__file__).parent.parent / "ml_dsa_{}_{}.so".format(
+            parameter_set, implementation_type
+        )
+        self.ml_dsa = ctypes.PyDLL(ml_dsa_so)
 
     def bytearray_to_ctype(self, ba):
         char_array = ctypes.c_char * len(ba)

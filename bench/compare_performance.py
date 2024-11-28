@@ -4,12 +4,11 @@ import git
 import subprocess
 import sys
 
-@atexit.register
-def cleanup():
-    """Revert ml_dsa_65/ref back to its original state."""
-    print("Reverting ml_dsa_65/ref back to original state.",
-          file=sys.stderr)
-    repo.git.checkout("HEAD", "ml_dsa_65/ref")
+
+def cleanup(implementation_path):
+    """Revert implementation back to its original state."""
+    print("Reverting implementation back to original state.", file=sys.stderr)
+    repo.git.checkout("HEAD", implementation_path)
 
 
 def percent_change(old, new):
@@ -52,6 +51,10 @@ parser = argparse.ArgumentParser(
 )
 
 parser.add_argument(
+    "--implementation",
+    help="path to the implementation to be benchmarked.",
+)
+parser.add_argument(
     "--old", help="the commit whose performance is to be used as the baseline."
 )
 parser.add_argument(
@@ -63,11 +66,15 @@ args = parser.parse_args()
 
 repo = git.Repo(".")
 
-if repo.is_dirty(path="ml_dsa_65/ref"):
-    sys.exit("Cannot proceed: you have uncommitted changes in ml_dsa_65/ref.")
+if repo.is_dirty(path=args.implementation):
+    sys.exit(
+        "Cannot proceed: you have uncommitted changes in {}.".format(
+            args.implementation
+        )
+    )
 
 # Now measure the old performance
-repo.git.checkout(args.old, "ml_dsa_65/ref")
+repo.git.checkout(args.old, args.implementation)
 
 shell(["make", "bench.o"])
 
@@ -75,7 +82,7 @@ old = shell(["./bench.o"])
 old = parse_bench_output(old)
 
 # Measure new performance
-repo.git.checkout(args.new, "ml_dsa_65/ref")
+repo.git.checkout(args.new, args.implementation)
 
 shell(["make", "bench.o"])
 
@@ -98,3 +105,5 @@ print(
         percent_change(old["verify_median"], new["verify_median"])
     )
 )
+
+atexit.register(cleanup, args.implementation)

@@ -21,14 +21,11 @@ $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
 # --------------------------------------------------------------------
 .PHONY: test
 test: $(OUTPUT_FILE_NAME).so
-	cd test && python3 nist_drbg_kat_tests.py && \
-			   python3 nist_acvp_tests.py && \
-			   python3 wycheproof_verify_tests.py && \
-			   python3 wycheproof_sign_tests.py
+	python3 -m pytest tests/
 
-.PHONY: large-kat-test
-large-kat-test: $(OUTPUT_FILE_NAME).so
-	cd test && python3 large_kat_test.py
+.PHONY: nist-drbg-kat-test
+nist-drbg-kat-test: $(OUTPUT_FILE_NAME).so
+	python3 -m pytest tests/test_nist_drbg_kats.py
 
 $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 	$(CC) $^ -fPIC -shared -o $@
