@@ -5,7 +5,7 @@ JASMINC ?= jasminc
 JASMINCT ?= jasmin-ct
 
 # --------------------------------------------------------------------
-IMPLEMENTATION = ml_dsa_$(PARAMETER_SET)/$(IMPLEMENTATION_TYPE)
+IMPLEMENTATION = $(IMPLEMENTATION_TYPE)/ml_dsa_$(PARAMETER_SET)
 
 IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
 						 $(wildcard $(IMPLEMENTATION)/*.jinc) \
