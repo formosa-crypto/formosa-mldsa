@@ -39,16 +39,13 @@ check-sct: $(IMPLEMENTATION)/ml_dsa.jazz
 	$(JASMINCT) --speculative $^
 
 # --------------------------------------------------------------------
-bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c bench/notrandombytes.c
+bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c bench/notrandombytes.c $(IMPLEMENTATION)/api.h
 	$(CC) -Wall -Werror \
 		  -DIMPLEMENTATION_TYPE=$(IMPLEMENTATION_TYPE) \
 		  -DKEYGEN=ml_dsa_$(PARAMETER_SET)_keygen \
 		  -DSIGN=ml_dsa_$(PARAMETER_SET)_sign \
 		  -DVERIFY=ml_dsa_$(PARAMETER_SET)_verify \
-		  -DVERIFICATION_KEY_SIZE=1952 \
-		  -DSIGNING_KEY_SIZE=4032 \
-		  -DSIGNATURE_SIZE=3309 \
-		  $^ -o $@
+		  $^ -I $(IMPLEMENTATION) -o $@
 
 # --------------------------------------------------------------------
 .PHONY: clean

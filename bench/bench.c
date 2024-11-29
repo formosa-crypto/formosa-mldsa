@@ -4,20 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "api.h"
 #include "notrandombytes.h"
 
-// Configurable parameters.
-
 #define DATA_POINTS 100000
-
-extern void KEYGEN(uint8_t *verification_key, uint8_t *signing_key,
-                   const uint8_t key_generation_randomness[32]);
-extern void SIGN(uint8_t *signature, const uint8_t *signing_key,
-                 const uint8_t *message, const size_t message_size,
-                 const uint8_t randomness[32]);
-extern void VERIFY(const uint8_t *verification_key, const uint8_t *message,
-                   const size_t message_size,
-                   const uint8_t signature[SIGNATURE_SIZE]);
 
 // Utility functions and macros.
 
