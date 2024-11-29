@@ -8,9 +8,7 @@ import hashlib
 @pytest.fixture()
 def kats(ml_dsa):
     kat_file = (
-        Path(__file__).parent
-        / "nist_drbg"
-        / "ml_dsa_{}.json".format(ml_dsa.parameter_set)
+        Path(__file__).parent / "pqc" / "ml_dsa_{}.json".format(ml_dsa.parameter_set)
     )
     with open(kat_file, "r") as kats_raw:
         return json.load(kats_raw)
@@ -39,7 +37,8 @@ def test_against_kats(ml_dsa, kats):
         # We append [0,0] to signal an empty domain separation context, see
         # the comment in ml_dsa.jazz for as to why this is done here instead
         # of there.
-        message = bytearray([0, 0]) + bytearray.fromhex(kat["message"])
+        ctx = bytearray.fromhex(kat["context"])
+        message = bytearray([0, len(ctx)]) + ctx + bytearray.fromhex(kat["message"])
 
         signing_randomness = bytearray.fromhex(kat["signing_randomness"])
 
