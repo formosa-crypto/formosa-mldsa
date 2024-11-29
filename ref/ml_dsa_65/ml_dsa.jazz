@@ -33,8 +33,6 @@ export fn ml_dsa_65_keygen(
     reg u8 byte;
     reg u64 i;
 
-    _ = #init_msf();
-
     () = #spill(verification_key_out, signing_key_out);
     verification_key, signing_key = keygen_internal(randomness);
     () = #unspill(verification_key_out, signing_key_out);
@@ -76,8 +74,6 @@ export fn ml_dsa_65_sign(
     #flexible reg u8 byte;
     reg u64 i = 0;
 
-    _ = #init_msf();
-
     i = 0;
     while(i < SIGNING_KEY_SIZE) {
         byte = (u8)[signing_key + i];
@@ -115,8 +111,6 @@ export fn ml_dsa_65_verify(
 
     #public reg u8 byte;
     reg u64 i;
-
-    _ = #init_msf();
 
     i = 0;
     while(i < VERIFICATION_KEY_SIZE) {

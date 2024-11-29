@@ -21,8 +21,6 @@ namespace signature {
         reg u64 i j hints_written hint_offset;
         reg u32 hint_coefficient;
 
-        reg u64 msf;
-
         inline int k;
         inline bool condition;
 
@@ -44,37 +42,27 @@ namespace signature {
 
 
         // Write out hints
-        msf = #init_msf();
 
         hints_written = 0;
         i = 0;
         while {condition = i < ROWS_IN_MATRIX_A;} (condition) {
-            msf = #update_msf(condition, msf);
-
             j = 0;
             while {condition = j < COEFFICIENTS_IN_POLYNOMIAL;} (condition) {
-                msf = #update_msf(condition, msf);
-
                 hint_offset = i;
                 hint_offset <<= LOG_2_COEFFICIENTS_IN_POLYNOMIAL;
                 hint_offset += j;
 
                 hint_coefficient = hint[hint_offset];
-                hint_coefficient = #protect_32(hint_coefficient, msf);
 
                 condition = hint_coefficient != 0;
                 if (condition) {
-                    msf = #update_msf(condition, msf);
-
                     signature[START_OF_HINT + hints_written] = (8u)j;
                     hints_written += 1;
                 } else {
-                    msf = #update_msf(!condition, msf);
                 }
 
                 j += 1;
             }
-            msf = #update_msf(!condition, msf);
 
             signature[START_OF_HINT + MAX_ONES_IN_HINT + i] = (8u) hints_written;
             i += 1;
@@ -117,7 +105,6 @@ namespace signature {
             }
 
             current_true_hints_seen = (64u)hint_encoded[MAX_ONES_IN_HINT + encoded_offset];
-            _ = #init_msf();
 
             if (current_true_hints_seen < previous_true_hints_seen) {
                 ill_formed_hint = 1;
@@ -134,11 +121,9 @@ namespace signature {
                     } (done == 0) {
                         // Coefficients are ordered for strong unforgeability
                         hint_at_j = (64u)hint_encoded[j];
-                        _ = #init_msf();
 
                         if (j > previous_true_hints_seen) {
                             hint_at_j_minus_one = (64u)hint_encoded[j - 1];
-                            _ = #init_msf();
 
                             if (hint_at_j <= hint_at_j_minus_one) {
                                 ill_formed_hint = 1;
@@ -170,7 +155,6 @@ namespace signature {
             done |= ill_formed_hint;
         } (done == 0) {
             hint = (64u)hint_encoded[encoded_offset];
-            _ = #init_msf();
 
             if(hint != 0) {
                 ill_formed_hint = 1;

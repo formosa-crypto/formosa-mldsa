@@ -137,22 +137,16 @@ namespace polynomial {
         reg u32 weight a0 a1 hint;
         reg u64 i;
 
-        reg u64 msf = #init_msf();
-
         inline bool condition;
 
         weight = 0;
         i = 0;
         while {condition = i < COEFFICIENTS_IN_POLYNOMIAL;} (condition) {
-            msf = #update_msf(condition, msf);
-
             a0 = f0[i];
-            a0 = #protect_32(a0, msf);
 
             a1 = f1[i];
-            a1 = #protect_32(a1, msf);
 
-            hint, msf = coefficient::make_hint(a0, a1, msf);
+            hint = coefficient::make_hint(a0, a1);
             hints[i] = hint;
             weight += hint;
             i += 1;
@@ -202,21 +196,15 @@ namespace polynomial {
         reg u64 i;
         reg u32 a h;
 
-        reg u64 msf = #init_msf();
-
         inline bool b;
 
         i = 0;
         while { b = i < COEFFICIENTS_IN_POLYNOMIAL; } (b) {
-            msf = #update_msf(b, msf);
-
             h = hints[i];
-            h = #protect_32(h, msf);
 
             a = commitment[i];
-            a = #protect_32(a, msf);
 
-            a, msf = coefficient::use_hint(a, h, msf);
+            a = coefficient::use_hint(a, h);
 
             commitment[i] = a;
 
