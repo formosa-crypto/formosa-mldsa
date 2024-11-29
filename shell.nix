@@ -5,6 +5,7 @@ in pkgs.mkShell {
     (pkgs.python3.withPackages (python-pkgs: with python-pkgs; [
       pycryptodome
       pytest
+      gitpython
     ]))
   ];
   JASMINC = "${pkgs.jasmin-compiler.bin}/bin/jasminc";

@@ -42,11 +42,17 @@ fn rejection_sample_less_than_field_modulus(
 
     inline int k;
 
+    reg u64 msf = #init_msf();
+
     xof_offset = 0;
 
     while { b = xof_offset < SHAKE128_RATE; } (b) {
+        msf = #update_msf(b, msf);
+
         b = sampled < COEFFICIENTS_IN_POLYNOMIAL;
         if (b) {
+            msf = #update_msf(b, msf);
+
             try_coefficient = 0;
             for k = 0 to 3 {
                 #declassify byte = (32u)state[u8 xof_offset + k];
@@ -55,15 +61,19 @@ fn rejection_sample_less_than_field_modulus(
                 try_coefficient |= byte;
             }
             try_coefficient &= 0x00_7F_FF_FF;
+            try_coefficient = #protect_32(try_coefficient, msf);
 
 
             b = try_coefficient < MODULUS;
             if (b) {
+                msf = #update_msf(b, msf);
                 result[sampled] = try_coefficient;
                 sampled += 1;
             } else {
+                msf = #update_msf(!b, msf);
             }
         } else {
+            msf = #update_msf(!b, msf);
         }
 
         xof_offset += 3;
