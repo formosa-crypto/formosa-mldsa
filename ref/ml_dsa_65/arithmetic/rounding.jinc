@@ -65,7 +65,7 @@ namespace coefficient {
         return a0_32, a1;
     }
 
-    fn make_hint(reg u32 a0, reg u32 a1) -> reg u32 {
+    fn make_hint(reg u32 a0, reg u32 a1, reg u64 msf) -> reg u32, #msf reg u64 {
         reg u32 result;
         inline bool condition;
 
@@ -73,25 +73,37 @@ namespace coefficient {
 
         condition = a0 >s GAMMA2;
         if (condition) {
+            msf = #update_msf(condition, msf);
+
             result = 1;
         } else {
+            msf = #update_msf(!condition, msf);
+
             condition = a0 <s -GAMMA2;
             if (condition) {
+                msf = #update_msf(condition, msf);
                 result = 1;
             } else {
+                msf = #update_msf(!condition, msf);
+
                 condition = a0 == -GAMMA2;
                 if (condition) {
+                    msf = #update_msf(condition, msf);
+
                     condition = a1 != 0;
                     if (condition) {
+                        msf = #update_msf(condition, msf);
                         result = 1;
                     } else {
+                        msf = #update_msf(!condition, msf);
                     }
                 } else {
+                    msf = #update_msf(!condition, msf);
                 }
             }
         }
 
-        return result;
+        return result, msf;
     }
 
     inline
@@ -135,7 +147,7 @@ namespace coefficient {
         return result;
     }
 
-    fn use_hint(reg u32 a hint) -> reg u32 {
+    fn use_hint(reg u32 a hint, reg u64 msf) -> reg u32, #msf reg u64 {
         reg u32 a0;
         reg u32 a1;
 
@@ -145,17 +157,22 @@ namespace coefficient {
 
         b = hint != 0;
         if (b) {
+            msf = #update_msf(b, msf);
+
             b = a0 >s 0;
             if (b) {
+                msf = #update_msf(b, msf);
                 a1 += 1;
                 a1 &= 15;
             } else {
+                msf = #update_msf(!b, msf);
                 a1 -= 1;
                 a1 &= 15;
             }
         } else {
+            msf = #update_msf(!b, msf);
         }
 
-        return a1;
+        return a1, msf;
     }
 }
