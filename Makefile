@@ -39,6 +39,10 @@ check-ct: $(IMPLEMENTATION)/ml_dsa.jazz
 check-sct: $(IMPLEMENTATION)/ml_dsa.jazz
 	$(JASMINCT) --speculative $^
 
+.PHONY: run-interpreter
+run-interpreter: $(IMPLEMENTATION)/test/execute.jazz $(IMPLEMENTATION)/ml_dsa.jazz
+	$(JASMINC) $< | grep 'true'
+
 # --------------------------------------------------------------------
 bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c bench/notrandombytes.c $(IMPLEMENTATION)/api.h
 	$(CC) -Wall -Werror \
