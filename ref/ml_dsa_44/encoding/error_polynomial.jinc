@@ -1,0 +1,186 @@
+require "../parameters.jinc"
+
+// N.B.: This file varies according to parameter set.
+
+namespace error_polynomial {
+    fn encode(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+              reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
+    ) -> reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE]
+    {
+            reg u32 encoded_byte;
+
+            reg u32 t0 t1 t2 t3 t4 t5 t6 t7;
+
+            reg u64 i = 0;
+            reg u64 out_offset = 0;
+
+            while (i < COEFFICIENTS_IN_POLYNOMIAL) {
+                // r[3*i+0]  = (t[0] >> 0) | (t[1] << 3) | (t[2] << 6);
+                t0 = ETA;
+                t0 -= polynomial[i + 0];
+
+                t1 = ETA;
+                t1 -= polynomial[i + 1];
+                t1 <<= 3;
+
+                t2 = ETA;
+                t2 -= polynomial[i + 2];
+
+                encoded_byte = t2 << 6;
+                encoded_byte |= t0;
+                encoded_byte |= t1;
+                encoded[out_offset + 0] = (8u)encoded_byte;
+
+                // r[3*i+1]  = (t[2] >> 2) | (t[3] << 1) | (t[4] << 4) | (t[5] << 7);
+                encoded_byte >>= 8;
+
+                t3 = ETA;
+                t3 -= polynomial[i + 3];
+                t3 <<= 1;
+
+                t4 = ETA;
+                t4 -= polynomial[i + 4];
+                t4 <<= 4;
+
+                t5 = ETA;
+                t5 -= polynomial[i + 5];
+                t5 <<= 7;
+
+                encoded_byte |= t3;
+                encoded_byte |= t4;
+                encoded_byte |= t5;
+                encoded[out_offset + 1] = (8u)encoded_byte;
+
+                // r[3*i+2]  = (t[5] >> 1) | (t[6] << 2) | (t[7] << 5);
+                encoded_byte >>= 8;
+
+                t6 = ETA;
+                t6 -= polynomial[i + 6];
+                t6 <<= 2;
+
+                t7 = ETA;
+                t7 -= polynomial[i + 7];
+                t7 <<= 5;
+
+                encoded_byte |= t6;
+                encoded_byte |= t7;
+                encoded[out_offset + 2] = (8u)encoded_byte;
+
+                i += 8;
+                out_offset += 3;
+            }
+
+            return encoded;
+    }
+
+    fn decode(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u32 t0 t1 t2;
+        reg u32 coefficient temp;
+
+        inline int ETA_BITS_MASK = (1 << 3) - 1;
+
+        reg u64 i = 0;
+        reg u64 out_offset = 0;
+
+        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
+            t0 = (32u) encoded[i + 0];
+            t1 = (32u) encoded[i + 1];
+            t2 = (32u) encoded[i + 2];
+
+            // r->coeffs[8*i+0] = (a[3*i+0] >> 0) & 7;
+            // r->coeffs[8*i+0] = ETA - r->coeffs[8*i+0];
+            temp = t0;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset] = coefficient;
+
+            // r->coeffs[8*i+1] =  (a[3*i+0] >> 3) & 7;
+            // r->coeffs[8*i+1] = ETA - r->coeffs[8*i+1];
+            temp = t0;
+            temp >>= 3;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 1] = coefficient;
+
+            // r->coeffs[8*i+2] = ((a[3*i+0] >> 6) | (a[3*i+1] << 2)) & 7;
+            // r->coeffs[8*i+2] = ETA - r->coeffs[8*i+2];
+            temp = t0 >> 6;
+            temp = #LEA_32(4 * t1 + temp);
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 2] = coefficient;
+
+            // r->coeffs[8*i+3] =  (a[3*i+1] >> 1) & 7;
+            // r->coeffs[8*i+3] = ETA - r->coeffs[8*i+3];
+            temp = t1;
+            temp >>= 1;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 3] = coefficient;
+
+            // r->coeffs[8*i+4] =  (a[3*i+1] >> 4) & 7;
+            // r->coeffs[8*i+4] = ETA - r->coeffs[8*i+4];
+            temp = t1;
+            temp >>= 4;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 4] = coefficient;
+
+            // r->coeffs[8*i+5] = ((a[3*i+1] >> 7) | (a[3*i+2] << 1)) & 7;
+            // r->coeffs[8*i+5] = ETA - r->coeffs[8*i+5];
+            temp = t1 >> 7;
+            temp = #LEA_32(2 * t2 + temp);
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 5] = coefficient;
+
+            // r->coeffs[8*i+6] =  (a[3*i+2] >> 2) & 7;
+            // r->coeffs[8*i+6] = ETA - r->coeffs[8*i+6];
+            temp = t2;
+            temp >>= 2;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 6] = coefficient;
+
+            // r->coeffs[8*i+7] =  (a[3*i+2] >> 5) & 7;
+            // r->coeffs[8*i+7] = ETA - r->coeffs[8*i+7];
+            temp = t2 >> 5;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 7] = coefficient;
+
+            i += 3;
+            out_offset += 8;
+        }
+
+        return polynomial;
+    }
+}

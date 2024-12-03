@@ -1,0 +1,196 @@
+require "../parameters.jinc"
+
+namespace coefficient {
+    fn power2round(reg u32 r) -> reg u32, reg u32 {
+        /*
+        int32_t a1; //high bits
+
+        a1 = (a + (1 << (D-1)) - 1) >> D;
+        *a0 = a - (a1 << D);
+        */
+        reg u32 high_bits, low_bits;
+        reg u32 v32;
+
+        high_bits = r;
+        high_bits += (1 << (BITS_IN_LOWER_PART_OF_T - 1)) - 1;
+        high_bits >>= BITS_IN_LOWER_PART_OF_T;
+
+        v32 = high_bits;
+        v32 <<= BITS_IN_LOWER_PART_OF_T;
+
+        low_bits = r;
+        low_bits -= v32;
+
+        return high_bits, low_bits;
+    }
+
+    // N.B.: This function varies according to parameter set.
+    inline
+    fn decompose(reg u32 r) -> reg u32, reg u32 {
+        reg u32 temp high_bits low_bits;
+
+        // Compute ceil((r + 127) >> 7);
+        high_bits = r;
+        high_bits += 127;
+        high_bits >>s= 7;
+
+        // Compute (( (ceil(r + 127) >> 7) * 11_275) + (1 << 23) ) >> 24;
+        high_bits *= 11_275;
+        high_bits += (1 << 23);
+        high_bits >>s= 24;
+
+        // Compute high_bits ^= ((43 - high_bits) >> 31) & high_bits;
+        // to handle the corner case.
+        temp = 43;
+        temp -= high_bits;
+        temp >>s= 31;
+        temp &= high_bits;
+
+        high_bits ^= temp;
+
+        // Compute low_bits = r - (r1 * (GAMMA2 * 2));
+        temp = high_bits;
+        temp *= GAMMA2 * 2;
+
+        low_bits = r;
+        low_bits -= temp;
+
+        // Compute low_bits -= (((MODULUS - 1) / 2 - low_bits) >> 31) & MODULUS
+        // to account for the corner case.
+        temp = (MODULUS - 1) / 2;
+        temp -= low_bits;
+        temp >>s= 31;
+        temp &= MODULUS;
+
+        low_bits -= temp;
+
+        return low_bits, high_bits;
+    }
+
+    fn make_hint(reg u32 a0, reg u32 a1, reg u64 msf) -> reg u32, #msf reg u64 {
+        reg u32 result;
+        inline bool condition;
+
+        result = 0;
+
+        condition = a0 >s GAMMA2;
+        if (condition) {
+            msf = #update_msf(condition, msf);
+
+            result = 1;
+        } else {
+            msf = #update_msf(!condition, msf);
+
+            condition = a0 <s -GAMMA2;
+            if (condition) {
+                msf = #update_msf(condition, msf);
+                result = 1;
+            } else {
+                msf = #update_msf(!condition, msf);
+
+                condition = a0 == -GAMMA2;
+                if (condition) {
+                    msf = #update_msf(condition, msf);
+
+                    condition = a1 != 0;
+                    if (condition) {
+                        msf = #update_msf(condition, msf);
+                        result = 1;
+                    } else {
+                        msf = #update_msf(!condition, msf);
+                    }
+                } else {
+                    msf = #update_msf(!condition, msf);
+                }
+            }
+        }
+
+        return result, msf;
+    }
+
+    inline
+    fn check_norm(#secret reg u32 coefficient, inline int threshold) -> stack u8
+    {
+        reg u32 sign_mask;
+        stack u32 c;
+
+        reg bool sf;
+
+        stack u8 result;
+
+        result = 0;
+
+        // This norm is calculated using the absolute value of the
+        // signed representative in the range:
+        //
+        // -MODULUS / 2 < r <= MODULUS / 2.
+        //
+        // So if the coefficient is negative, get its absolute value, but
+        // don't convert it into a different representation.
+        //
+        // Also, we must not leak the sign of the centralized representative.
+        sign_mask = coefficient;
+        sign_mask >>s= 31;
+
+        c = coefficient;
+        c <<= 1;
+        c &= sign_mask;
+        coefficient = coefficient - c;
+
+        // But it is ok to leak which coefficient violates the bound since
+        // the probability for each coefficient is independent of the secret
+        // data.
+        //
+        // We've used constant-time code here to make CT and SCT checking easier.
+        _, _, sf, _, _ = #CMP_32(coefficient, threshold);
+        result = #SETcc(!sf);
+        result = -result;
+
+        return result;
+    }
+
+    // N.B.: This function varies according to parameter set.
+    fn use_hint(reg u32 a hint, reg u64 msf) -> reg u32, #msf reg u64 {
+        reg u32 high_bits low_bits;
+
+        inline bool b;
+
+        low_bits, high_bits = decompose(a);
+
+        b = hint != 0;
+        if (b) {
+            msf = #update_msf(b, msf);
+
+            b = low_bits >s 0;
+            if (b) {
+                b = high_bits == 43;
+                if (b) {
+                    msf = #update_msf(b, msf);
+
+                    high_bits = 0;
+                } else {
+                    msf = #update_msf(!b, msf);
+
+                    high_bits += 1;
+                }
+            } else {
+                msf = #update_msf(!b, msf);
+
+                b = high_bits == 0;
+                if (b) {
+                    msf = #update_msf(b, msf);
+
+                    high_bits = 43;
+                } else {
+                    msf = #update_msf(!b, msf);
+
+                    high_bits -= 1;
+                }
+            }
+        } else {
+            msf = #update_msf(!b, msf);
+        }
+
+        return high_bits, msf;
+    }
+}

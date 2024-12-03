@@ -1,0 +1,58 @@
+require "../ml_dsa.jazz"
+
+inline fn setup_memory() -> reg u64, reg u64, reg u64, reg u64, reg u64, reg u64
+{
+    reg u64 verification_key signing_key signature message message_size randomness;
+
+    inline int i;
+
+    verification_key = 0x1000;
+    signing_key = 0x2000;
+
+    signature = 0x3000;
+
+    message = 0x4000;
+    message_size = 64;
+
+    randomness = 0x5000;
+
+    for i = 0 to 8 {
+        [randomness + 8 * i] = i;
+        [message + 8 * i] = i;
+    }
+
+    return verification_key, signing_key, signature, message, message_size, randomness;
+}
+
+fn test_consistency() -> reg bool {
+    reg u64 verification_key signing_key signature message message_size randomness;
+    verification_key, signing_key, signature, message, message_size, randomness = setup_memory();
+
+    reg u64 verify_result i;
+
+    stack u8[32] keygen_randomness signing_randomness;
+
+    i = 0;
+    while (i < 32) {
+        keygen_randomness[i] = (u8)[randomness + i];
+        signing_randomness[i] = (u8)[randomness + i + 32];
+
+        i += 1;
+    }
+
+    #[inline]
+    ml_dsa_65_keygen(verification_key, signing_key, keygen_randomness);
+    #[inline]
+    ml_dsa_65_sign(signature, signing_key, message, message_size, signing_randomness);
+    #[inline]
+    verify_result = ml_dsa_65_verify(verification_key, message, message_size, signature);
+
+    reg bool result;
+    if (verify_result == 0) {
+        result = true;
+    } else {
+        result = false;
+    }
+
+    return result;
+}

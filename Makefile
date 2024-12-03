@@ -1,5 +1,5 @@
-PARAMETER_SET = 65
-IMPLEMENTATION_TYPE = ref
+PARAMETER_SET ?= 65
+IMPLEMENTATION_TYPE ?= ref
 
 # --------------------------------------------------------------------
 JASMINC ?= jasminc
@@ -22,11 +22,17 @@ $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
 # --------------------------------------------------------------------
 .PHONY: test
 test: $(OUTPUT_FILE_NAME).so
-	python3 -m pytest tests/
+	python3 -m pytest \
+		--parameter-set=$(PARAMETER_SET) \
+		--implementation-type=$(IMPLEMENTATION_TYPE) \
+		tests/
 
 .PHONY: nist-drbg-kat-test
 nist-drbg-kat-test: $(OUTPUT_FILE_NAME).so
-	python3 -m pytest tests/test_nist_drbg_kats.py
+	python3 -m pytest \
+		--parameter-set=$(PARAMETER_SET) \
+		--implementation-type=$(IMPLEMENTATION_TYPE) \
+		tests/test_nist_drbg_kats.py
 
 $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 	$(CC) $^ -fPIC -shared -o $@

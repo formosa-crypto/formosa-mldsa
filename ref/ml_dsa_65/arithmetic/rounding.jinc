@@ -26,43 +26,39 @@ namespace coefficient {
 
     // high bits = a0, low bits = a1
     inline
-    fn decompose(reg u32 a) -> reg u32, reg u32 {
-        reg u64 a0;
-        reg u32 a0_32;
-        reg u32 a1;
-        reg u32 v;
-        reg u64 v64;
+    fn decompose(reg u32 r) -> reg u32, reg u32 {
+        reg u32 temp high_bits low_bits;
 
         // a1  = (a + 127) >> 7;
-        a1 = a;
-        a1 += 127;
-        a1 >>= 7;
+        high_bits = r;
+        high_bits += 127;
+        high_bits >>= 7;
 
-        // a1  = (a1*1025 + (1 << 21)) >> 22;
-        v = a1;
-        a1 <<= 10;
-        a1 += v;
-        a1 += (int) (1 << 21);
-        a1 >>= 22;
+        // a1  = (high_bits * 1025 + (1 << 21)) >> 22;
+        temp = high_bits;
+        high_bits <<= 10;
+        high_bits += temp;
+
+        high_bits += 1 << 21;
+        high_bits >>= 22;
 
         // a1 &= 15;
-        a1 &= 15;
+        high_bits &= 15;
 
         // *a0  = a - a1*2*GAMMA2;
-        v64 = (64u) a1;
-        v64 *= 2 * MODULUS / 32;
-        a0 = (64u) a;
-        a0 -= v64;
+        temp = high_bits;
+        temp *= 2 * GAMMA2;
+        low_bits = r;
+        low_bits -= temp;
 
         // *a0 -= (((Q-1)/2 - *a0) >> 31) & Q;
-        v64 = (MODULUS - 1) / 2;
-        v64 -= a0;
-        v64 >>= 31;
-        v64 &= MODULUS;
-        a0 -= v64;
+        temp = (MODULUS - 1) / 2;
+        temp -= low_bits;
+        temp >>s= 31;
+        temp &= MODULUS;
+        low_bits -= temp;
 
-        a0_32 = (32u) a0;
-        return a0_32, a1;
+        return low_bits, high_bits;
     }
 
     fn make_hint(reg u32 a0, reg u32 a1, reg u64 msf) -> reg u32, #msf reg u64 {

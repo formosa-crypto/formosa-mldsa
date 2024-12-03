@@ -84,7 +84,7 @@ fn sign_internal(
 
     () = #spill(randomness);
     message_representative = derive_message_representative(
-        signing_key[64:MESSAGE_REPRESENTATIVE_SIZE],
+        signing_key[64:VERIFICATION_KEY_HASH_SIZE],
         pointer_to_message,
         message_size);
 

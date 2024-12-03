@@ -3,6 +3,26 @@ import pytest
 import ml_dsa_wrapper
 
 
-@pytest.fixture(params=[("ref", "65")], scope="module")
+def pytest_addoption(parser):
+    parser.addoption(
+        "--parameter-set",
+        action="store",
+        default="65",
+        help="ML-DSA parameter set: 44 or 65 or 87",
+        choices=("44", "65", "87"),
+    )
+    parser.addoption(
+        "--implementation-type",
+        action="store",
+        default="ref",
+        help="Implementation type: ref or avx2",
+        choices=("ref", "avx2"),
+    )
+
+
+@pytest.fixture(scope="module")
 def ml_dsa(request):
-    return ml_dsa_wrapper.ML_DSA(request.param[0], request.param[1])
+    return ml_dsa_wrapper.ML_DSA(
+        request.config.getoption("--parameter-set"),
+        request.config.getoption("--implementation-type"),
+    )
