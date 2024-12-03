@@ -26,7 +26,7 @@ namespace signature {
         inline int k;
         inline bool condition;
 
-        signature[0:48] = #copy(commitment_hash);
+        signature[0:COMMITMENT_HASH_SIZE] = #copy(commitment_hash);
 
         for k = 0 to COLUMNS_IN_MATRIX_A {
             polynomial_encoded = signature[START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE];

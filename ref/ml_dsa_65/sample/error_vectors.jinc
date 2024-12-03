@@ -67,7 +67,7 @@ fn rejection_sample_less_than_eta(
             if (b) {
                 msf = #update_msf(b, msf);
 
-                temp = 4;
+                temp = ETA;
                 temp -= try_coefficient;
                 error[sampled] = temp;
 
@@ -88,7 +88,7 @@ fn rejection_sample_less_than_eta(
                 if (b) {
                     msf = #update_msf(b, msf);
 
-                    temp = 4;
+                    temp = ETA;
                     temp -= try_coefficient;
                     error[sampled] = temp;
 
