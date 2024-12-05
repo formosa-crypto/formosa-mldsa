@@ -163,6 +163,8 @@ namespace coefficient {
 
             b = low_bits >s 0;
             if (b) {
+                msf = #update_msf(b, msf);
+
                 b = high_bits == 43;
                 if (b) {
                     msf = #update_msf(b, msf);

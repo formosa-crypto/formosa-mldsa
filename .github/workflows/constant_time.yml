@@ -8,7 +8,9 @@ jobs:
     name: tests
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
+      matrix:
+        parameter_set: ["44", "65"]
     steps:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v25
@@ -16,5 +18,5 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
     - uses: DeterminateSystems/magic-nix-cache-action@v3
     - run: nix-shell --run 'echo Installed dependencies.'
-    - run: nix-shell --run 'make check-ct'
-    - run: nix-shell --run 'make check-sct'
+    - run: nix-shell --run 'env PARAMETER_SET=${{ matrix.parameter_set }} make check-ct'
+    - run: nix-shell --run 'env PARAMETER_SET=${{ matrix.parameter_set }} make check-sct'
