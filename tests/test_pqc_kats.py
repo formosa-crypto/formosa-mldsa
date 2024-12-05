@@ -14,7 +14,7 @@ def kats(ml_dsa):
         return json.load(kats_raw)
 
 
-def test_against_kats(ml_dsa, kats):
+def test_against_pqc_kats(ml_dsa, kats):
     for kat in kats:
         # Test key generation.
         key_generation_seed = bytearray.fromhex(kat["key_generation_seed"])
@@ -34,9 +34,6 @@ def test_against_kats(ml_dsa, kats):
 
         # Then signing.
 
-        # We append [0,0] to signal an empty domain separation context, see
-        # the comment in ml_dsa.jazz for as to why this is done here instead
-        # of there.
         ctx = bytearray.fromhex(kat["context"])
         message = bytearray([0, len(ctx)]) + ctx + bytearray.fromhex(kat["message"])
 
@@ -47,7 +44,7 @@ def test_against_kats(ml_dsa, kats):
         sha3_256_hash_of_signature = hashlib.sha3_256(signature).digest()
         assert sha3_256_hash_of_signature == bytes.fromhex(
             (kat["sha3_256_hash_of_signature"])
-        )
+        ), print("Failure at KAT number {}".format(kat["count"]))
 
         # And lastly, verification.
         verification_result = ml_dsa.verify(verification_key.raw, message, signature)

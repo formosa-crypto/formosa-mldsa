@@ -16,7 +16,7 @@ def kats(ml_dsa):
         return json.load(kats_raw)
 
 
-def test_against_kats(ml_dsa, kats):
+def test_against_nist_drbg_kats(ml_dsa, kats):
     for kat in kats:
         # Test key generation.
         key_generation_seed = bytearray.fromhex(kat["key_generation_seed"])

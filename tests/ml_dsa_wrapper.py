@@ -70,9 +70,15 @@ class ML_DSA:
     def verify(self, verification_key, message, signature):
         if self.parameter_set == "44":
             return self.ml_dsa.ml_dsa_44_verify(
-                verification_key, self.bytearray_to_ctype(message), len(message), signature
+                verification_key,
+                self.bytearray_to_ctype(message),
+                len(message),
+                signature,
             )
         elif self.parameter_set == "65":
             return self.ml_dsa.ml_dsa_65_verify(
-                verification_key, self.bytearray_to_ctype(message), len(message), signature
+                verification_key,
+                self.bytearray_to_ctype(message),
+                len(message),
+                signature,
             )

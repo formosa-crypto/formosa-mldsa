@@ -26,7 +26,7 @@ def verification_test_groups(ml_dsa):
         return json.load(tests_raw)["testGroups"]
 
 
-def test_signing(ml_dsa, signing_test_groups):
+def test_wycheproof_sign(ml_dsa, signing_test_groups):
     signing_seed = bytearray([0] * 32)
 
     for test_group in signing_test_groups:
@@ -72,7 +72,7 @@ def test_signing(ml_dsa, signing_test_groups):
             # wycheproof test file.
 
 
-def test_verification(ml_dsa, verification_test_groups):
+def test_wycheproof_verify(ml_dsa, verification_test_groups):
     for test_group in verification_test_groups:
         verification_key = bytearray.fromhex(test_group["publicKey"])
         if len(verification_key) != ml_dsa.verification_key_size:
