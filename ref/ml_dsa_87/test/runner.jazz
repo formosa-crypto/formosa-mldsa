@@ -41,11 +41,11 @@ fn test_consistency() -> reg bool {
     }
 
     #[inline]
-    ml_dsa_65_keygen(verification_key, signing_key, keygen_randomness);
+    ml_dsa_87_keygen(verification_key, signing_key, keygen_randomness);
     #[inline]
-    ml_dsa_65_sign(signature, signing_key, message, message_size, signing_randomness);
+    ml_dsa_87_sign(signature, signing_key, message, message_size, signing_randomness);
     #[inline]
-    verify_result = ml_dsa_65_verify(verification_key, message, message_size, signature);
+    verify_result = ml_dsa_87_verify(verification_key, message, message_size, signature);
 
     reg bool result;
     if (verify_result == 0) {

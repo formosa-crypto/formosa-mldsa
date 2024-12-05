@@ -1,4 +1,4 @@
-name: "Constant-time and speculative-constant-time checks"
+name: "Constant-time and speculative-constant-time check"
 on:
   pull_request:
   push:
@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        parameter_set: ["44", "65"]
+        parameter_set: ["44", "65", "87"]
     steps:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v25

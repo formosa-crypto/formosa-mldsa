@@ -12,9 +12,9 @@
 require "runner.jazz"
 
 exec test_consistency (
-  0x1000:1952,
-  0x2000:4032,
-  0x3000:3309,
+  0x1000:2592,
+  0x2000:4896,
+  0x3000:4627,
   0x4000:64, // Message size
   0x5000:64 // Total randomness
 )
