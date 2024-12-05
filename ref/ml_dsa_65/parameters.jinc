@@ -3,14 +3,16 @@ require "constants.jinc"
 param int ROWS_IN_MATRIX_A = 6;
 param int COLUMNS_IN_MATRIX_A = 5;
 
+param int ETA = 4;
+// This is calculated as:
+// (BITS_PER_ERROR_COEFFICIENT * COEFFICIENTS_IN_POLYNOMIAL) / 8
+// For ML-DSA-44, BITS_PER_ERROR_COEFFICIENT is 4.
 param int ENCODED_ERROR_POLYNOMIAL_SIZE = 128;
 
 param int GAMMA1 = (1 << 19);
 param int BITS_TO_ENCODE_GAMMA1_COEFFICIENT = 20;
 
 param int GAMMA2 = (MODULUS - 1) / 32;
-
-param int ETA = 4;
 
 param int MAX_ONES_IN_HINT = 55;
 

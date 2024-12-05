@@ -1,5 +1,5 @@
-#ifndef ML_DSA_65_API_H
-#define ML_DSA_65_API_H
+#ifndef ML_DSA_44_API_H
+#define ML_DSA_44_API_H
 
 #define VERIFICATION_KEY_SIZE 1312
 #define SIGNING_KEY_SIZE 2560
@@ -29,5 +29,5 @@ int ml_dsa_44_verify(
   const uint8_t signature[SIGNATURE_SIZE]
 );
 
-#endif /* ML_DSA_65_API_H */
+#endif /* ML_DSA_44_API_H */
 

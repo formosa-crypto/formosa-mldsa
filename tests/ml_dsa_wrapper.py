@@ -13,8 +13,10 @@ class ML_DSA:
             self.verification_key_size = 1952
             self.signing_key_size = 4032
             self.signature_size = 3309
-        else:
-            sys.exit("Parameter set not yet implemented.")
+        else:  # parameter_set = 87
+            self.verification_key_size = 2592
+            self.signing_key_size = 4896
+            self.signature_size = 4627
 
         self.parameter_set = parameter_set
 
@@ -41,6 +43,10 @@ class ML_DSA:
             self.ml_dsa.ml_dsa_65_keygen(
                 verification_key, signing_key, self.bytearray_to_ctype(randomness)
             )
+        else:  # self.parameter_set == "87"
+            self.ml_dsa.ml_dsa_87_keygen(
+                verification_key, signing_key, self.bytearray_to_ctype(randomness)
+            )
 
         return (verification_key, signing_key)
 
@@ -64,6 +70,14 @@ class ML_DSA:
                 len(message),
                 self.bytearray_to_ctype(randomness),
             )
+        else:  # self.parameter_set == "87"
+            self.ml_dsa.ml_dsa_87_sign(
+                signature,
+                signing_key,
+                self.bytearray_to_ctype(message),
+                len(message),
+                self.bytearray_to_ctype(randomness),
+            )
 
         return signature
 
@@ -77,6 +91,13 @@ class ML_DSA:
             )
         elif self.parameter_set == "65":
             return self.ml_dsa.ml_dsa_65_verify(
+                verification_key,
+                self.bytearray_to_ctype(message),
+                len(message),
+                signature,
+            )
+        else:  # self.parameter_set == "87"
+            return self.ml_dsa.ml_dsa_87_verify(
                 verification_key,
                 self.bytearray_to_ctype(message),
                 len(message),

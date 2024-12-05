@@ -1,4 +1,4 @@
-name: "Constant-time checking"
+name: "Constant-time and speculative-constant-time checks"
 on:
   pull_request:
   push:

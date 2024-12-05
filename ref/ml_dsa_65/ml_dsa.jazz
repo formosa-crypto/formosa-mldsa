@@ -16,11 +16,8 @@ require "verify.jinc"
 // at 5 arguments for signing, and Jasmin does not currently support functions
 // that take more than 6 arguments.
 
-// We expect that:
-//
-// - |verification_key_out| points to a buffer of 1952 bytes.
-// - |signing_key_out| points to a buffer of 4032 bytes.
-//
+// See api.h for the sizes of the buffers expected by these functions.
+
 #[sct="transient * transient * {ptr: transient, val: secret} -> ()"]
 export fn ml_dsa_65_keygen(
     #spill_to_mmx reg u64 verification_key_out,
@@ -54,12 +51,6 @@ export fn ml_dsa_65_keygen(
     }
 }
 
-// We expect that:
-//
-// - |signature_out| points to a buffer of 3309 bytes.
-// - |signing_key| points to a buffer of 4032 bytes.
-// - |message| points to a buffer of |message_size| bytes.
-//
 #[sct="transient * transient * transient * transient * {ptr: transient, val: secret} -> ()"]
 export fn ml_dsa_65_sign(
     #spill_to_mmx reg u64 signature_out,
@@ -97,12 +88,6 @@ export fn ml_dsa_65_sign(
     }
 }
 
-// We expect that:
-//
-// - |verification_key| points to a buffer of 1952 bytes.
-// - |message| points to a buffer of |message_size| bytes.
-// - |signature| points to a buffer of 3309 bytes.
-//
 export fn ml_dsa_65_verify(
     #transient reg u64 verification_key,
     #transient reg u64 message message_size,

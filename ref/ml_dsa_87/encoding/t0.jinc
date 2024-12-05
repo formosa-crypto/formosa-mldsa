@@ -1,0 +1,433 @@
+require "../parameters.jinc"
+
+namespace t0 {
+    inline fn change_t0_interval(reg u32 coefficient) -> reg u32
+    {
+        coefficient = -coefficient;
+        coefficient += (1 << BITS_IN_LOWER_PART_OF_T) / 2;
+
+        return coefficient;
+    }
+    fn encode_polynomial(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0,
+        reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE] encoded
+    ) -> reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE]
+    {
+        stack u32[8] t;
+
+        reg u64 i;
+        reg u64 encoded_offset t0_offset;
+
+        reg u32 coefficient;
+
+        reg u8 c c1;
+
+        encoded_offset = 0;
+        t0_offset = 0;
+
+        i = 0;
+        while(i < COEFFICIENTS_IN_POLYNOMIAL / 8) {
+            // r[13*i + 0] = t[0];
+
+            coefficient = t0[t0_offset];
+            t0_offset += 1;
+            coefficient = change_t0_interval(coefficient);
+            t[0] = coefficient;
+
+            c = (8u) coefficient;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            // r[13*i+ 1] = t[0] >> 8;
+            // r[13*i+ 1] |=  t[1] << 5;
+
+            coefficient = t[0];
+            coefficient >>= 8;
+            c = (8u)coefficient;
+
+            coefficient = t0[t0_offset];
+            t0_offset += 1;
+            coefficient = change_t0_interval(coefficient);
+            t[1] = coefficient;
+
+            coefficient <<= 5;
+            c1 = (8u) coefficient;
+            c |= c1;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            //r[13*i+ 2]  =  t[1] >>  3;
+
+            coefficient = t[1];
+            coefficient >>= 3;
+            c = (8u) coefficient;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            // r[13*i+ 3]  =  t[1] >> 11;
+            // r[13*i+ 3] |=  t[2] <<  2;
+
+            coefficient = t[1];
+            coefficient >>= 11;
+            c = (8u) coefficient;
+
+            coefficient = t0[t0_offset];
+            t0_offset += 1;
+            coefficient = change_t0_interval(coefficient);
+            t[2] = coefficient;
+
+            coefficient <<= 2;
+            c1 = (8u) coefficient;
+            c |= c1;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            //r[13*i+ 4]  =  t[2] >>  6;
+            //r[13*i+ 4] |=  t[3] <<  7;
+
+            coefficient = t[2];
+            coefficient >>= 6;
+            c = (8u) coefficient;
+
+            coefficient = t0[t0_offset];
+            t0_offset += 1;
+            coefficient = change_t0_interval(coefficient);
+            t[3] = coefficient;
+
+            coefficient <<= 7;
+            c1 = (8u) coefficient;
+            c |= c1;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            //r[13*i+ 5]  =  t[3] >>  1;
+
+            coefficient = t[3];
+            coefficient >>= 1;
+            c = (8u) coefficient;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            //r[13*i+ 6]  =  t[3] >>  9;
+            //r[13*i+ 6] |=  t[4] <<  4;
+
+            coefficient = t[3];
+            coefficient >>= 9;
+            c = (8u) coefficient;
+
+            coefficient = t0[t0_offset];
+            t0_offset += 1;
+            coefficient = change_t0_interval(coefficient);
+            t[4] = coefficient;
+
+            coefficient <<= 4;
+            c1 = (8u) coefficient;
+            c |= c1;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            //r[13*i+ 7]  =  t[4] >>  4;
+
+            coefficient = t[4];
+            coefficient >>= 4;
+            c = (8u) coefficient;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            //r[13*i+ 8]  =  t[4] >> 12;
+            //r[13*i+ 8] |=  t[5] <<  1;
+
+            coefficient = t[4];
+            coefficient >>= 12;
+            c = (8u) coefficient;
+
+            coefficient = t0[t0_offset];
+            t0_offset += 1;
+            coefficient = change_t0_interval(coefficient);
+            t[5] = coefficient;
+
+            coefficient <<= 1;
+            c1 = (8u) coefficient;
+            c |= c1;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            //r[13*i + 9]  =  t[5] >>  7;
+            //r[13*i +  9] |=  t[6] <<  6;
+
+            coefficient = t[5];
+            coefficient >>= 7;
+            c = (8u) coefficient;
+
+            coefficient = t0[t0_offset];
+            t0_offset += 1;
+            coefficient = change_t0_interval(coefficient);
+            t[6] = coefficient;
+
+            coefficient <<= 6;
+            c1 = (8u) coefficient;
+            c |= c1;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            // r[13*i+10] = t[6] >> 2;
+
+            coefficient = t[6];
+            coefficient >>= 2;
+            c = (8u) coefficient;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            //r[13*i+11]  =  t[6] >> 10;
+            //r[13*i+11] |=  t[7] <<  3;
+
+            coefficient = t[6];
+            coefficient >>= 10;
+            c = (8u) coefficient;
+
+            coefficient = t0[t0_offset];
+            t0_offset += 1;
+            coefficient = change_t0_interval(coefficient);
+            t[7] = coefficient;
+
+            coefficient <<= 3;
+            c1 = (8u) coefficient;
+            c |= c1;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            //r[13*i+12]  =  t[7] >>  5;
+
+            coefficient = t[7];
+            coefficient >>= 5;
+            c = (8u) coefficient;
+            encoded[encoded_offset] = c;
+            encoded_offset += 1;
+
+            i += 1;
+        }
+
+        return encoded;
+    }
+
+    inline fn encode(
+        reg ptr u8[T0_ENCODED_SIZE] encoded,
+        reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0
+    ) -> reg ptr u8[T0_ENCODED_SIZE]
+    {
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0_to_pack;
+
+        inline int j;
+
+        for j = 0 to ROWS_IN_MATRIX_A {
+            t0_to_pack = t0[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL];
+            encoded[j * T0_POLYNOMIAL_ENCODED_SIZE : T0_POLYNOMIAL_ENCODED_SIZE] = encode_polynomial(t0_to_pack, encoded[j * T0_POLYNOMIAL_ENCODED_SIZE : T0_POLYNOMIAL_ENCODED_SIZE]);
+        }
+
+        return encoded;
+    }
+
+    fn decode_polynomial(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0,
+        reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE] src
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 i;
+        reg u64 input_offset output_offset;
+        reg u32 coefficient encoded_byte;
+
+        output_offset = 0;
+
+        i = 0;
+        while(i < COEFFICIENTS_IN_POLYNOMIAL / 8) {
+            // r->coeffs[8*i+0] = a[13*i+0];
+            // r->coeffs[8*i+0] |= (uint32_t)a[13*i+1] << 8;
+            // r->coeffs[8*i+0] &= BITS_IN_LOWER_PART_OF_T_MASK;
+            // r->coeffs[8*i+0] = (1 << (D-1)) - r->coeffs[8*i+0];
+
+            input_offset = (64u) i;
+            input_offset *= 13;
+            coefficient = (32u) src[input_offset];
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 8;
+            coefficient |= encoded_byte;
+
+            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
+
+            coefficient = change_t0_interval(coefficient);
+            t0[output_offset] = coefficient;
+            output_offset += 1;
+
+            // r->coeffs[8*i+1]  = a[13*i+1] >> 5;
+            // r->coeffs[8*i+1] |= (uint32_t)a[13*i+2] << 3;
+            // r->coeffs[8*i+1] |= (uint32_t)a[13*i+3] << 11;
+            // r->coeffs[8*i+1] &= BITS_IN_LOWER_PART_OF_T_MASK;
+            // r->coeffs[8*i+1] = (1 << (D-1)) - r->coeffs[8*i+1];
+
+            coefficient = (32u) src[input_offset];
+            coefficient >>= 5;
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 3;
+            coefficient |= encoded_byte;
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 11;
+            coefficient |= encoded_byte;
+
+            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
+
+            coefficient = change_t0_interval(coefficient);
+            t0[output_offset] = coefficient;
+            output_offset += 1;
+
+            // r->coeffs[8*i+2]  = a[13*i+3] >> 2;
+            // r->coeffs[8*i+2] |= (uint32_t)a[13*i+4] << 6;
+            // r->coeffs[8*i+2] &= BITS_IN_LOWER_PART_OF_T_MASK;
+            // r->coeffs[8*i+2] = (1 << (D-1)) - r->coeffs[8*i+2];
+
+            coefficient = (32u) src[input_offset];
+            coefficient >>= 2;
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 6;
+            coefficient |= encoded_byte;
+
+            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
+
+            coefficient = change_t0_interval(coefficient);
+            t0[output_offset] = coefficient;
+            output_offset += 1;
+
+            // r->coeffs[8*i+3]  = a[13*i+4] >> 7;
+            // r->coeffs[8*i+3] |= (uint32_t)a[13*i+5] << 1;
+            // r->coeffs[8*i+3] |= (uint32_t)a[13*i+6] << 9;
+            // r->coeffs[8*i+3] &= BITS_IN_LOWER_PART_OF_T_MASK;
+            // r->coeffs[8*i+3] = (1 << (D-1)) - r->coeffs[8*i+3];
+            coefficient = (32u) src[input_offset];
+            coefficient >>= 7;
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 1;
+            coefficient |= encoded_byte;
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 9;
+            coefficient |= encoded_byte;
+
+            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
+
+            coefficient = change_t0_interval(coefficient);
+            t0[output_offset] = coefficient;
+            output_offset += 1;
+
+            // r->coeffs[8*i+4]  = a[13*i+6] >> 4;
+            // r->coeffs[8*i+4] |= (uint32_t)a[13*i+7] << 4;
+            // r->coeffs[8*i+4] |= (uint32_t)a[13*i+8] << 12;
+            // r->coeffs[8*i+4] &= BITS_IN_LOWER_PART_OF_T_MASK;
+            // r->coeffs[8*i+4] = (1 << (D-1)) - r->coeffs[8*i+4];
+            coefficient = (32u) src[input_offset];
+            coefficient >>= 4;
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 4;
+            coefficient |= encoded_byte;
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 12;
+            coefficient |= encoded_byte;
+
+            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
+
+            coefficient = change_t0_interval(coefficient);
+            t0[output_offset] = coefficient;
+            output_offset += 1;
+
+            // r->coeffs[8*i+5]  = a[13*i+8] >> 1;
+            // r->coeffs[8*i+5] |= (uint32_t)a[13*i+9] << 7;
+            // r->coeffs[8*i+5] &= BITS_IN_LOWER_PART_OF_T_MASK;
+            // r->coeffs[8*i+5] = (1 << (D-1)) - r->coeffs[8*i+5];
+            coefficient = (32u) src[input_offset];
+            coefficient >>= 1;
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 7;
+            coefficient |= encoded_byte;
+
+            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
+
+            coefficient = change_t0_interval(coefficient);
+            t0[output_offset] = coefficient;
+            output_offset += 1;
+
+            // r->coeffs[8*i+6]  = a[13*i+9] >> 6;
+            // r->coeffs[8*i+6] |= (uint32_t)a[13*i+10] << 2;
+            // r->coeffs[8*i+6] |= (uint32_t)a[13*i+11] << 10;
+            // r->coeffs[8*i+6] &= BITS_IN_LOWER_PART_OF_T_MASK;
+            // r->coeffs[8*i+6] = (1 << (D-1)) - r->coeffs[8*i+6];
+            coefficient = (32u) src[input_offset];
+            coefficient >>= 6;
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 2;
+            coefficient |= encoded_byte;
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 10;
+            coefficient |= encoded_byte;
+
+            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
+
+            coefficient = change_t0_interval(coefficient);
+            t0[output_offset] = coefficient;
+            output_offset += 1;
+
+            // r->coeffs[8*i+7]  = a[13*i+11] >> 3;
+            // r->coeffs[8*i+7] |= (uint32_t)a[13*i+12] << 5;
+            // r->coeffs[8*i+7] &= BITS_IN_LOWER_PART_OF_T_MASK;
+            // r->coeffs[8*i+7] = (1 << (D-1)) - r->coeffs[8*i+7];
+            coefficient = (32u) src[input_offset];
+            coefficient >>= 3;
+
+            input_offset += 1;
+            encoded_byte = (32u) src[input_offset];
+            encoded_byte <<= 5;
+            coefficient |= encoded_byte;
+
+            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
+
+            coefficient = change_t0_interval(coefficient);
+            t0[output_offset] = coefficient;
+            output_offset += 1;
+
+            i += 1;
+        }
+
+        return t0;
+    }
+
+    inline fn
+    decode(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0, reg ptr u8[T0_ENCODED_SIZE] encoded) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
+        reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE] encoded_polynomial;
+
+        inline int i;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            encoded_polynomial = encoded[T0_POLYNOMIAL_ENCODED_SIZE * i : T0_POLYNOMIAL_ENCODED_SIZE];
+            t0[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL] = decode_polynomial(t0[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL], encoded_polynomial);
+        }
+
+        return t0;
+    }
+}

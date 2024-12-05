@@ -48,7 +48,7 @@ def test_against_nist_drbg_kats(ml_dsa, kats):
         sha3_256_hash_of_signature = hashlib.sha3_256(signature).digest()
         assert sha3_256_hash_of_signature == bytes.fromhex(
             (kat["sha3_256_hash_of_signature"])
-        )
+        ), print([hex(b) for b in signature[0:16]])
 
         # And lastly, verification.
         verification_result = ml_dsa.verify(verification_key.raw, message, signature)
