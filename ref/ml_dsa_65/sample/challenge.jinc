@@ -1,7 +1,3 @@
-require "../hashing.jinc"
-require "../parameters.jinc"
-require "../encoding/gamma1.jinc"
-
 inline
 fn absorb_to_generate_challenges(
     reg ptr u64[25] state,

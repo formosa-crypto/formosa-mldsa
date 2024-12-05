@@ -1,7 +1,5 @@
-require "hashing.jinc"
-require "hashing.jinc"
-require "constants.jinc"
 require "parameters.jinc"
+require "constants.jinc"
 require "encoding/s1.jinc"
 require "encoding/s2.jinc"
 require "encoding/t0.jinc"

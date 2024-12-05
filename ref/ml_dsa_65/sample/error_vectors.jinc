@@ -1,8 +1,3 @@
-require "../constants.jinc"
-require "../hashing.jinc"
-
-// N.B.: ETA is 4.
-
 inline
 fn absorb_to_generate_errors(
     reg ptr u64[25] state,
