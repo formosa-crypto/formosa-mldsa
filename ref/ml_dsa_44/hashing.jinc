@@ -1,4 +1,4 @@
-require "keccak/keccak1600.jinc"
+from Common require "keccak/keccak1600.jinc"
 require "arithmetic/rounding.jinc"
 
 param int SHAKE128_RATE = 168;

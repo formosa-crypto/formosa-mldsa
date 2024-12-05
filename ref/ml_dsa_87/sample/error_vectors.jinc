@@ -1,5 +1,5 @@
 require "../constants.jinc"
-require "../hashing.jinc"
+from Common require "hashing.jinc"
 
 // N.B.: This file varies according to parameter set.
 

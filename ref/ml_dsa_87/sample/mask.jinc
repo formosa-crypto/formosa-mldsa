@@ -1,5 +1,6 @@
-require "../hashing.jinc"
 require "../parameters.jinc"
+
+from Common require "hashing.jinc"
 require "../encoding/gamma1.jinc"
 
 inline

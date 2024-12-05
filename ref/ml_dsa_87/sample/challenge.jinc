@@ -1,4 +1,4 @@
-require "../hashing.jinc"
+from Common require "hashing.jinc"
 require "../parameters.jinc"
 require "../encoding/gamma1.jinc"
 

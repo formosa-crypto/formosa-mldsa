@@ -1,8 +1,8 @@
-require "hashing.jinc"
-require "hashing.jinc"
+require "parameters.jinc"
+
+from Common require "hashing.jinc"
 require "row_vector.jinc"
 require "column_vector.jinc"
-require "parameters.jinc"
 require "constants.jinc"
 require "encoding/s1.jinc"
 require "encoding/s2.jinc"

@@ -1,6 +1,8 @@
-require "hashing.jinc"
-require "constants.jinc"
 require "parameters.jinc"
+
+from Common require "hashing.jinc"
+
+require "constants.jinc"
 require "encoding/signature.jinc"
 require "encoding/t1.jinc"
 require "encoding/commitment.jinc"

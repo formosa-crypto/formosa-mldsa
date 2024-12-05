@@ -1,23 +1,27 @@
 PARAMETER_SET ?= 65
 IMPLEMENTATION_TYPE ?= ref
 
-# --------------------------------------------------------------------
-JASMINC ?= jasminc
-JASMINCT ?= jasmin-ct
-
-# --------------------------------------------------------------------
+COMMON = $(IMPLEMENTATION_TYPE)/common
 IMPLEMENTATION = $(IMPLEMENTATION_TYPE)/ml_dsa_$(PARAMETER_SET)
 
+# --------------------------------------------------------------------
+JASMINC ?= jasminc
+JASMINC_FLAGS ?= -I Common:$(COMMON) -lazy-regalloc
+
+JASMINCT ?= jasmin-ct
+# --------------------------------------------------------------------
 IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
 						 $(wildcard $(IMPLEMENTATION)/*.jinc) \
 						 $(wildcard $(IMPLEMENTATION)/encoding/*.jinc) \
 						 $(wildcard $(IMPLEMENTATION)/sample/*.jinc) \
-						 $(wildcard $(IMPLEMENTATION)/arithmetic/*.jinc)
+						 $(wildcard $(IMPLEMENTATION)/arithmetic/*.jinc) \
+						 $(wildcard $(COMMON)/*.jinc) \
+						 $(wildcard $(COMMON)/keccak/*.jinc)
 
 OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)
 
 $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
-	$(JASMINC) -lazy-regalloc -o $@ $<
+	$(JASMINC) $(JASMINC_FLAGS) -o $@ $<
 
 # --------------------------------------------------------------------
 .PHONY: test

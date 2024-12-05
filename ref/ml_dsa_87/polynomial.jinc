@@ -1,5 +1,6 @@
 require "parameters.jinc"
 require "arithmetic/modular.jinc"
+require "arithmetic/rounding.jinc"
 
 namespace polynomial {
     fn add(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs sum)
