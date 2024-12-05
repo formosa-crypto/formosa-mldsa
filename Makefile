@@ -43,15 +43,15 @@ $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 
 .PHONY: check-ct
 check-ct: $(IMPLEMENTATION)/ml_dsa.jazz
-	$(JASMINCT) $^
+	env JASMINPATH="Common=$(COMMON)" $(JASMINCT) $^
 
 .PHONY: check-sct
 check-sct: $(IMPLEMENTATION)/ml_dsa.jazz
-	$(JASMINCT) --speculative $^
+	env JASMINPATH="Common=$(COMMON)" $(JASMINCT) --speculative $^
 
 .PHONY: run-interpreter
 run-interpreter: $(IMPLEMENTATION)/test/execute.jazz $(IMPLEMENTATION)/ml_dsa.jazz
-	$(JASMINC) $< | grep 'true'
+	$(JASMINC) $(JASMINC_FLAGS) $< | grep 'true'
 
 # --------------------------------------------------------------------
 bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c bench/notrandombytes.c $(IMPLEMENTATION)/api.h
