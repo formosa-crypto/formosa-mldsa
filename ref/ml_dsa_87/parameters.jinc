@@ -1,4 +1,4 @@
-require "constants.jinc"
+from Common require "constants.jinc"
 
 param int ROWS_IN_MATRIX_A = 8;
 param int COLUMNS_IN_MATRIX_A = 7;

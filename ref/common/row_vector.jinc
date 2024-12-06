@@ -1,31 +1,26 @@
-require "polynomial.jinc"
-require "arithmetic/rounding.jinc"
 require "arithmetic/ntt.jinc"
+require "polynomial.jinc"
 
 // A row vector has dimensions 1 * COLUMNS_IN_MATRIX_A
 namespace row_vector {
-    fn ntt(
-        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector
-    ) -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    fn ntt(reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+        -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         inline int i;
-
-       for i = 0 to COLUMNS_IN_MATRIX_A {
-        vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
-            polynomial::ntt(
-                vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
-            );
+        for i = 0 to COLUMNS_IN_MATRIX_A {
+            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::ntt(
+                    vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                );
         }
 
         return vector;
     }
 
-    fn invert_ntt_montgomery(
-        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector
-    ) -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    fn invert_ntt_montgomery(reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+        -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         inline int i;
-
         for i = 0 to COLUMNS_IN_MATRIX_A {
             vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
                 polynomial::invert_ntt_montgomery(
@@ -41,17 +36,15 @@ namespace row_vector {
         -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] sum;
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs_polynomial rhs_polynomial polynomial_sum;
 
         inline int i;
         for i = 0 to COLUMNS_IN_MATRIX_A {
-            lhs_polynomial = lhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            rhs_polynomial = rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-
-            polynomial_sum = sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            polynomial_sum = polynomial::add(lhs_polynomial, rhs_polynomial, polynomial_sum);
-
-            sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] = polynomial_sum;
+            sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::add(
+                    lhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
+                    rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
+                    sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
+                );
         }
         return sum;
     }

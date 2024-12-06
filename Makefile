@@ -12,11 +12,14 @@ JASMINCT ?= jasmin-ct
 # --------------------------------------------------------------------
 IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
 						 $(wildcard $(IMPLEMENTATION)/*.jinc) \
+						 $(wildcard $(IMPLEMENTATION)/arithmetic/*.jinc) \
 						 $(wildcard $(IMPLEMENTATION)/encoding/*.jinc) \
 						 $(wildcard $(IMPLEMENTATION)/sample/*.jinc) \
-						 $(wildcard $(IMPLEMENTATION)/arithmetic/*.jinc) \
 						 $(wildcard $(COMMON)/*.jinc) \
-						 $(wildcard $(COMMON)/keccak/*.jinc)
+						 $(wildcard $(COMMON)/arithmetic/*.jinc) \
+						 $(wildcard $(COMMON)/encoding/*.jinc) \
+						 $(wildcard $(COMMON)/keccak/*.jinc) \
+						 $(wildcard $(COMMON)/sample/*.jinc)
 
 OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)
 

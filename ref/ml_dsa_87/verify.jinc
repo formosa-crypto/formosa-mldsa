@@ -1,16 +1,4 @@
-require "parameters.jinc"
-
-from Common require "hashing.jinc"
-
-require "constants.jinc"
-require "encoding/signature.jinc"
-require "encoding/t1.jinc"
 require "encoding/commitment.jinc"
-require "row_vector.jinc"
-require "polynomial.jinc"
-require "arithmetic/ntt.jinc"
-require "sample/matrix_A.jinc"
-require "sample/challenge.jinc"
 
 inline
 fn compare_commitment_hashes(stack u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg u64 {

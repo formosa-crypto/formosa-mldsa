@@ -1,14 +1,4 @@
-require "parameters.jinc"
-require "constants.jinc"
-require "encoding/s1.jinc"
-require "encoding/s2.jinc"
-require "encoding/t0.jinc"
-require "encoding/signature.jinc"
 require "encoding/commitment.jinc"
-require "row_vector.jinc"
-require "sample/mask.jinc"
-require "sample/matrix_A.jinc"
-require "sample/challenge.jinc"
 
 fn derive_seed_for_mask(
     reg ptr u8[32] k,
