@@ -8,12 +8,11 @@ namespace row_vector {
         -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         inline int i;
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial;
-
-       for i = 0 to COLUMNS_IN_MATRIX_A {
-            polynomial = vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            polynomial = polynomial::ntt(polynomial);
-            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = polynomial;
+        for i = 0 to COLUMNS_IN_MATRIX_A {
+            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::ntt(
+                vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+            );
         }
 
         return vector;

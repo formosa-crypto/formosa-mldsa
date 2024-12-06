@@ -3,17 +3,29 @@ require "keccak/keccak1600.jinc"
 param int SHAKE128_RATE = 168;
 param int SHAKE256_RATE = 136;
 
+// N.B.: While this is only used in hash_verification_key(), making it an inline int
+// wouldn't work; it's used in a while loop condition, which causes issues for
+// the RSB-checker.
+param int FULL_BLOCKS_IN_VERIFICATION_KEY = VERIFICATION_KEY_SIZE / SHAKE256_RATE;
+
+// N.B.: The #spill operator does not work with the RSB-checker at the moment. We
+// leave the #spill_to_mmx annotations as is to be able to switch back to
+// using this operator once the issue is fixed.
+
 inline
 fn hash_verification_key(
     #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
     #spill_to_mmx reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash
 ) -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE]
 {
-    inline int FULL_BLOCKS_IN_VERIFICATION_KEY = VERIFICATION_KEY_SIZE / SHAKE256_RATE;
 
     stack u64[25] state;
     #spill_to_mmx reg u64 verification_key_offset;
     reg u64 state_offset = 0;
+
+    #mmx reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash_mmx;
+    #mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key_mmx;
+    #mmx reg u64 verification_key_offset_mmx;
 
     reg u8 byte;
 
@@ -33,9 +45,16 @@ fn hash_verification_key(
             state_offset += 1;
         }
 
-        () = #spill(verification_key_offset, verification_key, hash);
+
+        hash_mmx = hash;
+        verification_key_mmx = verification_key;
+        verification_key_offset_mmx = verification_key_offset;
+
         state = _keccakf1600_ref1(state);
-        () = #unspill(verification_key_offset, verification_key, hash);
+
+        hash = hash_mmx;
+        verification_key = verification_key_mmx;
+        verification_key_offset = verification_key_offset_mmx;
 
         state_offset = 0;
     }
@@ -55,9 +74,9 @@ fn hash_verification_key(
 
     // ... then squeeze.
 
-    () = #spill(hash);
+    hash_mmx = hash;
     state = _keccakf1600_ref1(state);
-    () = #unspill(hash);
+    hash = hash_mmx;
 
     state_offset = 0;
     while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
@@ -92,6 +111,8 @@ fn derive_message_representative(
     reg u64 state_offset;
     #spill_to_mmx reg u64 message_offset;
 
+    #mmx reg u64 message_mmx message_size_mmx message_offset_mmx;
+
     // Absorb ...
 
     state = __keccak_init_ref1(state);
@@ -107,9 +128,15 @@ fn derive_message_representative(
     message_offset = 0;
     while(message_offset < message_size) {
         if (state_offset >= SHAKE256_RATE) {
-            () = #spill(message, message_offset, message_size);
+            message_mmx = message;
+            message_offset_mmx = message_offset;
+            message_size_mmx = message_size;
+
             state = _keccakf1600_ref1(state);
-            () = #unspill(message, message_offset, message_size);
+
+            message = message_mmx;
+            message_offset = message_offset_mmx;
+            message_size = message_size_mmx;
 
             ?{}, state_offset = #set0_64();
         }
@@ -141,24 +168,28 @@ fn derive_message_representative(
     return message_representative;
 }
 
+// The message representative is always 64 bytes long, which means the first
+// full block that we absorb will contain 64 bytes of the message representative,
+// and SHAKE256_RATE - 64 = 136 - 64 = 72 bytes of the encoded commitment.
+// Subtracting these 72 bytes from the encoded commitment size and dividing
+// by SHAKE256_RATE gives us the number of full commitment blocks to absorb.
+param int FULL_COMMITMENT_BLOCKS_TO_ABSORB = (ENCODED_COMMITMENT_SIZE - 72) / SHAKE256_RATE;
+
 inline
 fn derive_commitment_hash(
     reg ptr u8[64] message_representative,
     #spill_to_mmx reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment
     ) -> stack u8[COMMITMENT_HASH_SIZE]
 {
-    // The message representative is always 64 bytes long, which means the first
-    // full block that we absorb will contain 64 bytes of the message representative,
-    // and SHAKE256_RATE - 64 = 136 - 64 = 72 bytes of the encoded commitment.
-    // Subtracting these 72 bytes from the encoded commitment size and dividing
-    // by SHAKE256_RATE gives us the number of full commitment blocks to absorb.
-    inline int FULL_COMMITMENT_BLOCKS_TO_ABSORB = (ENCODED_COMMITMENT_SIZE - 72) / SHAKE256_RATE;
 
     stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
     stack u64[25] state;
     reg u8 byte;
     reg u64 state_offset;
     #spill_to_mmx reg u64 encoded_commitment_offset;
+
+    #mmx reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment_mmx;
+    #mmx reg u64 encoded_commitment_offset_mmx;
 
     state = __keccak_init_ref1(state);
     state_offset = 0;
@@ -180,9 +211,13 @@ fn derive_commitment_hash(
             state_offset += 1;
         }
 
-        () = #spill(encoded_commitment, encoded_commitment_offset);
+        encoded_commitment_mmx = encoded_commitment;
+        encoded_commitment_offset_mmx = encoded_commitment_offset;
+
         state = _keccakf1600_ref1(state);
-        () = #unspill(encoded_commitment, encoded_commitment_offset);
+
+        encoded_commitment = encoded_commitment_mmx;
+        encoded_commitment_offset = encoded_commitment_offset_mmx;
 
         state_offset = 0;
     }
