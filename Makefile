@@ -65,6 +65,4 @@ bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c bench/notrandombytes.c $(IMPLEMENTA
 # --------------------------------------------------------------------
 .PHONY: clean
 clean:
-	rm -fr *.s \
-		   *.so \
-		   *.o
+	rm -fr *.s *.so *.o

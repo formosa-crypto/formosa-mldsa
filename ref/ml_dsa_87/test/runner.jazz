@@ -9,12 +9,12 @@ inline fn setup_memory() -> reg u64, reg u64, reg u64, reg u64, reg u64, reg u64
     verification_key = 0x1000;
     signing_key = 0x2000;
 
-    signature = 0x3000;
+    signature = 0x4000;
 
-    message = 0x4000;
+    message = 0x6000;
     message_size = 64;
 
-    randomness = 0x5000;
+    randomness = 0x7000;
 
     for i = 0 to 8 {
         [randomness + 8 * i] = i;
