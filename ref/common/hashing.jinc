@@ -8,10 +8,6 @@ param int SHAKE256_RATE = 136;
 // the RSB-checker.
 param int FULL_BLOCKS_IN_VERIFICATION_KEY = VERIFICATION_KEY_SIZE / SHAKE256_RATE;
 
-// N.B.: The #spill operator does not work with the RSB-checker at the moment. We
-// leave the #spill_to_mmx annotations as is to be able to switch back to
-// using this operator once the issue is fixed.
-
 inline
 fn hash_verification_key(
     #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
@@ -22,10 +18,6 @@ fn hash_verification_key(
     stack u64[25] state;
     #spill_to_mmx reg u64 verification_key_offset;
     reg u64 state_offset = 0;
-
-    #mmx reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash_mmx;
-    #mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key_mmx;
-    #mmx reg u64 verification_key_offset_mmx;
 
     reg u8 byte;
 
@@ -45,16 +37,9 @@ fn hash_verification_key(
             state_offset += 1;
         }
 
-
-        hash_mmx = hash;
-        verification_key_mmx = verification_key;
-        verification_key_offset_mmx = verification_key_offset;
-
+        () = #spill(hash, verification_key, verification_key_offset);
         state = _keccakf1600_ref1(state);
-
-        hash = hash_mmx;
-        verification_key = verification_key_mmx;
-        verification_key_offset = verification_key_offset_mmx;
+        () = #unspill(hash, verification_key, verification_key_offset);
 
         state_offset = 0;
     }
@@ -74,9 +59,9 @@ fn hash_verification_key(
 
     // ... then squeeze.
 
-    hash_mmx = hash;
+    () = #spill(hash);
     state = _keccakf1600_ref1(state);
-    hash = hash_mmx;
+    () = #unspill(hash);
 
     state_offset = 0;
     while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
@@ -111,8 +96,6 @@ fn derive_message_representative(
     reg u64 state_offset;
     #spill_to_mmx reg u64 message_offset;
 
-    #mmx reg u64 message_mmx message_size_mmx message_offset_mmx;
-
     // Absorb ...
 
     state = __keccak_init_ref1(state);
@@ -128,15 +111,9 @@ fn derive_message_representative(
     message_offset = 0;
     while(message_offset < message_size) {
         if (state_offset >= SHAKE256_RATE) {
-            message_mmx = message;
-            message_offset_mmx = message_offset;
-            message_size_mmx = message_size;
-
+            () = #spill(message, message_offset, message_size);
             state = _keccakf1600_ref1(state);
-
-            message = message_mmx;
-            message_offset = message_offset_mmx;
-            message_size = message_size_mmx;
+            () = #unspill(message, message_offset, message_size);
 
             ?{}, state_offset = #set0_64();
         }
@@ -188,9 +165,6 @@ fn derive_commitment_hash(
     reg u64 state_offset;
     #spill_to_mmx reg u64 encoded_commitment_offset;
 
-    #mmx reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment_mmx;
-    #mmx reg u64 encoded_commitment_offset_mmx;
-
     state = __keccak_init_ref1(state);
     state_offset = 0;
 
@@ -211,13 +185,9 @@ fn derive_commitment_hash(
             state_offset += 1;
         }
 
-        encoded_commitment_mmx = encoded_commitment;
-        encoded_commitment_offset_mmx = encoded_commitment_offset;
-
+        () = #spill(encoded_commitment, encoded_commitment_offset);
         state = _keccakf1600_ref1(state);
-
-        encoded_commitment = encoded_commitment_mmx;
-        encoded_commitment_offset = encoded_commitment_offset_mmx;
+        () = #unspill(encoded_commitment, encoded_commitment_offset);
 
         state_offset = 0;
     }
