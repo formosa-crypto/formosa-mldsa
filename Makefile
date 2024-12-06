@@ -6,7 +6,7 @@ IMPLEMENTATION = $(IMPLEMENTATION_TYPE)/ml_dsa_$(PARAMETER_SET)
 
 # --------------------------------------------------------------------
 JASMINC ?= jasminc
-JASMINC_FLAGS ?= -I Common:$(COMMON) -lazy-regalloc
+JASMINC_FLAGS ?= -I Common:$(COMMON)
 
 JASMINCT ?= jasmin-ct
 # --------------------------------------------------------------------
