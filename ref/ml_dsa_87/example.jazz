@@ -1,4 +1,4 @@
-require "../ml_dsa.jazz"
+require "ml_dsa.jazz"
 
 inline fn setup_memory() -> reg u64, reg u64, reg u64, reg u64, reg u64, reg u64
 {
@@ -9,12 +9,12 @@ inline fn setup_memory() -> reg u64, reg u64, reg u64, reg u64, reg u64, reg u64
     verification_key = 0x1000;
     signing_key = 0x2000;
 
-    signature = 0x3000;
+    signature = 0x4000;
 
-    message = 0x4000;
+    message = 0x6000;
     message_size = 64;
 
-    randomness = 0x5000;
+    randomness = 0x7000;
 
     for i = 0 to 8 {
         [randomness + 8 * i] = i;
@@ -41,11 +41,11 @@ fn test_consistency() -> reg bool {
     }
 
     #[inline]
-    ml_dsa_65_keygen(verification_key, signing_key, keygen_randomness);
+    ml_dsa_87_keygen(verification_key, signing_key, keygen_randomness);
     #[inline]
-    ml_dsa_65_sign(signature, signing_key, message, message_size, signing_randomness);
+    ml_dsa_87_sign(signature, signing_key, message, message_size, signing_randomness);
     #[inline]
-    verify_result = ml_dsa_65_verify(verification_key, message, message_size, signature);
+    verify_result = ml_dsa_87_verify(verification_key, message, message_size, signature);
 
     reg bool result;
     if (verify_result == 0) {

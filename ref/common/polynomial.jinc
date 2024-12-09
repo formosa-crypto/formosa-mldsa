@@ -55,8 +55,10 @@ namespace polynomial {
         return sum;
     }
 
-    fn pointwise_montgomery_product(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs product)
-        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
+    fn pointwise_montgomery_product(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs product
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
         reg u64 lhs_coefficient rhs_coefficient;
         reg u32 product_reduced;
 
@@ -216,6 +218,7 @@ namespace polynomial {
             a = #protect_32(a, msf);
 
             a, msf = coefficient::use_hint(a, h, msf);
+            msf = #init_msf(); //TODO
 
             commitment[i] = a;
 

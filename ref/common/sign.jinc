@@ -1,5 +1,3 @@
-require "encoding/commitment.jinc"
-
 fn derive_seed_for_mask(
     reg ptr u8[32] k,
     reg ptr u8[32] randomness,

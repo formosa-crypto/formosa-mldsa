@@ -50,19 +50,25 @@ namespace row_vector {
     }
 
     inline
-    fn dot_product(stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output)
-        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    fn dot_product(
+        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs_polynomial rhs_polynomial;
         stack u32[COEFFICIENTS_IN_POLYNOMIAL] product;
 
-        inline int i;
-
         output = polynomial::zero(output);
+
+        inline int i;
         for i = 0 to COLUMNS_IN_MATRIX_A {
-            lhs_polynomial = lhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            rhs_polynomial = rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            product = polynomial::pointwise_montgomery_product(lhs_polynomial, rhs_polynomial, product);
+            // TODO: Remove these fences.
+            _ = #init_msf();
+            product = polynomial::pointwise_montgomery_product(
+                lhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
+                rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
+                product
+            );
+            _ = #init_msf();
             output = polynomial::sum_coefficients(product, output);
         }
 
@@ -94,19 +100,19 @@ namespace row_vector {
     inline
     fn multiply_with_matrix_A(
         reg ptr u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A,
-        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
-        -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector
+    ) -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] out;
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] out_rsp;
 
         inline int i;
         for i = 0 to ROWS_IN_MATRIX_A {
-            out_rsp = out[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            out_rsp = dot_product(
-                matrix_A[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL * i : COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
-                vector, out_rsp);
-            out[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] = out_rsp;
+            out[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
+                dot_product(
+                    matrix_A[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL * i : COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
+                    vector,
+                    out[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
+                );
         }
 
         return out;

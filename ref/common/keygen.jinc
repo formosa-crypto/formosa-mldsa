@@ -1,5 +1,3 @@
-require "sample/error_vectors.jinc"
-
 inline
 fn prepare_state_for_shake256(
     reg ptr u64[25] state,

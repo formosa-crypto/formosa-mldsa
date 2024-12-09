@@ -53,7 +53,7 @@ check-sct: $(IMPLEMENTATION)/ml_dsa.jazz
 	env JASMINPATH="Common=$(COMMON)" $(JASMINCT) --speculative $^
 
 .PHONY: run-interpreter
-run-interpreter: $(IMPLEMENTATION)/test/execute.jazz $(IMPLEMENTATION)/ml_dsa.jazz
+run-interpreter: $(IMPLEMENTATION)/run_example.jazz $(IMPLEMENTATION)/ml_dsa.jazz
 	$(JASMINC) $(JASMINC_FLAGS) $< | grep 'true'
 
 # --------------------------------------------------------------------

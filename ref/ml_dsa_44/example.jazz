@@ -1,4 +1,4 @@
-require "../ml_dsa.jazz"
+require "ml_dsa.jazz"
 
 inline fn setup_memory() -> reg u64, reg u64, reg u64, reg u64, reg u64, reg u64
 {

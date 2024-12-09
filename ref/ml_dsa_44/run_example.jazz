@@ -9,7 +9,7 @@
  * of several days).
 */
 
-require "runner.jazz"
+require "example.jazz"
 
 exec test_consistency (
   0x1000:1312,
