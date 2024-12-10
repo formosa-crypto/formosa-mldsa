@@ -1,9 +1,8 @@
-require "../parameters.jinc"
-
 namespace commitment {
+    inline
     fn encode_polynomial(
-        reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment_polynomial
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment_polynomial,
+        reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] output
     ) -> reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
     {
         reg u64 i;
@@ -11,18 +10,18 @@ namespace commitment {
 
         i = 0;
         while (i < COEFFICIENTS_IN_POLYNOMIAL / 2) {
-            // encoded[i] = a->coeffs[2*i+0] | (a->coeffs[2*i+1] << 4);
+            // output[i] = a->coeffs[2*i+0] | (a->coeffs[2*i+1] << 4);
             encoded_byte = commitment_polynomial[2*i + 1];
             encoded_byte <<= 4;
 
             encoded_byte |= commitment_polynomial[2*i + 0];
 
-            encoded[i] = (8u)encoded_byte;
+            output[i] = (8u)encoded_byte;
             i += 1;
 
         }
 
-        return encoded;
+        return output;
     }
 
     inline
@@ -37,8 +36,8 @@ namespace commitment {
             encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE :
                                    ENCODED_COMMITMENT_POLYNOMIAL_SIZE] =
             encode_polynomial(
-                encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE],
-                commitment[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                commitment[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
             );
         }
 
