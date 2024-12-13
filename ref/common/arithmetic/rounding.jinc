@@ -1,4 +1,5 @@
 namespace coefficient {
+    inline
     fn power2round(reg u32 r) -> reg u32, reg u32 {
         /*
         int32_t a1; //high bits

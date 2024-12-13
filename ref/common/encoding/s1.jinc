@@ -1,16 +1,21 @@
 namespace s1 {
     inline
     fn encode(
-        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1,
+        #spill_to_mmx reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1,
         reg ptr u8[S1_ENCODED_SIZE] encoded
     ) -> reg ptr u8[S1_ENCODED_SIZE]
     {
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly;
-
         inline int i;
+
+        () = #spill(s1);
+
         for i = 0 to COLUMNS_IN_MATRIX_A {
-            poly = s1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL];
-            encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE] = error_polynomial::encode(poly, encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE]);
+            encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE] =
+                error_polynomial::encode(
+                    s1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
+                    encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE]
+                );
+            () = #unspill(s1);
         }
         return encoded;
     }

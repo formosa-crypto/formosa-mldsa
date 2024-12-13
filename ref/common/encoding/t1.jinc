@@ -77,16 +77,21 @@ namespace t1 {
     inline fn
     encode(
         reg ptr u8[T1_ENCODED_SIZE] encoded,
-        reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t1
+        #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t1
     ) -> reg ptr u8[T1_ENCODED_SIZE]
     {
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1_to_pack;
-
         inline int j;
 
+        () = #spill(t1);
+
         for j = 0 to ROWS_IN_MATRIX_A {
-            t1_to_pack = t1[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL];
-            encoded[j * T1_POLYNOMIAL_ENCODED_SIZE : T1_POLYNOMIAL_ENCODED_SIZE] = encode_polynomial(t1_to_pack, encoded[j * T1_POLYNOMIAL_ENCODED_SIZE : T1_POLYNOMIAL_ENCODED_SIZE]);
+            encoded[j * T1_POLYNOMIAL_ENCODED_SIZE : T1_POLYNOMIAL_ENCODED_SIZE] =
+                encode_polynomial(
+                    t1[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL],
+                    encoded[j * T1_POLYNOMIAL_ENCODED_SIZE : T1_POLYNOMIAL_ENCODED_SIZE]
+                );
+
+            () = #unspill(t1);
         }
 
         return encoded;

@@ -54,13 +54,17 @@ namespace column_vector {
         -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t1 t0;
-        reg u64 i;
+        #spill_to_mmx reg u64 i;
         reg u32 x y1 y2;
 
         i = 0;
         while(i < ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
             x = v[i];
+
+            () = #spill(i);
             y1, y2 = coefficient::power2round(x);
+            () = #unspill(i);
+
             t1[i] = y1;
             t0[i] = y2;
             i += 1;
@@ -70,12 +74,15 @@ namespace column_vector {
     }
 
     inline
-    fn add(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs)
-        -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    fn add(
+        #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs
+    ) -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] sum;
 
         inline int i;
+
+        () = #spill(lhs, rhs);
 
         for i = 0 to ROWS_IN_MATRIX_A {
             sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
@@ -84,6 +91,7 @@ namespace column_vector {
                     rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
                     sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
                 );
+            () = #unspill(lhs, rhs);
         }
         return sum;
     }
