@@ -51,25 +51,27 @@ namespace row_vector {
 
     inline
     fn dot_product(
-        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output
+        #spill_to_mmx reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs,
+        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[COEFFICIENTS_IN_POLYNOMIAL] product;
 
         output = polynomial::zero(output);
+        () = #spill(output, lhs, rhs);
 
         inline int i;
         for i = 0 to COLUMNS_IN_MATRIX_A {
-            // TODO: Remove these fences.
-            _ = #init_msf();
+            () = #unspill(lhs, rhs);
             product = polynomial::pointwise_montgomery_product(
                 lhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
                 rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
                 product
             );
-            _ = #init_msf();
+
+            () = #unspill(output);
             output = polynomial::sum_coefficients(product, output);
+            () = #spill(output);
         }
 
         return output;

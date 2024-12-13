@@ -79,6 +79,7 @@ namespace polynomial {
         return product;
     }
 
+    inline
     fn zero(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
         reg u64 i;
@@ -218,7 +219,6 @@ namespace polynomial {
             a = #protect_32(a, msf);
 
             a, msf = coefficient::use_hint(a, h, msf);
-            msf = #init_msf(); //TODO
 
             commitment[i] = a;
 

@@ -1,4 +1,5 @@
 namespace commitment {
+    inline
     fn encode_polynomial(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded
