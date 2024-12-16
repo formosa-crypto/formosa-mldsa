@@ -134,22 +134,27 @@ namespace column_vector {
     }
 
     inline
-    fn multiply_by_polynomial(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
-        -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    fn multiply_by_polynomial(
+        #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector,
+        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly
+    ) -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
-        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] fvector;
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] product;
 
-        inline int ii;
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] fg g;
+        () = #spill(vector, poly);
 
-        for ii = 0 to ROWS_IN_MATRIX_A {
-            fg = fvector[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            g = vector[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            fg = polynomial::pointwise_montgomery_product(f, g, fg);
-            fvector[ii * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = fg;
+        inline int i;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            product[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::pointwise_montgomery_product(
+                    vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                    poly,
+                    product[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                );
+            () = #unspill(vector, poly);
         }
 
-        return fvector;
+        return product;
     }
 
     inline

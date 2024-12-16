@@ -133,11 +133,13 @@ namespace polynomial {
     }
 
     inline
-    fn make_hint(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f0 f1 hints)
-        -> reg u32, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    fn make_hint(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f0 f1,
+        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints
+    ) -> reg u32, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u32 weight a0 a1 hint;
-        reg u64 i;
+        #spill_to_mmx reg u64 i;
 
         reg u64 msf = #init_msf();
 
@@ -155,6 +157,7 @@ namespace polynomial {
             a1 = #protect_32(a1, msf);
 
             hint, msf = coefficient::make_hint(a0, a1, msf);
+
             hints[i] = hint;
             weight += hint;
             i += 1;

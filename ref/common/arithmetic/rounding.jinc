@@ -23,6 +23,7 @@ namespace coefficient {
         return highbits, lowbits;
     }
 
+    inline
     fn make_hint(reg u32 a0, reg u32 a1, reg u64 msf) -> reg u32, #msf reg u64 {
         reg u32 result;
         inline bool condition;
