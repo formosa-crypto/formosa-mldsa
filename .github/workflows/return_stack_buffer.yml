@@ -1,4 +1,4 @@
-name: "Ensure the code can be protected against Spectre-RSB attacks."
+name: "Spectre-RSB checking."
 on:
   pull_request:
   push:
