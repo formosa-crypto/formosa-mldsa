@@ -16,5 +16,12 @@ jobs:
     - uses: cachix/install-nix-action@v25
       with:
         nix_path: nixpkgs=channel:nixos-unstable
-    - run: nix-shell rsb-checker.nix --run 'echo Installed dependencies.'
-    - run: nix-shell rsb-checker.nix --run 'env PARAMETER_SET=${{ matrix.parameter_set }} make check-rsb'
+    - uses: actions/checkout@master
+      with:
+        repository: sarranz/jasmin
+        ref: rsb3
+        path: jasmin-rsb
+    - name: Build Jasmin with the RSB-checker
+      working-directory: jasmin-rsb
+      run: nix-shell --run 'cd compiler && make CIL -j4 && make'
+    - run: env RSB_CHECKER=jasmin-rsb/compiler/jasmin-ct PARAMETER_SET=${{ matrix.parameter_set }} make check-rsb

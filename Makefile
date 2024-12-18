@@ -54,7 +54,7 @@ check-sct: $(IMPLEMENTATION)/ml_dsa.jazz
 
 .PHONY: check-rsb
 check-rsb: $(IMPLEMENTATION)/ml_dsa.jazz
-	env JASMINPATH="Common=$(COMMON)" $(JASMINCT_RSB) --speculative $^
+	env JASMINPATH="Common=$(COMMON)" $(RSB_CHECKER) --speculative $^
 
 .PHONY: run-interpreter
 run-interpreter: $(IMPLEMENTATION)/example.jazz $(IMPLEMENTATION)/ml_dsa.jazz
