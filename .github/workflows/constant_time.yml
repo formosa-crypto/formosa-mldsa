@@ -1,4 +1,4 @@
-name: "Constant-time and speculative-constant-time check"
+name: "CT and Spectre-SCT related checks"
 on:
   pull_request:
   push:

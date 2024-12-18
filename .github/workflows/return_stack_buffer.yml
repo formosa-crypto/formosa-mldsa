@@ -1,4 +1,4 @@
-name: "Spectre-RSB checking."
+name: "Spectre-RSB related checks"
 on:
   pull_request:
   push:
