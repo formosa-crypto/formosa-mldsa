@@ -43,6 +43,7 @@ namespace coefficient {
         return low_bits, high_bits;
     }
 
+    inline
     fn use_hint(reg u32 a hint, reg u64 msf) -> reg u32, #msf reg u64 {
         reg u32 high_bits low_bits;
 

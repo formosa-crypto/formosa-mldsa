@@ -1,9 +1,10 @@
 require "../parameters.jinc"
 
 namespace commitment {
+    inline
     fn encode_polynomial(
-        reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded
     ) -> reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
     {
         reg u64 i = 0;
@@ -29,15 +30,16 @@ namespace commitment {
         -> stack u8[ENCODED_COMMITMENT_SIZE]
     {
         stack u8[ENCODED_COMMITMENT_SIZE] encoded_commitment;
-        reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded_polynomial;
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial;
 
         inline int i;
 
         for i = 0 to ROWS_IN_MATRIX_A {
-            encoded_polynomial = encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE];
-            polynomial = commitment[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE] = encode_polynomial(encoded_polynomial, polynomial);
+            encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE :
+                                   ENCODED_COMMITMENT_POLYNOMIAL_SIZE] =
+            encode_polynomial(
+                commitment[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
+            );
         }
 
         return encoded_commitment;

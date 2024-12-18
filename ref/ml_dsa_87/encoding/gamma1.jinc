@@ -62,6 +62,7 @@ namespace gamma1 {
         return encoded;
     }
 
+    inline
     fn decode_to_polynomial(
         reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] bytes,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
