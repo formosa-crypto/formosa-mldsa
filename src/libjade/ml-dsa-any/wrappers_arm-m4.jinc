@@ -191,3 +191,46 @@ inline fn __abs_ct(#secret reg u32 x) -> reg u32 {
   x = -x if (x <s 0);
   return x;
 }
+
+/*************************************************
+* Name:        JASMIN_MLDSA_make_hint
+*
+* Description: Compute hint bit indicating whether the low bits of the
+*              input element overflow into the high bits.
+*
+* Arguments:   - int32_t a0: low bits of input element
+*              - int32_t a1: high bits of input element
+*
+* Returns 1 if overflow.
+**************************************************/
+/*
+unsigned int JASMIN_MLDSA_make_hint(int32_t a0, int32_t a1) {
+    if (a0 > GAMMA2 || a0 < -GAMMA2 || (a0 == -GAMMA2 && a1 != 0)) {
+        return 1;
+    }
+
+    return 0;
+}
+*/
+
+// gamma2 = GAMMA2
+inline fn __make_hint(reg u32 a0, reg u32 a1, reg u32 gamma2) -> reg u32
+{
+   reg u32 mgamma2, res, aux, one, zero;
+   inline bool lt, gt, eq;
+
+
+   mgamma2 = -gamma2;
+   ?{">s"=gt, "<s"=lt, "=="=eq} = #CMP(a0, gamma2);
+   res = 0;
+   one = 1;
+   res = one if gt;
+   res = one if lt;
+   aux = 0;
+   aux = one if eq;
+   zero = 0;
+   aux = zero if (a1 == 0);
+   res = 1 if (aux == 1);
+   return res;
+}          
+

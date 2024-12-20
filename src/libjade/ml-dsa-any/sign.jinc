@@ -461,7 +461,7 @@ fn _crypto_sign_signature_ctx
   (#secret reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig,
    #public reg ptr u32[2] ctx_m,  // This is the two pointers 
    #public reg ptr u32[3] ctxlen_mlen_siglen, // all the length are public
-   reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk)
+   #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk)
    -> #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], #public reg u32
 {
   sig = sig; ctx_m = ctx_m; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
@@ -501,6 +501,7 @@ fn _crypto_sign_signature_ctx
 
   () = #spill(sig, status, ctxlen);
   (rho, tr, key, t0, s1, s2) = _unpack_sk(rho, tr, key, t0, s1, s2, sk);
+  #declassify rho = rho; // FIXME does it make sens ?  I think not. Discuss with Manuel
   s_rho = rho; s_tr = tr; s_t0 = t0; s_s1 = s1; s_s2 = s2;
   s_key_rnd_mu[0:SEEDBYTES] = key;
 

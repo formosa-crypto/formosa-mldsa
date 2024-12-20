@@ -382,6 +382,7 @@ fn _polyveck_make_hint(
     () = #unspill(v0);
     s += tmp;
   }
+  #declassify h = h; // _poly_make_hint set it public
   return s, h;
 }
 

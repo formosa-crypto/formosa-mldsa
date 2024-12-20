@@ -471,11 +471,12 @@ inline fn __poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a
   {
     a0_ = a0[(int) i];
     a1_ = a1[(int) i];
-    h_ = __make_hint(a0_, a1_, gamma2);
+    #declassify h_ = __make_hint(a0_, a1_, gamma2);
     h[(int) i] = h_;
     s += h_;
     i += 1;
   }
+  #declassify h = h; // h is init with h_ that is declassify
   return s, h;
 }
 

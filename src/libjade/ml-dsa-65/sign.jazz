@@ -13,7 +13,7 @@ export fn JASMIN_MLDSA65_crypto_sign_keypair(#secret reg ptr u8[JASMIN_MLDSA_CRY
   return pk, sk, status;
 }
 
-export fn JASMIN_MLDSA65_crypto_sign_signature_ctx_internal(#secret reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, #secret reg ptr u32[2] ctx_m, #secret reg ptr u32[3] ctxlen_mlen_siglen, #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], #secret reg u32
+export fn JASMIN_MLDSA65_crypto_sign_signature_ctx_internal(#secret reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, #public reg ptr u32[2] ctx_m, #public reg ptr u32[3] ctxlen_mlen_siglen, #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], #secret reg u32
 {
   sig = sig; ctx_m = ctx_m; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
   reg u32 status;

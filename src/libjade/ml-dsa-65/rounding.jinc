@@ -66,57 +66,6 @@ inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA_make_hint
-*
-* Description: Compute hint bit indicating whether the low bits of the
-*              input element overflow into the high bits.
-*
-* Arguments:   - int32_t a0: low bits of input element
-*              - int32_t a1: high bits of input element
-*
-* Returns 1 if overflow.
-**************************************************/
-/*
-unsigned int JASMIN_MLDSA_make_hint(int32_t a0, int32_t a1) {
-    if (a0 > GAMMA2 || a0 < -GAMMA2 || (a0 == -GAMMA2 && a1 != 0)) {
-        return 1;
-    }
-
-    return 0;
-}
-*/
-
-// gamma2 = GAMMA2
-inline fn __make_hint(reg u32 a0, reg u32 a1, reg u32 gamma2) -> reg u32
-{
-   reg u32 mgamma2 res;
-   inline bool lt eq;
-
-   res = 1;
-   if (a0 <=s gamma2) {
-     mgamma2 = -gamma2;
-
-     eq, lt = __cmp_eq_lt(a0, mgamma2);
-
-     if (!lt) {
-
-      if (!eq) {
-         res = 0;
-      }
-
-      if (a1 == 0) {
-         res = 0;
-       }
-
-     }
-   }
-   return res;
-}          
-
-
-
-
-/*************************************************
 * Name:        JASMIN_MLDSA_use_hint
 *
 * Description: Correct high bits according to hint.
