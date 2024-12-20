@@ -58,6 +58,34 @@ inline fn __set_if_true_plus_imm(reg u32 in, inline int i, inline bool b) -> reg
   return out;
 }
 
+inline fn __cmp_ge_s(reg u32 in_1, reg u32 in_2) -> inline bool { 
+  inline bool b;
+  b = in_1 >=s in_2; 
+  return b;
+} 
+
+inline fn __cmp_gt_u(reg u32 in_1, reg u32 in_2) -> inline bool { 
+  inline bool b;
+  b = in_1 >u in_2; 
+  return b;
+} 
+
+inline fn __cmp_lt_u(reg u32 in_1, reg u32 in_2) -> inline bool { 
+  inline bool b;
+  b = in_1 <u in_2; 
+  return b;
+} 
+
+inline fn __cmp_lt_u_imm(inline u32 in_1, reg u32 in_2) -> inline bool { 
+  inline bool b;
+  reg u32 x; 
+  x = in_1;
+  b = x <u in_2; 
+  return b;
+} 
+
+
+
 inline fn __cmp_b(reg u32 in_1, reg u32 in_2) -> inline bool {
   inline bool b;
   b = (in_1 <u in_2);
@@ -189,4 +217,21 @@ inline fn __rsb_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
   in_2 = in_2 << nb_bits;
   out = in_2 - in_1;
   return out;
+}
+
+/** 
+**/
+inline fn __abs_ct(#secret reg u32 x) -> reg u32 { 
+  reg u32 test aux1 aux2;
+  test = #SLTI(x, 0);  /* test = x <s 0 */
+  /* x & (test - 1) - x & (-test)
+     if x < 0 then -x else 
+  */
+  aux1 = 1;
+  aux1 = test - aux1;
+  aux1 = x & aux1;
+  aux2 = -test;
+  aux2 = x & aux2;
+  x = aux1 - aux2;
+  return x;
 }

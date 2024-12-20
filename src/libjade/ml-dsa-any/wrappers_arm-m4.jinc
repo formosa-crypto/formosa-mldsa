@@ -45,11 +45,32 @@ inline fn __set_if_true_plus_imm(reg u32 in, inline int i, inline bool b) -> reg
   return out;
 }
 
+inline fn __cmp_ge_s(reg u32 in_1, reg u32 in_2) -> inline bool { 
+  inline bool b;
+  ?{">=s" = b} = #CMP(in_1, in_2);
+  return b;
+} 
+
+inline fn __cmp_gt_u(reg u32 in_1, reg u32 in_2) -> inline bool { 
+  inline bool b;
+  ?{">u" = b} = #CMP(in_1, in_2);
+  return b;
+} 
+
+inline fn __cmp_lt_u_imm(inline u32 in_1, reg u32 in_2) -> inline bool { 
+  inline bool b;
+  ?{">u"=b} = #CMP(in_2, in_1); 
+  return b;
+}
+
+// TODO: rename and document 
 inline fn __cmp_b(reg u32 in_1, reg u32 in_2) -> inline bool {
   inline bool b;
   ?{"<u" = b} = #CMP(in_1, in_2);
   return b;
 }
+
+
 
 inline fn __cmp_eq_lt(reg u32 in_1, reg u32 in_2) -> inline bool, inline bool {
   inline bool lt;
@@ -161,4 +182,12 @@ inline fn __rsb_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
   reg u32 out;
   out = #RSB(in_1, in_2 << nb_bits);
   return out;
+}
+
+
+/** 
+**/
+inline fn __abs_ct(#secret reg u32 x) -> reg u32 { 
+  x = -x if (x <s 0);
+  return x;
 }

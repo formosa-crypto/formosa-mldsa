@@ -5,7 +5,7 @@ export fn JASMIN_MLDSA65_challenge(reg ptr u32[N] c, reg ptr u8[SEEDBYTES] seed)
   return c;
 }
 
-export fn JASMIN_MLDSA65_crypto_sign_keypair(reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES], reg u32 {
+export fn JASMIN_MLDSA65_crypto_sign_keypair(#secret reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk, #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES], #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES], #secret reg u32 {
   pk = pk; sk = sk;
   reg u32 status;
   pk, sk, status = _crypto_sign_keypair(pk, sk);
@@ -13,7 +13,7 @@ export fn JASMIN_MLDSA65_crypto_sign_keypair(reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBL
   return pk, sk, status;
 }
 
-export fn JASMIN_MLDSA65_crypto_sign_signature_ctx_internal(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], reg u32
+export fn JASMIN_MLDSA65_crypto_sign_signature_ctx_internal(#secret reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, #secret reg ptr u32[2] ctx_m, #secret reg ptr u32[3] ctxlen_mlen_siglen, #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], #secret reg u32
 {
   sig = sig; ctx_m = ctx_m; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
   reg u32 status;

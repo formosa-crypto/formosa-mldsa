@@ -156,7 +156,7 @@ fn _polyvecl_pointwise_acc_montgomery(
   return w;
 }
 
-fn _polyvecl_chknorm(reg ptr u32[polyvecl] v, reg u32 bound) -> reg u32
+fn _polyvecl_chknorm(#secret reg ptr u32[polyvecl] v, reg u32 bound) -> reg u32
 {
   inline int i;
   reg u32 b b_; 

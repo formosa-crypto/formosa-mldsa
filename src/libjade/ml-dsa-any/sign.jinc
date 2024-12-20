@@ -458,11 +458,11 @@ fn _shake256_inc_finalize(
 * Returns 0 (success) or -1 (context string too long)
 **************************************************/
 fn _crypto_sign_signature_ctx
-  (reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig,
-   reg ptr u32[2] ctx_m,
-   reg ptr u32[3] ctxlen_mlen_siglen,
+  (#secret reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig,
+   #public reg ptr u32[2] ctx_m,  // This is the two pointers 
+   #public reg ptr u32[3] ctxlen_mlen_siglen, // all the length are public
    reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk)
-   -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], reg u32
+   -> #secret reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], #public reg u32
 {
   sig = sig; ctx_m = ctx_m; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
   reg u32 status;
@@ -666,7 +666,10 @@ fn _crypto_sign_signature_ctx
           s_w0 = w0; w1 = s_w1;
           reg u32 n;
           n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
-          if (n > OMEGA) {
+          inline bool test;
+          #declassify test = __cmp_lt_u_imm(OMEGA, n); // OMEGA < n; 
+          // if (n > OMEGA) 
+          if (test) {
             continue = 1;
           } else {
             () = #unspill(sig);

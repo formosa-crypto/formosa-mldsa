@@ -164,7 +164,8 @@ fn _poly_add2_inplace(reg ptr u32[N] a) -> reg ptr u32[N]
 * Returns 0 if norm is strictly smaller than B <= (Q-1)/8 and 1 otherwise.
 **************************************************/
 
-inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
+/* FIXME: Add a warning indicating that the function use declassify and should be use carefully */
+inline fn __poly_chknorm(#secret reg ptr u32[N] a, reg u32 B) -> reg u32 {
   reg u32 r;
   reg u32 q;
   r = 0;
@@ -172,6 +173,7 @@ inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
   q -= 1;
   q = q >> 3;
 
+  // FIXME: B and q are constant what is the purpose of this test ?
   if (B >s q) {
     r = 1;
   }
@@ -179,20 +181,23 @@ inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
   reg u32 t;
 
   reg u32 i; i = 0;
+
   while {
     t = a[(int) i];
-    // FIXME for arm
+    
     //t = -t if t <s 0;
-    if (t <s 0) {
-       t = -t;
-    }
-
+    t = __abs_ct(t);
     i += 1;
 
-    if (t >=s B) {
+
+
+    inline bool ge;
+    #declassify ge = __cmp_ge_s(t, B); 
+    
+    if (ge) { 
       r = 1;
       i = N;
-    }
+    } 
 
   } (i != N)
 
@@ -216,7 +221,7 @@ fn _poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
 *              - const uint8_t mu[]: byte array containing seed of length SEEDBYTES
 **************************************************/
 
-fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[CTILDEBYTES] seed) -> reg ptr u32[N]
+fn _poly_challenge(reg ptr u32[N] c, #secret reg ptr u8[CTILDEBYTES] seed) -> reg ptr u32[N]
 {
   stack u32[PQC_SHAKECTX_BYTES*2] _state;
   reg ptr u32[PQC_SHAKECTX_BYTES*2] state;
@@ -252,6 +257,7 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[CTILDEBYTES] seed) -> reg ptr u3
   reg u32 j;
   j = N - TAU;
   reg u32 b;
+  inline bool test;
   while (j < N) {
     while {
       if (pos >= SHAKE256_RATE) {
@@ -264,8 +270,11 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[CTILDEBYTES] seed) -> reg ptr u3
 
       b = (32u) state[u8 (int) pos];
       pos += 1;
-    } (b > j)
+      #declassify test = __cmp_gt_u(j, b); /* b > j */      
 
+    } (test)
+
+    #declassify b = b; // This come from a rejection sampling arguments
     aux = c[(int) b];
     c[(int) j] = aux;
 

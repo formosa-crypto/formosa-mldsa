@@ -37,8 +37,12 @@ inline fn __montgomery_reduce_8380417(reg u32 a_low a_high) -> reg u32
 
   tp_low = a_low - txQ_low;
   tp_high = a_high - txQ_high;
-  if tp_low >32u a_low { tp_high = tp_high + 1; } // carry
-
+  
+  reg u32 carry;
+  // if tp_low >32u a_low { tp_high = tp_high + 1; } // carry
+  carry = #SLTU(a_low, tp_low);
+  tp_high += carry;
+ 
   res = tp_high;
   return res;
 }
