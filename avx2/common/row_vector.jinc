@@ -69,7 +69,9 @@ namespace row_vector {
                 product
             );
 
+            () = #unspill(output);
             output = polynomial::add_to_running_total(product, output);
+            () = #spill(output);
         }
 
         return output;

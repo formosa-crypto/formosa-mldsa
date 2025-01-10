@@ -38,6 +38,7 @@ namespace polynomial {
         return difference;
     }
 
+    inline
     fn sum_coefficients(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f sum)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
