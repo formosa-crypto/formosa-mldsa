@@ -1,0 +1,140 @@
+require "../hashing.jinc"
+
+inline
+fn absorb_for_shake128(
+    reg ptr u64[25] state,
+    reg const ptr u8[32] rho,
+    inline int i,
+    inline int j
+) -> reg ptr u64[25]
+{
+    reg u8 byte;
+    reg u64 k;
+
+    state = __keccak_init_ref1(state);
+
+    k = 0;
+    while (k < 32) {
+        byte = rho[k];
+        state[u8 k] = byte;
+
+        k += 1;
+    }
+    state[u8 32] = j;
+    state[u8 33] = i;
+
+    state[u8 34] = 0x1f;
+    state[u8 SHAKE128_RATE - 1] = 0x80;
+
+    return state;
+}
+
+fn rejection_sample_less_than_field_modulus(
+    reg ptr u64[25] state,
+    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result,
+    #spill_to_mmx reg u64 sampled
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
+{
+    reg u64 xof_offset;
+    #public reg u32 try_coefficient byte;
+
+    inline bool b;
+
+    inline int k;
+
+    reg u64 msf = #init_msf();
+
+    xof_offset = 0;
+
+    while { b = xof_offset < SHAKE128_RATE; } (b) {
+        msf = #update_msf(b, msf);
+
+        b = sampled < COEFFICIENTS_IN_POLYNOMIAL;
+        if (b) {
+            msf = #update_msf(b, msf);
+
+            try_coefficient = 0;
+            for k = 0 to 3 {
+                #declassify byte = (32u)state[u8 xof_offset + k];
+
+                byte <<= 8 * k;
+                try_coefficient |= byte;
+            }
+            try_coefficient &= 0x00_7F_FF_FF;
+            try_coefficient = #protect_32(try_coefficient, msf);
+
+
+            b = try_coefficient < MODULUS;
+            if (b) {
+                msf = #update_msf(b, msf);
+                result[sampled] = try_coefficient;
+                sampled += 1;
+            } else {
+                msf = #update_msf(!b, msf);
+            }
+        } else {
+            msf = #update_msf(!b, msf);
+        }
+
+        xof_offset += 3;
+    }
+
+    return result, sampled;
+}
+
+inline
+fn sample_polynomial(
+    reg ptr u8[32] rho,
+    inline int i,
+    inline int j,
+    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+{
+    #spill_to_mmx reg u64 coefficients_sampled;
+    stack u64[25] state;
+
+    () = #spill(result);
+    state = absorb_for_shake128(state, rho, i, j);
+    state = _keccakf1600_ref1(state);
+    () = #unspill(result);
+
+    coefficients_sampled = 0;
+    result, coefficients_sampled = rejection_sample_less_than_field_modulus(state, result, coefficients_sampled);
+
+    while (coefficients_sampled < COEFFICIENTS_IN_POLYNOMIAL) {
+        () = #spill(coefficients_sampled, result);
+        state = _keccakf1600_ref1(state);
+        () = #unspill(coefficients_sampled, result);
+
+        result, coefficients_sampled = rejection_sample_less_than_field_modulus(state, result, coefficients_sampled);
+    }
+
+    return result;
+}
+
+namespace sample {
+    inline
+    fn matrix_A(
+        #public stack u8[32] rho
+    ) -> stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
+
+        inline int i j;
+
+        for i = 0 to ROWS_IN_MATRIX_A {
+            for j = 0 to COLUMNS_IN_MATRIX_A {
+                matrix_A[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                    sample_polynomial
+                    (
+                        rho,
+                        i,
+                        j,
+                        matrix_A[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                    );
+            }
+        }
+
+        return matrix_A;
+    }
+}

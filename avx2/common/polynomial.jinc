@@ -1,0 +1,291 @@
+require "arithmetic/modular.jinc"
+
+
+namespace polynomial {
+    fn add(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs_pointer rhs_pointer sum_pointer)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 lhs rhs sum;
+
+        reg u64 offset;
+
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            lhs = lhs_pointer.[u256 offset];
+            rhs = rhs_pointer.[u256 offset];
+
+            sum = #VPADD_8u32(lhs, rhs);
+            sum_pointer.[u256 offset] = sum;
+
+            offset += 32;
+        }
+
+        return sum_pointer;
+    }
+
+    fn subtract(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs_pointer rhs_pointer difference_pointer
+    )
+    -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
+        reg u256 lhs rhs difference;
+
+        reg u64 offset;
+
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            lhs = lhs_pointer.[u256 offset];
+            rhs = rhs_pointer.[u256 offset];
+
+            difference = #VPSUB_8u32(lhs, rhs);
+            difference_pointer.[u256 offset] = difference;
+
+            offset += 32;
+        }
+
+        return difference_pointer;
+    }
+
+    inline
+    fn add_to_running_total(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial running_total)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 lhs rhs sum;
+
+        reg u64 offset;
+
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            lhs = polynomial.[u256 offset];
+            rhs = running_total.[u256 offset];
+
+            sum = #VPADD_8u32(lhs, rhs);
+            running_total.[u256 offset] = sum;
+
+            offset += 32;
+        }
+
+        return running_total;
+    }
+
+    inline
+    fn zero(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 zero_u256;
+        reg u64 offset;
+
+        ?{}, zero_u256 = #set0_256();
+
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            #VMOVDQU_256(polynomial.[u256 offset]) = zero_u256;
+            offset += 32;
+        }
+
+        return polynomial;
+    }
+
+    // For use in fn pointwise_montgomery_multiply_and_reduce() below
+    u32[8] MODULUS_VECTOR = {
+        MODULUS,
+        MODULUS,
+        MODULUS,
+        MODULUS,
+        MODULUS,
+        MODULUS,
+        MODULUS,
+        MODULUS
+    };
+    u32[8] INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR = {
+        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R
+    };
+    fn pointwise_montgomery_multiply_and_reduce(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs product
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        // TODO: If performance is lacking, unroll this loop to process 3 
+        // chunks per round.
+
+        reg u256 lhs_low lhs_high rhs_low rhs_high;
+        reg u256 product_low product_high;
+        reg u256 t_low t_high;
+
+        reg u64 offset;
+
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            lhs_low = lhs.[u256 offset];
+            rhs_low = rhs.[u256 offset];
+
+            lhs_high = #VMOVSHDUP_256(lhs_low);
+            rhs_high = #VMOVSHDUP_256(rhs_low);
+
+            // Multiply
+            product_low = #VPMUL_256(lhs_low, rhs_low);
+            product_high = #VPMUL_256(lhs_high, rhs_high);
+
+            // Reduce
+            t_low = #VPMUL_256(product_low,
+                    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR.[u256 0]);
+            t_high = #VPMUL_256(product_high,
+                    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR.[u256 0]);
+            t_low = #VPMUL_256(t_low, MODULUS_VECTOR.[u256 0]);
+            t_high = #VPMUL_256(t_high, MODULUS_VECTOR.[u256 0]);
+
+            product_low = #VPSUB_4u64(product_low, t_low);
+            product_high = #VPSUB_4u64(product_high, t_high);
+
+            product_low = #VMOVSHDUP_256(product_low);
+            product_low = #VPBLEND_8u32(product_low, product_high, 0b1_0_1_0_1_0_1_0);
+            product.[u256 offset] = product_low;
+
+            offset += 32;
+        }
+
+        return product;
+    }
+
+    fn conditionally_add_modulus(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 i;
+        reg u32 val;
+        ?{}, i = #set0_64();
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            val = f[i];
+            val = coefficient::conditionally_add_modulus(val);
+            f[i] = val;
+            i += 1;
+        }
+        return f;
+    }
+
+    inline
+    fn check_infinity_norm(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial, inline int threshold)
+        -> reg u8
+    {
+        reg u8 ret;
+        reg u8 result;
+        reg u32 coefficient;
+
+        reg u64 i;
+
+        result = 0;
+
+        i = 0;
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            coefficient = polynomial[i];
+            ret = coefficient::check_norm(coefficient, threshold);
+            result |= ret;
+            i += 1;
+        }
+
+        return result;
+    }
+
+    inline
+    fn make_hint(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f0 f1,
+        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints
+    ) -> reg u32, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u32 weight a0 a1 hint;
+        #spill_to_mmx reg u64 i;
+
+        reg u64 msf = #init_msf();
+
+        inline bool condition;
+
+        weight = 0;
+        i = 0;
+        while {condition = i < COEFFICIENTS_IN_POLYNOMIAL;} (condition) {
+            msf = #update_msf(condition, msf);
+
+            a0 = f0[i];
+            a0 = #protect_32(a0, msf);
+
+            a1 = f1[i];
+            a1 = #protect_32(a1, msf);
+
+            hint, msf = coefficient::make_hint(a0, a1, msf);
+
+            hints[i] = hint;
+            weight += hint;
+            i += 1;
+        }
+
+        return weight, hints;
+    }
+
+    fn reduce32(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 i;
+        reg u32 coeff reduced;
+
+        i = 0;
+        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
+            coeff = polynomial[i];
+            reduced = coefficient::reduce32(coeff);
+            polynomial[i] = reduced;
+
+            i += 1;
+        }
+
+        return polynomial;
+    }
+
+    inline
+    fn shift_coefficients_left(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
+        reg u64 i;
+        reg u32 coefficient;
+
+        i = 0;
+        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
+            coefficient = polynomial[i];
+            coefficient <<= BITS_IN_LOWER_PART_OF_T;
+            polynomial[i] = coefficient;
+            i += 1;
+        }
+
+        return polynomial;
+    }
+
+    fn use_hints(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment hints
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 i;
+        reg u32 a h;
+
+        reg u64 msf = #init_msf();
+
+        inline bool b;
+
+        i = 0;
+        while { b = i < COEFFICIENTS_IN_POLYNOMIAL; } (b) {
+            msf = #update_msf(b, msf);
+
+            h = hints[i];
+            h = #protect_32(h, msf);
+
+            a = commitment[i];
+            a = #protect_32(a, msf);
+
+            a, msf = coefficient::use_hint(a, h, msf);
+
+            commitment[i] = a;
+
+            i += 1;
+        }
+
+        return commitment;
+    }
+}

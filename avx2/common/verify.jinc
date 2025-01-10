@@ -1,0 +1,154 @@
+inline
+fn compare_commitment_hashes(stack u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg u64 {
+    // TODO: Short circuit on failure
+
+    reg u64 i;
+    reg u8 lhs_byte rhs_byte;
+
+    reg u64 result;
+
+    inline bool condition;
+
+    reg u64 msf = #init_msf();
+
+    result = 0;
+
+    i = 0;
+    while { condition = i < COMMITMENT_HASH_SIZE; } (condition) {
+        msf = #update_msf(condition, msf);
+
+        lhs_byte = lhs[i];
+        lhs_byte = #protect_8(lhs_byte, msf);
+
+        rhs_byte = rhs[i];
+        rhs_byte = #protect_8(rhs_byte, msf);
+
+        condition = lhs_byte != rhs_byte;
+        if (condition) {
+            msf = #update_msf(condition, msf);
+            result |= (64u)-1;
+        } else {
+            msf = #update_msf(!condition, msf);
+        }
+
+        i += 1;
+    }
+
+    return result;
+}
+
+inline 
+fn reconstruct_signer_commitment(
+    reg ptr u8[T1_ENCODED_SIZE] t1_encoded,
+    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] challenge_as_ntt,
+    reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] A_times_signer_response,
+    reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints
+) -> stack ptr u8[ENCODED_COMMITMENT_SIZE] {
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] commitment;
+    stack u8[ENCODED_COMMITMENT_SIZE] commitment_encoded;
+
+    stack u8[T1_POLYNOMIAL_ENCODED_SIZE] t1_element_encoded;
+    stack u32[COEFFICIENTS_IN_POLYNOMIAL] Az_element t1_element commitment_element hints_element c_times_t1;
+
+    () = #spill(challenge_as_ntt);
+
+    inline int i;
+
+    for i = 0 to ROWS_IN_MATRIX_A {
+        Az_element = A_times_signer_response[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL];
+
+        t1_element_encoded = t1_encoded[T1_POLYNOMIAL_ENCODED_SIZE * i: T1_POLYNOMIAL_ENCODED_SIZE];
+        t1_element = t1::decode_polynomial(t1_element, t1_element_encoded);
+
+        t1_element = polynomial::shift_coefficients_left(t1_element);
+        t1_element = polynomial::ntt(t1_element);
+
+        () = #unspill(challenge_as_ntt);
+        c_times_t1 = polynomial::pointwise_montgomery_multiply_and_reduce(challenge_as_ntt, t1_element, c_times_t1);
+
+        commitment_element = commitment[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL];
+        commitment_element = polynomial::subtract(Az_element, c_times_t1, commitment_element);
+        commitment_element = polynomial::reduce32(commitment_element);
+        commitment_element = polynomial::invert_ntt_montgomery(commitment_element);
+        commitment_element = polynomial::conditionally_add_modulus(commitment_element);
+
+        hints_element = hints[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+        commitment_element = polynomial::use_hints(commitment_element, hints_element);
+
+        commitment[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = commitment_element;
+    }
+
+    commitment_encoded = commitment::encode(commitment);
+
+    return commitment_encoded;
+}
+
+inline
+fn verify_internal(
+    stack u8[VERIFICATION_KEY_SIZE] verification_key,
+    #spill_to_mmx reg u64 message message_size,
+    #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature_encoded
+) -> reg u64 {
+    // 0 indicates success, -1 indicates failure.
+    reg u64 result = -1;
+
+    reg u8 signer_response_outside_bounds;
+
+    stack u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
+    stack u8[COMMITMENT_HASH_SIZE] expected_commitment_hash;
+    stack u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative;
+
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] A_times_signer_response;
+
+    stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
+    stack u32[COEFFICIENTS_IN_POLYNOMIAL] challenge;
+    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response;
+
+    stack u8[ENCODED_COMMITMENT_SIZE] reconstructed_signer_commitment;
+
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints;
+
+    signer_response = gamma1::decode(signature_encoded[COMMITMENT_HASH_SIZE: GAMMA1_ENCODED_SIZE], signer_response);
+
+    #declassify signer_response_outside_bounds = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
+    _ = #init_msf();
+    if (signer_response_outside_bounds == 0) {
+        hints, result = signature::decode_hint(signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE], hints);
+
+        if (result == 0) {
+            () = #spill(message, message_size);
+
+            () = #spill(signature_encoded);
+            matrix_A = sample::matrix_A(verification_key[0:SEED_FOR_MATRIX_A_SIZE]);
+
+            signer_response = row_vector::ntt(signer_response);
+            A_times_signer_response = row_vector::multiply_with_matrix_A(matrix_A, signer_response);
+            () = #unspill(signature_encoded);
+
+            #declassify challenge = sample::challenge(challenge, signature_encoded[0:COMMITMENT_HASH_SIZE]);
+            challenge = polynomial::ntt(challenge);
+
+            reconstructed_signer_commitment = reconstruct_signer_commitment(
+                                                    verification_key[SEED_FOR_MATRIX_A_SIZE: T1_ENCODED_SIZE],
+                                                    challenge,
+                                                    A_times_signer_response,
+                                                    hints);
+
+            // Compute the expected commitment hash
+            verification_key_hash = hash_verification_key(verification_key, verification_key_hash);
+            () = #unspill(message, message_size);
+
+            message_representative = derive_message_representative(
+                verification_key_hash,
+                message,
+                message_size);
+
+            #declassify expected_commitment_hash = derive_commitment_hash(message_representative, reconstructed_signer_commitment);
+
+            () = #unspill(signature_encoded);
+            result = compare_commitment_hashes(expected_commitment_hash, signature_encoded[0:COMMITMENT_HASH_SIZE]);
+        }
+    }
+
+    return result;
+}
