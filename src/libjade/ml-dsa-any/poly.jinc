@@ -269,7 +269,9 @@ fn _poly_challenge(reg ptr u32[N] c, #secret reg ptr u8[CTILDEBYTES] seed) -> re
       }
 
       b = (32u) state[u8 (int) pos];
+      /* We can certainly declassify the value of b */
       pos += 1;
+      
       #declassify test = __cmp_gt_u(j, b); /* b > j */      
 
     } (test)
