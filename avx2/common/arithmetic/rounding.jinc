@@ -64,45 +64,4 @@ namespace coefficient {
 
         return result, msf;
     }
-
-    inline
-    fn check_norm(#secret reg u32 coefficient, inline int threshold) -> stack u8
-    {
-        reg u32 sign_mask;
-        stack u32 c;
-
-        reg bool sf;
-
-        stack u8 result;
-
-        result = 0;
-
-        // This norm is calculated using the absolute value of the
-        // signed representative in the range:
-        //
-        // -FIELD_MODULUS / 2 < r <= FIELD_MODULUS / 2.
-        //
-        // So if the coefficient is negative, get its absolute value, but
-        // don't convert it into a different representation.
-        //
-        // Also, we must not leak the sign of the centralized representative.
-        sign_mask = coefficient;
-        sign_mask >>s= 31;
-
-        c = coefficient;
-        c <<= 1;
-        c &= sign_mask;
-        coefficient = coefficient - c;
-
-        // But it is ok to leak which coefficient violates the bound since
-        // the probability for each coefficient is independent of the secret
-        // data.
-        //
-        // We've used constant-time code here to make CT and SCT checking easier.
-        _, _, sf, _, _ = #CMP_32(coefficient, threshold);
-        result = #SETcc(!sf);
-        result = -result;
-
-        return result;
-    }
 }

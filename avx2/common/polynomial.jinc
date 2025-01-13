@@ -1,5 +1,38 @@
 require "arithmetic/modular.jinc"
 
+// For use in fn pointwise_montgomery_multiply_and_reduce() below
+u256 MODULUS_VECTOR = (8u32)[
+    MODULUS,
+    MODULUS,
+    MODULUS,
+    MODULUS,
+    MODULUS,
+    MODULUS,
+    MODULUS,
+    MODULUS
+];
+u256 INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR = (8u32)[
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R
+];
+
+u256 TWO_POW_22_VECTOR = (8u32)[
+    1 << 22,
+    1 << 22,
+    1 << 22,
+    1 << 22,
+    1 << 22,
+    1 << 22,
+    1 << 22,
+    1 << 22
+];
+
 
 namespace polynomial {
     fn add(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs_pointer rhs_pointer sum_pointer)
@@ -85,27 +118,6 @@ namespace polynomial {
         return polynomial;
     }
 
-    // For use in fn pointwise_montgomery_multiply_and_reduce() below
-    u32[8] MODULUS_VECTOR = {
-        MODULUS,
-        MODULUS,
-        MODULUS,
-        MODULUS,
-        MODULUS,
-        MODULUS,
-        MODULUS,
-        MODULUS
-    };
-    u32[8] INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR = {
-        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
-        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
-        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
-        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
-        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
-        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
-        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
-        INVERSE_OF_MODULUS_MOD_MONTGOMERY_R
-    };
     fn pointwise_montgomery_multiply_and_reduce(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs product
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
@@ -133,11 +145,11 @@ namespace polynomial {
 
             // Reduce
             t_low = #VPMUL_256(product_low,
-                    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR.[u256 0]);
+                    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR);
             t_high = #VPMUL_256(product_high,
-                    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR.[u256 0]);
-            t_low = #VPMUL_256(t_low, MODULUS_VECTOR.[u256 0]);
-            t_high = #VPMUL_256(t_high, MODULUS_VECTOR.[u256 0]);
+                    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR);
+            t_low = #VPMUL_256(t_low, MODULUS_VECTOR);
+            t_high = #VPMUL_256(t_high, MODULUS_VECTOR);
 
             product_low = #VPSUB_4u64(product_low, t_low);
             product_high = #VPSUB_4u64(product_high, t_high);
@@ -152,40 +164,76 @@ namespace polynomial {
         return product;
     }
 
-    fn conditionally_add_modulus(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
+    fn conditionally_add_modulus(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 i;
-        reg u32 val;
-        ?{}, i = #set0_64();
-        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            val = f[i];
-            val = coefficient::conditionally_add_modulus(val);
-            f[i] = val;
-            i += 1;
+        reg u256 zero mask;
+        reg u256 lhs rhs;
+        reg u256 modulus;
+        reg u64 offset;
+
+        modulus = MODULUS_VECTOR;
+
+        ?{}, zero = #set0_256();
+
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            lhs = polynomial.[u256 offset];
+
+            mask = #VPCMPGT_8u32(zero, lhs);
+            rhs = #VPAND_256(modulus, mask);
+
+            lhs = #VPADD_8u32(lhs, rhs);
+            polynomial.[u256 offset] = lhs;
+
+            offset += 32;
         }
-        return f;
+
+        return polynomial;
     }
 
     inline
-    fn check_infinity_norm(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial, inline int threshold)
-        -> reg u8
+    fn check_infinity_norm(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        inline int threshold
+    ) -> reg u8
     {
-        reg u8 ret;
+        reg u256 coefficients;
+        reg u256 zero threshold_vector;
+        reg u256 exceeds exceeds_negative exceeds_any;
+        reg u64 msb_mask;
         reg u8 result;
-        reg u32 coefficient;
+        reg bool zf;
 
-        reg u64 i;
+        reg u64 offset temp;
+
+        temp = threshold - 1;
+        threshold_vector = (256u)#VMOV(temp);
+        threshold_vector = #VPBROADCAST_8u32(threshold_vector);
+
+        ?{}, zero = #set0_256();
+        ?{}, exceeds_any = #set0_256();
 
         result = 0;
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            coefficients = polynomial.[u256 offset];
 
-        i = 0;
-        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            coefficient = polynomial[i];
-            ret = coefficient::check_norm(coefficient, threshold);
-            result |= ret;
-            i += 1;
+            // TODO: If performance is lacking, add and use mm256_abs_epi32()
+            // instead of the following 3 lines.
+            exceeds = #VPCMPGT_8u32(coefficients, threshold_vector);
+            coefficients = #VPSUB_8u32(zero, coefficients);
+            exceeds_negative = #VPCMPGT_8u32(coefficients, threshold_vector);
+
+            exceeds = #VPOR_256(exceeds, exceeds_negative);
+            exceeds_any = #VPOR_256(exceeds_any, exceeds);
+
+            offset += 32;
         }
+
+        msb_mask = #VPMOVMSKB_u256u64(exceeds_any);
+        _, _, _, _, zf = #TEST_64(msb_mask, msb_mask);
+        result = #SETcc(!zf);
 
         return result;
     }
@@ -196,6 +244,9 @@ namespace polynomial {
         #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints
     ) -> reg u32, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
+        // TODO: To make this avx2, we'll need implementations of:
+        // - mm256_abs_epi32()
+        // - mm256_sign_epi32()
         reg u32 weight a0 a1 hint;
         #spill_to_mmx reg u64 i;
 
@@ -227,16 +278,28 @@ namespace polynomial {
     fn reduce32(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 i;
-        reg u32 coeff reduced;
+        reg u256 two_pow_22 modulus;
+        reg u256 a t;
 
-        i = 0;
-        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            coeff = polynomial[i];
-            reduced = coefficient::reduce32(coeff);
-            polynomial[i] = reduced;
+        reg u64 offset;
 
-            i += 1;
+        two_pow_22 = #VMOVDQU_256(TWO_POW_22_VECTOR);
+        modulus = #VMOVDQU_256(MODULUS_VECTOR);
+
+        offset = 0;
+        while(offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            // t = (a + (1 << 22)) >> 23
+            a = polynomial.[u256 offset];
+            t = #VPADD_8u32(a, two_pow_22);
+            t = #VPSRA_8u32(t, 23);
+
+            // t = a - t*Q
+            t = #VPMULL_8u32(t, modulus);
+            a = #VPSUB_8u32(a, t);
+
+            polynomial.[u256 offset] = a;
+
+            offset += 32;
         }
 
         return polynomial;
@@ -244,48 +307,20 @@ namespace polynomial {
 
     inline
     fn shift_coefficients_left(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
-        reg u64 i;
-        reg u32 coefficient;
+        reg u256 coefficients;
 
-        i = 0;
-        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
-            coefficient = polynomial[i];
-            coefficient <<= BITS_IN_LOWER_PART_OF_T;
-            polynomial[i] = coefficient;
-            i += 1;
+        reg u64 offset;
+
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            coefficients = polynomial.[u256 offset];
+            coefficients = #VPSLL_8u32(coefficients, BITS_IN_LOWER_PART_OF_T);
+
+            polynomial.[u256 offset] = coefficients;
+
+            offset += 32;
         }
 
         return polynomial;
-    }
-
-    fn use_hints(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment hints
-    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
-    {
-        reg u64 i;
-        reg u32 a h;
-
-        reg u64 msf = #init_msf();
-
-        inline bool b;
-
-        i = 0;
-        while { b = i < COEFFICIENTS_IN_POLYNOMIAL; } (b) {
-            msf = #update_msf(b, msf);
-
-            h = hints[i];
-            h = #protect_32(h, msf);
-
-            a = commitment[i];
-            a = #protect_32(a, msf);
-
-            a, msf = coefficient::use_hint(a, h, msf);
-
-            commitment[i] = a;
-
-            i += 1;
-        }
-
-        return commitment;
     }
 }

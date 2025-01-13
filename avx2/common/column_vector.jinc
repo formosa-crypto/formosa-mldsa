@@ -6,16 +6,11 @@ require "polynomial.jinc"
 namespace column_vector {
     fn reduce32(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
         -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
-        reg u64 i;
-        reg u32 original reduced;
+        inline int i;
 
-        i = 0;
-        while(i < ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
-            original = vector[i];
-            reduced = coefficient::reduce32(original);
-
-            vector[i] = reduced;
-            i += 1;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::reduce32(vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]);
         }
 
         return vector;

@@ -1,0 +1,32 @@
+namespace polynomial {
+    fn use_hints(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment hints
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 i;
+        reg u32 a h;
+
+        reg u64 msf = #init_msf();
+
+        inline bool b;
+
+        i = 0;
+        while { b = i < COEFFICIENTS_IN_POLYNOMIAL; } (b) {
+            msf = #update_msf(b, msf);
+
+            h = hints[i];
+            h = #protect_32(h, msf);
+
+            a = commitment[i];
+            a = #protect_32(a, msf);
+
+            a, msf = coefficient::use_hint(a, h, msf);
+
+            commitment[i] = a;
+
+            i += 1;
+        }
+
+        return commitment;
+    }
+}

@@ -2,6 +2,7 @@ require "parameters.jinc"
 require "arithmetic/rounding.jinc"
 require "encoding/error_polynomial.jinc"
 require "encoding/gamma1.jinc"
+require "polynomial.jinc"
 
 from Common require "sample/matrix_A.jinc"
 from Common require "sample/challenge.jinc"
