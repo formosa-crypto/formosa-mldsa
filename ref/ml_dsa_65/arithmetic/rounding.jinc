@@ -1,7 +1,6 @@
 from Common require "arithmetic/rounding.jinc"
 
 namespace coefficient {
-    // high bits = a0, low bits = a1
     inline
     fn decompose(reg u32 r) -> reg u32, reg u32 {
         reg u32 temp high_bits low_bits;

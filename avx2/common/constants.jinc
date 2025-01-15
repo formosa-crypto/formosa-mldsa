@@ -1,5 +1,16 @@
 param int MODULUS = 8_380_417;
 
+u256 MODULUS_VECTOR = (8u32)[
+    MODULUS,
+    MODULUS,
+    MODULUS,
+    MODULUS,
+    MODULUS,
+    MODULUS,
+    MODULUS,
+    MODULUS
+];
+
 param int BITS_IN_LOWER_PART_OF_T = 13;
 param int BITS_IN_LOWER_PART_OF_T_MASK = (1 << BITS_IN_LOWER_PART_OF_T) - 1;
 

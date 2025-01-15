@@ -1,14 +1,86 @@
+u256[5] CONSTANTS_TABLE = {
+    (8u32)[15, 15, 15, 15, 15, 15, 15, 15],
+    (8u32)[1025, 1025, 1025, 1025, 1025, 1025, 1025, 1025],
+    (8u32)[ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA],
+    (8u32)[127, 127, 127, 127, 127, 127, 127, 127],
+    (8u32)[512, 512, 512, 512, 512, 512, 512, 512]
+};
+
 namespace polynomial {
+    fn decompose (
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lower_part,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] upper_part
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL],
+         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        // We approximate 1 / 4092 as:
+        // ⌊2²² / 4092⌋ / 2²² = 1025 / 2²²
+        reg u256 modulus modulus_halved;
+        reg u256 v alpha;
+        reg u256 offs shift mask;
+        reg u256 coefficients comparisons;
+
+        reg u256 lower, upper;
+
+        reg u64 offset;
+
+        modulus = MODULUS_VECTOR;
+        modulus_halved = #VPSRL_8u32(modulus, 1);
+
+        mask = CONSTANTS_TABLE[0]; // 15
+        v = CONSTANTS_TABLE[1]; // 1025
+        alpha = CONSTANTS_TABLE[2]; // ALPHA
+        offs = CONSTANTS_TABLE[3]; // 127
+        shift = CONSTANTS_TABLE[4]; // 512
+
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            coefficients = polynomial.[u256 offset];
+
+            // Compute the upper bits fist
+
+            // For each coefficient |r|, first compute
+            // ceil(r / 128)
+            upper = #VPADD_8u32(coefficients, offs);
+            upper = #VPSRL_8u32(upper, 7);
+
+            upper = #VPMULHU_16u16(upper, v);
+            upper = #VPMULHRS_16u16(upper, shift);
+            upper = #VPAND_256(upper, mask);
+
+            // Then compute the lower bits
+            lower = #VPMULL_8u32(upper, alpha);
+            lower = #VPSUB_8u32(coefficients, lower);
+            comparisons = #VPCMPGT_8u32(lower, modulus_halved);
+
+            comparisons = #VPAND_256(comparisons, modulus);
+            lower = #VPSUB_8u32(lower, comparisons);
+
+            lower_part.[u256 offset] = lower;
+            upper_part.[u256 offset] = upper;
+
+            offset += 32;
+        }
+
+        return lower_part, upper_part;
+    }
+
+    // TODO: Ideally, we'd use VBLENDVPS to implement this, but it's not
+    // available in Jasmin yet.
     fn use_hints(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment hints
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u64 i;
         reg u32 a h;
+        stack u32[COEFFICIENTS_IN_POLYNOMIAL] lower_part higher_part;
 
         reg u64 msf = #init_msf();
 
         inline bool b;
+
+        lower_part, higher_part = decompose(commitment, lower_part, higher_part);
 
         i = 0;
         while { b = i < COEFFICIENTS_IN_POLYNOMIAL; } (b) {
@@ -17,10 +89,7 @@ namespace polynomial {
             h = hints[i];
             h = #protect_32(h, msf);
 
-            a = commitment[i];
-            a = #protect_32(a, msf);
-
-            a, msf = coefficient::use_hint(a, h, msf);
+            a, msf = coefficient::use_hint(lower_part[i], higher_part[i], h, msf);
 
             commitment[i] = a;
 
@@ -29,4 +98,5 @@ namespace polynomial {
 
         return commitment;
     }
+
 }

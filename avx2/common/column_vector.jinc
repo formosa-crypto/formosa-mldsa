@@ -110,19 +110,16 @@ namespace column_vector {
        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] low high;
-        reg u32 coefficient low_bits high_bits;
-        reg u64 i;
 
-        i = 0;
-        while(i < ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
-            coefficient = vector[i];
-
-            low_bits, high_bits = coefficient::decompose(coefficient);
-
-            low[i] = low_bits;
-            high[i] = high_bits;
-
-            i += 1;
+        inline int i;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            low[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+            high[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::decompose(
+                    vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                    low[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                    high[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                );
         }
 
         return low, high;

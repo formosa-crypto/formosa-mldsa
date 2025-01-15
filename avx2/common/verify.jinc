@@ -37,7 +37,7 @@ fn compare_commitment_hashes(stack u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg u64 
     return result;
 }
 
-inline 
+inline
 fn reconstruct_signer_commitment(
     reg ptr u8[T1_ENCODED_SIZE] t1_encoded,
     #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] challenge_as_ntt,

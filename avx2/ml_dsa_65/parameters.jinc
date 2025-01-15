@@ -13,6 +13,7 @@ param int GAMMA1 = (1 << 19);
 param int BITS_TO_ENCODE_GAMMA1_COEFFICIENT = 20;
 
 param int GAMMA2 = (MODULUS - 1) / 32;
+param int ALPHA = 2 * GAMMA2;
 
 param int MAX_ONES_IN_HINT = 55;
 

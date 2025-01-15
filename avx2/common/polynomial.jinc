@@ -1,16 +1,5 @@
 require "arithmetic/modular.jinc"
 
-// For use in fn pointwise_montgomery_multiply_and_reduce() below
-u256 MODULUS_VECTOR = (8u32)[
-    MODULUS,
-    MODULUS,
-    MODULUS,
-    MODULUS,
-    MODULUS,
-    MODULUS,
-    MODULUS,
-    MODULUS
-];
 u256 INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR = (8u32)[
     INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
     INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
@@ -201,7 +190,7 @@ namespace polynomial {
         reg u256 coefficients;
         reg u256 zero threshold_vector;
         reg u256 exceeds exceeds_negative exceeds_any;
-        reg u64 msb_mask;
+        reg u32 msb_mask;
         reg u8 result;
         reg bool zf;
 
@@ -231,8 +220,8 @@ namespace polynomial {
             offset += 32;
         }
 
-        msb_mask = #VPMOVMSKB_u256u64(exceeds_any);
-        _, _, _, _, zf = #TEST_64(msb_mask, msb_mask);
+        msb_mask = #VPMOVMSKB_u256u32(exceeds_any);
+        _, _, _, _, zf = #TEST_32(msb_mask, msb_mask);
         result = #SETcc(!zf);
 
         return result;
