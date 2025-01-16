@@ -1,74 +1,47 @@
 namespace t1 {
+    u256[3] ENCODING_SHIFTS_TABLE = {
+        (8u32)[0, 22, 0, 22, 0, 22, 0, 22],
+        (8u32)[0, 0, 6, 4, 0, 0, 2, 0],
+        (8u32)[0, 12, 0, 12, 0, 12, 0, 12]
+    };
     fn encode_polynomial(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1,
         reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] t1_encoded
     ) -> reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE]
     {
-        reg u64 i;
-        reg u64 input_offset output_offset;
-        reg u32 encoded_bytes encoded_byte;
+        reg u256 combined shifts;
+        reg u256 coefficients;
 
-        input_offset = 0;
-        output_offset = 0;
+        reg u64 offset encoded_offset;
 
-        i = 0;
-        while(i < COEFFICIENTS_IN_POLYNOMIAL / 4) {
-            // t1_encoded[5*i+0] = t1[4*i+0] >> 0;
+        offset = 0;
+        encoded_offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            coefficients = t1.[u256 offset];
 
-            encoded_bytes = t1[input_offset];
+            // Combine the 2 adjacent coefficients
+            shifts = ENCODING_SHIFTS_TABLE[0]; // (8u32)[0, 22, 0, 22, 0, 22, 0, 22]
+            combined = #VPSLLV_8u32(coefficients, shifts);
+            combined = #VPSRL_4u64(combined, 22);
 
-            t1_encoded[output_offset] = (8u)encoded_bytes;
-            output_offset += 1;
+            // Combine the 4 adjacent coefficients
+            shifts = ENCODING_SHIFTS_TABLE[1]; // (8u32)[0, 0, 6, 4, 0, 0, 2, 0]
+            combined = #VPERMD(shifts, combined);
 
-            // t1_encoded[5*i+1] = (t1[4*i+0] >> 8) | (t1[4*i+1] << 2);
+            shifts = ENCODING_SHIFTS_TABLE[2]; // (8u32)[0, 12, 0, 12, 0, 12, 0, 12]
+            combined = #VPSLLV_8u32(combined, shifts);
+            combined = #VPSRL_4u64(combined, 12);
 
-            encoded_bytes = t1[input_offset];
-            encoded_bytes >>= 8;
+            // We should now have 40 bits starting at position 0 in the lower
+            // 128-bit lane of |combined|
+            #VMOVDQU_128(t1_encoded.[u128 encoded_offset]) = #VEXTRACTI128(combined, 0);
 
-            input_offset += 1;
-            encoded_byte = t1[input_offset];
-            encoded_byte <<= 2;
-            encoded_bytes |= encoded_byte;
+            // and 40 bits starting at position 0 in the upper 128-bit lane
+            // of |combined|
+            #VMOVDQU_128(t1_encoded.[u128 encoded_offset + 5]) = #VEXTRACTI128(combined, 1);
 
-            t1_encoded[output_offset] = (8u)encoded_bytes;
-            output_offset += 1;
-
-            // t1_encoded[5*i+2] = (t1[4*i+1] >> 6) | (t1[4*i+2] << 4);
-
-            encoded_bytes = t1[input_offset];
-            encoded_bytes >>= 6;
-
-            input_offset += 1;
-            encoded_byte = t1[input_offset];
-            encoded_byte <<= 4;
-            encoded_bytes |= encoded_byte;
-
-            t1_encoded[output_offset] = (8u)encoded_bytes;
-            output_offset += 1;
-
-            // t1_encoded[5*i+3] = (t1[4*i+2] >> 4) | (t1[4*i+3] << 6);
-
-            encoded_bytes = t1[input_offset];
-            encoded_bytes >>= 4;
-
-            input_offset += 1;
-            encoded_byte = t1[input_offset];
-            encoded_byte <<= 6;
-            encoded_bytes |= encoded_byte;
-
-            t1_encoded[output_offset] = (8u)encoded_bytes;
-            output_offset += 1;
-
-            // t1_encoded[5*i+4] = (t1[4*i+3] >> 2);
-
-            encoded_bytes = t1[input_offset];
-            encoded_bytes >>= 2;
-
-            t1_encoded[output_offset] = (8u)encoded_bytes;
-            output_offset += 1;
-
-            input_offset += 1;
-            i += 1;
+            encoded_offset += 10;
+            offset += 32;
         }
 
         return t1_encoded;
@@ -97,70 +70,52 @@ namespace t1 {
         return encoded;
     }
 
+    u256[2] DECODING_TABLE = {
+        (32u8)[-1, -1, 9, 8, -1, -1, 8, 7, -1, -1, 7, 6, -1, -1, 6, 5, -1,
+               -1, 4, 3, -1, -1, 3, 2, -1, -1, 2, 1, -1, -1, 1, 0],
+        (8u32)[6, 4, 2, 0, 6, 4, 2, 0]
+    };
+    u256 mask = (8u32)[BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK];
+
     fn decode_polynomial(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1,
         reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] t1_encoded
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 i output_offset input_offset;
-        reg u32 coefficient;
-        reg u32 temp1 temp2;
+        reg u64 encoded_offset offset;
 
-        input_offset = 0;
-        output_offset = 0;
+        reg u128 byte_chunk;
 
-        i = 0;
-        while (i < COEFFICIENTS_IN_POLYNOMIAL / 4) {
-            coefficient = (32u)t1_encoded[input_offset];
-            input_offset += 1;
+        reg u256 coefficients;
+        reg u256 shifts;
 
-            temp1 = (32u)t1_encoded[input_offset];
-            input_offset += 1;
+        encoded_offset = 0;
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            // We process only 10 bytes at a time.
+            byte_chunk = t1_encoded.[u128 encoded_offset];
+            encoded_offset += 10;
 
-            temp2 = temp1;
-            temp1 <<= 8;
-            coefficient |= temp1;
-            coefficient &= BITS_IN_UPPER_PART_OF_T_MASK;
+            coefficients = #VINSERTI128(coefficients, byte_chunk, 0);
+            coefficients = #VINSERTI128(coefficients, byte_chunk, 1);
 
-            t1[output_offset] = coefficient;
-            output_offset += 1; 
+            shifts = DECODING_TABLE[0];
+            coefficients = #VPSHUFB_256(coefficients, shifts);
 
-            coefficient = temp2 >> 2;
-            temp1 = (32u)t1_encoded[input_offset];
-            input_offset += 1;
+            shifts = DECODING_TABLE[1];
+            coefficients = #VPSRLV_8u32(coefficients, shifts);
 
-            temp2 = temp1;
-            temp1 <<= 6;
-            coefficient |= temp1;
-            coefficient &= BITS_IN_UPPER_PART_OF_T_MASK;
+            coefficients = #VPAND_256(coefficients, mask);
 
-            t1[output_offset] = coefficient;
-            output_offset += 1; 
-
-            coefficient = temp2 >> 4;
-            temp1 = (32u)t1_encoded[input_offset];
-            input_offset += 1;
-
-            temp2 = temp1;
-            temp1 <<= 4;
-            coefficient |= temp1;
-            coefficient &= BITS_IN_UPPER_PART_OF_T_MASK;
-
-            t1[output_offset] = coefficient;
-            output_offset += 1; 
-
-            coefficient = temp2 >> 6;
-
-            temp1 = (32u)t1_encoded[input_offset];
-            input_offset += 1;
-
-            temp1 <<= 2;
-            coefficient |= temp1;
-
-            t1[output_offset] = coefficient;
-            output_offset += 1; 
-
-            i += 1;
+            t1.[u256 offset] = coefficients;
+            offset += 32;
         }
 
         return t1;
