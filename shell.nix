@@ -1,5 +1,5 @@
 let
-  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/6dbbd5a2622d9abf9263a5cb0a85ca218974b085.tar.gz") {};
+  pkgs = import (fetchTarball "https://github.com/NixOS/nixpkgs/archive/3ca2cedac25e364aaa53599c85f16e89c3305c1d.tar.gz") {};
 in pkgs.mkShell {
   packages = [
     (pkgs.python3.withPackages (python-pkgs: with python-pkgs; [
