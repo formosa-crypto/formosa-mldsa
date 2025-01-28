@@ -229,7 +229,7 @@ namespace t0 {
         return encoded;
     }
 
-    u256[4] DECODING_TABLE = {
+    u256[3] DECODING_TABLE = {
         (32u8)[
             -1, -1, 12, 11, -1, 11, 10, 9,
             -1, -1, 9, 8, -1, 8, 7, 6, -1,
@@ -246,16 +246,6 @@ namespace t0 {
             BITS_IN_LOWER_PART_OF_T_MASK,
             BITS_IN_LOWER_PART_OF_T_MASK,
             BITS_IN_LOWER_PART_OF_T_MASK
-        ],
-        (8u32)[
-            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
-            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
-            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
-            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
-            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
-            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
-            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
-            (1 << BITS_IN_LOWER_PART_OF_T) / 2
         ]
     };
 
@@ -291,7 +281,7 @@ namespace t0 {
             mask = DECODING_TABLE[2];
             coefficients = #VPAND_256(coefficients, mask);
 
-            shifts = DECODING_TABLE[3];
+            shifts = HALF_OF_BITS_IN_T0_VECTOR;
             coefficients = #VPSUB_8u32(shifts, coefficients);
 
             t0.[u256 offset] = coefficients;

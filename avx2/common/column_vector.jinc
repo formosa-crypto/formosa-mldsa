@@ -45,24 +45,21 @@ namespace column_vector {
     }
 
     inline
-    fn power2round(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] v)
-        -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    fn power2round(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+        -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
+           stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t1 t0;
-        #spill_to_mmx reg u64 i;
-        reg u32 x y1 y2;
 
-        i = 0;
-        while(i < ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
-            x = v[i];
-
-            () = #spill(i);
-            y1, y2 = coefficient::power2round(x);
-            () = #unspill(i);
-
-            t1[i] = y1;
-            t0[i] = y2;
-            i += 1;
+        inline int i;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            t1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+            t0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                = polynomial::power2round(
+                      vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                      t1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                      t0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                  );
         }
 
         return t1, t0;

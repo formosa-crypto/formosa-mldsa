@@ -308,4 +308,44 @@ namespace polynomial {
 
         return polynomial;
     }
+
+    u256 ONES_VECTOR = (8u32)[1, 1, 1, 1, 1, 1, 1, 1];
+    inline
+    fn power2round(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] highbits,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lowbits
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL],
+         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 coefficients;
+        reg u256 high low;
+        reg u256 half_t0_bits ones_vector;
+
+        reg u64 offset;
+
+        half_t0_bits = HALF_OF_BITS_IN_T0_VECTOR;
+        ones_vector = ONES_VECTOR;
+
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            coefficients = polynomial.[u256 offset];
+
+            high = #VPADD_8u32(coefficients, half_t0_bits);
+            high = #VPSUB_8u32(high, ones_vector);
+            high = #VPSRA_8u32(high, BITS_IN_LOWER_PART_OF_T);
+
+            low = #VPSLL_8u32(high, BITS_IN_LOWER_PART_OF_T);
+            low = #VPSUB_8u32(coefficients, low);
+
+            highbits.[u256 offset] = high;
+            lowbits.[u256 offset] = low;
+
+            offset += 32;
+        }
+
+        return highbits, lowbits;
+    }
+
+
 }
