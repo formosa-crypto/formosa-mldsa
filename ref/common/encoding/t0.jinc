@@ -1,5 +1,5 @@
 namespace t0 {
-    inline fn change_t0_interval(reg u32 coefficient) -> reg u32
+    fn change_t0_interval(reg u32 coefficient) -> reg u32
     {
         coefficient = -coefficient;
         coefficient += (1 << BITS_IN_LOWER_PART_OF_T) / 2;

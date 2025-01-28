@@ -189,7 +189,7 @@ namespace polynomial {
     {
         reg u256 coefficients;
         reg u256 zero threshold_vector;
-        reg u256 exceeds exceeds_negative exceeds_any;
+        reg u256 exceeds exceeds_any;
         reg u32 msb_mask;
         reg u8 result;
         reg bool zf;
@@ -208,13 +208,9 @@ namespace polynomial {
         while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
             coefficients = polynomial.[u256 offset];
 
-            // TODO: If performance is lacking, add and use mm256_abs_epi32()
-            // instead of the following 3 lines.
+            coefficients = #VPABS_8u32(coefficients);
             exceeds = #VPCMPGT_8u32(coefficients, threshold_vector);
-            coefficients = #VPSUB_8u32(zero, coefficients);
-            exceeds_negative = #VPCMPGT_8u32(coefficients, threshold_vector);
 
-            exceeds = #VPOR_256(exceeds, exceeds_negative);
             exceeds_any = #VPOR_256(exceeds_any, exceeds);
 
             offset += 32;

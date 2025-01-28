@@ -1,5 +1,5 @@
 namespace t0 {
-    inline fn change_t0_interval(reg u32 coefficient) -> reg u32
+    fn change_t0_interval(reg u32 coefficient) -> reg u32
     {
         coefficient = -coefficient;
         coefficient += (1 << BITS_IN_LOWER_PART_OF_T) / 2;
@@ -229,193 +229,73 @@ namespace t0 {
         return encoded;
     }
 
+    u256[4] DECODING_TABLE = {
+        (32u8)[
+            -1, -1, 12, 11, -1, 11, 10, 9,
+            -1, -1, 9, 8, -1, 8, 7, 6, -1,
+            6, 5, 4, -1, -1, 4, 3, -1, 3,
+            2, 1, -1, -1, 1, 0
+        ],
+        (8u32)[3, 6, 1, 4, 7, 2, 5, 0],
+        (8u32)[
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK
+        ],
+        (8u32)[
+            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
+            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
+            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
+            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
+            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
+            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
+            (1 << BITS_IN_LOWER_PART_OF_T) / 2,
+            (1 << BITS_IN_LOWER_PART_OF_T) / 2
+        ]
+    };
+
     inline
     fn decode_polynomial(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0,
-        reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE] src
+        reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE] t0_encoded
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 i;
-        reg u64 input_offset output_offset;
-        reg u32 coefficient encoded_byte;
+        reg u64 encoded_offset offset;
 
-        output_offset = 0;
+        reg u128 byte_chunk;
 
-        i = 0;
-        while(i < COEFFICIENTS_IN_POLYNOMIAL / 8) {
-            // r->coeffs[8*i+0] = a[13*i+0];
-            // r->coeffs[8*i+0] |= (uint32_t)a[13*i+1] << 8;
-            // r->coeffs[8*i+0] &= BITS_IN_LOWER_PART_OF_T_MASK;
-            // r->coeffs[8*i+0] = (1 << (D-1)) - r->coeffs[8*i+0];
+        reg u256 coefficients;
+        reg u256 shifts mask;
 
-            input_offset = (64u) i;
-            input_offset *= 13;
-            coefficient = (32u) src[input_offset];
+        encoded_offset = 0;
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            // We process only 13 bytes at a time.
+            byte_chunk = t0_encoded.[u128 encoded_offset];
+            encoded_offset += 13;
 
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 8;
-            coefficient |= encoded_byte;
+            coefficients = #VINSERTI128(coefficients, byte_chunk, 0);
+            coefficients = #VINSERTI128(coefficients, byte_chunk, 1);
 
-            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
+            shifts = DECODING_TABLE[0];
+            coefficients = #VPSHUFB_256(coefficients, shifts);
 
-            coefficient = change_t0_interval(coefficient);
-            t0[output_offset] = coefficient;
-            output_offset += 1;
+            shifts = DECODING_TABLE[1];
+            coefficients = #VPSRLV_8u32(coefficients, shifts);
 
-            // r->coeffs[8*i+1]  = a[13*i+1] >> 5;
-            // r->coeffs[8*i+1] |= (uint32_t)a[13*i+2] << 3;
-            // r->coeffs[8*i+1] |= (uint32_t)a[13*i+3] << 11;
-            // r->coeffs[8*i+1] &= BITS_IN_LOWER_PART_OF_T_MASK;
-            // r->coeffs[8*i+1] = (1 << (D-1)) - r->coeffs[8*i+1];
+            mask = DECODING_TABLE[2];
+            coefficients = #VPAND_256(coefficients, mask);
 
-            coefficient = (32u) src[input_offset];
-            coefficient >>= 5;
+            shifts = DECODING_TABLE[3];
+            coefficients = #VPSUB_8u32(shifts, coefficients);
 
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 3;
-            coefficient |= encoded_byte;
-
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 11;
-            coefficient |= encoded_byte;
-
-            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
-
-            coefficient = change_t0_interval(coefficient);
-            t0[output_offset] = coefficient;
-            output_offset += 1;
-
-            // r->coeffs[8*i+2]  = a[13*i+3] >> 2;
-            // r->coeffs[8*i+2] |= (uint32_t)a[13*i+4] << 6;
-            // r->coeffs[8*i+2] &= BITS_IN_LOWER_PART_OF_T_MASK;
-            // r->coeffs[8*i+2] = (1 << (D-1)) - r->coeffs[8*i+2];
-
-            coefficient = (32u) src[input_offset];
-            coefficient >>= 2;
-
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 6;
-            coefficient |= encoded_byte;
-
-            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
-
-            coefficient = change_t0_interval(coefficient);
-            t0[output_offset] = coefficient;
-            output_offset += 1;
-
-            // r->coeffs[8*i+3]  = a[13*i+4] >> 7;
-            // r->coeffs[8*i+3] |= (uint32_t)a[13*i+5] << 1;
-            // r->coeffs[8*i+3] |= (uint32_t)a[13*i+6] << 9;
-            // r->coeffs[8*i+3] &= BITS_IN_LOWER_PART_OF_T_MASK;
-            // r->coeffs[8*i+3] = (1 << (D-1)) - r->coeffs[8*i+3];
-            coefficient = (32u) src[input_offset];
-            coefficient >>= 7;
-
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 1;
-            coefficient |= encoded_byte;
-
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 9;
-            coefficient |= encoded_byte;
-
-            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
-
-            coefficient = change_t0_interval(coefficient);
-            t0[output_offset] = coefficient;
-            output_offset += 1;
-
-            // r->coeffs[8*i+4]  = a[13*i+6] >> 4;
-            // r->coeffs[8*i+4] |= (uint32_t)a[13*i+7] << 4;
-            // r->coeffs[8*i+4] |= (uint32_t)a[13*i+8] << 12;
-            // r->coeffs[8*i+4] &= BITS_IN_LOWER_PART_OF_T_MASK;
-            // r->coeffs[8*i+4] = (1 << (D-1)) - r->coeffs[8*i+4];
-            coefficient = (32u) src[input_offset];
-            coefficient >>= 4;
-
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 4;
-            coefficient |= encoded_byte;
-
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 12;
-            coefficient |= encoded_byte;
-
-            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
-
-            coefficient = change_t0_interval(coefficient);
-            t0[output_offset] = coefficient;
-            output_offset += 1;
-
-            // r->coeffs[8*i+5]  = a[13*i+8] >> 1;
-            // r->coeffs[8*i+5] |= (uint32_t)a[13*i+9] << 7;
-            // r->coeffs[8*i+5] &= BITS_IN_LOWER_PART_OF_T_MASK;
-            // r->coeffs[8*i+5] = (1 << (D-1)) - r->coeffs[8*i+5];
-            coefficient = (32u) src[input_offset];
-            coefficient >>= 1;
-
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 7;
-            coefficient |= encoded_byte;
-
-            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
-
-            coefficient = change_t0_interval(coefficient);
-            t0[output_offset] = coefficient;
-            output_offset += 1;
-
-            // r->coeffs[8*i+6]  = a[13*i+9] >> 6;
-            // r->coeffs[8*i+6] |= (uint32_t)a[13*i+10] << 2;
-            // r->coeffs[8*i+6] |= (uint32_t)a[13*i+11] << 10;
-            // r->coeffs[8*i+6] &= BITS_IN_LOWER_PART_OF_T_MASK;
-            // r->coeffs[8*i+6] = (1 << (D-1)) - r->coeffs[8*i+6];
-            coefficient = (32u) src[input_offset];
-            coefficient >>= 6;
-
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 2;
-            coefficient |= encoded_byte;
-
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 10;
-            coefficient |= encoded_byte;
-
-            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
-
-            coefficient = change_t0_interval(coefficient);
-            t0[output_offset] = coefficient;
-            output_offset += 1;
-
-            // r->coeffs[8*i+7]  = a[13*i+11] >> 3;
-            // r->coeffs[8*i+7] |= (uint32_t)a[13*i+12] << 5;
-            // r->coeffs[8*i+7] &= BITS_IN_LOWER_PART_OF_T_MASK;
-            // r->coeffs[8*i+7] = (1 << (D-1)) - r->coeffs[8*i+7];
-            coefficient = (32u) src[input_offset];
-            coefficient >>= 3;
-
-            input_offset += 1;
-            encoded_byte = (32u) src[input_offset];
-            encoded_byte <<= 5;
-            coefficient |= encoded_byte;
-
-            coefficient &= BITS_IN_LOWER_PART_OF_T_MASK;
-
-            coefficient = change_t0_interval(coefficient);
-            t0[output_offset] = coefficient;
-            output_offset += 1;
-
-            i += 1;
+            t0.[u256 offset] = coefficients;
+            offset += 32;
         }
 
         return t0;
