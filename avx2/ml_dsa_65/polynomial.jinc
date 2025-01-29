@@ -1,16 +1,15 @@
-u256[5] CONSTANTS_TABLE = {
-    (8u32)[15, 15, 15, 15, 15, 15, 15, 15],
-    (8u32)[1025, 1025, 1025, 1025, 1025, 1025, 1025, 1025],
-    (8u32)[ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA],
-    (8u32)[127, 127, 127, 127, 127, 127, 127, 127],
-    (8u32)[512, 512, 512, 512, 512, 512, 512, 512]
-};
-
 namespace polynomial {
+    u256[5] CONSTANTS_TABLE = {
+        (8u32)[15, 15, 15, 15, 15, 15, 15, 15],
+        (8u32)[1025, 1025, 1025, 1025, 1025, 1025, 1025, 1025],
+        (8u32)[ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA],
+        (8u32)[127, 127, 127, 127, 127, 127, 127, 127],
+        (8u32)[512, 512, 512, 512, 512, 512, 512, 512]
+    };
     fn decompose (
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lower_part,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] upper_part
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lows,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] highs
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL],
          reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -57,43 +56,51 @@ namespace polynomial {
             comparisons = #VPAND_256(comparisons, modulus);
             lower = #VPSUB_8u32(lower, comparisons);
 
-            lower_part.[u256 offset] = lower;
-            upper_part.[u256 offset] = upper;
+            lows.[u256 offset] = lower;
+            highs.[u256 offset] = upper;
 
             offset += 32;
         }
 
-        return lower_part, upper_part;
+        return lows, highs;
     }
 
-    // TODO: Ideally, we'd use VBLENDVPS to implement this, but it's not
-    // available in Jasmin yet.
     fn use_hints(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment hints
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment hint_polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 i;
-        reg u32 a h;
-        stack u32[COEFFICIENTS_IN_POLYNOMIAL] lower_part higher_part;
+        reg u256 zeros;
+        reg u256 hints;
+        reg u256 coefficients;
+        reg u256 high low;
+        reg u256 mask;
 
-        reg u64 msf = #init_msf();
+        stack u32[COEFFICIENTS_IN_POLYNOMIAL] highs lows;
 
-        inline bool b;
+        reg u64 offset temp;
 
-        lower_part, higher_part = decompose(commitment, lower_part, higher_part);
+        temp = 15;
+        mask = (256u)#VMOV(temp);
+        mask = #VPBROADCAST_8u32(mask);
 
-        i = 0;
-        while { b = i < COEFFICIENTS_IN_POLYNOMIAL; } (b) {
-            msf = #update_msf(b, msf);
+        ?{}, zeros = #set0_256();
 
-            h = hints[i];
-            h = #protect_32(h, msf);
+        lows, highs = decompose(commitment, lows, highs);
 
-            a, msf = coefficient::use_hint(lower_part[i], higher_part[i], h, msf);
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            low = lows.[u256 offset];
+            hints = hint_polynomial.[u256 offset];
 
-            commitment[i] = a;
+            hints = #VPSIGN_8s32(hints, low);
 
-            i += 1;
+            high = highs.[u256 offset];
+            coefficients = #VPADD_8u32(high, hints);
+            coefficients = #VPAND_256(coefficients, mask);
+
+            commitment.[u256 offset] = coefficients;
+
+            offset += 32;
         }
 
         return commitment;

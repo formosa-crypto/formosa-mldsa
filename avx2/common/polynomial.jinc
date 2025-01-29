@@ -346,6 +346,4 @@ namespace polynomial {
 
         return highbits, lowbits;
     }
-
-
 }

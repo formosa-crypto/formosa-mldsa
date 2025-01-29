@@ -1,37 +1,34 @@
+// TODO: Ideally, we'd short circuit on failure.
 inline
 fn compare_commitment_hashes(stack u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg u64 {
-    // TODO: Short circuit on failure
-
-    reg u64 i;
-    reg u8 lhs_byte rhs_byte;
+    reg u128 lhs_bytes rhs_bytes;
+    reg u128 result_vec temp;
 
     reg u64 result;
+    reg u64 offset;
 
-    inline bool condition;
+    offset = 0;
 
-    reg u64 msf = #init_msf();
+    lhs_bytes = lhs.[u128 offset];
+    rhs_bytes = rhs.[u128 offset];
+    result_vec = #VPCMPEQ_16u8(lhs_bytes, rhs_bytes);
+    offset += 16;
 
-    result = 0;
+    while (offset < COMMITMENT_HASH_SIZE) {
+        lhs_bytes = lhs.[u128 offset];
+        rhs_bytes = rhs.[u128 offset];
 
-    i = 0;
-    while { condition = i < COMMITMENT_HASH_SIZE; } (condition) {
-        msf = #update_msf(condition, msf);
+        temp = #VPCMPEQ_16u8(lhs_bytes, rhs_bytes);
+        result_vec = #VPAND_128(result_vec, temp);
 
-        lhs_byte = lhs[i];
-        lhs_byte = #protect_8(lhs_byte, msf);
+        offset += 16;
+    }
 
-        rhs_byte = rhs[i];
-        rhs_byte = #protect_8(rhs_byte, msf);
-
-        condition = lhs_byte != rhs_byte;
-        if (condition) {
-            msf = #update_msf(condition, msf);
-            result |= (64u)-1;
-        } else {
-            msf = #update_msf(!condition, msf);
-        }
-
-        i += 1;
+    result = #VPMOVMSKB_u128u64(result_vec);
+    if (result == 0xFF_FF) {
+        result = 0;
+    } else {
+        result = -1;
     }
 
     return result;
