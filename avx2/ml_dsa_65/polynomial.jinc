@@ -77,11 +77,9 @@ namespace polynomial {
 
         stack u32[COEFFICIENTS_IN_POLYNOMIAL] highs lows;
 
-        reg u64 offset temp;
+        reg u64 offset;
 
-        temp = 15;
-        mask = (256u)#VMOV(temp);
-        mask = #VPBROADCAST_8u32(mask);
+        mask = CONSTANTS_TABLE[0]; // 15
 
         ?{}, zeros = #set0_256();
 

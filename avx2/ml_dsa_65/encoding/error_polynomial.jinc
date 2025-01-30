@@ -1,66 +1,141 @@
 namespace error_polynomial {
-    fn encode(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
-              reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
+    u256 ENCODE_SHUFFLE_INDICES = (32u8)[
+        15, 14, 7, 6, 13, 12, 5, 4,
+        11, 10, 3, 2, 9, 8, 1, 0, 15,
+        14, 7, 6, 13, 12, 5, 4, 11, 10,
+        3, 2, 9, 8, 1, 0
+    ];
+    fn encode(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
     ) -> reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE]
     {
-        reg u32 low_nibble high_nibble;
-        reg u32 coefficient;
+        reg u256 c0 c1 c2 c3 c4 c5 c6 c7;
+        reg u256 shift shuffle_indices;
+        reg u256 eta;
 
-        reg u64 i out_offset;
+        reg u64 offset encoded_offset temp;
 
-        i = 0;
-        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
-            coefficient = polynomial[i];
-            low_nibble = ETA;
-            low_nibble -= coefficient;
+        temp = (16 << 8) + 1;
+        shift = (256u)#VMOV(temp);
+        shift = #VPBROADCAST_16u16(shift);
 
-            coefficient = polynomial[i + 1];
-            high_nibble = ETA;
-            high_nibble -= coefficient;
+        temp = ETA;
+        eta = (256u)#VMOV(temp);
+        eta = #VPBROADCAST_8u32(eta);
 
-            high_nibble <<= 4;
-            high_nibble |= low_nibble;
+        shuffle_indices = ENCODE_SHUFFLE_INDICES;
 
-            out_offset = i;
-            out_offset >>= 1;
-            encoded[out_offset] = high_nibble;
+        offset = 0;
+        encoded_offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            c0 = polynomial.[u256 offset];
+            c0 = #VPSUB_8u32(eta, c0);
+            offset += 32;
 
-            i += 2;
+            c1 = polynomial.[u256 offset];
+            c1 = #VPSUB_8u32(eta, c1);
+            offset += 32;
+
+            c2 = polynomial.[u256 offset];
+            c2 = #VPSUB_8u32(eta, c2);
+            offset += 32;
+
+            c3 = polynomial.[u256 offset];
+            c3 = #VPSUB_8u32(eta, c3);
+            offset += 32;
+
+            c4 = polynomial.[u256 offset];
+            c4 = #VPSUB_8u32(eta, c4);
+            offset += 32;
+
+            c5 = polynomial.[u256 offset];
+            c5 = #VPSUB_8u32(eta, c5);
+            offset += 32;
+
+            c6 = polynomial.[u256 offset];
+            c6 = #VPSUB_8u32(eta, c6);
+            offset += 32;
+
+            c7 = polynomial.[u256 offset];
+            c7 = #VPSUB_8u32(eta, c7);
+            offset += 32;
+
+            c0 = #VPACKUS_8u32(c0, c1);
+            c1 = #VPACKUS_8u32(c2, c3);
+            c2 = #VPACKUS_8u32(c4, c5);
+            c3 = #VPACKUS_8u32(c6, c7);
+
+            c0 = #VPACKUS_16u16(c0, c1);
+            c1 = #VPACKUS_16u16(c2, c3);
+
+            c0 = #VPMADDUBSW_256(c0, shift);
+            c1 = #VPMADDUBSW_256(c1, shift);
+
+            c0 = #VPACKUS_16u16(c0, c1);
+            c0 = #VPERMQ(c0, 0xD8);
+
+            c0 = #VPSHUFB_256(c0, shuffle_indices);
+
+            encoded.[u256 encoded_offset] = c0;
+            encoded_offset += 32;
         }
 
         return encoded;
     }
 
+    u256 DECODE_SHUFFLE_INDICES = (32u8)[
+        -1, -1, -1, 3,
+        -1, -1, -1, 3,
+        -1, -1, -1, 2,
+        -1, -1, -1, 2,
+        -1, -1, -1, 1,
+        -1, -1, -1, 1,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    ];
+    u256 SHIFTS = (8u32)[4, 0, 4, 0, 4, 0, 4, 0];
     fn decode(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] decoded,
         reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u32 nibble;
+        reg u128 bytes;
+        reg u256 coefficients;
+        reg u256 shuffle_indices;
+        reg u256 mask shifts;
+        reg u256 eta;
 
-        reg u64 i;
+        reg u64 offset decoded_offset temp;
 
-        i = 0;
-        while (i < COEFFICIENTS_IN_POLYNOMIAL / 2) {
-            // low_nibble = encoded[i] & 0x0F;
-            // decoded[2*i + 0] = ETA - low_nibble;
-            nibble = (32u)encoded[i];
-            nibble &= 0x0F;
+        temp = (1 << 4) - 1;
+        mask = (256u)#VMOV(temp);
+        mask = #VPBROADCAST_8u32(mask);
 
-            nibble = -nibble;
-            nibble += ETA;
-            decoded[2 * i] = nibble;
+        temp = ETA;
+        eta = (256u)#VMOV(temp);
+        eta = #VPBROADCAST_8u32(eta);
 
-            // high_nibble = encoded[i] >> 4;
-            // decoded[2*i+1] = ETA - high_nibble;
-            nibble = (32u)encoded[i];
-            nibble >>= 4;
+        shuffle_indices = DECODE_SHUFFLE_INDICES;
+        shifts = SHIFTS;
 
-            nibble = -nibble;
-            nibble += ETA;
-            decoded[2*i + 1] = nibble;
+        offset = 0;
+        decoded_offset = 0;
+        while (offset < ENCODED_ERROR_POLYNOMIAL_SIZE) {
+            bytes = encoded.[u128 offset];
+            offset += 4;
 
-            i += 1;
+            coefficients = #VINSERTI128(coefficients, bytes, 0);
+            coefficients = #VINSERTI128(coefficients, bytes, 1);
+
+            coefficients = #VPSHUFB_256(coefficients, shuffle_indices);
+            coefficients = #VPSRLV_8u32(coefficients, shifts);
+            coefficients = #VPAND_256(coefficients, mask);
+
+            coefficients = #VPSUB_8u32(eta, coefficients);
+
+            decoded.[u256 decoded_offset] = coefficients;
+            decoded_offset += 32;
         }
 
         return decoded;
