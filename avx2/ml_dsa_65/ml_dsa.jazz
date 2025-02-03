@@ -1,7 +1,7 @@
 require "parameters.jinc"
 require "encoding/error_polynomial.jinc"
 require "encoding/gamma1.jinc"
-require "polynomial.jinc"
+require "arithmetic/rounding.jinc"
 
 from Common require "arithmetic/rounding.jinc"
 from Common require "sample/matrix_A.jinc"
