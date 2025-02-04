@@ -225,36 +225,67 @@ namespace polynomial {
 
     inline
     fn make_hint(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f0 f1,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] low_coefficients high_coefficients,
         #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints
     ) -> reg u32, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        // TODO: To make this avx2, we'll need implementations of:
-        // - mm256_abs_epi32()
-        // - mm256_sign_epi32()
-        reg u32 weight a0 a1 hint;
-        #spill_to_mmx reg u64 i;
+        reg u256 hint_block;
+        reg u256 low abs_low high;
+        reg u256 gamma2 minus_gamma2;
+        reg u256 low_out_of_bounds;
+        reg u256 low_equals_minus_gamma2_and_high_is_nonzero;
+        reg u256 zeros;
 
-        reg u64 msf = #init_msf();
+        reg u64 offset temp;
+        reg u32 num_hints weight;
 
-        inline bool condition;
+        temp = GAMMA2;
+        gamma2 = (256u)#VMOV_64(temp);
+        gamma2 = #VPBROADCAST_8u32(gamma2);
+
+        temp = -GAMMA2;
+        minus_gamma2 = (256u)#VMOV_64(temp);
+        minus_gamma2 = #VPBROADCAST_8u32(minus_gamma2);
+
+        ?{}, zeros = #set0_256();
 
         weight = 0;
-        i = 0;
-        while {condition = i < COEFFICIENTS_IN_POLYNOMIAL;} (condition) {
-            msf = #update_msf(condition, msf);
+        offset = 0;
+        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+            low = low_coefficients.[u256 offset];
+            high = high_coefficients.[u256 offset];
 
-            a0 = f0[i];
-            a0 = #protect_32(a0, msf);
+            abs_low = #VPABS_8u32(low);
+            low_out_of_bounds = #VPCMPGT_8u32(abs_low, gamma2);
 
-            a1 = f1[i];
-            a1 = #protect_32(a1, msf);
+            low_equals_minus_gamma2_and_high_is_nonzero = #VPCMPEQ_8u32(low, minus_gamma2);
+            low_equals_minus_gamma2_and_high_is_nonzero =
+                #VPSIGN_8u32(
+                    low_equals_minus_gamma2_and_high_is_nonzero,
+                    high);
 
-            hint, msf = coefficient::make_hint(a0, a1, msf);
+            hint_block = #VPOR_256(
+                low_out_of_bounds,
+                low_equals_minus_gamma2_and_high_is_nonzero
+            );
 
-            hints[i] = hint;
-            weight += hint;
-            i += 1;
+            // TODO: We could also handle serializing the hint here, but
+            // that'd require _mm256_movemask_ps(). Revisit if performance
+            // is lacking.
+            hint_block = #VPSRL_8u32(hint_block, 31);
+            hints.[u256 offset] = hint_block;
+            offset += 32;
+
+            // TODO: The code:
+            // zeros = #VPSUB_8u32(zeros, hint_block);
+            // num_hints = #VPMOVMSKB_u256u32(zeros);
+            // causes a bug. Figure out why.
+            hint_block = #VPSUB_8u32(zeros, hint_block);
+            num_hints = #VPMOVMSKB_u256u32(hint_block);
+            _, _, _, _, _, num_hints = #POPCNT_32(num_hints);
+            num_hints >>= 2;
+
+            weight += num_hints;
         }
 
         return weight, hints;
@@ -309,7 +340,6 @@ namespace polynomial {
         return polynomial;
     }
 
-    u256 ONES_VECTOR = (8u32)[1, 1, 1, 1, 1, 1, 1, 1];
     inline
     fn power2round(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
@@ -322,10 +352,13 @@ namespace polynomial {
         reg u256 high low;
         reg u256 half_t0_bits ones_vector;
 
-        reg u64 offset;
+        reg u64 offset temp;
 
         half_t0_bits = HALF_OF_BITS_IN_T0_VECTOR;
-        ones_vector = ONES_VECTOR;
+
+        temp = 1;
+        ones_vector = (256u)#VMOV_64(temp);
+        ones_vector = #VPBROADCAST_8u32(ones_vector);
 
         offset = 0;
         while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
