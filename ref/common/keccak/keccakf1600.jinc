@@ -156,7 +156,6 @@ inline fn __keccakf1600_ref1(reg ptr u64[25] a) -> reg ptr u64[25]
   return a;
 }
 
-// TODO: Rename this to ref1
 #[returnaddress="stack"]
 fn _keccakf1600_ref1(reg ptr u64[25] a) -> reg ptr u64[25]
 {

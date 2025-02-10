@@ -276,10 +276,12 @@ namespace polynomial {
             hints.[u256 offset] = hint_block;
             offset += 32;
 
+            //
             // TODO: The code:
             // zeros = #VPSUB_8u32(zeros, hint_block);
             // num_hints = #VPMOVMSKB_u256u32(zeros);
             // causes a bug. Figure out why.
+            //
             hint_block = #VPSUB_8u32(zeros, hint_block);
             num_hints = #VPMOVMSKB_u256u32(hint_block);
             _, _, _, _, _, num_hints = #POPCNT_32(num_hints);
