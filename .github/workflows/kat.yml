@@ -11,6 +11,12 @@ jobs:
       fail-fast: true
       matrix:
         parameter_set: ["44", "65", "87"]
+        implementation_type: ["ref", "avx2"]
+        exclude: # Not implemented yet.
+          - parameter_set: "44"
+            implementation_type: "avx2"
+          - parameter_set: "87"
+            implementation_type: "avx2"
     steps:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v25
@@ -18,4 +24,4 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
     - uses: DeterminateSystems/magic-nix-cache-action@v3
     - run: nix-shell --run 'echo Installed dependencies.'
-    - run: nix-shell --run 'env PARAMETER_SET=${{ matrix.parameter_set }} make test'
+    - run: nix-shell --run 'env PARAMETER_SET=${{ matrix.parameter_set }} IMPLEMENTATION_TYPE=${{ matrix.implementation_type }} make test'
