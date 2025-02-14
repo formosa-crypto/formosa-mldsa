@@ -63,7 +63,9 @@ namespace gamma1 {
                -1, 4, 3, 2, -1, 2, 1, 0],
         (8u32)[4, 0, 4, 0, 4, 0, 4, 0]
     };
-    inline
+
+    // TODO: If we inline this, we run out of registers in sign.jinc due to a
+    // a conflict with sample::matrix_A. Figure out why.
     fn decode_to_polynomial(
         reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] bytes,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
