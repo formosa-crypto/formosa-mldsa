@@ -69,8 +69,8 @@ namespace gamma1 {
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u128 lower_bytes upper_bytes;
-        reg u256 byte_chunk coefficients;
+        reg u128 sixteen_bytes;
+        reg u256 coefficients;
         reg u256 gamma1 gamma1_times_2_mask;
         reg u256 shifts;
 
@@ -88,17 +88,18 @@ namespace gamma1 {
         encoded_offset = 0;
         offset = 0;
         while (encoded_offset < ENCODED_GAMMA1_POLYNOMIAL_SIZE) {
-            lower_bytes = bytes.[u128 encoded_offset];
+            sixteen_bytes = bytes.[u128 encoded_offset];
             encoded_offset += 4;
 
-            upper_bytes = bytes.[u128 encoded_offset];
+            coefficients = #VINSERTI128(coefficients, sixteen_bytes, 0);
+
+            sixteen_bytes = bytes.[u128 encoded_offset];
             encoded_offset += 16;
 
-            byte_chunk = #VINSERTI128(byte_chunk, lower_bytes, 0);
-            byte_chunk = #VINSERTI128(byte_chunk, upper_bytes, 1);
+            coefficients = #VINSERTI128(coefficients, sixteen_bytes, 1);
 
             shifts = DECODING_SHIFTS_TABLE[0];
-            coefficients = #VPSHUFB_256(byte_chunk, shifts);
+            coefficients = #VPSHUFB_256(coefficients, shifts);
 
             shifts = DECODING_SHIFTS_TABLE[1];
             coefficients = #VPSRLV_8u32(coefficients, shifts);

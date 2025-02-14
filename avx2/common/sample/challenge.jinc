@@ -1,3 +1,5 @@
+require "../hashing.jinc"
+
 inline
 fn absorb_to_generate_challenges(
     reg ptr u64[25] state,

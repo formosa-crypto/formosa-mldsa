@@ -1,8 +1,5 @@
 require "keccak/keccak1600.jinc"
 
-param int SHAKE128_RATE = 168;
-param int SHAKE256_RATE = 136;
-
 // N.B.: While this is only used in hash_verification_key(), making it an inline int
 // wouldn't work; it's used in a while loop condition, which causes issues for
 // the RSB-checker.

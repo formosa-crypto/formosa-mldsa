@@ -76,6 +76,9 @@ fn sign_internal(
 
     #declassify seed_for_matrix_A = signing_key[0:32];
 
+    // TODO: This conflicts with sample::matrix_A() below, figure out why.
+    t0 = t0::decode(t0, signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]);
+
     _ = #init_msf();
     matrix_A = sample::matrix_A(seed_for_matrix_A);
     () = #unspill(randomness);
@@ -84,7 +87,6 @@ fn sign_internal(
 
     s1 = s1::decode(signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE], s1);
     s2 = s2::decode(signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY: S2_ENCODED_SIZE], s2);
-    t0 = t0::decode(t0, signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]);
 
     s1 = row_vector::ntt(s1);
     s2 = column_vector::ntt(s2);

@@ -4,6 +4,7 @@ require "encoding/gamma1.jinc"
 require "arithmetic/rounding.jinc"
 
 from Common require "arithmetic/rounding.jinc"
+
 from Common require "sample/matrix_A.jinc"
 from Common require "sample/challenge.jinc"
 from Common require "sample/mask.jinc"
@@ -17,6 +18,7 @@ from Common require "encoding/signature.jinc"
 from Common require "encoding/s1.jinc"
 from Common require "encoding/s2.jinc"
 
+require "sample/matrix_A.jinc"
 require "sample/error_vectors.jinc"
 from Common require "keygen.jinc"
 

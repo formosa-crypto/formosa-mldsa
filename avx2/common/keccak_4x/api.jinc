@@ -1,0 +1,13 @@
+require "keccakf1600.jinc"
+require "keccakf1600_4x.jinc"
+
+inline fn __keccak_init_avx2() -> reg u256[7]
+{
+  inline int i;
+  reg u256[7] state;
+
+  for i=0 to 7
+  { state[i] = #set0_256(); }
+
+  return state;
+}
