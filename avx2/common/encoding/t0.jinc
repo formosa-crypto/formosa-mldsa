@@ -109,6 +109,8 @@ namespace t0 {
         reg u256 coefficients;
         reg u256 shifts mask;
 
+        coefficients = #set0_256();
+
         encoded_offset = 0;
         offset = 0;
         while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {

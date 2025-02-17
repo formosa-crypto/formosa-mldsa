@@ -64,8 +64,7 @@ namespace gamma1 {
         (8u32)[4, 0, 4, 0, 4, 0, 4, 0]
     };
 
-    // TODO: If we inline this, we run out of registers in sign.jinc due to a
-    // a conflict with sample::matrix_A. Figure out why.
+    inline
     fn decode_to_polynomial(
         reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] bytes,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
@@ -76,16 +75,22 @@ namespace gamma1 {
         reg u256 gamma1 gamma1_times_2_mask;
         reg u256 shifts;
 
+        reg u128 temp1;
+
         reg u64 temp;
         reg u64 offset encoded_offset;
 
         temp = GAMMA1;
-        gamma1 = (256u)#VMOV_64(temp);
-        gamma1 = #VPBROADCAST_8u32(gamma1);
+        temp1 = #VMOV_64(temp);
+        // TODO: This seems suspicious, check if it actually corresponds to
+        // an encoding.
+        gamma1 = #VPBROADCAST_8u32(temp1);
 
         temp = (GAMMA1 << 1) - 1;
-        gamma1_times_2_mask = (256u)#VMOV_64(temp);
-        gamma1_times_2_mask = #VPBROADCAST_8u32(gamma1_times_2_mask);
+        temp1 = #VMOV_64(temp);
+        gamma1_times_2_mask = #VPBROADCAST_8u32(temp1);
+
+        coefficients = #set0_256();
 
         encoded_offset = 0;
         offset = 0;
