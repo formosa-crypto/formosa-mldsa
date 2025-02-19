@@ -7,7 +7,8 @@ from Common require "arithmetic/rounding.jinc"
 
 from Common require "sample/matrix_A/matrix_A.jinc"
 from Common require "sample/challenge.jinc"
-from Common require "sample/mask.jinc"
+from Common require "sample/mask/mask_1x.jinc"
+from Common require "sample/mask/mask_4x.jinc"
 
 from Common require "row_vector.jinc"
 from Common require "column_vector.jinc"
@@ -22,6 +23,7 @@ require "sample/matrix_A.jinc"
 require "sample/error_vectors.jinc"
 from Common require "keygen.jinc"
 
+require "sample/mask.jinc"
 require "encoding/commitment.jinc"
 from Common require "sign.jinc"
 

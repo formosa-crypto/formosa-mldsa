@@ -26,7 +26,6 @@ namespace sample {
                     rho,
                     domain_separators
                 );
-
         }
 
         // Fill last two elements

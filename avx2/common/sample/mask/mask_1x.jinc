@@ -26,11 +26,11 @@ fn absorb_for_shake256(
 // We calculate ceil(a/b) = floor((a + b - 1) / b) where:
 // a = ENCODED_GAMMA1_POLYNOMIAL_SIZE
 // b = SHAKE256_RATE
-param int SHAKE256_BLOCKS_FOR_GAMMA1_ENCODED_POLYNOMIAL =
+param int BLOCKS_TO_EXTRACT =
     (ENCODED_GAMMA1_POLYNOMIAL_SIZE + SHAKE256_RATE - 1) / SHAKE256_RATE;
 
 inline
-fn sample_mask_polynomial(
+fn sample_mask_polynomial_1x(
     reg ptr u8[64] rho_prime,
     reg u16 domain_separator,
     reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] mask
@@ -40,17 +40,18 @@ fn sample_mask_polynomial(
     reg u64 i;
     reg u8 byte;
     stack u64[25] state;
-    stack u8[SHAKE256_BLOCKS_FOR_GAMMA1_ENCODED_POLYNOMIAL * SHAKE256_RATE] mask_encoded;
+    stack u8[BLOCKS_TO_EXTRACT * SHAKE256_RATE] mask_encoded;
 
-    inline int block_being_squeezed;
+    reg u8 block_being_squeezed;
 
     state = absorb_for_shake256(rho_prime, domain_separator, state);
 
+    block_being_squeezed = 0;
     mask_encoded_offset = 0;
-    for block_being_squeezed = 0 to SHAKE256_BLOCKS_FOR_GAMMA1_ENCODED_POLYNOMIAL {
-        () = #spill(mask, mask_encoded_offset);
+    while (block_being_squeezed < BLOCKS_TO_EXTRACT) {
+        () = #spill(block_being_squeezed, mask, mask_encoded_offset);
         state = _keccakf1600_ref1(state);
-        () = #unspill(mask, mask_encoded_offset);
+        () = #unspill(block_being_squeezed, mask, mask_encoded_offset);
 
         _ = #init_msf();
 
@@ -69,29 +70,4 @@ fn sample_mask_polynomial(
     mask = gamma1::decode_to_polynomial(mask_encoded[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE], mask);
 
     return mask;
-}
-
-namespace sample {
-    inline
-    fn mask(stack u8[64] rho_prime, stack u16 domain_separator)
-        -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], stack u16
-    {
-        stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask;
-
-        inline int i;
-
-        for i = 0 to COLUMNS_IN_MATRIX_A {
-            mask[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
-                sample_mask_polynomial
-                (
-                    rho_prime,
-                    domain_separator,
-                    mask[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
-                );
-
-            domain_separator += 1;
-        }
-
-        return mask, domain_separator;
-    }
 }

@@ -20,7 +20,8 @@ IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
 						 $(wildcard $(COMMON)/encoding/*.jinc) \
 						 $(wildcard $(COMMON)/keccak/*.jinc) \
 						 $(wildcard $(COMMON)/sample/*.jinc) \
-						 $(wildcard $(COMMON)/sample/matrix_A/*.jinc)
+						 $(wildcard $(COMMON)/sample/matrix_A/*.jinc) \
+						 $(wildcard $(COMMON)/sample/mask/*.jinc)
 
 OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)
 
