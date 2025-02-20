@@ -6,5 +6,5 @@
 	url = https://github.com/clebreto/libjade.git
 	branch = feature/riscv
 [submodule "crypto-specs"]
-	path = crypto-specs
+	path = ext/crypto-specs
 	url = git@github.com:formosa-crypto/crypto-specs.git
