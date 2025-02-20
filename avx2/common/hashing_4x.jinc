@@ -14,9 +14,9 @@ fn __shake128_squeezeblock4x(
     reg u256 t256;
     reg u128 t128;
     inline int i;
-    reg u64 ms;
+    #msf reg u64 msf = #init_msf();
 
-    #inline state, ms = _KeccakF1600_StatePermute4x(state, ms);
+    state, msf = _KeccakF1600_StatePermute4x(state, msf);
 
     for i = 0 to (SHAKE128_RATE / 8) {
         t256 = state[i];
@@ -44,9 +44,9 @@ fn __shake256_squeezeblock4x(
     reg u256 t256;
     reg u128 t128;
     inline int i;
-    reg u64 ms;
+    #msf reg u64 msf = #init_msf();
 
-    #inline state, ms = _KeccakF1600_StatePermute4x(state, ms);
+    state, msf = _KeccakF1600_StatePermute4x(state, msf);
 
     for i = 0 to (SHAKE256_RATE / 8) {
         t256 = state[i];
