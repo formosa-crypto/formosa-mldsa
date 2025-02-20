@@ -1,5 +1,0 @@
-#define MAKE_PQCLEAN_NAME(x) PQCLEAN_MLDSA44_CLEAN_ ## x
-#define PQCLEAN_VERSION(variable) MAKE_PQCLEAN_NAME(variable)
-
-#define MAKE_JASMIN_NAME(x) JASMIN_MLDSA_ ## x
-#define JASMIN_VERSION(variable) MAKE_JASMIN_NAME(variable)
