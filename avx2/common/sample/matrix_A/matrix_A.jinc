@@ -3,7 +3,12 @@ from Common require "hashing_4x.jinc"
 // TODO: If performance is lacking, see if we can sample 5 blocks, and remove
 // the use of |rejection_sample_one_block|.
 param int BLOCKS = 4;
-param int REJECTION_SAMPLE_INPUT_SIZE = BLOCKS * SHAKE128_RATE;
+param int REJECTION_SAMPLING_BYTES = BLOCKS * SHAKE128_RATE;
+
+// TODO: Explain why we need to pad by 8 bytes.
+param int PADDING_BYTES = 8;
+
+param int REJECTION_SAMPLE_INPUT_SIZE = REJECTION_SAMPLING_BYTES + PADDING_BYTES;
 require "rejection_sample.jinc"
 
 fn shake128_absorb_34_4x(
@@ -114,6 +119,14 @@ fn sample_4_polynomials(
 
     reg u8 flg0 flg1 done;
     reg bool cf zf;
+
+    inline int i;
+    for i = 0 to PADDING_BYTES {
+        buf0[REJECTION_SAMPLING_BYTES + i] = 0;
+        buf1[REJECTION_SAMPLING_BYTES + i] = 0;
+        buf2[REJECTION_SAMPLING_BYTES + i] = 0;
+        buf3[REJECTION_SAMPLING_BYTES + i] = 0;
+    }
 
     // Rejection sampling for the first time.
     xof_state = shake128_absorb_34_4x(rho, domain_separators, xof_state);

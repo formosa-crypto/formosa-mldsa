@@ -56,7 +56,7 @@ fn rejection_sample_multiple_blocks(
 
     bytes_filled = 0;
     input_offset = 0;
-    while (input_offset < REJECTION_SAMPLE_INPUT_SIZE) {
+    while (input_offset < REJECTION_SAMPLING_BYTES) {
         potential_coefficients = randombytes.[u256 input_offset];
         potential_coefficients = bytestream_to_potential_coefficients(potential_coefficients);
         input_offset += 24;
