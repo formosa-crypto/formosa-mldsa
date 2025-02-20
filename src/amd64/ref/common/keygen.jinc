@@ -4,7 +4,7 @@ fn prepare_state_for_shake256(
     reg ptr u8[32] randomness,
     reg u8 number_of_rows,
     reg u8 number_of_columns
-) -> stack u64[25] {
+) -> reg mut ptr u64[25] {
     reg u8 byte;
 
     reg u64 i;

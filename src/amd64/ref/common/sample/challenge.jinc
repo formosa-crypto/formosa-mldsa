@@ -2,7 +2,7 @@ inline
 fn absorb_to_generate_challenges(
     reg ptr u64[25] state,
     reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash
-) -> stack u64[25] {
+) -> reg mut ptr u64[25] {
     reg u8 byte;
 
     inline int i;

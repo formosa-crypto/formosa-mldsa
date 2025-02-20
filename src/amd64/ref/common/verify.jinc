@@ -43,7 +43,7 @@ fn reconstruct_signer_commitment(
     #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] challenge_as_ntt,
     reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] A_times_signer_response,
     reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints
-) -> stack ptr u8[ENCODED_COMMITMENT_SIZE] {
+) -> stack u8[ENCODED_COMMITMENT_SIZE] {
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] commitment;
     stack u8[ENCODED_COMMITMENT_SIZE] commitment_encoded;
 

@@ -5,7 +5,7 @@ fn absorb_to_generate_errors(
     reg ptr u64[25] state,
     reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
     reg u16 index
-) -> stack u64[25] {
+) -> reg mut ptr u64[25] {
     reg u8 byte;
     reg u64 i;
 
