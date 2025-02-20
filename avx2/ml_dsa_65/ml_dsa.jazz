@@ -20,6 +20,8 @@ from Common require "encoding/s1.jinc"
 from Common require "encoding/s2.jinc"
 
 require "sample/matrix_A.jinc"
+
+require "sample/error_vectors/error_vectors_1x.jinc"
 require "sample/error_vectors.jinc"
 from Common require "keygen.jinc"
 
