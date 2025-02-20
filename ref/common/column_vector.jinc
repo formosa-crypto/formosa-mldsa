@@ -197,7 +197,7 @@ namespace column_vector {
 
     inline
     fn make_hint(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] addend original)
-        -> stack u32, stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+        -> reg u32, stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u32 ones_in_hint ones_in_hint_vector;
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint_vector;

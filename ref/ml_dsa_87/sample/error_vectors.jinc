@@ -2,10 +2,11 @@
 
 inline
 fn absorb_to_generate_errors(
-    reg ptr u64[25] state,
     reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
     reg u16 index
 ) -> stack u64[25] {
+    stack u64[25] state;
+
     reg u8 byte;
     reg u64 i;
 
@@ -131,7 +132,7 @@ fn sample_error_polynomial(
     stack u64[25] state;
 
     () = #spill(error);
-    state = absorb_to_generate_errors(state, rho_prime, i);
+    state = absorb_to_generate_errors(rho_prime, i);
     state = _keccakf1600_ref1(state);
     () = #unspill(error);
 

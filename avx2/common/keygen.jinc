@@ -1,10 +1,11 @@
 inline
 fn prepare_state_for_shake256(
-    reg ptr u64[25] state,
     reg ptr u8[32] randomness,
     reg u8 number_of_rows,
     reg u8 number_of_columns
 ) -> stack u64[25] {
+    stack u64[25] state;
+
     reg u8 byte;
 
     reg u64 i;
@@ -50,7 +51,7 @@ fn keygen_internal(reg ptr u8[32] randomness)
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t t0 t1;
 
-    state = prepare_state_for_shake256(state, randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
+    state = prepare_state_for_shake256(randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
     state = _keccakf1600_ref1(state);
 
     #declassify seed_for_matrix_A = state[u8 0:SEED_FOR_MATRIX_A_SIZE];
