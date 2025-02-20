@@ -1,0 +1,77 @@
+/* The correctness of the transformations applied by Jasmin when compiling code
+ * relies on the input code not having undefined behaviour. Running our implementation
+ * through the interpreter is a sanity-check: If we run the interpreter without
+ * crashing the program, at least for the inputs we've given it here,
+ * the program is correct.
+ *
+ * Ideally, we'd want to run the implementation through a safety-checker, but this
+ * checker is outdated and takes an inordinate amount of time to run (on the order
+ * of several days).
+*/
+
+require "ml_dsa.jazz"
+
+inline fn setup_memory() -> reg u64, reg u64, reg u64, reg u64, reg u64, reg u64
+{
+    reg u64 verification_key signing_key signature message message_size randomness;
+
+    inline int i;
+
+    verification_key = 0x1000;
+    signing_key = 0x2000;
+
+    signature = 0x3000;
+
+    message = 0x4000;
+    message_size = 64;
+
+    randomness = 0x5000;
+
+    for i = 0 to 8 {
+        [randomness + 8 * i] = i;
+        [message + 8 * i] = i;
+    }
+
+    return verification_key, signing_key, signature, message, message_size, randomness;
+}
+
+fn test_consistency() -> reg bool {
+    reg u64 verification_key signing_key signature message message_size randomness;
+    verification_key, signing_key, signature, message, message_size, randomness = setup_memory();
+
+    reg u64 verify_result i;
+
+    stack u8[32] keygen_randomness signing_randomness;
+
+    i = 0;
+    while (i < 32) {
+        keygen_randomness[i] = (u8)[randomness + i];
+        signing_randomness[i] = (u8)[randomness + i + 32];
+
+        i += 1;
+    }
+
+    #[inline]
+    ml_dsa_44_keygen(verification_key, signing_key, keygen_randomness);
+    #[inline]
+    ml_dsa_44_sign(signature, signing_key, message, message_size, signing_randomness);
+    #[inline]
+    verify_result = ml_dsa_44_verify(verification_key, message, message_size, signature);
+
+    reg bool result;
+    if (verify_result == 0) {
+        result = true;
+    } else {
+        result = false;
+    }
+
+    return result;
+}
+
+exec test_consistency (
+  0x1000:1312,
+  0x2000:2560,
+  0x3000:2420,
+  0x4000:64, // Message size
+  0x5000:64 // Total randomness
+)

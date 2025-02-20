@@ -1,0 +1,45 @@
+namespace s1 {
+    inline
+    fn encode(
+        #spill_to_mmx reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1,
+        reg ptr u8[S1_ENCODED_SIZE] encoded
+    ) -> reg ptr u8[S1_ENCODED_SIZE]
+    {
+        inline int i;
+
+        () = #spill(s1);
+
+        for i = 0 to COLUMNS_IN_MATRIX_A {
+            encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE] =
+                error_polynomial::encode(
+                    s1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
+                    encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE]
+                );
+            () = #unspill(s1);
+        }
+        return encoded;
+    }
+
+    inline
+    fn decode(
+        #spill_to_mmx reg ptr u8[S1_ENCODED_SIZE] encoded,
+        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1
+    ) -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        inline int i;
+
+        () = #spill(encoded);
+
+        for i = 0 to COLUMNS_IN_MATRIX_A {
+            s1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                error_polynomial::decode(
+                    s1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                    encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE]
+                );
+            () = #unspill(encoded);
+        }
+
+        return s1;
+    }
+
+}

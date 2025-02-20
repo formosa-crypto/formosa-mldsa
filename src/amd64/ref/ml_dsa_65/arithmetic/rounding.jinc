@@ -1,0 +1,69 @@
+from Common require "arithmetic/rounding.jinc"
+
+namespace coefficient {
+    inline
+    fn decompose(reg u32 r) -> reg u32, reg u32 {
+        reg u32 temp high_bits low_bits;
+
+        // a1  = (a + 127) >> 7;
+        high_bits = r;
+        high_bits += 127;
+        high_bits >>= 7;
+
+        // a1  = (high_bits * 1025 + (1 << 21)) >> 22;
+        temp = high_bits;
+        high_bits <<= 10;
+        high_bits += temp;
+
+        high_bits += 1 << 21;
+        high_bits >>= 22;
+
+        // a1 &= 15;
+        high_bits &= 15;
+
+        // *a0  = a - a1*2*GAMMA2;
+        temp = high_bits;
+        temp *= 2 * GAMMA2;
+        low_bits = r;
+        low_bits -= temp;
+
+        // *a0 -= (((Q-1)/2 - *a0) >> 31) & Q;
+        temp = (MODULUS - 1) / 2;
+        temp -= low_bits;
+        temp >>s= 31;
+        temp &= MODULUS;
+        low_bits -= temp;
+
+        return low_bits, high_bits;
+    }
+
+    inline
+    fn use_hint(reg u32 a hint, reg u64 msf) -> reg u32, #msf reg u64 {
+        reg u32 a0;
+        reg u32 a1;
+
+        inline bool b;
+
+        a0, a1 = decompose(a);
+
+        b = hint != 0;
+        if (b) {
+            msf = #update_msf(b, msf);
+
+            b = a0 >s 0;
+            if (b) {
+                msf = #update_msf(b, msf);
+                a1 += 1;
+                a1 &= 15;
+            } else {
+                msf = #update_msf(!b, msf);
+                a1 -= 1;
+                a1 &= 15;
+            }
+        } else {
+            msf = #update_msf(!b, msf);
+        }
+
+        return a1, msf;
+    }
+}

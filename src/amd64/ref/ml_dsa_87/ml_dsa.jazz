@@ -1,0 +1,152 @@
+require "parameters.jinc"
+require "arithmetic/rounding.jinc"
+require "encoding/error_polynomial.jinc"
+require "encoding/gamma1.jinc"
+
+from Common require "sample/matrix_A.jinc"
+from Common require "sample/challenge.jinc"
+from Common require "sample/mask.jinc"
+
+from Common require "row_vector.jinc"
+from Common require "column_vector.jinc"
+
+from Common require "encoding/t0.jinc"
+from Common require "encoding/t1.jinc"
+from Common require "encoding/signature.jinc"
+from Common require "encoding/s1.jinc"
+from Common require "encoding/s2.jinc"
+
+require "sample/error_vectors.jinc"
+from Common require "keygen.jinc"
+
+require "encoding/commitment.jinc"
+from Common require "sign.jinc"
+
+require "encoding/commitment.jinc"
+from Common require "verify.jinc"
+
+// N.B.: If it seems that some functions seemingly lack annotations to guide the
+// constant-time (CT) checker, it is because it looks for #[sct=...] annotations
+// and ignores speculative-constant-time (SCT) related information; this is to say,
+// the annotation given to the SCT checker can suffice for the CT checker as well.
+
+// N.B.: Signing and verification assume the domain separation context has already
+// been appended to the message; they do NOT validate whether this was done in
+// accordance with the FIPS-204 specification.
+//
+// Ideally, we'd pass in two additional arguments, one being a pointer to the
+// context string and the other being the size of said string, but we're already
+// at 5 arguments for signing, and Jasmin does not currently support functions
+// that take more than 6 arguments.
+
+// See api.h for the sizes of the buffers expected by these functions.
+
+#[sct="transient * transient * {ptr: transient, val: secret} -> ()"]
+export fn ml_dsa_87_keygen(
+    #spill_to_mmx reg u64 verification_key_out,
+    #spill_to_mmx reg u64 signing_key_out,
+    reg ptr u8[32] randomness)
+{
+    #public stack u8[VERIFICATION_KEY_SIZE] verification_key;
+    #secret stack u8[SIGNING_KEY_SIZE] signing_key;
+
+    reg u8 byte;
+    reg u64 i;
+
+    _ = #init_msf();
+
+    () = #spill(verification_key_out, signing_key_out);
+    verification_key, signing_key = keygen_internal(randomness);
+    () = #unspill(verification_key_out, signing_key_out);
+
+    i = 0;
+    while (i < VERIFICATION_KEY_SIZE) {
+        byte = verification_key[i];
+        (u8)[verification_key_out + i] = byte;
+        i += 1;
+    }
+
+    i = 0;
+    while(i < SIGNING_KEY_SIZE) {
+        byte = signing_key[i];
+        (u8)[signing_key_out + i] = byte;
+        i += 1;
+    }
+}
+
+#[sct="transient * transient * transient * transient * {ptr: transient, val: secret} -> ()"]
+export fn ml_dsa_87_sign(
+    #spill_to_mmx reg u64 signature_out,
+    reg u64 signing_key,
+    reg u64 message,
+    reg u64 message_size,
+    reg ptr u8[32] randomness
+)
+{
+    #secret stack u8[SIGNING_KEY_SIZE] signing_key_on_stack;
+
+    stack u8[SIGNATURE_SIZE] signature;
+
+    #flexible reg u8 byte;
+    reg u64 i = 0;
+
+    _ = #init_msf();
+
+    i = 0;
+    while(i < SIGNING_KEY_SIZE) {
+        byte = (u8)[signing_key + i];
+        signing_key_on_stack[i] = byte;
+        i += 1;
+    }
+
+    () = #spill(signature_out);
+    signature = sign_internal(signing_key_on_stack, message, message_size, randomness);
+    () = #unspill(signature_out);
+
+    i = 0;
+    while(i < SIGNATURE_SIZE) {
+        byte = signature[i];
+        (u8)[signature_out + i] = byte;
+        i += 1;
+    }
+}
+
+// We expect that:
+//
+// - |verification_key| points to a buffer of 1952 bytes.
+// - |message| points to a buffer of |message_size| bytes.
+// - |signature| points to a buffer of 3309 bytes.
+//
+export fn ml_dsa_87_verify(
+    #transient reg u64 verification_key,
+    #transient reg u64 message message_size,
+    #transient reg u64 signature
+) -> #public reg u64 {
+    #public stack u8[VERIFICATION_KEY_SIZE] verification_key_on_stack;
+    #public stack u8[SIGNATURE_SIZE] signature_on_stack;
+
+    #public reg u64 verification_result;
+
+    #public reg u8 byte;
+    reg u64 i;
+
+    _ = #init_msf();
+
+    i = 0;
+    while(i < VERIFICATION_KEY_SIZE) {
+        #declassify byte = (u8)[verification_key + i];
+        verification_key_on_stack[i] = byte;
+        i += 1;
+    }
+
+    i = 0;
+    while(i < SIGNATURE_SIZE) {
+        #declassify byte = (u8)[signature + i];
+        signature_on_stack[i] = byte;
+        i += 1;
+    }
+
+    verification_result = verify_internal(verification_key_on_stack, message, message_size, signature_on_stack);
+
+    return verification_result;
+}

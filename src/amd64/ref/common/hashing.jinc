@@ -1,0 +1,220 @@
+require "keccak/keccak1600.jinc"
+
+param int SHAKE128_RATE = 168;
+param int SHAKE256_RATE = 136;
+
+// N.B.: While this is only used in hash_verification_key(), making it an inline int
+// wouldn't work; it's used in a while loop condition, which causes issues for
+// the RSB-checker.
+param int FULL_BLOCKS_IN_VERIFICATION_KEY = VERIFICATION_KEY_SIZE / SHAKE256_RATE;
+
+inline
+fn hash_verification_key(
+    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash
+) -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE]
+{
+
+    stack u64[25] state;
+    #spill_to_mmx reg u64 verification_key_offset;
+    reg u64 state_offset = 0;
+
+    reg u8 byte;
+
+    verification_key_offset = 0;
+
+    // Absorb ...
+
+    state = __keccak_init_ref1(state);
+
+    while(verification_key_offset < FULL_BLOCKS_IN_VERIFICATION_KEY * SHAKE256_RATE) {
+        while(state_offset < SHAKE256_RATE) {
+            byte = verification_key[verification_key_offset];
+
+            state[u8 state_offset] ^= byte;
+
+            verification_key_offset += 1;
+            state_offset += 1;
+        }
+
+        () = #spill(hash, verification_key, verification_key_offset);
+        state = _keccakf1600_ref1(state);
+        () = #unspill(hash, verification_key, verification_key_offset);
+
+        state_offset = 0;
+    }
+
+    // Now absorb the last partial block.
+    while(verification_key_offset < VERIFICATION_KEY_SIZE) {
+        byte = verification_key[verification_key_offset];
+
+        state[u8 state_offset] ^= byte;
+
+        verification_key_offset += 1;
+        state_offset += 1;
+    }
+
+    state[u8 state_offset] ^= 0x1f;
+    state[u8 SHAKE256_RATE - 1] ^= 0x80;
+
+    // ... then squeeze.
+
+    () = #spill(hash);
+    state = _keccakf1600_ref1(state);
+    () = #unspill(hash);
+
+    state_offset = 0;
+    while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
+        byte = state[u8 state_offset];
+        hash[state_offset] = byte;
+        state_offset += 1;
+    }
+
+    return hash;
+}
+
+inline
+fn shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u64[25], reg u64 {
+    if (offset >= SHAKE256_RATE) {
+        state = _keccakf1600_ref1(state);
+        ?{}, offset = #set0_64();
+    }
+    return state, offset;
+}
+inline
+fn derive_message_representative(
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash_of_verification_key,
+    #spill_to_mmx reg u64 message,
+    #spill_to_mmx reg u64 message_size
+) -> stack u8[MESSAGE_REPRESENTATIVE_SIZE]
+{
+    stack u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative;
+
+    stack u64[25] state;
+
+    reg u8 byte;
+    reg u64 state_offset;
+    #spill_to_mmx reg u64 message_offset;
+
+    // Absorb ...
+
+    state = __keccak_init_ref1(state);
+
+    state_offset = 0;
+    while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
+        byte = hash_of_verification_key[state_offset];
+        state[u8 state_offset] = byte;
+
+        state_offset += 1;
+    }
+
+    message_offset = 0;
+    while(message_offset < message_size) {
+        if (state_offset >= SHAKE256_RATE) {
+            () = #spill(message, message_offset, message_size);
+            state = _keccakf1600_ref1(state);
+            () = #unspill(message, message_offset, message_size);
+
+            ?{}, state_offset = #set0_64();
+        }
+
+        byte = (u8) [message + message_offset];
+        message_offset += 1;
+
+        state[u8 state_offset] ^= byte;
+        state_offset += 1;
+    }
+
+    // Absorb separator byte
+    state, state_offset = shake256_consider_permute(state, state_offset);
+    state[u8 state_offset] ^= 0x1f;
+
+    // Finish
+    state, state_offset = shake256_consider_permute(state, state_offset);
+    state[u8 SHAKE256_RATE-1] ^= 0x80;
+
+    state = _keccakf1600_ref1(state);
+
+    state_offset = 0;
+    while(state_offset < MESSAGE_REPRESENTATIVE_SIZE) {
+        byte = state[u8 state_offset];
+        message_representative[state_offset] = byte;
+        state_offset += 1;
+    }
+
+    return message_representative;
+}
+
+// The message representative is always 64 bytes long, which means the first
+// full block that we absorb will contain 64 bytes of the message representative,
+// and SHAKE256_RATE - 64 = 136 - 64 = 72 bytes of the encoded commitment.
+// Subtracting these 72 bytes from the encoded commitment size and dividing
+// by SHAKE256_RATE gives us the number of full commitment blocks to absorb.
+param int FULL_COMMITMENT_BLOCKS_TO_ABSORB = (ENCODED_COMMITMENT_SIZE - 72) / SHAKE256_RATE;
+
+inline
+fn derive_commitment_hash(
+    reg ptr u8[64] message_representative,
+    #spill_to_mmx reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment
+    ) -> stack u8[COMMITMENT_HASH_SIZE]
+{
+
+    stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
+    stack u64[25] state;
+    reg u8 byte;
+    reg u64 state_offset;
+    #spill_to_mmx reg u64 encoded_commitment_offset;
+
+    state = __keccak_init_ref1(state);
+    state_offset = 0;
+
+    // Absorb message_representative
+    while (state_offset < MESSAGE_REPRESENTATIVE_SIZE) {
+        byte = message_representative[state_offset];
+        state[u8 state_offset] = byte;
+        state_offset += 1;
+    }
+
+    encoded_commitment_offset = 0;
+    while (encoded_commitment_offset < 72 + (FULL_COMMITMENT_BLOCKS_TO_ABSORB * SHAKE256_RATE)) {
+        while(state_offset < SHAKE256_RATE) {
+            byte = encoded_commitment[encoded_commitment_offset];
+            encoded_commitment_offset += 1;
+
+            state[u8 state_offset] ^= byte;
+            state_offset += 1;
+        }
+
+        () = #spill(encoded_commitment, encoded_commitment_offset);
+        state = _keccakf1600_ref1(state);
+        () = #unspill(encoded_commitment, encoded_commitment_offset);
+
+        state_offset = 0;
+    }
+
+    // Now absorb the last partial block. This will be skipped in ML-DSA-87
+    // where ENCODED_COMMITMENT_SIZE = 1024.
+    while(encoded_commitment_offset < ENCODED_COMMITMENT_SIZE) {
+        byte = encoded_commitment[encoded_commitment_offset];
+        encoded_commitment_offset += 1;
+
+        state[u8 state_offset] ^= byte;
+        state_offset += 1;
+    }
+
+    // Absorb separator byte and finish
+    state[u8 state_offset] ^= 0x1f;
+    state[u8 SHAKE256_RATE - 1] ^= 0x80;
+
+    // Now squeeze
+
+    state = _keccakf1600_ref1(state);
+    state_offset = 0;
+
+    while(state_offset < COMMITMENT_HASH_SIZE) {
+        byte = state[u8 state_offset];
+        commitment_hash[state_offset] = byte;
+        state_offset += 1;
+    }
+    return commitment_hash;
+}
