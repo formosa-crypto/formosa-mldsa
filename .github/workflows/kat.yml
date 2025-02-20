@@ -12,7 +12,7 @@ jobs:
       matrix:
         parameter_set: ["44", "65", "87"]
         implementation_type: ["ref", "avx2"]
-        exclude: # Not implemented yet.
+        exclude: # TODO: Implement.
           - parameter_set: "44"
             implementation_type: "avx2"
           - parameter_set: "87"
