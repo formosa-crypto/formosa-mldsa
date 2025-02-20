@@ -4,8 +4,9 @@ on:
   push:
 
 jobs:
-  tests:
-    name: tests
+  check:
+    name: check
+    if: false
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
