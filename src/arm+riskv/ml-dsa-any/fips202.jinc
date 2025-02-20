@@ -1,0 +1,315 @@
+inline fn __keccak_init_ref(reg ptr u32[25*2] state) -> reg ptr u32[25*2]
+{
+  reg u32 i t;
+
+  i = 0;
+  t = 0;
+  while(i < 25*2)
+  { state[(int)i] = t;
+    i += 1;
+  }
+
+  return state;
+}
+
+
+inline fn __add_seed_ref(reg ptr u32[25*2] state,
+                         reg ptr u8[SEEDBYTES] in) 
+                      -> reg ptr u32[25*2] 
+{
+  reg u32 i t0 inlen4;
+
+  inlen4 = SEEDBYTES >> 2;
+
+  i = 0;
+  while ( i < inlen4 )
+  {
+    t0 = in[u32 (int)i];
+    state[(int)i] = t0;
+    i += 1;
+  }
+  return state;
+}
+
+inline fn __add_crh_ref(reg ptr u32[25*2] state,
+                        reg ptr u8[CRHBYTES] in) 
+                     -> reg ptr u32[25*2] 
+{
+  reg u32 i t0 inlen4;
+
+  inlen4 = CRHBYTES >> 2;
+
+  i = 0;
+  while ( i < inlen4 )
+  {
+    t0 = in[u32 (int)i];
+    state[(int)i] = t0;
+    i += 1;
+  }
+  return state;
+}
+
+inline fn __add_ctilde_ref(reg ptr u32[25*2] state,
+                         reg ptr u8[CTILDEBYTES] in)
+                      -> reg ptr u32[25*2]
+{
+  reg u32 i t0 inlen4;
+
+  inlen4 = CTILDEBYTES >> 2;
+
+  i = 0;
+  while ( i < inlen4 )
+  {
+    t0 = in[u32 (int)i];
+    state[(int)i] = t0;
+    i += 1;
+  }
+  return state;
+}
+
+inline fn __add_seedrndcrh_ref(reg ptr u32[25*2] state,
+                        reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] in) 
+                     -> reg ptr u32[25*2] 
+{
+  reg u32 i t0 inlen4;
+
+  inlen4 = (SEEDBYTES + RNDBYTES + CRHBYTES) >> 2;
+
+  i = 0;
+  while ( i < inlen4 )
+  {
+    t0 = in[u32 (int)i];
+    state[(int)i] = t0;
+    i += 1;
+  }
+  return state;
+}
+
+
+inline fn __add_mu_ref(reg ptr u32[25*2] state,
+                         reg u32 pos,
+                         reg ptr u8[2] in)
+                      -> reg ptr u32[25*2]
+{
+  reg u32 t0 i j;
+  j = 0;
+
+  i = pos;
+  t0 = (32u)in[(int)j];
+  state[u8 (int)i] = (8u)t0;
+
+  i += 1;
+  j = 1;
+  t0 = (32u)in[(int)j];
+  state[u8 (int)i] = (8u)t0;
+
+  return state;
+}
+
+inline fn __add_zero_after_add_naive(reg ptr u32[25*2] state, inline int pos) -> reg ptr u32[25*2]
+{
+  reg u32 i, zero;
+  zero = 0;
+
+  i = pos;
+
+  while (i < 25 * 2 * 4) {
+    state[u8 (int) i] = (8u)zero;
+    i += 1;
+  }
+  return state;
+}
+
+inline fn __add_nonce_ref(
+  reg ptr u32[25*2] state, 
+  inline int i, 
+  reg u32 nonce) 
+-> reg ptr u32[25*2] 
+{
+  state[u16 (int)i] = nonce;
+  return state;
+}
+
+
+param int TRAIL_BYTE = 0x1f;
+
+inline fn __add_block_end(
+   reg ptr u32[25*2] state, 
+   inline int i, 
+   inline int rate
+) -> reg ptr u32[25*2]
+{
+  reg u32 t0 t1;
+  
+  t0 = (32u) state[u8 (int)i];
+  t0 ^= TRAIL_BYTE;
+  state[u8 (int)i] = (8u) t0;
+
+  rate -= 1;
+
+  t0 = (32u) state[u8 rate];
+  t1 = 0x80;
+  t0 ^= t1;
+  state[u8 rate] = (8u) t0;
+
+  return state;
+}
+
+inline fn __add_zero_after_add(reg ptr u32[25*2] state, inline int nbbytes) -> reg ptr u32[25*2]
+{
+  reg u32 i, zero;
+  zero = 0;
+
+  if (nbbytes % 2 == 1) { 
+    state[u8 (int) nbbytes] = zero;
+  }
+  nbbytes = nbbytes + ((nbbytes % 2 == 1) ? 1 : 0);
+  if (nbbytes % 4 == 2) { 
+    state[u16 (int) (nbbytes / 2)] = zero;
+  }
+  nbbytes = nbbytes + ((nbbytes % 4 == 2) ? 2 : 0);
+
+  i = (nbbytes / 4);
+
+  while (i < 25*2) {
+    state[(int) i] = zero;
+    i += 1;
+  } 
+  return state;     
+}
+
+inline fn __SHAKE256_init_seed_ref(
+  reg ptr u32[25*2] state,
+  reg ptr u8[SEEDBYTES] seed
+) -> reg ptr u32[25*2]
+{
+  state = __add_seed_ref(state, seed);
+  state = __add_zero_after_add(state, SEEDBYTES);
+  reg u32 k = K;
+  state[u8 SEEDBYTES] = k;
+  reg u32 l = L;
+  state[u8 SEEDBYTES+1] = l;
+  state = __add_block_end(state, SEEDBYTES + 2, SHAKE256_RATE);
+  state = _keccakf1600_ref(state);
+  return state;
+}
+
+inline fn __SHAKE256_init_ctilde_ref(
+  reg ptr u32[25*2] state,
+  reg ptr u8[CTILDEBYTES] seed
+) -> reg ptr u32[25*2]
+{
+  state = __add_ctilde_ref(state, seed);
+  state = __add_zero_after_add(state, CTILDEBYTES);
+  state = __add_block_end(state, CTILDEBYTES, SHAKE256_RATE);
+  state = _keccakf1600_ref(state);
+  return state;
+}
+
+fn _stream128_init(
+  reg ptr u32[25*2] state,
+  reg ptr u8[SEEDBYTES] seed,
+  reg u32 nonce
+) -> reg ptr u32[25*2]
+{
+  state = __add_seed_ref(state, seed);
+  state = __add_nonce_ref(state, SEEDBYTES >> 1, nonce);
+  state = __add_zero_after_add(state, SEEDBYTES + 2);
+  state = __add_block_end(state, SEEDBYTES + 2, SHAKE128_RATE);
+  state = _keccakf1600_ref(state);
+  return state;
+}
+
+fn _stream128_refill_buffer(
+  reg ptr u32[25*2] state,
+  reg ptr u32[N] a,
+  reg u32 pos,
+  reg u32 ctr,
+  reg u32 q
+) -> reg ptr u32[25*2], reg ptr u32[N], reg u32, reg u32, reg u32, reg u32[3] 
+{
+  if (pos == SHAKE128_RATE >> 2) {
+    stack u32 sctr;
+    stack ptr u32[N] sa;
+    sctr = ctr; sa = a;
+    state = _keccakf1600_ref(state); 
+    a = sa; pos = 0; ctr = sctr; q = __Q();
+  }
+  reg u32[3] buf;
+  inline int i;
+  for i = 0 to 3 { buf[i] = state[(int) pos]; pos += 1; }  
+  return state, a, pos, ctr, q, buf;
+}
+
+fn _stream256_init(
+  reg ptr u32[25*2] state,
+  reg ptr u8[CRHBYTES] seed,
+  reg u32 nonce
+) -> reg ptr u32[25*2]
+{
+  state = __add_crh_ref(state, seed);
+  state = __add_nonce_ref(state, CRHBYTES >> 1, nonce);
+  state = __add_zero_after_add(state, CRHBYTES + 2);
+  state = __add_block_end(state, CRHBYTES + 2, SHAKE256_RATE);
+  state = _keccakf1600_ref(state);
+  return state;
+}
+
+fn _stream256_refill_buffer(
+  reg ptr u32[25*2] state,
+  reg ptr u32[N] a,
+  reg u32 pos,
+  reg u32 ctr ,
+  reg u32 n205
+) -> reg ptr u32[25*2], reg ptr u32[N], reg u32, reg u32, reg u32, reg u32
+{
+  if (pos == SHAKE256_RATE >> 2) {
+    stack u32 sctr;
+    stack ptr u32[N] sa;
+    sctr = ctr; sa = a;
+    state = _keccakf1600_ref(state); 
+    a = sa; pos = 0; ctr = sctr; n205 = 205;
+  }
+  reg u32 buf;
+  buf = state[(int) pos]; pos += 1; 
+  return state, a, pos, ctr, n205, buf;
+}
+
+fn _stream256_full_squeeze (
+  reg ptr u8[SHAKE256_RATE] buf, 
+  reg ptr u32[25*2] state
+) -> reg ptr u8[SHAKE256_RATE] {
+  reg u32 i, t;
+  i = 0;
+
+  while (i < SHAKE256_RATE / 4) {
+    t = state[(int) i];
+    buf[u32 (int) i] = t;
+    i += 1;
+  }
+  return buf;
+}
+         
+   
+
+
+
+
+
+
+
+
+
+
+  
+   
+
+
+
+
+
+
+
+
+
+
