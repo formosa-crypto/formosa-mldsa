@@ -6,9 +6,8 @@ IMPLEMENTATION = $(IMPLEMENTATION_TYPE)/ml_dsa_$(PARAMETER_SET)
 
 # --------------------------------------------------------------------
 JASMINC ?= jasminc
-JASMINC_FLAGS ?= -I Common:$(COMMON)
-
 JASMINCT ?= jasmin-ct
+
 # --------------------------------------------------------------------
 IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
 						 $(wildcard $(IMPLEMENTATION)/*.jinc) \
@@ -26,7 +25,7 @@ IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
 OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)
 
 $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
-	$(JASMINC) $(JASMINC_FLAGS) -o $@ $<
+	env JASMINPATH="Common=$(COMMON)" $(JASMINC) $(JASMINC_FLAGS) -o $@ $<
 
 # --------------------------------------------------------------------
 .PHONY: test
@@ -60,7 +59,7 @@ check-rsb: $(IMPLEMENTATION)/ml_dsa.jazz
 
 .PHONY: run-interpreter
 run-interpreter: $(IMPLEMENTATION)/example.jazz $(IMPLEMENTATION)/ml_dsa.jazz
-	$(JASMINC) $(JASMINC_FLAGS) $< | grep 'true'
+	$env JASMINPATH="Common=$(COMMON)" (JASMINC) $< | grep 'true'
 
 # --------------------------------------------------------------------
 bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c bench/notrandombytes.c $(IMPLEMENTATION)/api.h

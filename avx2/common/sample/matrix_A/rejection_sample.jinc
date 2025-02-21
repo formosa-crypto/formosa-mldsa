@@ -19,11 +19,12 @@ u256[3] ENCODING_TABLE = {
 // Read in 32 bytes to fill up the YMM register, but we only use the first 24,
 // since 24 bytes already give us 8 potential coefficients.
 inline
-fn bytestream_to_potential_coefficients(reg u256 coefficients) -> reg u256 {
+fn bytestream_to_potential_coefficients(reg u256 bytestream) -> reg u256 {
     reg u256 constants;
+    reg u256 coefficients;
 
     constants = ENCODING_TABLE[0];
-    coefficients = #VPERMD(constants, coefficients);
+    coefficients = #VPERMD(constants, bytestream);
 
     constants = ENCODING_TABLE[1];
     coefficients = #VPSHUFB_256(coefficients, constants);

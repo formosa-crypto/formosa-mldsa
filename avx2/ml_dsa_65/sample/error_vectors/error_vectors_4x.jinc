@@ -1,75 +1,146 @@
-// We need at least 3 bytes to sample a coefficient and so, given that there are
-// 256 coefficients, we need a minimum of 768 bytes to sample a ring element.
-// TODO: If performance is lacking, see if we can sample 5 blocks, and remove
-// the use of |rejection_sample_one_block|.
-param int BLOCKS = 4;
+// At minimum we'll need 2 bytes to sample a coefficient, and so we'll need
+// at least 128 bytes to sample an entire polynomial. Each SHAKE256 block is
+// 136 bytes, so we might be able to get away with sampling just one block.
+param int BLOCKS = 1;
 
-param int REJECTION_SAMPLING_BYTES = BLOCKS * SHAKE128_RATE;
-
-// TODO: Explain why we need to pad by 8 bytes.
-param int PADDING_BYTES = 8;
-
-param int REJECTION_SAMPLE_INPUT_SIZE = REJECTION_SAMPLING_BYTES + PADDING_BYTES;
+param int REJECTION_SAMPLE_INPUT_SIZE = BLOCKS * SHAKE256_RATE;
 require "rejection_sample.jinc"
 
-fn shake128_absorb_34_4x(
-    reg ptr u8[32] rho,
-    reg ptr u16[4] domain_separators,
+fn shake256_absorb_to_generate_errors(
+    reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
+    reg u16 index,
     reg ptr u256[25] state
 ) -> reg ptr u256[25]
 {
-    inline int i;
-
-    reg u256 t0 t1;
-    reg u16 t16;
+    reg u256 t256 zeros;
     reg u64 t64;
 
+    inline int i lane;
+
+    zeros = #set0_256();
     for i = 0 to 25 {
-        t0 = #set0_256();
-        state[i] = t0;
+        state[i] = zeros;
     }
 
-    for i = 0 to 4
-    {
-        t64 = rho[u64 i];
-        state[u64 4 * i] ^= t64;
-
-        t64 = rho[u64 i];
-        state[u64 4 * i + 1] ^= t64;
-
-        t64 = rho[u64 i];
-        state[u64 4 * i + 2] ^= t64;
-
-        t64 = rho[u64 i];
-        state[u64 4 * i + 3] ^= t64;
+    for i = 0 to 8 {
+        // N.B.: SEED_FOR_ERROR_VECTORS_SIZE is always 64.
+        t64 = rho_prime.[u64 8 * i];
+        t256 = (256u)t64;
+        t256 = #VPBROADCAST_4u64(t256);
+        state[i] = t256;
     }
 
-    t16 = domain_separators[0];
-    state[u16 64] ^= t16;
-    state[u8 130] ^= 0x1F;
+    for lane = 0 to 4 {
+        t64 = (64u)starting_domain_separator;
+        t64 = #LEA_64(0x1F0000 + t64);
 
-    t16 = domain_separators[1];
-    state[u16 68] ^= t16;
-    state[u8 138] ^= 0x1F;
+        t256 = (256u)t64;
+        t256 = #VPBROADCAST_4u64(t256);
+        t256 = #VPADD_4u64(t256, CONST_0123);
+        state[8] = t256;
+    }
 
-    t16 = domain_separators[2];
-    state[u16 72] ^= t16;
-    state[u8 146] ^= 0x1F;
-
-    t16 = domain_separators[3];
-    state[u16 76] ^= t16;
-    state[u8 154] ^= 0x1F;
-
-    t0 = shake_sep[u256 0];
-    t1 = state[SHAKE128_RATE / 8 - 1];
-    t0 = t0 ^ t1;
-    state[SHAKE128_RATE / 8 - 1] = t0;
+    t64 = 0x8000000000000000;
+    t256 = (256u)t64;
+    t256 = #VPBROADCAST_4u64(t256);
+    state[16] = t256;
 
     return state;
 }
 
 inline
-fn __shake128_squeeze_multiple_blocks_4x(
+fn bytestream_to_potential_coefficients(reg u256 bytestream) -> reg u256 {
+    reg u256 constants;
+
+    constants = ENCODING_TABLE[0];
+    coefficients = #VPERMD(constants, coefficients);
+
+    constants = ENCODING_TABLE[1];
+    coefficients = #VPSHUFB_256(coefficients, constants);
+
+    constants = ENCODING_TABLE[2];
+    coefficients = #VPAND_256(coefficients, constants);
+
+    return coefficients;
+}
+fn rejection_sample_avx2(
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+    reg ptr u8[REJECTION_SAMPLE_INPUT_SIZE] randombytes
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL],
+     reg u64
+{
+    reg u256 modulus potential_coefficients compare_with_field_modulus;
+    reg u128 shuffles lower_coefficients upper_coefficients;
+
+    reg u64 input_offset;
+    reg u64 good_lower good_upper good;
+    reg u64 filled bytes_filled;
+
+    reg ptr u8[256] shuffle_table_pointer;
+    reg u64 shuffle_table_idx;
+
+    reg u64 pext_mask = 0x11_11_11_11;
+
+    shuffle_table_pointer = SHUFFLE_TABLE;
+
+    bytes_filled = 0;
+    input_offset = 0;
+    while (input_offset < REJECTION_SAMPLING_BYTES) {
+        potential_coefficients = randombytes.[u256 input_offset];
+        potential_coefficients = bytestream_to_potential_coefficients(potential_coefficients);
+        input_offset += 24;
+
+        modulus = MODULUS_VECTOR;
+        compare_with_field_modulus = #VPCMPGT_8u32(modulus, potential_coefficients);
+
+        // TODO: Find a better to way to extract a mask from the MSBs of the 8
+        // 32-bit values in the register. PEXT could be slow on AMD CPUs.
+        good = #VPMOVMSKB_u256u64(compare_with_field_modulus);
+        good = #PEXT_64(good, pext_mask);
+
+        // Do the lower 4 coefficients first.
+        lower_coefficients = #VEXTRACTI128(potential_coefficients, 0);
+
+        good_lower = good;
+        good_lower &= 0xF;
+
+        shuffle_table_idx = good_lower;
+        shuffle_table_idx <<= 4;
+        shuffles = shuffle_table_pointer.[u128 shuffle_table_idx];
+
+        lower_coefficients = #VPSHUFB_128(lower_coefficients, shuffles);
+        polynomial.[u128 bytes_filled] = lower_coefficients;
+
+        _, _, _, _, _, good_lower = #POPCNT_64(good_lower);
+        good_lower <<= 2;
+        bytes_filled += good_lower;
+
+        // Then the upper 4 coefficients.
+        upper_coefficients = #VEXTRACTI128(potential_coefficients, 1);
+
+        good_upper = good;
+        good_upper >>= 4;
+
+        shuffle_table_idx = good_upper;
+        shuffle_table_idx <<= 4;
+        shuffles = shuffle_table_pointer.[u128 shuffle_table_idx];
+
+        upper_coefficients = #VPSHUFB_128(upper_coefficients, shuffles);
+        polynomial.[u128 bytes_filled] = upper_coefficients;
+
+        _, _, _, _, _, good_upper = #POPCNT_64(good_upper);
+        good_upper <<= 2;
+        bytes_filled += good_upper;
+    }
+
+    filled = bytes_filled;
+    filled >>= 2;
+
+    return polynomial, filled;
+}
+
+inline
+fn __shake256_squeeze_multiple_blocks_4x(
   reg ptr u256[25] state,
   reg ptr u8[REJECTION_SAMPLE_INPUT_SIZE] b0 b1 b2 b3
 ) ->
@@ -84,17 +155,17 @@ fn __shake128_squeeze_multiple_blocks_4x(
     for i = 0 to BLOCKS
     {
         state,
-        b0[i*SHAKE128_RATE:SHAKE128_RATE],
-        b1[i*SHAKE128_RATE:SHAKE128_RATE],
-        b2[i*SHAKE128_RATE:SHAKE128_RATE],
-        b3[i*SHAKE128_RATE:SHAKE128_RATE]
+        b0[i*SHAKE256_RATE:SHAKE256_RATE],
+        b1[i*SHAKE256_RATE:SHAKE256_RATE],
+        b2[i*SHAKE256_RATE:SHAKE256_RATE],
+        b3[i*SHAKE256_RATE:SHAKE256_RATE]
         =
-        __shake128_squeezeblock4x(
+        __shake256_squeezeblock4x(
             state,
-            b0[i*SHAKE128_RATE:SHAKE128_RATE],
-            b1[i*SHAKE128_RATE:SHAKE128_RATE],
-            b2[i*SHAKE128_RATE:SHAKE128_RATE],
-            b3[i*SHAKE128_RATE:SHAKE128_RATE]
+            b0[i*SHAKE256_RATE:SHAKE256_RATE],
+            b1[i*SHAKE256_RATE:SHAKE256_RATE],
+            b2[i*SHAKE256_RATE:SHAKE256_RATE],
+            b3[i*SHAKE256_RATE:SHAKE256_RATE]
         );
     }
 
@@ -122,58 +193,52 @@ fn sample_4_polynomials(
     reg bool cf zf;
 
     inline int i;
-    for i = 0 to PADDING_BYTES {
-        buf0[REJECTION_SAMPLING_BYTES + i] = 0;
-        buf1[REJECTION_SAMPLING_BYTES + i] = 0;
-        buf2[REJECTION_SAMPLING_BYTES + i] = 0;
-        buf3[REJECTION_SAMPLING_BYTES + i] = 0;
-    }
 
     // Rejection sampling for the first time.
-    xof_state = shake128_absorb_34_4x(rho, domain_separators, xof_state);
-    xof_state, buf0, buf1, buf2, buf3 = __shake128_squeeze_multiple_blocks_4x(xof_state, buf0, buf1, buf2, buf3);
+    xof_state = shake256_absorb_to_generate_errors(rho, domain_separators, xof_state);
+    xof_state, buf0, buf1, buf2, buf3 = __shake256_squeeze_multiple_blocks_4x(xof_state, buf0, buf1, buf2, buf3);
 
-    polynomial0, filled = rejection_sample_multiple_blocks(polynomial0, buf0);
+    polynomial0, filled = rejection_sample_avx2(polynomial0, buf0);
     filled0 = filled;
 
-    polynomial1, filled = rejection_sample_multiple_blocks(polynomial1, buf1);
+    polynomial1, filled = rejection_sample_avx2(polynomial1, buf1);
     filled1 = filled;
 
-    polynomial2, filled = rejection_sample_multiple_blocks(polynomial2, buf2);
+    polynomial2, filled = rejection_sample_avx2(polynomial2, buf2);
     filled2 = filled;
 
-    polynomial3, filled = rejection_sample_multiple_blocks(polynomial3, buf3);
+    polynomial3, filled = rejection_sample_avx2(polynomial3, buf3);
     filled3 = filled;
 
     done = 1;
     while (done != 0) {
         xof_state,
-        buf0[0:SHAKE128_RATE],
-        buf1[0:SHAKE128_RATE],
-        buf2[0:SHAKE128_RATE],
-        buf3[0:SHAKE128_RATE]
-        = __shake128_squeezeblock4x(
+        buf0[0:SHAKE256_RATE],
+        buf1[0:SHAKE256_RATE],
+        buf2[0:SHAKE256_RATE],
+        buf3[0:SHAKE256_RATE]
+        = __shake256_squeezeblock4x(
             xof_state,
-            buf0[0:SHAKE128_RATE],
-            buf1[0:SHAKE128_RATE],
-            buf2[0:SHAKE128_RATE],
-            buf3[0:SHAKE128_RATE]
+            buf0[0:SHAKE256_RATE],
+            buf1[0:SHAKE256_RATE],
+            buf2[0:SHAKE256_RATE],
+            buf3[0:SHAKE256_RATE]
         );
 
         filled = filled0;
-        polynomial0, filled = rejection_sample_one_block(polynomial0, filled, buf0[0:SHAKE128_RATE]);
+        polynomial0, filled = rejection_sample(polynomial0, filled, buf0[0:SHAKE256_RATE]);
         filled0 = filled;
 
         filled = filled1;
-        polynomial1, filled = rejection_sample_one_block(polynomial1, filled, buf1[0:SHAKE128_RATE]);
+        polynomial1, filled = rejection_sample(polynomial1, filled, buf1[0:SHAKE256_RATE]);
         filled1 = filled;
 
         filled = filled2;
-        polynomial2, filled = rejection_sample_one_block(polynomial2, filled, buf2[0:SHAKE128_RATE]);
+        polynomial2, filled = rejection_sample(polynomial2, filled, buf2[0:SHAKE256_RATE]);
         filled2 = filled;
 
         filled = filled3;
-        polynomial3, filled = rejection_sample_one_block(polynomial3, filled, buf3[0:SHAKE128_RATE]);
+        polynomial3, filled = rejection_sample(polynomial3, filled, buf3[0:SHAKE256_RATE]);
         filled3 = filled;
 
         _, cf, _, _, zf = #CMP_64(filled0, COEFFICIENTS_IN_POLYNOMIAL - 1);

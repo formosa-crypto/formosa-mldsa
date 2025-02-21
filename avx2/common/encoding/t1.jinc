@@ -4,7 +4,7 @@ namespace t1 {
         (8u32)[0, 0, 6, 4, 0, 0, 2, 0],
         (8u32)[0, 12, 0, 12, 0, 12, 0, 12]
     };
-    u128 GROUPING_SHUFFLE = (16u8)[
+    u128 SHUFFLE_TO_GROUP = (16u8)[
         -1, -1, -1, -1, -1, -1, 12,
         11, 10, 9, 8, 4, 3, 2, 1, 0
     ];
@@ -33,7 +33,7 @@ namespace t1 {
         _bytestream = #VPERMQ(_bytestream, 0b00_00_10_00);
         bytestream = #VEXTRACTI128(_bytestream, 0);
 
-        shifts_128 = GROUPING_SHUFFLE;
+        shifts_128 = SHUFFLE_TO_GROUP;
         bytestream = #VPSHUFB_128(bytestream, shifts_128);
 
         return bytestream;

@@ -29,7 +29,7 @@ fn absorb_to_generate_errors(
     return state;
 }
 
-fn rejection_sample_less_than_eta_1x(
+fn rejection_sample(
     reg ptr u64[25] state,
     #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
     #spill_to_mmx reg u64 sampled
@@ -122,14 +122,14 @@ fn sample_error_polynomial(
     () = #unspill(error);
 
     coefficients_sampled = 0;
-    error, coefficients_sampled = rejection_sample_less_than_eta_1x(state, error, coefficients_sampled);
+    error, coefficients_sampled = rejection_sample(state, error, coefficients_sampled);
 
     while (coefficients_sampled < COEFFICIENTS_IN_POLYNOMIAL) {
         () = #spill(coefficients_sampled, error);
         state = _keccakf1600_ref1(state);
         () = #unspill(coefficients_sampled, error);
 
-        error, coefficients_sampled = rejection_sample_less_than_eta_1x(state, error, coefficients_sampled);
+        error, coefficients_sampled = rejection_sample(state, error, coefficients_sampled);
     }
 
     return error;
