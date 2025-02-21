@@ -1,8 +1,11 @@
 from Common require "hashing_4x.jinc"
 
+// We need at least 3 bytes to sample a coefficient and so, given that there are
+// 256 coefficients, we need a minimum of 768 bytes to sample a ring element.
 // TODO: If performance is lacking, see if we can sample 5 blocks, and remove
 // the use of |rejection_sample_one_block|.
 param int BLOCKS = 4;
+
 param int REJECTION_SAMPLING_BYTES = BLOCKS * SHAKE128_RATE;
 
 // TODO: Explain why we need to pad by 8 bytes.
