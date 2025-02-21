@@ -11,6 +11,93 @@ lemma ge0_to_uint (w : W64.t) :
 
 hint exact : ge0_to_uint.
 
+from CryptoSpecs require import GFq.
+import Zq.
+
+op addwl(_as _bs : W32.t list) : W32.t list = map2 (W32.(+)) _as _bs.
+op addcl(_as _bs : coeff list) : coeff list = map2 (Zq.(+)) _as _bs.
+
+op ub32(b : int, w : W32.t) = to_uint w < b.
+op sb32(b : int, w : W32.t) = -b <= to_sint w < b.
+
+op ulift(_as : W32.t list) = map (incoeff \o W32.to_uint) _as.
+op slift(_as : W32.t list) = map (incoeff \o to_sint) _as.
+
+lemma uadd_lift _ba _bb _as _bs :
+   _ba + _bb < W32.modulus =>
+   all (ub32 _ba) _as =>
+   all (ub32 _bb) _bs =>
+     ulift (addwl _as _bs) = addcl (ulift _as) (ulift _bs) /\
+     all (ub32 (_ba + _bb)) (addwl _as _bs).
+admitted.
+
+lemma sadd_lift _ba _bb _as _bs :
+   _ba + _bb <= W32.modulus %/2 =>
+   all (sb32 _ba) _as =>
+   all (sb32 _bb) _bs =>
+     slift (addwl _as _bs) = addcl (slift _as) (slift _bs) /\
+     all (sb32 (_ba + _bb)) (addwl _as _bs).
+admitted.
+
+from JazzEC require import Ml_dsa_65_amd64.
+
+op to_list32(_a : BArray1024.t) : W32.t list.
+
+module Poly = {
+proc polynomial__add(lhs : BArray1024.t, rhs : BArray1024.t) : BArray1024.t = {
+    var i : int;
+    var lhs_coefficient : W32.t;
+    var rhs_coefficient : W32.t;
+    var sum : BArray1024.t;
+    sum <- witness;
+    i <- 0;
+    while (i < 256){
+      lhs_coefficient <- get32d lhs (4 * i);
+      rhs_coefficient <- get32d rhs (4 * i);
+      lhs_coefficient <- lhs_coefficient + rhs_coefficient;
+      sum <- set32d sum (4 * i) lhs_coefficient;
+      i <- i + 1;
+    }
+    return sum;
+  }
+}.
+
+
+
+
+lemma polynomial_add_corr_ref_x86 (_a _b : BArray1024.t) :
+   hoare [ Poly.polynomial__add :
+     lhs = _a /\ rhs = _b ==>
+        to_list32 res = addwl (to_list32 _a) (to_list32 _b)
+         ].
+proof.
+proc. 
+unroll for ^while.
+(* use bdep here*)
+
+
+
+conseq (polynomial_add_x86_ref_eq)
+     (polynomial_add_corr _a _b) => /=.
++ move => &1 />.
+  by exists ((lhs, rhs){1}).
+
+by auto.  
+qed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 module Poly = {
 proc polynomial__add(lhs : BArray1024.t, rhs : BArray1024.t) : BArray1024.t = {
     var i : int;
@@ -44,7 +131,6 @@ while ( #pre /\
 by auto => />;smt(get_set32E).
 qed.
 
-from JazzEC require import Ml_dsa_65_amd64.
 
 
 lemma polynomial_add_x86_ref_eq :

@@ -1,9 +1,9 @@
 [general]
 timeout = 2
 
-provers = Alt-Ergo@2.4
+provers = Alt-Ergo@2.5
 provers = CVC4@1.8
-provers = Z3@4.8
+provers = Z3@4.12
 
 rdirs = proof
 rdirs = Jasmin:jasmin/eclib
@@ -15,6 +15,7 @@ idirs = JazzEC:src/arm+riskv/ml-dsa-87/extraction
 idirs = JazzEC:src/amd64/ref/ml_dsa_44/extraction
 idirs = JazzEC:src/amd64/ref/ml_dsa_65/extraction
 idirs = JazzEC:src/amd64/ref/ml_dsa_87/extraction
-idirs = CryptoSpecs:crypto-specs/common
-rdirs = CryptoSpecs:crypto-specs/fips202
-rdirs = CryptoSpecs:crypto-specs/ml-dsa
+idirs = CryptoSpecs:ext/crypto-specs/arrays
+idirs = CryptoSpecs:ext/crypto-specs/common
+rdirs = CryptoSpecs:ext/crypto-specs/fips202
+rdirs = CryptoSpecs:ext/crypto-specs/ml-dsa
