@@ -105,7 +105,7 @@ namespace gamma1 {
         reg u128 temp1;
 
         reg u64 temp;
-        reg u64 offset output_offset;
+        reg u64 output_offset input_offset;
 
         temp = GAMMA1;
         temp1 = #VMOV_64(temp);
@@ -119,16 +119,16 @@ namespace gamma1 {
 
         coefficients = #set0_256();
 
+        input_offset = 0;
         output_offset = 0;
-        offset = 0;
-        while (output_offset < ENCODED_GAMMA1_POLYNOMIAL_SIZE) {
-            sixteen_bytes = bytes.[u128 output_offset];
-            output_offset += 4;
+        while (input_offset < ENCODED_GAMMA1_POLYNOMIAL_SIZE) {
+            sixteen_bytes = bytes.[u128 input_offset];
+            input_offset += 4;
 
             coefficients = #VINSERTI128(coefficients, sixteen_bytes, 0);
 
-            sixteen_bytes = bytes.[u128 output_offset];
-            output_offset += 16;
+            sixteen_bytes = bytes.[u128 input_offset];
+            input_offset += 16;
 
             coefficients = #VINSERTI128(coefficients, sixteen_bytes, 1);
 
@@ -141,8 +141,8 @@ namespace gamma1 {
             coefficients = #VPAND_256(coefficients, gamma1_times_2_mask);
             coefficients = #VPSUB_8u32(gamma1, coefficients);
 
-            polynomial.[u256 offset] = coefficients;
-            offset += 32;
+            polynomial.[u256 output_offset] = coefficients;
+            output_offset += 32;
         }
 
         return polynomial;

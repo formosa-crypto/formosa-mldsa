@@ -121,20 +121,22 @@ namespace t1 {
     {
         reg u64 output_offset input_offset;
 
-        reg u128 byte_chunk;
+        reg u128 bytestream;
 
         reg u256 coefficients;
         reg u256 shifts;
 
-        output_offset = 0;
-        input_offset = 0;
-        while (input_offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
-            // We process only 10 bytes at a time.
-            byte_chunk = t1_encoded.[u128 output_offset];
-            output_offset += 10;
+        coefficients = #set0_256();
 
-            coefficients = #VINSERTI128(coefficients, byte_chunk, 0);
-            coefficients = #VINSERTI128(coefficients, byte_chunk, 1);
+        input_offset = 0;
+        output_offset = 0;
+        while (input_offset < T1_POLYNOMIAL_ENCODED_SIZE - 10) {
+            // We process only 10 bytes at a time.
+            bytestream = t1_encoded.[u128 input_offset];
+            input_offset += 10;
+
+            coefficients = #VINSERTI128(coefficients, bytestream, 0);
+            coefficients = #VINSERTI128(coefficients, bytestream, 1);
 
             shifts = DECODING_TABLE[0];
             coefficients = #VPSHUFB_256(coefficients, shifts);
@@ -144,9 +146,25 @@ namespace t1 {
 
             coefficients = #VPAND_256(coefficients, mask);
 
-            t1.[u256 input_offset] = coefficients;
-            input_offset += 32;
+            t1.[u256 output_offset] = coefficients;
+            output_offset += 32;
         }
+
+        bytestream = t1_encoded.[u128 T1_POLYNOMIAL_ENCODED_SIZE - 16];
+        bytestream = #VPSRLDQ_128(bytestream, 6);
+
+        coefficients = #VINSERTI128(coefficients, bytestream, 0);
+        coefficients = #VINSERTI128(coefficients, bytestream, 1);
+
+        shifts = DECODING_TABLE[0];
+        coefficients = #VPSHUFB_256(coefficients, shifts);
+
+        shifts = DECODING_TABLE[1];
+        coefficients = #VPSRLV_8u32(coefficients, shifts);
+
+        coefficients = #VPAND_256(coefficients, mask);
+
+        t1.[u256 output_offset] = coefficients;
 
         return t1;
     }

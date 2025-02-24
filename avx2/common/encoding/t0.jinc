@@ -117,46 +117,59 @@ namespace t0 {
         ]
     };
 
+    fn bytestream_to_coefficients(reg u128 bytestream) -> reg u256 {
+        reg u256 coefficients;
+        reg u256 shifts mask;
+
+        coefficients = #set0_256();
+        coefficients = #VINSERTI128(coefficients, bytestream, 0);
+        coefficients = #VINSERTI128(coefficients, bytestream, 1);
+
+        shifts = DECODING_TABLE[0];
+        coefficients = #VPSHUFB_256(coefficients, shifts);
+
+        shifts = DECODING_TABLE[1];
+        coefficients = #VPSRLV_8u32(coefficients, shifts);
+
+        mask = DECODING_TABLE[2];
+        coefficients = #VPAND_256(coefficients, mask);
+
+        shifts = HALF_OF_BITS_IN_T0_VECTOR;
+        coefficients = #VPSUB_8u32(shifts, coefficients);
+
+        return coefficients;
+    }
     inline
     fn decode_polynomial(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0,
         reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE] t0_encoded
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 output_offset offset;
-
-        reg u128 byte_chunk;
-
+        reg u128 bytestream;
         reg u256 coefficients;
-        reg u256 shifts mask;
 
-        coefficients = #set0_256();
+        reg u64 input_offset output_offset;
 
+        input_offset = 0;
         output_offset = 0;
-        offset = 0;
-        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+        while (input_offset < T0_POLYNOMIAL_ENCODED_SIZE - 13) {
             // We process only 13 bytes at a time.
-            byte_chunk = t0_encoded.[u128 output_offset];
-            output_offset += 13;
+            bytestream = t0_encoded.[u128 input_offset];
+            input_offset += 13;
 
-            coefficients = #VINSERTI128(coefficients, byte_chunk, 0);
-            coefficients = #VINSERTI128(coefficients, byte_chunk, 1);
+            coefficients = bytestream_to_coefficients(bytestream);
 
-            shifts = DECODING_TABLE[0];
-            coefficients = #VPSHUFB_256(coefficients, shifts);
-
-            shifts = DECODING_TABLE[1];
-            coefficients = #VPSRLV_8u32(coefficients, shifts);
-
-            mask = DECODING_TABLE[2];
-            coefficients = #VPAND_256(coefficients, mask);
-
-            shifts = HALF_OF_BITS_IN_T0_VECTOR;
-            coefficients = #VPSUB_8u32(shifts, coefficients);
-
-            t0.[u256 offset] = coefficients;
-            offset += 32;
+            t0.[u256 output_offset] = coefficients;
+            output_offset += 32;
         }
+
+        bytestream = t0_encoded.[u128 T0_POLYNOMIAL_ENCODED_SIZE - 16];
+        bytestream = #VPSRLDQ_128(bytestream, 3);
+
+        coefficients = bytestream_to_coefficients(bytestream);
+
+        t0.[u256 output_offset] = coefficients;
+        output_offset += 32;
 
         return t0;
     }

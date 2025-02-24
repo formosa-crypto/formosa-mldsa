@@ -108,6 +108,7 @@ namespace error_polynomial {
         reg u256 eta;
 
         reg u64 input_offset output_offset temp;
+        reg u64 byte_group;
 
         temp = (1 << 4) - 1;
         mask = (256u)#VMOV(temp);
@@ -124,39 +125,27 @@ namespace error_polynomial {
 
         input_offset = 0;
         output_offset = 0;
-        while (input_offset < ENCODED_ERROR_POLYNOMIAL_SIZE - 16) {
-            bytes = encoded.[u128 input_offset];
-            input_offset += 4;
-
-            coefficients = #VINSERTI128(coefficients, bytes, 0);
-            coefficients = #VINSERTI128(coefficients, bytes, 1);
-
-            coefficients = #VPSHUFB_256(coefficients, decoding_shuffles);
-            coefficients = #VPSRLV_8u32(coefficients, shifts);
-            coefficients = #VPAND_256(coefficients, mask);
-
-            coefficients = #VPSUB_8u32(eta, coefficients);
-
-            decoded.[u256 output_offset] = coefficients;
-            output_offset += 32;
-        }
-
-        bytes = encoded.[u128 input_offset];
         while (input_offset < ENCODED_ERROR_POLYNOMIAL_SIZE) {
-            coefficients = #VINSERTI128(coefficients, bytes, 0);
-            coefficients = #VINSERTI128(coefficients, bytes, 1);
+            bytes = encoded.[u128 input_offset];
+            input_offset += 16;
 
-            coefficients = #VPSHUFB_256(coefficients, decoding_shuffles);
-            coefficients = #VPSRLV_8u32(coefficients, shifts);
-            coefficients = #VPAND_256(coefficients, mask);
+            byte_group = 0;
+            while (byte_group < 4) {
+                coefficients = #VINSERTI128(coefficients, bytes, 0);
+                coefficients = #VINSERTI128(coefficients, bytes, 1);
 
-            coefficients = #VPSUB_8u32(eta, coefficients);
+                coefficients = #VPSHUFB_256(coefficients, decoding_shuffles);
+                coefficients = #VPSRLV_8u32(coefficients, shifts);
+                coefficients = #VPAND_256(coefficients, mask);
 
-            decoded.[u256 output_offset] = coefficients;
-            output_offset += 32;
+                coefficients = #VPSUB_8u32(eta, coefficients);
 
-            bytes = #VPSRLDQ_128(bytes, 4);
-            input_offset += 4;
+                decoded.[u256 output_offset] = coefficients;
+                output_offset += 32;
+
+                bytes = #VPSRLDQ_128(bytes, 4);
+                byte_group += 1;
+            }
         }
 
         return decoded;

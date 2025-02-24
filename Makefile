@@ -59,7 +59,7 @@ check-rsb: $(IMPLEMENTATION)/ml_dsa.jazz
 
 .PHONY: run-interpreter
 run-interpreter: $(IMPLEMENTATION)/example.jazz $(IMPLEMENTATION)/ml_dsa.jazz
-	$env JASMINPATH="Common=$(COMMON)" (JASMINC) $< | grep 'true'
+	env JASMINPATH="Common=$(COMMON)" $(JASMINC) $< | grep 'true'
 
 # --------------------------------------------------------------------
 bench.o: $(OUTPUT_FILE_NAME).s bench/bench.c bench/notrandombytes.c $(IMPLEMENTATION)/api.h
