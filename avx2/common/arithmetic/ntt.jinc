@@ -1,4 +1,55 @@
 namespace polynomial {
+    fn ntt_at_layer_0(
+        reg u64 zeta_i,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg u64, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        inline int STEP = 1 << 0;
+        inline int ROUNDS = 128 >> 0;
+
+        reg u64 round offset bound;
+
+        reg u64 t64 zeta;
+        reg u32 t left;
+
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] zetas = ZETAS_TIMES_MONTGOMERY_R;
+
+        round = 0;
+        while (round < ROUNDS) {
+            zeta_i += 1;
+
+            offset = round;
+            offset *= STEP;
+            offset *= 2;
+
+            bound = offset;
+            bound += STEP;
+
+            while (offset < bound) {
+                // TODO: Loading these values as a 64u will result in the
+                // wrong answer, maybe this should be reflected in the types?
+                t64 = (64s)polynomial[offset + STEP];
+                zeta = (64s)zetas[zeta_i];
+
+                t64 *= zeta;
+                t = montgomery_reduce(t64);
+
+                left = polynomial[offset];
+                left -= t;
+                polynomial[offset + STEP] = left;
+
+                left = polynomial[offset];
+                left += t;
+                polynomial[offset] = left;
+
+                offset += 1;
+            }
+
+            round += 1;
+        }
+
+        return zeta_i, polynomial;
+    }
     inline
     fn ntt_at_layer(
         inline int LAYER,
@@ -57,9 +108,10 @@ namespace polynomial {
         reg u64 zeta_i = -1;
 
         inline int LAYER;
-        for LAYER = 7 downto -1 {
+        for LAYER = 7 downto 0 {
             zeta_i, polynomial = ntt_at_layer(LAYER, zeta_i, polynomial);
         }
+        zeta_i, polynomial = ntt_at_layer_0(zeta_i, polynomial);
 
         return polynomial;
     }
