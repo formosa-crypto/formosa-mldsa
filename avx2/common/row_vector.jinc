@@ -1,4 +1,3 @@
-require "arithmetic/ntt.jinc"
 require "polynomial.jinc"
 
 // A row vector has dimensions 1 * COLUMNS_IN_MATRIX_A

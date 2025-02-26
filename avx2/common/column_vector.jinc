@@ -1,5 +1,3 @@
-from Common require "arithmetic/ntt.jinc"
-
 require "polynomial.jinc"
 
 // A column vector has dimensions ROWS_IN_MATRIX_A * 1

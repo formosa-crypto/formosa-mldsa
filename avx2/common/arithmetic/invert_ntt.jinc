@@ -1,0 +1,84 @@
+namespace polynomial {
+    inline
+    fn invert_ntt_at_layer(
+        inline int LAYER,
+        reg u64 zeta_i,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg u64, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        inline int STEP = 1 << LAYER;
+        inline int ROUNDS = 128 >> LAYER;
+
+        reg u64 round offset bound;
+
+        reg u64 t64 zeta;
+        reg u32 t left right;
+
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] zetas = ZETAS_TIMES_MONTGOMERY_R;
+
+        round = 0;
+        while (round < ROUNDS) {
+            zeta_i -= 1;
+
+            offset = round;
+            offset *= STEP;
+            offset *= 2;
+
+            bound = offset;
+            bound += STEP;
+
+            while (offset < bound) {
+                t = polynomial[offset + STEP];
+                t -= polynomial[offset];
+
+                left = polynomial[offset];
+                right = polynomial[offset + STEP];
+                left += right;
+                polynomial[offset] = left;
+
+                zeta = (64s)zetas[zeta_i];
+                t64 = (64s)t;
+
+                t64 *= zeta;
+                t = montgomery_reduce(t64);
+                polynomial[offset + STEP] = t;
+
+                offset += 1;
+            }
+
+            round += 1;
+        }
+
+        return zeta_i, polynomial;
+    }
+
+    fn invert_ntt_montgomery(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 zeta_i coefficient64;
+        reg u32 coefficient;
+
+        reg u64 j;
+
+        inline int LAYER;
+
+        zeta_i = 255;
+        for LAYER = 0 to 8 {
+            zeta_i, polynomial = invert_ntt_at_layer(LAYER, zeta_i, polynomial);
+        }
+
+        j = 0;
+        while(j < COEFFICIENTS_IN_POLYNOMIAL) {
+            coefficient64 = (64s)polynomial[j];
+            coefficient64 *= 41_978;
+
+            coefficient = montgomery_reduce(coefficient64);
+            polynomial[j] = coefficient;
+
+            j += 1;
+        }
+
+        return polynomial;
+    }
+}
