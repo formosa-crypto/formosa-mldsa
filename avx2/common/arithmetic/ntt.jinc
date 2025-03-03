@@ -139,7 +139,6 @@ namespace polynomial {
         rhs = polynomial.[u256 rhs_start];
         rhs_truncated = (128u)rhs;
 
-        // TODO: See if VINSERTF128 can be used.
         summands = #set0_256();
         summands = #VINSERTI128(summands, lhs_truncated, 0);
         summands = #VINSERTI128(summands, rhs_truncated, 1);
