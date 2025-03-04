@@ -53,8 +53,6 @@ fn sample_mask_polynomial_1x(
         state = _keccakf1600_ref1(state);
         () = #unspill(block_being_squeezed, mask, mask_encoded_offset);
 
-        _ = #init_msf();
-
         i = 0;
         while(i < SHAKE256_RATE) {
             byte = state[u8 i];
