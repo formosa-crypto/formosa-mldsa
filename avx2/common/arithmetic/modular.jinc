@@ -136,26 +136,3 @@ namespace polynomial {
         return polynomial;
     }
 }
-
-inline
-fn montgomery_reduce(reg u64 a) -> reg u32
-{
-    reg u32 a32;
-    reg u64 v64;
-    reg u32 t;
-
-    // t = (int64_t)(int32_t)a*QINV;
-    a32 = (32s) a;
-    v64 = (64s) a32;
-    v64 *= INVERSE_OF_MODULUS_MOD_MONTGOMERY_R;
-    t = (32s) v64;
-
-    // t = (a - (int64_t)t*Q) >> 32;
-    v64 = (64s) t;
-    v64 *= -MODULUS;
-    v64 += a;
-    v64 >>= 32;
-    t = (32s) v64;
-
-    return t;
-}

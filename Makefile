@@ -14,6 +14,7 @@ IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
 						 $(wildcard $(IMPLEMENTATION)/arithmetic/*.jinc) \
 						 $(wildcard $(IMPLEMENTATION)/encoding/*.jinc) \
 						 $(wildcard $(IMPLEMENTATION)/sample/*.jinc) \
+						 $(wildcard $(IMPLEMENTATION)/sample/error_vectors/*.jinc) \
 						 $(wildcard $(COMMON)/*.jinc) \
 						 $(wildcard $(COMMON)/arithmetic/*.jinc) \
 						 $(wildcard $(COMMON)/encoding/*.jinc) \

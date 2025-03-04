@@ -1,0 +1,210 @@
+namespace error_4x {
+    fn shake256_init(
+        reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
+        reg u16 starting_domain_separator,
+        reg ptr u256[25] state
+    ) -> reg ptr u256[25]
+    {
+        reg u256 t256 zeros;
+        reg u64 t64;
+
+        inline int i lane;
+
+        zeros = #set0_256();
+        for i = 0 to 25 {
+            state[i] = zeros;
+        }
+
+        for i = 0 to 8 {
+            // N.B.: SEED_FOR_ERROR_VECTORS_SIZE is always 64.
+            t64 = rho_prime.[u64 8 * i];
+            t256 = (256u)t64;
+            t256 = #VPBROADCAST_4u64(t256);
+            state[i] = t256;
+        }
+
+        for lane = 0 to 4 {
+            t64 = (64u)starting_domain_separator;
+            t64 = #LEA_64(0x1F0000 + t64);
+
+            t256 = (256u)t64;
+            t256 = #VPBROADCAST_4u64(t256);
+            t256 = #VPADD_4u64(t256, CONST_0123);
+            state[8] = t256;
+        }
+
+        t64 = 0x8000000000000000;
+        t256 = (256u)t64;
+        t256 = #VPBROADCAST_4u64(t256);
+        state[16] = t256;
+
+        return state;
+    }
+
+
+    u256 DECODING_SHUFFLES = (32u8)[
+        -1, -1, -1, 3,
+        -1, -1, -1, 3,
+        -1, -1, -1, 2,
+        -1, -1, -1, 2,
+        -1, -1, -1, 1,
+        -1, -1, -1, 1,
+        -1, -1, -1, 0,
+        -1, -1, -1, 0
+    ];
+    u256 SHIFTS = (8u32)[4, 0, 4, 0, 4, 0, 4, 0];
+    inline
+    fn bytestream_to_potential_error_coefficients(reg u128 bytestream) -> reg u256 {
+        reg u256 coefficients;
+        reg u256 decoding_shuffles shifts;
+        reg u256 mask;
+        reg u64 temp;
+
+        temp = (1 << 4) - 1;
+        mask = (256u)#VMOV(temp);
+        mask = #VPBROADCAST_8u32(mask);
+
+        decoding_shuffles = DECODING_SHUFFLES;
+        shifts = SHIFTS;
+
+        coefficients = #set0_256();
+        coefficients = #VINSERTI128(coefficients, bytestream, 0);
+        coefficients = #VINSERTI128(coefficients, bytestream, 1);
+
+        coefficients = #VPSHUFB_256(coefficients, decoding_shuffles);
+        coefficients = #VPSRLV_8u32(coefficients, shifts);
+        coefficients = #VPAND_256(coefficients, mask);
+
+        return coefficients;
+    }
+
+    fn rejection_sample(
+        reg ptr u8[SHAKE256_RATE] randombytes,
+        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
+        #spill_to_mmx reg u64 sampled
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
+    {
+        reg u64 xof_offset;
+        #public reg u32 try_coefficient temp;
+        reg u8 byte;
+
+        xof_offset = 0;
+
+        while (xof_offset < SHAKE256_RATE) {
+            if (sampled < COEFFICIENTS_IN_POLYNOMIAL) {
+                byte = randombytes[u8 xof_offset];
+
+                try_coefficient = (32u)byte;
+                try_coefficient &= 0x0F;
+
+                if (try_coefficient < 9) {
+                    temp = ETA;
+                    temp -= try_coefficient;
+                    error[sampled] = temp;
+
+                    sampled += 1;
+                }
+
+                if (sampled < COEFFICIENTS_IN_POLYNOMIAL) {
+                    try_coefficient = (32u)byte;
+                    try_coefficient >>= 4;
+
+                    if (try_coefficient < 9) {
+                        temp = ETA;
+                        temp -= try_coefficient;
+                        error[sampled] = temp;
+
+                        sampled += 1;
+                    }
+                }
+            }
+
+            xof_offset += 1;
+        }
+
+        return error, sampled;
+    }
+
+    inline
+    fn sample_polynomials(
+        reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
+        reg u16 starting_domain_separator
+    ) -> stack u32[COEFFICIENTS_IN_POLYNOMIAL],
+         stack u32[COEFFICIENTS_IN_POLYNOMIAL],
+         stack u32[COEFFICIENTS_IN_POLYNOMIAL],
+         stack u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u256[25] xof_state;
+
+        // At minimum we'll need 2 bytes to sample a coefficient, and so we'll need
+        // at least 128 bytes to sample an entire polynomial. Each SHAKE256 block is
+        // 136 bytes, so we might be able to get away with sampling just one block.
+        stack u8[SHAKE256_RATE] buf0 buf1 buf2 buf3;
+
+        stack u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial0 polynomial1 polynomial2 polynomial3;
+
+        reg u64 filled0 filled1 filled2 filled3;
+        reg u64 filled;
+
+        reg u8 flg0 flg1 done;
+        reg bool cf zf;
+
+        xof_state = shake256_init(rho_prime, starting_domain_separator, xof_state);
+
+        filled0 = 0;
+        filled1 = 0;
+        filled2 = 0;
+        filled3 = 0;
+
+        done = 1;
+        while (done != 0) {
+            xof_state,
+            buf0,
+            buf1,
+            buf2,
+            buf3
+            = __shake256_squeezeblock4x(
+                xof_state,
+                buf0,
+                buf1,
+                buf2,
+                buf3
+            );
+
+            filled = filled0;
+            polynomial0, filled = rejection_sample(buf0, polynomial0, filled);
+            filled0 = filled;
+
+            filled = filled1;
+            polynomial1, filled = rejection_sample(buf1, polynomial1, filled);
+            filled1 = filled;
+
+            filled = filled2;
+            polynomial2, filled = rejection_sample(buf2, polynomial2, filled);
+            filled2 = filled;
+
+            filled = filled3;
+            polynomial3, filled = rejection_sample(buf3, polynomial3, filled);
+            filled3 = filled;
+
+            _, cf, _, _, zf = #CMP_64(filled0, COEFFICIENTS_IN_POLYNOMIAL - 1);
+            flg0 = #SETcc(cf || zf);
+
+            _, cf, _, _, zf = #CMP_64(filled1, COEFFICIENTS_IN_POLYNOMIAL - 1);
+            flg1 = #SETcc(cf || zf);
+
+            _, _, _, _, _, done = #OR_8(flg0, flg1);
+
+            _, cf, _, _, zf = #CMP_64(filled2, COEFFICIENTS_IN_POLYNOMIAL - 1);
+            flg0 = #SETcc(cf || zf);
+
+            _, cf, _, _, zf = #CMP_64(filled3, COEFFICIENTS_IN_POLYNOMIAL - 1);
+            flg1 = #SETcc(cf || zf);
+
+            _, _, _, _, _, flg0 = #OR_8(flg0, flg1);
+            _, _, _, _, _, done = #OR_8(flg0, done);
+        }
+
+        return polynomial0, polynomial1, polynomial2, polynomial3;
+    }
+}

@@ -75,7 +75,6 @@ fn keygen_internal(reg ptr u8[32] randomness)
 
     s1 = row_vector::ntt(s1);
 
-    _ = #init_msf();
     matrix_A = sample::matrix_A(seed_for_matrix_A);
 
     t = row_vector::multiply_with_matrix_A(matrix_A, s1);
