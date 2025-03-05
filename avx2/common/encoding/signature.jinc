@@ -6,32 +6,40 @@ namespace signature {
     fn encode(
         reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash,
         reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response,
-        reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint
-    ) -> stack u8[SIGNATURE_SIZE]
+        reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint,
+        reg u64 signature_pointer
+    )
     {
-        stack u8[SIGNATURE_SIZE] signature;
-        reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] polynomial_encoded;
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial;
-
         reg u64 i j hints_written hint_offset;
         reg u32 hint_coefficient;
 
+        reg u8 byte;
+
         inline int k;
+        inline int offset;
         inline bool condition;
 
-        signature[0:COMMITMENT_HASH_SIZE] = #copy(commitment_hash);
+        i = 0;
+        while (i < COMMITMENT_HASH_SIZE) {
+            byte = commitment_hash[i];
+            (u8)[signature_pointer + i] = byte;
+
+            i += 1;
+        }
 
         for k = 0 to COLUMNS_IN_MATRIX_A {
-            polynomial_encoded = signature[START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE];
-            polynomial = signer_response[k * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            polynomial_encoded = gamma1::encode_polynomial(polynomial_encoded, polynomial);
-            signature[START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE] = polynomial_encoded;
+            offset = START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE);
+            gamma1::encode_polynomial(
+                signer_response[k * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                signature_pointer,
+                offset
+            );
         }
 
         // Clear the hints buffer
         i = 0;
         while (i < MAX_ONES_IN_HINT + ROWS_IN_MATRIX_A) {
-            signature[START_OF_HINT + i] = 0;
+            (u8)[signature_pointer + START_OF_HINT + i] = 0;
             i += 1;
         }
 
@@ -49,19 +57,17 @@ namespace signature {
                 hint_coefficient = hint[hint_offset];
 
                 condition = hint_coefficient != 0;
-                if (condition) {
-                    signature[START_OF_HINT + hints_written] = (8u)j;
+                if (hint_coefficient != 0) {
+                    (u8)[signature_pointer + START_OF_HINT + hints_written] = (8u)j;
                     hints_written += 1;
                 }
 
                 j += 1;
             }
 
-            signature[START_OF_HINT + MAX_ONES_IN_HINT + i] = (8u) hints_written;
+            (u8)[signature_pointer + START_OF_HINT + MAX_ONES_IN_HINT + i] = (8u) hints_written;
             i += 1;
         }
-
-        return signature;
     }
 
     inline
