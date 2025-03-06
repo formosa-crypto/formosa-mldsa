@@ -57,8 +57,6 @@ namespace polynomial {
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs product
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        // TODO: If performance is lacking, unroll this loop to process 3 
-        // chunks per round.
         reg u256 lhs_coeffs rhs_coeffs;
         reg u256 product_coeffs;
 
@@ -68,10 +66,14 @@ namespace polynomial {
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
             lhs_coeffs = lhs.[u256 offset];
             rhs_coeffs = rhs.[u256 offset];
-
             product_coeffs = montgomery_multiply_and_reduce(lhs_coeffs, rhs_coeffs);
             product.[u256 offset] = product_coeffs;
+            offset += 32;
 
+            lhs_coeffs = lhs.[u256 offset];
+            rhs_coeffs = rhs.[u256 offset];
+            product_coeffs = montgomery_multiply_and_reduce(lhs_coeffs, rhs_coeffs);
+            product.[u256 offset] = product_coeffs;
             offset += 32;
         }
 

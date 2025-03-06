@@ -3,6 +3,7 @@ require "encoding/error_polynomial.jinc"
 require "encoding/gamma1.jinc"
 require "arithmetic/rounding.jinc"
 
+from Common require "utils.jinc"
 from Common require "arithmetic/rounding.jinc"
 from Common require "arithmetic/modular.jinc"
 from Common require "arithmetic/zetas.jinc"

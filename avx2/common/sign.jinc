@@ -65,7 +65,7 @@ fn sign_internal(
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] ct0;
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w0_minus_cs2_plus_ct0;
 
-    reg u32 ones_in_hint;
+    reg u64 ones_in_hint;
     stack u8 infinity_norm_check_result;
 
     () = #spill(signature_pointer, randomness);

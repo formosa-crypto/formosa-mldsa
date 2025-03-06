@@ -1,0 +1,11 @@
+// TODO: Delete this once mm256_movemask_ps() is available in Jasmin.
+inline fn movemask_8u32(reg u256 ymm) -> reg u64
+{
+    reg u64 duplicated_mask mask;
+    reg u64 pext_control = 0x88_88_88_88_88;
+
+    duplicated_mask = #VPMOVMSKB_u256u64(ymm);
+    mask = #PEXT_64(duplicated_mask, pext_control);
+
+    return mask;
+}

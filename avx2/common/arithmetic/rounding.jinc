@@ -3,7 +3,7 @@ namespace polynomial {
     fn make_hint(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] low_coefficients high_coefficients,
         #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints
-    ) -> reg u32, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    ) -> reg u64, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 hint_block;
         reg u256 low abs_low high;
@@ -13,7 +13,7 @@ namespace polynomial {
         reg u256 zeros;
 
         reg u64 offset temp;
-        reg u32 num_hints weight;
+        reg u64 num_hints weight;
 
         temp = GAMMA2;
         gamma2 = (256u)#VMOV_64(temp);
@@ -27,7 +27,7 @@ namespace polynomial {
 
         weight = 0;
         offset = 0;
-        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
             low = low_coefficients.[u256 offset];
             high = high_coefficients.[u256 offset];
 
@@ -48,20 +48,12 @@ namespace polynomial {
             // TODO: We could also handle serializing the hint here, but
             // that'd require _mm256_movemask_ps(). Revisit if performance
             // is lacking.
+            num_hints = movemask_8u32(hint_block);
+            _, _, _, _, _, num_hints = #POPCNT_64(num_hints);
+
             hint_block = #VPSRL_8u32(hint_block, 31);
             hints.[u256 offset] = hint_block;
             offset += 32;
-
-            //
-            // TODO: The code:
-            // zeros = #VPSUB_8u32(zeros, hint_block);
-            // num_hints = #VPMOVMSKB_u256u32(zeros);
-            // causes a bug. Figure out why.
-            //
-            hint_block = #VPSUB_8u32(zeros, hint_block);
-            num_hints = #VPMOVMSKB_u256u32(hint_block);
-            _, _, _, _, _, num_hints = #POPCNT_32(num_hints);
-            num_hints >>= 2;
 
             weight += num_hints;
         }
@@ -90,7 +82,7 @@ namespace polynomial {
         ones_vector = #VPBROADCAST_8u32(ones_vector);
 
         offset = 0;
-        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
             coefficients = polynomial.[u256 offset];
 
             high = #VPADD_8u32(coefficients, half_t0_bits);
