@@ -16,38 +16,6 @@ namespace row_vector {
         return vector;
     }
 
-    fn invert_ntt_montgomery(reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
-        -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
-    {
-        inline int i;
-        for i = 0 to COLUMNS_IN_MATRIX_A {
-            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
-                polynomial::invert_ntt_montgomery(
-                    vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
-                );
-        }
-
-        return vector;
-    }
-
-    inline
-    fn add(stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs)
-        -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
-    {
-        stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] sum;
-
-        inline int i;
-        for i = 0 to COLUMNS_IN_MATRIX_A {
-            sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
-                polynomial::add(
-                    lhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
-                    rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
-                    sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
-                );
-        }
-        return sum;
-    }
-
     inline
     fn dot_product(
         #spill_to_mmx reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs,
@@ -74,31 +42,6 @@ namespace row_vector {
         }
 
         return output;
-    }
-
-    inline
-    fn multiply_by_polynomial(
-        #spill_to_mmx reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector,
-        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly
-    ) -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
-    {
-        stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] product;
-
-        () = #spill(vector, poly);
-
-        inline int i;
-        for i = 0 to COLUMNS_IN_MATRIX_A {
-            product[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
-                = polynomial::pointwise_montgomery_multiply_and_reduce(
-                    vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                    poly,
-                    product[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
-                );
-
-            () = #unspill(vector, poly);
-        }
-
-        return product;
     }
 
     // Compute A * NTT(vector)
@@ -132,19 +75,6 @@ namespace row_vector {
             vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
                 polynomial::conditionally_add_modulus(vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]);
         }
-        return vector;
-    }
-
-    fn reduce32(reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
-        -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
-    {
-        inline int i;
-
-        for i = 0 to COLUMNS_IN_MATRIX_A {
-            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
-                polynomial::reduce32(vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]);
-        }
-
         return vector;
     }
 
