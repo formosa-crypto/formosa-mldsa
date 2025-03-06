@@ -7,7 +7,7 @@
 #include "api.h"
 #include "notrandombytes.h"
 
-#define DATA_POINTS 100000
+#define DATA_POINTS 10000
 
 // Utility functions and macros.
 
