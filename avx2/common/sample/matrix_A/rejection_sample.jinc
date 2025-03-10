@@ -80,7 +80,7 @@ fn rejection_sample_multiple_blocks(
 
         compare_with_field_modulus = #VPCMPGT_8u32(modulus, potential_coefficients);
 
-        good = movemask_8u32(compare_with_field_modulus);
+        good = #MOVEMASK_8u32(compare_with_field_modulus);
 
         // Do the lower 4 coefficients first.
         lower_coefficients = #VEXTRACTI128(potential_coefficients, 0);

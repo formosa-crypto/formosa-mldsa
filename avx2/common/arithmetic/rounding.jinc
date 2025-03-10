@@ -45,10 +45,8 @@ namespace polynomial {
                 low_equals_minus_gamma2_and_high_is_nonzero
             );
 
-            // TODO: We could also handle serializing the hint here, but
-            // that'd require _mm256_movemask_ps(). Revisit if performance
-            // is lacking.
-            num_hints = movemask_8u32(hint_block);
+            // TODO: We could also handle serializing the hint here.
+            num_hints = #MOVEMASK_8u32(hint_block);
             _, _, _, _, _, num_hints = #POPCNT_64(num_hints);
 
             hint_block = #VPSRL_8u32(hint_block, 31);
