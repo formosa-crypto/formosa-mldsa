@@ -22,7 +22,7 @@ namespace sample {
             matrix_A[(index + 1) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
             matrix_A[(index + 2) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
             matrix_A[(index + 3) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
-                = sample_4_polynomials(
+                = matrix_A::sample_4_polynomials(
                     rho,
                     domain_separators
                 );
@@ -40,7 +40,7 @@ namespace sample {
         matrix_A[(index + 0) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
         matrix_A[(index + 1) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
         _, _ 
-        = sample_4_polynomials(
+        = matrix_A::sample_4_polynomials(
             rho,
             domain_separators
         );
