@@ -23,6 +23,24 @@ fn derive_seed_for_mask(
     return seed_for_mask;
 }
 
+inline fn compute_signer_response_element(
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] s1_element,
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] verifier_challenge,
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] mask_element,
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] signer_response_element
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+{
+    stack u32[COEFFICIENTS_IN_POLYNOMIAL] cs1;
+
+    cs1 = polynomial::pointwise_montgomery_multiply_and_reduce(s1_element, verifier_challenge, cs1);
+    cs1 = polynomial::invert_ntt_montgomery(cs1);
+
+    signer_response_element = polynomial::add(cs1, mask_element, signer_response_element);
+    signer_response_element = polynomial::reduce32(signer_response_element);
+
+    return signer_response_element;
+}
+
 inline
 fn sign_internal(
     #secret stack u8[SIGNING_KEY_SIZE] signing_key,
@@ -144,16 +162,18 @@ fn sign_internal(
         infinity_norm_check_result = 0;
         for i = 0 to COLUMNS_IN_MATRIX_A {
             if (infinity_norm_check_result == 0) {
-                s1_element = s1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-
-                cs1 = polynomial::pointwise_montgomery_multiply_and_reduce(s1_element, verifier_challenge, cs1);
-                cs1 = polynomial::invert_ntt_montgomery(cs1);
-
-                signer_response_element = signer_response[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-                signer_response_element = polynomial::add(cs1, mask[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL], signer_response_element);
-                signer_response_element = polynomial::reduce32(signer_response_element);
-                infinity_norm_check_result = polynomial::check_infinity_norm(signer_response_element, (int) (GAMMA1 - BETA));
-                signer_response[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = signer_response_element;
+                signer_response[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                    compute_signer_response_element(
+                        s1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                        verifier_challenge,
+                        mask[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                        signer_response[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                    );
+                infinity_norm_check_result =
+                    polynomial::check_infinity_norm(
+                        signer_response[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                        (int) (GAMMA1 - BETA)
+                    );
             }
         }
 
