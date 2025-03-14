@@ -1,7 +1,7 @@
 namespace sample {
     inline
     fn matrix_A(
-        #public stack u8[32] rho
+        #public reg ptr u8[32] rho
     ) -> stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;

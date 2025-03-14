@@ -1,6 +1,6 @@
 // TODO: Ideally, we'd short circuit on failure.
 inline
-fn compare_commitment_hashes(stack u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg u64 {
+fn compare_commitment_hashes(reg ptr u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg u64 {
     reg u128 lhs_bytes rhs_bytes;
     reg u128 result_vec temp;
 
@@ -24,7 +24,7 @@ fn compare_commitment_hashes(stack u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg u64 
         offset += 16;
     }
 
-    result = #VPMOVMSKB_u128u64(result_vec);
+    result = #MOVEMASK_16u8(result_vec);
     if (result == 0xFF_FF) {
         result = 0;
     } else {
@@ -44,7 +44,6 @@ fn reconstruct_signer_commitment(
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] commitment;
     stack u8[ENCODED_COMMITMENT_SIZE] commitment_encoded;
 
-    stack u8[T1_POLYNOMIAL_ENCODED_SIZE] t1_element_encoded;
     stack u32[COEFFICIENTS_IN_POLYNOMIAL] Az_element t1_element commitment_element hints_element c_times_t1;
 
     () = #spill(challenge_as_ntt);
@@ -54,8 +53,9 @@ fn reconstruct_signer_commitment(
     for i = 0 to ROWS_IN_MATRIX_A {
         Az_element = A_times_signer_response[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL];
 
-        t1_element_encoded = t1_encoded[T1_POLYNOMIAL_ENCODED_SIZE * i: T1_POLYNOMIAL_ENCODED_SIZE];
-        t1_element = t1::decode_polynomial(t1_element, t1_element_encoded);
+        t1_element = t1::decode_polynomial(
+            t1_element,
+            t1_encoded[T1_POLYNOMIAL_ENCODED_SIZE * i: T1_POLYNOMIAL_ENCODED_SIZE]);
 
         t1_element = polynomial::shift_coefficients_left(t1_element);
         t1_element = polynomial::ntt(t1_element);
@@ -80,9 +80,8 @@ fn reconstruct_signer_commitment(
     return commitment_encoded;
 }
 
-inline
 fn verify_internal(
-    stack u8[VERIFICATION_KEY_SIZE] verification_key,
+     reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
     #spill_to_mmx reg u64 message message_size,
     #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature_encoded
 ) -> reg u64 {
@@ -114,7 +113,7 @@ fn verify_internal(
         if (result == 0) {
             () = #spill(message, message_size);
 
-            () = #spill(signature_encoded);
+            () = #spill(signature_encoded, verification_key);
             matrix_A = sample::matrix_A(verification_key[0:SEED_FOR_MATRIX_A_SIZE]);
 
             signer_response = row_vector::ntt(signer_response);
@@ -124,6 +123,7 @@ fn verify_internal(
             #declassify challenge = sample::challenge(challenge, signature_encoded[0:COMMITMENT_HASH_SIZE]);
             challenge = polynomial::ntt(challenge);
 
+            () = #unspill(verification_key);
             reconstructed_signer_commitment = reconstruct_signer_commitment(
                                                     verification_key[SEED_FOR_MATRIX_A_SIZE: T1_ENCODED_SIZE],
                                                     challenge,
@@ -131,6 +131,7 @@ fn verify_internal(
                                                     hints);
 
             // Compute the expected commitment hash
+            () = #unspill(verification_key);
             verification_key_hash = hash_verification_key(verification_key, verification_key_hash);
             () = #unspill(message, message_size);
 

@@ -87,55 +87,21 @@ export fn ml_dsa_65_keygen(
 #[sct="transient * transient * transient * transient * {ptr: transient, val: secret} -> ()"]
 export fn ml_dsa_65_sign(
     #spill_to_mmx reg u64 signature_pointer,
-    reg u64 signing_key,
+    reg ptr u8[SIGNING_KEY_SIZE] signing_key,
     reg u64 message,
     reg u64 message_size,
     reg ptr u8[32] randomness
 )
 {
-    #secret stack u8[SIGNING_KEY_SIZE] signing_key_on_stack;
-
-    #flexible reg u8 byte;
-    reg u64 i = 0;
-
-    i = 0;
-    while(i < SIGNING_KEY_SIZE) {
-        byte = (u8)[signing_key + i];
-        signing_key_on_stack[i] = byte;
-        i += 1;
-    }
-
-    sign_internal(signing_key_on_stack, message, message_size, randomness, signature_pointer);
+    sign_internal(signing_key, message, message_size, randomness, signature_pointer);
 }
 
 export fn ml_dsa_65_verify(
-    #transient reg u64 verification_key,
+    #transient reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
     #transient reg u64 message message_size,
-    #transient reg u64 signature
+    #transient reg ptr u8[SIGNATURE_SIZE] signature
 ) -> #public reg u64 {
-    #public stack u8[VERIFICATION_KEY_SIZE] verification_key_on_stack;
-    #public stack u8[SIGNATURE_SIZE] signature_on_stack;
-
-    #public reg u64 verification_result;
-
-    #public reg u8 byte;
-    reg u64 i;
-
-    i = 0;
-    while(i < VERIFICATION_KEY_SIZE) {
-        #declassify byte = (u8)[verification_key + i];
-        verification_key_on_stack[i] = byte;
-        i += 1;
-    }
-
-    i = 0;
-    while(i < SIGNATURE_SIZE) {
-        #declassify byte = (u8)[signature + i];
-        signature_on_stack[i] = byte;
-        i += 1;
-    }
-
-    verification_result = verify_internal(verification_key_on_stack, message, message_size, signature_on_stack);
+    #public reg u64 verification_result = verify_internal(verification_key, message, message_size, signature);
 
     return verification_result;
 }

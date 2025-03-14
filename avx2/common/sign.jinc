@@ -43,7 +43,7 @@ inline fn compute_signer_response_element(
 
 inline
 fn sign_internal(
-    #secret stack u8[SIGNING_KEY_SIZE] signing_key,
+    #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key,
     reg u64 pointer_to_message,
     reg u64 message_size,
     #spill_to_mmx reg ptr u8[32] randomness,
@@ -54,7 +54,6 @@ fn sign_internal(
     reg ptr u8[SEED_FOR_MATRIX_A_SIZE] seed_for_matrix_A;
 
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
-    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] s1_element;
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
     reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] s2_element;
@@ -69,7 +68,6 @@ fn sign_internal(
     stack u8[64] seed_for_mask;
 
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response;
-    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] signer_response_element;
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint;
     reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hint_element;
@@ -86,7 +84,6 @@ fn sign_internal(
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w;
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask_as_ntt;
 
-    stack u32[COEFFICIENTS_IN_POLYNOMIAL] cs1;
     stack u32[COEFFICIENTS_IN_POLYNOMIAL] cs2;
 
     stack u32[COEFFICIENTS_IN_POLYNOMIAL] ct0;
@@ -103,19 +100,21 @@ fn sign_internal(
 
     inline int i;
 
-    () = #spill(signature_pointer, randomness);
+    () = #spill(signature_pointer, randomness, signing_key);
     message_representative = derive_message_representative(
         signing_key[64:VERIFICATION_KEY_HASH_SIZE],
         pointer_to_message,
         message_size);
 
+    () = #unspill(signing_key);
     #declassify seed_for_matrix_A = signing_key[0:32];
 
     matrix_A = sample::matrix_A(seed_for_matrix_A);
-    () = #unspill(randomness);
 
+    () = #unspill(randomness);
     seed_for_mask = derive_seed_for_mask(signing_key[32:32], randomness, message_representative, seed_for_mask);
 
+    () = #unspill(signing_key);
     s1 = s1::decode(signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE], s1);
     s2 = s2::decode(signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY: S2_ENCODED_SIZE], s2);
     t0 = t0::decode(t0, signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]);
