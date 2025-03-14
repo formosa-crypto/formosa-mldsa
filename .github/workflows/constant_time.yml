@@ -6,7 +6,6 @@ on:
 jobs:
   checks:
     name: checks
-    if: false
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
@@ -20,4 +19,4 @@ jobs:
     - uses: DeterminateSystems/magic-nix-cache-action@v3
     - run: nix-shell --run 'echo Installed dependencies.'
     - run: nix-shell --run 'env PARAMETER_SET=${{ matrix.parameter_set }} make check-ct'
-    - run: nix-shell --run 'env PARAMETER_SET=${{ matrix.parameter_set }} make check-sct'
+    #- run: nix-shell --run 'env PARAMETER_SET=${{ matrix.parameter_set }} make check-sct'
