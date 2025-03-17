@@ -34,10 +34,7 @@ namespace sample {
         reg u64 i;
         reg u64 sample_at;
         reg u64 signs xof_offset;
-        reg u64 byte;
         reg u32 coefficient shift;
-
-        inline int j;
 
         state = absorb_to_generate_challenges(seed);
 
@@ -45,13 +42,7 @@ namespace sample {
         state = _keccakf1600_ref1(state);
         () = #unspill(output_challenge);
 
-        signs = 0;
-        for j = 0 to 8 {
-            byte = (64u)state[u8 j];
-            byte <<= 8 * j;
-
-            signs |= byte;
-        }
+        signs = state.[u64 0];
         xof_offset = 8;
 
         i = 0;
