@@ -88,8 +88,6 @@ fn verify_internal(
     // 0 indicates success, -1 indicates failure.
     reg u64 result = -1;
 
-    reg u8 signer_response_outside_bounds;
-
     stack u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
     stack u8[COMMITMENT_HASH_SIZE] expected_commitment_hash;
     stack u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative;
@@ -104,47 +102,45 @@ fn verify_internal(
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints;
 
+    // TODO: Ensure we don't have to check the bounds here.
     signer_response = gamma1::decode(signature_encoded[COMMITMENT_HASH_SIZE: GAMMA1_ENCODED_SIZE], signer_response);
 
-    #declassify signer_response_outside_bounds = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
-    if (signer_response_outside_bounds == 0) {
-        hints, result = signature::decode_hint(signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE], hints);
+    hints, result = signature::decode_hint(signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE], hints);
 
-        if (result == 0) {
-            () = #spill(message, message_size);
+    if (result == 0) {
+        () = #spill(message, message_size);
 
-            () = #spill(signature_encoded, verification_key);
-            matrix_A = sample::matrix_A(verification_key[0:SEED_FOR_MATRIX_A_SIZE]);
+        () = #spill(signature_encoded, verification_key);
+        matrix_A = sample::matrix_A(verification_key[0:SEED_FOR_MATRIX_A_SIZE]);
 
-            signer_response = row_vector::ntt(signer_response);
-            A_times_signer_response = row_vector::multiply_with_matrix_A(matrix_A, signer_response);
-            () = #unspill(signature_encoded);
+        signer_response = row_vector::ntt(signer_response);
+        A_times_signer_response = row_vector::multiply_with_matrix_A(matrix_A, signer_response);
+        () = #unspill(signature_encoded);
 
-            #declassify challenge = sample::challenge(challenge, signature_encoded[0:COMMITMENT_HASH_SIZE]);
-            challenge = polynomial::ntt(challenge);
+        #declassify challenge = sample::challenge(challenge, signature_encoded[0:COMMITMENT_HASH_SIZE]);
+        challenge = polynomial::ntt(challenge);
 
-            () = #unspill(verification_key);
-            reconstructed_signer_commitment = reconstruct_signer_commitment(
-                                                    verification_key[SEED_FOR_MATRIX_A_SIZE: T1_ENCODED_SIZE],
-                                                    challenge,
-                                                    A_times_signer_response,
-                                                    hints);
+        () = #unspill(verification_key);
+        reconstructed_signer_commitment = reconstruct_signer_commitment(
+                                                verification_key[SEED_FOR_MATRIX_A_SIZE: T1_ENCODED_SIZE],
+                                                challenge,
+                                                A_times_signer_response,
+                                                hints);
 
-            // Compute the expected commitment hash
-            () = #unspill(verification_key);
-            verification_key_hash = hash_verification_key(verification_key, verification_key_hash);
-            () = #unspill(message, message_size);
+        // Compute the expected commitment hash
+        () = #unspill(verification_key);
+        verification_key_hash = hash_verification_key(verification_key, verification_key_hash);
+        () = #unspill(message, message_size);
 
-            message_representative = derive_message_representative(
-                verification_key_hash,
-                message,
-                message_size);
+        message_representative = derive_message_representative(
+            verification_key_hash,
+            message,
+            message_size);
 
-            #declassify expected_commitment_hash = derive_commitment_hash(message_representative, reconstructed_signer_commitment);
+        #declassify expected_commitment_hash = derive_commitment_hash(message_representative, reconstructed_signer_commitment);
 
-            () = #unspill(signature_encoded);
-            result = compare_commitment_hashes(expected_commitment_hash, signature_encoded[0:COMMITMENT_HASH_SIZE]);
-        }
+        () = #unspill(signature_encoded);
+        result = compare_commitment_hashes(expected_commitment_hash, signature_encoded[0:COMMITMENT_HASH_SIZE]);
     }
 
     return result;
