@@ -1,9 +1,9 @@
 JASMINC ?= jasminc
 
-ntt.s: ntt.jazz
+wrapper.s: wrapper.jazz
 	$(JASMINC) -o $@ $<
 
-bench.o: bench.c ntt.s
+bench.o: bench.c wrapper.s
 	$(CC) -Wall -Werror $^ -o $@
 
 .PHONY: clean

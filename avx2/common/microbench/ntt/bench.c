@@ -2,14 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DATA_POINTS 1000
+#define DATA_POINTS 10000
 
 // Utility functions and macros.
 
 #define _STRINGIFY(x) #x
 #define STRINGIFY(x) _STRINGIFY(x)
 
-extern void ntt_wrapper(uint32_t polynomial[256]);
+extern void wrapper(uint32_t polynomial[256]);
 
 static inline uint64_t cpucycles(void) {
   uint64_t result;
@@ -83,7 +83,7 @@ int main(void) {
   // Benchmark key-generation.
   for (size_t i = 0; i < DATA_POINTS; i++) {
     before = cpucycles();
-    ntt_wrapper(polynomial);
+    wrapper(polynomial);
     after = cpucycles();
 
     observations[i] = (after - cpucycles_overhead) - before;

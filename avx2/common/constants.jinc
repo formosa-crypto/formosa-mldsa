@@ -1,3 +1,5 @@
+param int KECCAK_ROUNDS=24;
+
 param int MODULUS = 8_380_417;
 
 u256 MODULUS_VECTOR = (8u32)[
