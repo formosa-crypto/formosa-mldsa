@@ -84,7 +84,7 @@ int main(void) {
   uint8_t message[65];
   uint8_t signature[SIGNATURE_SIZE];
 
-  uint64_t observations[DATA_POINTS];
+  uint64_t observations[DATA_POINTS] = {0};
 
   uint64_t before, after;
 
@@ -93,7 +93,7 @@ int main(void) {
   printf("name, median (cycles/ticks), average (cycles/ticks)\n");
 
   // Benchmark key-generation.
-  for (size_t i = 0; i + 1 < DATA_POINTS; i++) {
+  for (size_t i = 0; i < DATA_POINTS; i++) {
     notrandombytes(key_generation_randomness, 32);
 
     before = cpucycles();
@@ -108,7 +108,7 @@ int main(void) {
          (unsigned long long)average(observations, DATA_POINTS));
 
   // Benchmark signing.
-  for (size_t i = 0; i + 1 < DATA_POINTS; i++) {
+  for (size_t i = 0; i < DATA_POINTS; i++) {
     notrandombytes(signing_randomness, 32);
     notrandombytes(message, 65);
 
@@ -123,7 +123,7 @@ int main(void) {
          (unsigned long long)average(observations, DATA_POINTS));
 
   // Benchmark verification.
-  for (size_t i = 0; i + 1 < DATA_POINTS; i++) {
+  for (size_t i = 0; i < DATA_POINTS; i++) {
     before = cpucycles();
     VERIFY(verification_key, message, sizeof(message), signature);
     after = cpucycles();
