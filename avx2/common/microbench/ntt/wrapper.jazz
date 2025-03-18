@@ -3,7 +3,7 @@ require "../../arithmetic/modular.jinc"
 require "../../arithmetic/zetas.jinc"
 require "../../arithmetic/ntt.jinc"
 
-export fn ntt_wrapper(
+export fn wrapper(
     reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
 {

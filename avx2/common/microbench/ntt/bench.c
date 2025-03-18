@@ -6,9 +6,6 @@
 
 // Utility functions and macros.
 
-#define _STRINGIFY(x) #x
-#define STRINGIFY(x) _STRINGIFY(x)
-
 extern void wrapper(uint32_t polynomial[256]);
 
 static inline uint64_t cpucycles(void) {
