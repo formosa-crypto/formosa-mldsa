@@ -55,33 +55,16 @@ from Common require "verify.jinc"
 
 #[sct="transient * transient * {ptr: transient, val: secret} -> ()"]
 export fn ml_dsa_65_keygen(
-    #spill_to_mmx reg u64 verification_key_out,
-    #spill_to_mmx reg u64 signing_key_out,
-    reg ptr u8[32] randomness)
+    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    #spill_to_mmx reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    reg ptr u8[32] randomness
+) -> reg ptr u8[VERIFICATION_KEY_SIZE],
+     reg ptr u8[SIGNING_KEY_SIZE]
 {
-    #public stack u8[VERIFICATION_KEY_SIZE] verification_key;
-    #secret stack u8[SIGNING_KEY_SIZE] signing_key;
+    () = #spill(randomness);
+    verification_key, signing_key = keygen_internal(verification_key, signing_key, randomness);
 
-    reg u8 byte;
-    reg u64 i;
-
-    () = #spill(verification_key_out, signing_key_out);
-    verification_key, signing_key = keygen_internal(randomness);
-    () = #unspill(verification_key_out, signing_key_out);
-
-    i = 0;
-    while (i < VERIFICATION_KEY_SIZE) {
-        byte = verification_key[i];
-        (u8)[verification_key_out + i] = byte;
-        i += 1;
-    }
-
-    i = 0;
-    while(i < SIGNING_KEY_SIZE) {
-        byte = signing_key[i];
-        (u8)[signing_key_out + i] = byte;
-        i += 1;
-    }
+    return verification_key, signing_key;
 }
 
 #[sct="transient * transient * transient * transient * {ptr: transient, val: secret} -> ()"]
