@@ -11,30 +11,6 @@
 
 require "ml_dsa.jazz"
 
-inline fn setup_memory() -> reg u64, reg u64, reg u64, reg u64, reg u64, reg u64
-{
-    reg u64 verification_key signing_key signature message message_size randomness;
-
-    inline int i;
-
-    verification_key = 0x1000;
-    signing_key = 0x2000;
-
-    signature = 0x3000;
-
-    message = 0x4000;
-    message_size = 64;
-
-    randomness = 0x5000;
-
-    for i = 0 to 8 {
-        [randomness + 8 * i] = i;
-        [message + 8 * i] = i;
-    }
-
-    return verification_key, signing_key, signature, message, message_size, randomness;
-}
-
 fn test_consistency() -> reg bool {
     stack u8[VERIFICATION_KEY_SIZE] verification_key;
     stack u8[SIGNING_KEY_SIZE] signing_key;
@@ -43,7 +19,7 @@ fn test_consistency() -> reg bool {
     stack u8[32] signing_randomness;
 
     reg u64 message = 0x4000;
-    reg u64 message_size;
+    reg u64 message_size = 64;
 
     reg u64 verify_result i;
 
@@ -57,16 +33,14 @@ fn test_consistency() -> reg bool {
 
     i = 0;
     while (i < 64) {
-        [message + 8 * i] = i;
-
+        (u8)[message + i] = i;
         i += 1;
     }
-    message_size = 64;
 
     #[inline]
-    ml_dsa_65_keygen(verification_key, signing_key, keygen_randomness);
+    verification_key, signing_key = ml_dsa_65_keygen(verification_key, signing_key, keygen_randomness);
     #[inline]
-    ml_dsa_65_sign(signature, signing_key, message, message_size, signing_randomness);
+    signature = ml_dsa_65_sign(signature, signing_key, message, message_size, signing_randomness);
     #[inline]
     verify_result = ml_dsa_65_verify(verification_key, message, message_size, signature);
 
@@ -81,5 +55,5 @@ fn test_consistency() -> reg bool {
 }
 
 exec test_consistency (
-  0x4000:64, // Message
+    0x4000:64 // Message
 )

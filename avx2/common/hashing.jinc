@@ -22,6 +22,8 @@ fn hash_verification_key(
 
     // Absorb ...
 
+    () = #spill(hash);
+
     state = __keccak_init_ref1(state);
 
     while(verification_key_offset < FULL_BLOCKS_IN_VERIFICATION_KEY * SHAKE256_RATE) {
@@ -34,9 +36,9 @@ fn hash_verification_key(
             state_offset += 1;
         }
 
-        () = #spill(hash, verification_key, verification_key_offset);
+        () = #spill(verification_key, verification_key_offset);
         state = _keccakf1600_ref1(state);
-        () = #unspill(hash, verification_key, verification_key_offset);
+        () = #unspill(verification_key, verification_key_offset);
 
         state_offset = 0;
     }
@@ -56,10 +58,9 @@ fn hash_verification_key(
 
     // ... then squeeze.
 
-    () = #spill(hash);
     state = _keccakf1600_ref1(state);
-    () = #unspill(hash);
 
+    () = #unspill(hash);
     state_offset = 0;
     while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
         byte = state[u8 state_offset];
