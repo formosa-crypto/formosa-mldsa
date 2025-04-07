@@ -69,14 +69,16 @@ export fn ml_dsa_65_keygen(
 
 #[sct="transient * transient * transient * transient * {ptr: transient, val: secret} -> ()"]
 export fn ml_dsa_65_sign(
-    #spill_to_mmx reg u64 signature_pointer,
+    #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature,
     reg ptr u8[SIGNING_KEY_SIZE] signing_key,
     reg u64 message,
     reg u64 message_size,
     reg ptr u8[32] randomness
-)
+) -> reg ptr u8[SIGNATURE_SIZE]
 {
-    sign_internal(signing_key, message, message_size, randomness, signature_pointer);
+    signature = sign_internal(signing_key, message, message_size, randomness, signature);
+
+    return signature;
 }
 
 export fn ml_dsa_65_verify(

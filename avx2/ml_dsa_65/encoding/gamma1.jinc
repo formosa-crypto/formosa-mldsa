@@ -36,9 +36,9 @@ namespace gamma1 {
     inline
     fn encode_polynomial(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
-        reg u64 signature_pointer,
+        reg ptr u8[SIGNATURE_SIZE] signature_pointer,
         inline int sp_offset
-    )
+    ) -> reg ptr u8[SIGNATURE_SIZE]
     {
         reg u256 coefficients;
         reg u128 lower upper;
@@ -62,10 +62,10 @@ namespace gamma1 {
 
             lower, upper = coefficients_to_bytestream(gamma1, coefficients);
 
-            (u128)[signature_pointer + sp_offset + output_offset] = lower;
+            signature_pointer.[u128 sp_offset + output_offset] = lower;
             output_offset += 10;
 
-            (u128)[signature_pointer + sp_offset + output_offset] = upper;
+            signature_pointer.[u128 sp_offset + output_offset] = upper;
             output_offset += 10;
         }
 
@@ -73,13 +73,15 @@ namespace gamma1 {
 
         lower, upper = coefficients_to_bytestream(gamma1, coefficients);
 
-        (u128)[signature_pointer + sp_offset + output_offset] = lower;
+        signature_pointer.[u128 sp_offset + output_offset] = lower;
         output_offset += 10;
 
         final_output_block.[u128 0] = upper;
         for i = 0 to 10 {
-            (u8)[signature_pointer + sp_offset + output_offset + i] = final_output_block[i];
+            signature_pointer[sp_offset + output_offset + i] = final_output_block[i];
         }
+
+        return signature_pointer;
     }
 
     u256[2] DECODING_SHIFTS_TABLE = {

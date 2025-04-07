@@ -47,8 +47,8 @@ fn sign_internal(
     reg u64 pointer_to_message,
     reg u64 message_size,
     #spill_to_mmx reg ptr u8[32] randomness,
-    reg u64 signature_pointer
-)
+    reg ptr u8[SIGNATURE_SIZE] signature_pointer
+) -> reg ptr u8[SIGNATURE_SIZE]
 {
     // parts of signing_key
     reg ptr u8[SEED_FOR_MATRIX_A_SIZE] seed_for_matrix_A;
@@ -228,5 +228,7 @@ fn sign_internal(
 
 
     () = #unspill(signature_pointer);
-    signature::encode(commitment_hash, signer_response, hint, signature_pointer);
+    signature_pointer = signature::encode(commitment_hash, signer_response, hint, signature_pointer);
+
+    return signature_pointer;
 }

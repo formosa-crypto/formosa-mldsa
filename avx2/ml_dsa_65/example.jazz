@@ -36,20 +36,32 @@ inline fn setup_memory() -> reg u64, reg u64, reg u64, reg u64, reg u64, reg u64
 }
 
 fn test_consistency() -> reg bool {
-    reg u64 verification_key signing_key signature message message_size randomness;
-    verification_key, signing_key, signature, message, message_size, randomness = setup_memory();
+    stack u8[VERIFICATION_KEY_SIZE] verification_key;
+    stack u8[SIGNING_KEY_SIZE] signing_key;
+    stack u8[SIGNATURE_SIZE] signature;
+    stack u8[32] keygen_randomness;
+    stack u8[32] signing_randomness;
+
+    reg u64 message = 0x4000;
+    reg u64 message_size;
 
     reg u64 verify_result i;
 
-    stack u8[32] keygen_randomness signing_randomness;
-
     i = 0;
     while (i < 32) {
-        keygen_randomness[i] = (u8)[randomness + i];
-        signing_randomness[i] = (u8)[randomness + i + 32];
+        keygen_randomness[i] = i;
+        signing_randomness[i] = i;
 
         i += 1;
     }
+
+    i = 0;
+    while (i < 64) {
+        [message + 8 * i] = i;
+
+        i += 1;
+    }
+    message_size = 64;
 
     #[inline]
     ml_dsa_65_keygen(verification_key, signing_key, keygen_randomness);
@@ -69,9 +81,5 @@ fn test_consistency() -> reg bool {
 }
 
 exec test_consistency (
-  0x1000:1952,
-  0x2000:4032,
-  0x3000:3309,
-  0x4000:64, // Message size
-  0x5000:64 // Total randomness
+  0x4000:64, // Message
 )
