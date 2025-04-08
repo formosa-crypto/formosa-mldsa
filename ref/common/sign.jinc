@@ -25,13 +25,12 @@ fn derive_seed_for_mask(
 
 inline
 fn sign_internal(
-        #secret stack u8[SIGNING_KEY_SIZE] signing_key,
+        reg ptr u8[SIGNATURE_SIZE] signature,
+        #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key,
         reg u64 pointer_to_message,
         reg u64 message_size,
         #spill_to_mmx reg ptr u8[32] randomness
-) -> stack u8[SIGNATURE_SIZE] {
-    stack u8[SIGNATURE_SIZE] signature_encoded;
-
+) -> reg ptr u8[SIGNATURE_SIZE] {
     // parts of signing_key
     reg ptr u8[SEED_FOR_MATRIX_A_SIZE] seed_for_matrix_A;
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
@@ -68,20 +67,23 @@ fn sign_internal(
     reg u32 ones_in_hint;
     stack u8 infinity_norm_check_result;
 
-    () = #spill(randomness);
+    () = #spill(randomness, signature, signing_key);
     message_representative = derive_message_representative(
         signing_key[64:VERIFICATION_KEY_HASH_SIZE],
         pointer_to_message,
         message_size);
 
+    () = #unspill(signing_key);
     #declassify seed_for_matrix_A = signing_key[0:32];
 
     _ = #init_msf();
     matrix_A = sample::matrix_A(seed_for_matrix_A);
-    () = #unspill(randomness);
 
+    () = #unspill(randomness);
+    () = #unspill(signing_key);
     seed_for_mask = derive_seed_for_mask(signing_key[32:32], randomness, message_representative, seed_for_mask);
 
+    () = #unspill(signing_key);
     s1 = s1::decode(signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE], s1);
     s2 = s2::decode(signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY: S2_ENCODED_SIZE], s2);
     t0 = t0::decode(t0, signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]);
@@ -162,7 +164,7 @@ fn sign_internal(
         }
     }
 
-
-    signature_encoded = signature::encode(commitment_hash, signer_response, hint);
-    return signature_encoded;
+    () = #unspill(signature);
+    signature = signature::encode(signature, commitment_hash, signer_response, hint);
+    return signature;
 }

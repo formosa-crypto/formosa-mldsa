@@ -1,7 +1,7 @@
 /* The correctness of the transformations applied by Jasmin when compiling code
  * relies on the input code not having undefined behaviour. Running our implementation
  * through the interpreter is a sanity-check: If we run the interpreter without
- * crashing the program, at least for the inputs we've given it in here,
+ * crashing the program, at least for the inputs we've given it here,
  * the program is correct.
  *
  * Ideally, we'd want to run the implementation through a safety-checker, but this
@@ -11,50 +11,36 @@
 
 require "ml_dsa.jazz"
 
-inline fn setup_memory() -> reg u64, reg u64, reg u64, reg u64, reg u64, reg u64
-{
-    reg u64 verification_key signing_key signature message message_size randomness;
-
-    inline int i;
-
-    verification_key = 0x1000;
-    signing_key = 0x2000;
-
-    signature = 0x4000;
-
-    message = 0x6000;
-    message_size = 64;
-
-    randomness = 0x7000;
-
-    for i = 0 to 8 {
-        [randomness + 8 * i] = i;
-        [message + 8 * i] = i;
-    }
-
-    return verification_key, signing_key, signature, message, message_size, randomness;
-}
-
 fn test_consistency() -> reg bool {
-    reg u64 verification_key signing_key signature message message_size randomness;
-    verification_key, signing_key, signature, message, message_size, randomness = setup_memory();
+    stack u8[VERIFICATION_KEY_SIZE] verification_key;
+    stack u8[SIGNING_KEY_SIZE] signing_key;
+    stack u8[SIGNATURE_SIZE] signature;
+    stack u8[32] keygen_randomness;
+    stack u8[32] signing_randomness;
+
+    reg u64 message = 0x4000;
+    reg u64 message_size = 64;
 
     reg u64 verify_result i;
 
-    stack u8[32] keygen_randomness signing_randomness;
-
     i = 0;
     while (i < 32) {
-        keygen_randomness[i] = (u8)[randomness + i];
-        signing_randomness[i] = (u8)[randomness + i + 32];
+        keygen_randomness[i] = i;
+        signing_randomness[i] = i;
 
         i += 1;
     }
 
+    i = 0;
+    while (i < 64) {
+        (u8)[message + i] = i;
+        i += 1;
+    }
+
     #[inline]
-    ml_dsa_87_keygen(verification_key, signing_key, keygen_randomness);
+    verification_key, signing_key = ml_dsa_87_keygen(verification_key, signing_key, keygen_randomness);
     #[inline]
-    ml_dsa_87_sign(signature, signing_key, message, message_size, signing_randomness);
+    signature = ml_dsa_87_sign(signature, signing_key, message, message_size, signing_randomness);
     #[inline]
     verify_result = ml_dsa_87_verify(verification_key, message, message_size, signature);
 
@@ -69,9 +55,5 @@ fn test_consistency() -> reg bool {
 }
 
 exec test_consistency (
-  0x1000:2592,
-  0x2000:4896,
-  0x4000:4627,
-  0x6000:64, // Message size
-  0x7000:64 // Total randomness
+    0x4000:64 // Message
 )

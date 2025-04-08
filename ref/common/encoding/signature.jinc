@@ -4,12 +4,12 @@ namespace signature {
 
     inline
     fn encode(
+        reg ptr u8[SIGNATURE_SIZE] signature,
         reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash,
         reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response,
         reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint
-    ) -> stack u8[SIGNATURE_SIZE]
+    ) -> reg ptr u8[SIGNATURE_SIZE]
     {
-        stack u8[SIGNATURE_SIZE] signature;
         reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] polynomial_encoded;
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial;
 
@@ -21,7 +21,12 @@ namespace signature {
         inline int k;
         inline bool condition;
 
-        signature[0:COMMITMENT_HASH_SIZE] = #copy(commitment_hash);
+        i = 0;
+        while (i < COMMITMENT_HASH_SIZE) {
+            signature[i] = commitment_hash[i];
+
+            i += 1;
+        }
 
         for k = 0 to COLUMNS_IN_MATRIX_A {
             polynomial_encoded = signature[START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE];

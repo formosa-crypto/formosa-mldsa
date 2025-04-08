@@ -115,15 +115,18 @@ fn sample_polynomial(
 namespace sample {
     inline
     fn matrix_A(
-        #public stack u8[32] rho
+        #public reg ptr u8[32] rho
     ) -> stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
 
         inline int i j;
 
+        () = #spill(rho);
+
         for i = 0 to ROWS_IN_MATRIX_A {
             for j = 0 to COLUMNS_IN_MATRIX_A {
+                () = #unspill(rho);
                 matrix_A[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
                     sample_polynomial
                     (
