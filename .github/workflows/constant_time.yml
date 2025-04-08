@@ -16,7 +16,10 @@ jobs:
     - uses: cachix/install-nix-action@v25
       with:
         nix_path: nixpkgs=channel:nixos-unstable
-    - uses: DeterminateSystems/magic-nix-cache-action@v3
-    - run: nix-shell --run 'echo Installed dependencies.'
-    - run: nix-shell --run 'env PARAMETER_SET=${{ matrix.parameter_set }} make check-ct'
+    - name: Build the Jasmin compiler
+      run: |
+        git clone --branch main --depth 1 https://gitlab.com/jasmin-lang/jasmin-compiler.git
+        cd jasmin-compiler/compiler
+        nix-shell --run 'make'
+    - run: env JASMINCT='jasmin-compiler/compiler/jasmin-ct' PARAMETER_SET=${{ matrix.parameter_set }} make check-ct
     #- run: nix-shell --run 'env PARAMETER_SET=${{ matrix.parameter_set }} make check-sct'
