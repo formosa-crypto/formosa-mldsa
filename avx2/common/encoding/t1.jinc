@@ -62,7 +62,7 @@ namespace t1 {
 
             bytestream = coefficients_to_bytestream(coefficients);
 
-            #VMOVDQU_256(t1_encoded.[u128 output_offset]) = bytestream;
+            t1_encoded.[u128 output_offset] = bytestream;
             output_offset += 10;
         }
         coefficients = t1.[u256 input_offset];

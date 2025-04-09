@@ -77,7 +77,7 @@ namespace polynomial {
 
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
-            #VMOVDQU_256(polynomial.[u256 offset]) = zero_u256;
+            polynomial.[u256 offset] = zero_u256;
             offset += 32;
         }
 

@@ -93,7 +93,7 @@ namespace polynomial {
         ?{}, zero = #set0_256();
 
         offset = 0;
-        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
             lhs = polynomial.[u256 offset];
 
             mask = #VPCMPGT_8u32(zero, lhs);
@@ -116,11 +116,11 @@ namespace polynomial {
 
         reg u64 offset;
 
-        two_pow_22 = #VMOVDQU_256(TWO_POW_22_VECTOR);
-        modulus = #VMOVDQU_256(MODULUS_VECTOR);
+        two_pow_22 = TWO_POW_22_VECTOR;
+        modulus = MODULUS_VECTOR;
 
         offset = 0;
-        while(offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
+        while(offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
             // t = (a + (1 << 22)) >> 23
             a = polynomial.[u256 offset];
             t = #VPADD_8u32(a, two_pow_22);

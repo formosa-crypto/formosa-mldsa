@@ -63,7 +63,7 @@ fn sign_internal(
     reg u64 pointer_to_message,
     reg u64 message_size,
     #spill_to_mmx reg ptr u8[32] randomness,
-    reg ptr u8[SIGNATURE_SIZE] signature_pointer
+    reg ptr u8[SIGNATURE_SIZE] signature
 ) -> reg ptr u8[SIGNATURE_SIZE]
 {
     // parts of signing_key
@@ -120,7 +120,7 @@ fn sign_internal(
 
     inline int i;
 
-    () = #spill(signature_pointer, randomness, signing_key);
+    () = #spill(signature, randomness, signing_key);
     message_representative = derive_message_representative(
         signing_key[64:VERIFICATION_KEY_HASH_SIZE],
         pointer_to_message,
@@ -257,8 +257,8 @@ fn sign_internal(
     }
 
 
-    () = #unspill(signature_pointer);
-    signature_pointer = signature::encode(commitment_hash, signer_response, hint, signature_pointer);
+    () = #unspill(signature);
+    signature = signature::encode(commitment_hash, signer_response, hint, signature);
 
-    return signature_pointer;
+    return signature;
 }
