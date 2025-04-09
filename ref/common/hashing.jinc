@@ -23,6 +23,8 @@ fn hash_verification_key(
 
     verification_key_offset = 0;
 
+    () = #spill(hash);
+
     // Absorb ...
 
     state = __keccak_init_ref1(state);
@@ -37,9 +39,9 @@ fn hash_verification_key(
             state_offset += 1;
         }
 
-        () = #spill(hash, verification_key, verification_key_offset);
+        () = #spill(verification_key, verification_key_offset);
         state = _keccakf1600_ref1(state);
-        () = #unspill(hash, verification_key, verification_key_offset);
+        () = #unspill(verification_key, verification_key_offset);
 
         state_offset = 0;
     }
@@ -59,8 +61,8 @@ fn hash_verification_key(
 
     // ... then squeeze.
 
-    () = #spill(hash);
     state = _keccakf1600_ref1(state);
+
     () = #unspill(hash);
 
     state_offset = 0;

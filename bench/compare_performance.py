@@ -74,7 +74,7 @@ if repo.is_dirty(path=args.implementation):
     )
 
 # Now measure the old performance
-print("Baseline: measuring performance at {}".format(args.old))
+print("Measuring baseline performance at commit '{}'".format(args.old))
 repo.git.checkout(args.old, args.implementation)
 
 shell(["make", "bench.o"])
@@ -83,7 +83,7 @@ old = shell(["./bench.o"])
 old = parse_bench_output(old)
 
 # Measure new performance
-print("Now measuring performance at {}".format(args.new))
+print("Now measuring performance at commit '{}'".format(args.new))
 repo.git.checkout(args.new, args.implementation)
 
 shell(["make", "bench.o"])

@@ -6,19 +6,13 @@ fn prepare_state_for_shake256(
 ) -> stack u64[25] {
     stack u64[25] state;
 
-    reg u8 byte;
-
-    reg u64 i;
+    reg u256 copied_32_bytes;
 
     state = __keccak_init_ref1(state);
 
-    i = 0;
-    while (i < 32) {
-        byte = randomness[i];
-        state[u8 i] = byte;
+    copied_32_bytes = randomness.[u256 0];
+    state.[u256 0] = copied_32_bytes;
 
-        i += 1;
-    }
     state[u8 32] = number_of_rows;
     state[u8 33] = number_of_columns;
     state[u8 34] ^= 0x1f;
@@ -56,7 +50,7 @@ fn keygen_internal(
 
     stack u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
 
-    reg u64 i;
+    reg u256 copied_32_bytes;
 
     () = #spill(verification_key, signing_key);
 
@@ -74,18 +68,16 @@ fn keygen_internal(
     // s1 and s2 before applying the NTT to them.
     () = #unspill(signing_key);
 
-    i = 0;
-    while (i < SEED_FOR_MATRIX_A_SIZE) {
-        signing_key[i] = seed_for_matrix_A[i];
+    // SEED_FOR_MATRIX_A_SIZE is always 32.
+    copied_32_bytes = seed_for_matrix_A.[u256 0];
+    signing_key.[u256 0] = copied_32_bytes;
+    () = #unspill(verification_key);
+    verification_key.[u256 0] = copied_32_bytes;
+    () = #spill(verification_key);
 
-        i += 1;
-    }
-    i = 0;
-    while (i < SEED_FOR_SIGNING_SIZE) {
-        signing_key[SEED_FOR_MATRIX_A_SIZE + i] = seed_for_signing[i];
-
-        i += 1;
-    }
+    // SEED_FOR_SIGNING_SIZE is always 32.
+    copied_32_bytes = seed_for_signing.[u256 0];
+    signing_key.[u256 32] = copied_32_bytes;
 
     signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY : S1_ENCODED_SIZE] =
         s1::encode(s1, signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE]);
@@ -107,16 +99,9 @@ fn keygen_internal(
     t = column_vector::conditionally_add_modulus(t);
     t1, t0 = column_vector::power2round(t);
 
-    // Serialize the verification key.
+    // Serialize the rest of the verification key.
+
     () = #unspill(verification_key);
-
-    i = 0;
-    while (i < 32) {
-        verification_key[i] = seed_for_matrix_A[i];
-
-        i += 1;
-    }
-
     #declassify verification_key[32: T1_ENCODED_SIZE]
     = t1::encode(verification_key[32: T1_ENCODED_SIZE], t1);
 
@@ -126,12 +111,11 @@ fn keygen_internal(
 
     // TODO: See if this copy can be removed.
     () = #unspill(signing_key);
-    i = 0;
-    while (i < VERIFICATION_KEY_HASH_SIZE) {
-        signing_key[64 + i] = verification_key_hash[i];
+    copied_32_bytes = verification_key_hash.[u256 0];
+    signing_key.[u256 64] = copied_32_bytes;
 
-        i += 1;
-    }
+    copied_32_bytes = verification_key_hash.[u256 32];
+    signing_key.[u256 96] = copied_32_bytes;
 
     signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]
     = t0::encode(signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE], t0);

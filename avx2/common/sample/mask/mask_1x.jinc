@@ -6,8 +6,15 @@ fn absorb_for_shake256(
 ) -> stack u64[25] {
     reg u16 v;
 
+    reg u256 copied_32_bytes;
+
     state = __keccak_init_ref1(state);
-    state[u8 0:64] = #copy(rho_prime);
+
+    copied_32_bytes = rho_prime.[u256 0];
+    state.[u256 0] = copied_32_bytes;
+
+    copied_32_bytes = rho_prime.[u256 32];
+    state.[u256 32] = copied_32_bytes;
 
     v = domain_separator;
     v &= 0xFF;

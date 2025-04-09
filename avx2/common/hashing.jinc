@@ -18,6 +18,8 @@ fn hash_verification_key(
 
     reg u8 byte;
 
+    reg u256 copied_32_bytes;
+
     verification_key_offset = 0;
 
     // Absorb ...
@@ -62,11 +64,13 @@ fn hash_verification_key(
 
     () = #unspill(hash);
     state_offset = 0;
-    while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
-        byte = state[u8 state_offset];
-        hash[state_offset] = byte;
-        state_offset += 1;
-    }
+
+    // VERIFICATION_KEY_HASH_SIZE is always 64.
+    copied_32_bytes = state.[u256 0];
+    hash.[u256 0] = copied_32_bytes;
+
+    copied_32_bytes = state.[u256 32];
+    hash.[u256 32] = copied_32_bytes;
 
     return hash;
 }
