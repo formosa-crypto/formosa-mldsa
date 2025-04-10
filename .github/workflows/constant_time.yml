@@ -21,5 +21,7 @@ jobs:
         git clone --branch main --depth 1 https://gitlab.com/jasmin-lang/jasmin-compiler.git
         cd jasmin-compiler/compiler
         nix-shell --run 'make'
-    - run: env JASMINCT='jasmin-compiler/compiler/jasmin-ct' PARAMETER_SET=${{ matrix.parameter_set }} make check-ct
-    #- run: nix-shell --run 'env PARAMETER_SET=${{ matrix.parameter_set }} make check-sct'
+    - name: Check whether the code is constant-time.
+      run: env JASMINCT='jasmin-compiler/compiler/jasmin-ct' PARAMETER_SET=${{ matrix.parameter_set }} make check-ct
+    - name: Check whether the code is speculative constant-time.
+      run: env JASMINCT='jasmin-compiler/compiler/jasmin-ct' PARAMETER_SET=${{ matrix.parameter_set }} make check-sct

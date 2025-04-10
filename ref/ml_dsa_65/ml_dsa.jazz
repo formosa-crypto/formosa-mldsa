@@ -41,11 +41,16 @@ from Common require "verify.jinc"
 
 // See api.h for the sizes of the buffers expected by these functions.
 
+#[sct="{ptr: transient, val: transient} *
+       {ptr: transient, val: secret} *
+       {ptr: transient, val: secret} ->
+       {ptr: transient, val: transient} *
+       {ptr: secret, val: secret}"]
 export fn ml_dsa_65_keygen(
-    #public #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    #secret #spill_to_mmx reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    #secret reg ptr u8[32] randomness
-) -> #public reg ptr u8[VERIFICATION_KEY_SIZE], #secret reg ptr u8[SIGNING_KEY_SIZE]
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    reg ptr u8[32] randomness
+) -> reg ptr u8[VERIFICATION_KEY_SIZE], reg ptr u8[SIGNING_KEY_SIZE]
 {
     _ = #init_msf();
 
@@ -54,13 +59,18 @@ export fn ml_dsa_65_keygen(
     return verification_key, signing_key;
 }
 
+#[sct="{ptr: transient, val: transient} *
+       {ptr: transient, val: secret} *
+       transient * transient *
+       {ptr: transient, val: secret} ->
+       {ptr: transient, val: transient}"]
 export fn ml_dsa_65_sign(
-    #public #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature,
-    #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    #public reg u64 message,
-    #public reg u64 message_size,
-    #secret reg ptr u8[32] randomness
-) -> #public reg ptr u8[SIGNATURE_SIZE]
+    reg ptr u8[SIGNATURE_SIZE] signature,
+    reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    reg u64 message,
+    reg u64 message_size,
+    reg ptr u8[32] randomness
+) -> reg ptr u8[SIGNATURE_SIZE]
 {
     _ = #init_msf();
 
@@ -69,12 +79,16 @@ export fn ml_dsa_65_sign(
     return signature;
 }
 
+#[sct="{ptr: transient, val: transient} *
+       transient * transient *
+       {ptr: transient, val: transient} ->
+       public"]
 export fn ml_dsa_65_verify(
-    #transient reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    #transient reg u64 message message_size,
-    #transient reg ptr u8[SIGNATURE_SIZE] signature
-) -> #public reg u64 {
-    #public reg u64 verification_result;
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg u64 message message_size,
+    reg ptr u8[SIGNATURE_SIZE] signature
+) -> reg u64 {
+    reg u64 verification_result;
 
     _ = #init_msf();
 

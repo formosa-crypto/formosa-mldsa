@@ -27,15 +27,17 @@ fn prepare_state_for_shake256(
     return state;
 }
 
-#[sct="{ptr: public, val: secret} -> transient * secret"]
+#[sct="{ptr: public, val: public} *
+       {ptr: public, val: secret} *
+       {ptr: public, val: secret} ->
+       {ptr: public, val: transient} * {ptr: public, val: secret}"]
 inline
 fn keygen_internal(
-    #public reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    reg ptr u8[32] randomness
-)
-    -> reg ptr u8[VERIFICATION_KEY_SIZE],
-       reg ptr u8[SIGNING_KEY_SIZE]
+    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    #spill_to_mmx reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    #spill_to_mmx reg ptr u8[32] randomness
+) -> reg ptr u8[VERIFICATION_KEY_SIZE],
+     reg ptr u8[SIGNING_KEY_SIZE]
 {
     reg ptr u8[VERIFICATION_KEY_SIZE] verification_key_pointer_copy;
 

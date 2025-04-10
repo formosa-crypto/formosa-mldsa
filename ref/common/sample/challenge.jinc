@@ -40,7 +40,7 @@ namespace sample {
         state = absorb_to_generate_challenges(seed);
 
         () = #spill(output_challenge);
-        state = _keccakf1600_ref1(state);
+        #declassify state = _keccakf1600_ref1(state);
         () = #unspill(output_challenge);
 
         signs = 0;
@@ -63,7 +63,7 @@ namespace sample {
             while {
                 if(xof_offset >= SHAKE256_RATE) {
                     () = #spill(output_challenge, i, signs);
-                    state = _keccakf1600_ref1(state);
+                    #declassify state = _keccakf1600_ref1(state);
                     () = #unspill(output_challenge, i, signs);
 
                     xof_offset = 0;
