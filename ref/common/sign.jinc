@@ -125,7 +125,7 @@ fn sign_internal(
         commitment_encoded = commitment::encode(w1);
 
         () = #spill(domain_separator_for_mask);
-        #declassify commitment_hash = derive_commitment_hash(message_representative, commitment_encoded);
+        commitment_hash = derive_commitment_hash(message_representative, commitment_encoded);
 
         verifier_challenge = sample::challenge(verifier_challenge, commitment_hash);
         () = #unspill(domain_separator_for_mask);
@@ -135,7 +135,7 @@ fn sign_internal(
         cs1 = row_vector::multiply_by_polynomial(s1, verifier_challenge);
         cs1 = row_vector::invert_ntt_montgomery(cs1);
         signer_response = row_vector::add(cs1, mask);
-        #declassify signer_response = row_vector::reduce32(signer_response);
+        signer_response = row_vector::reduce32(signer_response);
         #declassify infinity_norm_check_result = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
 
         _ = #init_msf();
@@ -144,7 +144,7 @@ fn sign_internal(
             cs2 = column_vector::multiply_by_polynomial(s2, verifier_challenge);
             cs2 = column_vector::invert_ntt_montgomery(cs2);
             w0_minus_cs2 = column_vector::subtract(w0, cs2);
-            #declassify w0_minus_cs2 = column_vector::reduce32(w0_minus_cs2);
+            w0_minus_cs2 = column_vector::reduce32(w0_minus_cs2);
             #declassify infinity_norm_check_result = column_vector::check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
 
             _ = #init_msf();
@@ -152,7 +152,7 @@ fn sign_internal(
             if(infinity_norm_check_result == 0) {
                 ct0 = column_vector::multiply_by_polynomial(t0, verifier_challenge);
                 ct0 = column_vector::invert_ntt_montgomery(ct0);
-                #declassify ct0 = column_vector::reduce32(ct0);
+                ct0 = column_vector::reduce32(ct0);
                 #declassify infinity_norm_check_result = column_vector::check_infinity_norm(ct0, GAMMA2);
 
                 _ = #init_msf();
@@ -174,6 +174,7 @@ fn sign_internal(
 
     #declassify signer_response = signer_response;
     #declassify hint = hint;
+    #declassify commitment_hash = commitment_hash;
     signature = signature::encode(signature, commitment_hash, signer_response, hint);
     return signature;
 }
