@@ -63,7 +63,7 @@ fn keygen_internal(
     () = #spill(verification_key, signing_key);
 
     state = prepare_state_for_shake256(randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
-    #declassify state = _keccakf1600_ref1(state);
+    state = _keccakf1600_ref1(state);
 
     #declassify seed_for_matrix_A = state[u8 0:SEED_FOR_MATRIX_A_SIZE];
 

@@ -57,13 +57,18 @@ inline fn compute_signer_response_element(
     return signer_response_element;
 }
 
+#[sct="{ptr: public, val: transient} *
+       {ptr: public, val: secret} *
+       public * public *
+       {ptr: public, val: secret} ->
+       {ptr: public, val: transient}"]
 inline
 fn sign_internal(
+    #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature,
     #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key,
     reg u64 pointer_to_message,
     reg u64 message_size,
-    #spill_to_mmx reg ptr u8[32] randomness,
-    reg ptr u8[SIGNATURE_SIZE] signature
+    #spill_to_mmx reg ptr u8[32] randomness
 ) -> reg ptr u8[SIGNATURE_SIZE]
 {
     // parts of signing_key
@@ -105,7 +110,7 @@ fn sign_internal(
     stack u32[COEFFICIENTS_IN_POLYNOMIAL] ct0;
     stack u32[COEFFICIENTS_IN_POLYNOMIAL] w0_minus_cs2_plus_ct0;
 
-    reg u8 exit_rejection_sampling_loop;
+    #public reg u8 exit_rejection_sampling_loop;
 
     reg u64 ones_in_hint total_ones_in_hint;
     reg u64 hint_elements_processed;
@@ -190,6 +195,7 @@ fn sign_internal(
 
         infinity_norm_check_result = 0;
         for i = 0 to COLUMNS_IN_MATRIX_A {
+            #declassify infinity_norm_check_result = infinity_norm_check_result;
             if (infinity_norm_check_result == 0) {
                 signer_response[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
                     compute_signer_response_element(
@@ -209,6 +215,7 @@ fn sign_internal(
         total_ones_in_hint = 0;
         hint_elements_processed = 0;
         for i = 0 to ROWS_IN_MATRIX_A {
+            #declassify infinity_norm_check_result = infinity_norm_check_result;
             if (infinity_norm_check_result == 0) {
                 s2_element = s2[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
                 cs2 = polynomial::pointwise_montgomery_multiply_and_reduce(s2_element, verifier_challenge, cs2);
@@ -224,6 +231,7 @@ fn sign_internal(
                 w0_minus_cs2 = polynomial::reduce32(w0_minus_cs2);
 
                 infinity_norm_check_result = polynomial::check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
+                #declassify infinity_norm_check_result = infinity_norm_check_result;
 
                 if(infinity_norm_check_result == 0) {
                     t0_element = t0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
@@ -231,8 +239,10 @@ fn sign_internal(
                     ct0 = polynomial::invert_ntt_montgomery(ct0);
                     ct0 = polynomial::reduce32(ct0);
                     infinity_norm_check_result = polynomial::check_infinity_norm(ct0, GAMMA2);
+                    #declassify infinity_norm_check_result = infinity_norm_check_result;
 
                     if(infinity_norm_check_result == 0) {
+                        #declassify total_ones_in_hint = total_ones_in_hint;
                         if (total_ones_in_hint <= MAX_ONES_IN_HINT) {
                             w0_minus_cs2_plus_ct0 = polynomial::add(w0_minus_cs2, ct0, w0_minus_cs2_plus_ct0);
                             hint_element = hint[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
@@ -253,12 +263,15 @@ fn sign_internal(
         (_, cf, _, _, zf) = #CMP_64(total_ones_in_hint, MAX_ONES_IN_HINT);
         cond = #SETcc(cf || zf);
 
-        exit_rejection_sampling_loop &= cond;
+        #declassify exit_rejection_sampling_loop &= cond;
     }
 
 
     () = #unspill(signature);
-    signature = signature::encode(commitment_hash, signer_response, hint, signature);
+    #declassify hint = hint;
+    #declassify commitment_hash = commitment_hash;
+    #declassify signer_response = signer_response;
+    signature = signature::encode(signature, commitment_hash, signer_response, hint);
 
     return signature;
 }

@@ -21,7 +21,10 @@ fn prepare_state_for_shake256(
     return state;
 }
 
-#[sct="{ptr: public, val: secret} -> transient * secret"]
+#[sct="{ptr: public, val: transient} *
+       {ptr: public, val: secret} *
+       {ptr: public, val: secret} ->
+       {ptr: public, val: transient} * {ptr: public, val: secret}"]
 inline
 fn keygen_internal(
     reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
@@ -102,8 +105,9 @@ fn keygen_internal(
     // Serialize the rest of the verification key.
 
     () = #unspill(verification_key);
-    #declassify verification_key[32: T1_ENCODED_SIZE]
-    = t1::encode(verification_key[32: T1_ENCODED_SIZE], t1);
+    verification_key[32: T1_ENCODED_SIZE]
+        = t1::encode(verification_key[32: T1_ENCODED_SIZE], t1);
+    #declassify verification_key = verification_key;
 
     // ... and finish serializing the signing key.
     verification_key_pointer_copy = verification_key;

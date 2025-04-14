@@ -61,7 +61,7 @@ write_out_8_coefficients(
 }
 
 fn rejection_sample_multiple_blocks(
-    reg ptr u8[REJECTION_SAMPLING_BYTES] randombytes,
+    #secret reg ptr u8[REJECTION_SAMPLING_BYTES] randombytes,
     #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
 {
@@ -115,7 +115,9 @@ fn rejection_sample_multiple_blocks(
         coefficient_block = #VEXTRACTI128(coefficients, 0);
 
         // Start with the first 8
+        #declassify good_overall = good_overall;
         error, bytes_filled, good_overall = write_out_8_coefficients(coefficient_block, good_overall, bytes_filled, error);
+
         xof_offset += 4;
 
         if (bytes_filled < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
@@ -163,7 +165,7 @@ fn rejection_sample_multiple_blocks(
 
     while (!done) {
         coefficient = (32u)randombytes[xof_offset];
-        coefficient &= 0xF;
+        #declassify coefficient &= 0xF;
 
         if (coefficient < 9) {
             coefficient -= ETA;
@@ -175,7 +177,7 @@ fn rejection_sample_multiple_blocks(
 
         if (filled < COEFFICIENTS_IN_POLYNOMIAL) {
             coefficient = (32u)randombytes[xof_offset];
-            coefficient >>= 4;
+            #declassify coefficient >>= 4;
 
             if (coefficient < 9) {
                 coefficient -= ETA;
@@ -224,7 +226,7 @@ fn rejection_sample_one_block(
 
     while (!done) {
         coefficient = (32u)randombytes[xof_offset];
-        coefficient &= 0xF;
+        #declassify coefficient &= 0xF;
 
         if (coefficient < 9) {
             coefficient -= ETA;
@@ -236,7 +238,7 @@ fn rejection_sample_one_block(
 
         if (filled < COEFFICIENTS_IN_POLYNOMIAL) {
             coefficient = (32u)randombytes[xof_offset];
-            coefficient >>= 4;
+            #declassify coefficient >>= 4;
 
             if (coefficient < 9) {
                 coefficient -= ETA;

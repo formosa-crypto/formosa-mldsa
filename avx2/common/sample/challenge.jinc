@@ -61,7 +61,7 @@ namespace sample {
 
                     xof_offset = 0;
                 }
-                sample_at = (64u) state[u8 xof_offset];
+                #declassify sample_at = (64u) state[u8 xof_offset];
 
                 xof_offset += 1;
             } (sample_at > i)

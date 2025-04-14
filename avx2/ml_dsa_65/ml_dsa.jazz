@@ -53,11 +53,15 @@ from Common require "verify.jinc"
 
 // See api.h for the sizes of the buffers expected by these functions.
 
-#[sct="transient * transient * {ptr: transient, val: secret} -> ()"]
+#[sct="{ptr: transient, val: transient} *
+       {ptr: transient, val: secret} *
+       {ptr: transient, val: secret} ->
+       {ptr: transient, val: transient} *
+       {ptr: secret, val: secret}"]
 export fn ml_dsa_65_keygen(
-    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    #spill_to_mmx reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    reg ptr u8[32] randomness
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    #spill_to_mmx reg ptr u8[32] randomness
 ) -> reg ptr u8[VERIFICATION_KEY_SIZE],
      reg ptr u8[SIGNING_KEY_SIZE]
 {
@@ -67,7 +71,11 @@ export fn ml_dsa_65_keygen(
     return verification_key, signing_key;
 }
 
-#[sct="transient * transient * transient * transient * {ptr: transient, val: secret} -> ()"]
+#[sct="{ptr: transient, val: transient} *
+       {ptr: transient, val: secret} *
+       transient * transient *
+       {ptr: transient, val: secret} ->
+       {ptr: transient, val: transient}"]
 export fn ml_dsa_65_sign(
     #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature,
     reg ptr u8[SIGNING_KEY_SIZE] signing_key,
@@ -76,11 +84,15 @@ export fn ml_dsa_65_sign(
     reg ptr u8[32] randomness
 ) -> reg ptr u8[SIGNATURE_SIZE]
 {
-    signature = sign_internal(signing_key, message, message_size, randomness, signature);
+    signature = sign_internal(signature, signing_key, message, message_size, randomness);
 
     return signature;
 }
 
+#[sct="{ptr: transient, val: transient} *
+       transient * transient *
+       {ptr: transient, val: transient} ->
+       public"]
 export fn ml_dsa_65_verify(
     #transient reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
     #transient reg u64 message message_size,

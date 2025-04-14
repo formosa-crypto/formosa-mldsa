@@ -4,6 +4,21 @@
 require "keccakf1600_globals.jinc" // KECCAK1600_RC
 require "keccakf1600_spec.jinc" // __rhotates_spec
 
+// N.B.: This function was added by https://github.com/xvzcf to replace the use
+// of the ROL instruction in this file, since the ROL instruction is not marked
+// by Intel as having timing independent of its operands.
+//
+// N.B.: Ensure 0 <= ROTATE_BY <= 64
+inline fn __rotate_left_64(reg u64 v, inline int ROTATE_BY) -> reg u64 {
+    reg u64 lower = v;
+
+    lower >>= (64 - ROTATE_BY);
+    v <<= ROTATE_BY;
+    v |= lower;
+
+    return v;
+}
+
 // C[x] = A[x,0] ^ A[x,1] ^ A[x,2] ^ A[x,3] ^ A[x,4]
 inline fn __theta_sum_ref1(reg ptr u64[25] a) -> reg u64[5]
 {
@@ -35,7 +50,7 @@ inline fn __theta_rol_ref1(reg u64[5] c) -> reg u64[5]
     d[x] = c[(x + 1) % 5];
 
     // D[x] = ROT(D[x], 1)
-    _, _, d[x] = #ROL_64(d[x], 1);
+    d[x] = __rotate_left_64(d[x], 1);
 
     // D[x] ^= C[x-1]
     d[x] ^= c[(x - 1 + 5) % 5];
@@ -73,7 +88,7 @@ inline fn __rol_sum_ref1(
 
     // B[x] = ROT( B[x], r[x',y'] );
     if(r != 0)
-    { _, _, b[x] = #ROL_64(b[x], r); }
+    { b[x] = __rotate_left_64(b[x], r); }
 
   }
 

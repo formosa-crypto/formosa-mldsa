@@ -4,10 +4,10 @@ namespace signature {
 
     inline
     fn encode(
+        reg ptr u8[SIGNATURE_SIZE] signature_pointer,
         reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash,
         reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response,
-        reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint,
-        reg ptr u8[SIGNATURE_SIZE] signature_pointer
+        reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint
     ) -> reg ptr u8[SIGNATURE_SIZE]
     {
         reg u64 i j hints_written hint_offset;

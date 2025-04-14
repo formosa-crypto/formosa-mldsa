@@ -1,6 +1,6 @@
 namespace sample {
     inline
-    fn error_vectors(stack u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime)
+    fn error_vectors(#secret stack u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime)
         -> #secret stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
            #secret stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
         stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;

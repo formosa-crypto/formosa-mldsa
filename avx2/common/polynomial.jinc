@@ -119,7 +119,10 @@ namespace polynomial {
             offset += 32;
         }
 
+        // It is okay to leak which coefficient(s) violates the bound.
+        #declassify exceeds_any = exceeds_any;
         msb_mask = #MOVEMASK_8u32(exceeds_any);
+
         _, _, _, _, zf = #TEST_32(msb_mask, msb_mask);
         result = #SETcc(!zf);
 
