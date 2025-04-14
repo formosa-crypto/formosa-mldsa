@@ -48,7 +48,7 @@ $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 
 .PHONY: check-ct
 check-ct: $(IMPLEMENTATION)/ml_dsa.jazz
-	env JASMINPATH="Common=$(COMMON)" $(JASMINCT) $(JASMINCT_FLAGS) $^
+	env JASMINPATH="Common=$(COMMON)" $(JASMINCT) --doit $(JASMINCT_FLAGS) $^
 
 .PHONY: check-sct
 check-sct: $(IMPLEMENTATION)/ml_dsa.jazz

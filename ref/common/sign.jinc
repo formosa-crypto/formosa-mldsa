@@ -70,7 +70,7 @@ fn sign_internal(
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w0_minus_cs2_plus_ct0;
 
     reg u32 ones_in_hint;
-    stack u8 infinity_norm_check_result;
+    reg u8 infinity_norm_check_result;
 
     () = #spill(randomness, signature, signing_key);
     message_representative = derive_message_representative(
@@ -136,7 +136,8 @@ fn sign_internal(
         cs1 = row_vector::invert_ntt_montgomery(cs1);
         signer_response = row_vector::add(cs1, mask);
         signer_response = row_vector::reduce32(signer_response);
-        #declassify infinity_norm_check_result = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
+        infinity_norm_check_result = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
+        #declassify infinity_norm_check_result = infinity_norm_check_result;
 
         _ = #init_msf();
 
@@ -145,7 +146,8 @@ fn sign_internal(
             cs2 = column_vector::invert_ntt_montgomery(cs2);
             w0_minus_cs2 = column_vector::subtract(w0, cs2);
             w0_minus_cs2 = column_vector::reduce32(w0_minus_cs2);
-            #declassify infinity_norm_check_result = column_vector::check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
+            infinity_norm_check_result = column_vector::check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
+            #declassify infinity_norm_check_result = infinity_norm_check_result;
 
             _ = #init_msf();
 
@@ -153,7 +155,8 @@ fn sign_internal(
                 ct0 = column_vector::multiply_by_polynomial(t0, verifier_challenge);
                 ct0 = column_vector::invert_ntt_montgomery(ct0);
                 ct0 = column_vector::reduce32(ct0);
-                #declassify infinity_norm_check_result = column_vector::check_infinity_norm(ct0, GAMMA2);
+                infinity_norm_check_result = column_vector::check_infinity_norm(ct0, GAMMA2);
+                #declassify infinity_norm_check_result = infinity_norm_check_result;
 
                 _ = #init_msf();
                 if(infinity_norm_check_result == 0) {

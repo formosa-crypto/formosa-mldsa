@@ -23,7 +23,7 @@ fn compare_commitment_hashes(reg ptr u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg u6
         rhs_byte = rhs[i];
         rhs_byte = #protect_8(rhs_byte, msf);
 
-        condition = lhs_byte != rhs_byte;
+        #declassify condition = lhs_byte != rhs_byte;
         if (condition) {
             msf = #update_msf(condition, msf);
             result |= (64u)-1;
