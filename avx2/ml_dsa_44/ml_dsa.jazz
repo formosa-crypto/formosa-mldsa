@@ -1,0 +1,107 @@
+require "parameters.jinc"
+require "encoding/error_polynomial.jinc"
+require "encoding/gamma1.jinc"
+require "arithmetic/rounding.jinc"
+
+from Common require "arithmetic/rounding.jinc"
+from Common require "arithmetic/modular.jinc"
+from Common require "arithmetic/zetas.jinc"
+from Common require "arithmetic/ntt.jinc"
+from Common require "arithmetic/invert_ntt.jinc"
+
+from Common require "hashing_4x.jinc"
+from Common require "sample/matrix_A/matrix_A.jinc"
+from Common require "sample/challenge.jinc"
+from Common require "sample/mask/mask_1x.jinc"
+from Common require "sample/mask/mask_4x.jinc"
+
+from Common require "row_vector.jinc"
+from Common require "column_vector.jinc"
+
+from Common require "encoding/t0.jinc"
+from Common require "encoding/t1.jinc"
+from Common require "encoding/signature.jinc"
+from Common require "encoding/s1.jinc"
+from Common require "encoding/s2.jinc"
+
+require "sample/matrix_A.jinc"
+require "sample/error_vectors.jinc"
+from Common require "keygen.jinc"
+
+require "sample/mask.jinc"
+require "encoding/commitment.jinc"
+from Common require "sign.jinc"
+
+from Common require "verify.jinc"
+
+// N.B.: If it seems that some functions seemingly lack annotations to guide the
+// constant-time (CT) checker, it is because it looks for #[sct=...] annotations
+// and ignores speculative-constant-time (SCT) related information; this is to say,
+// the annotation given to the SCT checker can suffice for the CT checker as well.
+
+// N.B.: Signing and verification assume the domain separation context has already
+// been appended to the message; they do NOT validate whether this was done in
+// accordance with the FIPS-204 specification.
+//
+// Ideally, we'd pass in two additional arguments, one being a pointer to the
+// context string and the other being the size of said string, but we're already
+// at 5 arguments for signing, and Jasmin does not currently support functions
+// that take more than 6 arguments.
+
+// See api.h for the sizes of the buffers expected by these functions.
+
+#[sct="{ptr: transient, val: transient} *
+       {ptr: transient, val: secret} *
+       {ptr: transient, val: secret} ->
+       {ptr: transient, val: transient} *
+       {ptr: secret, val: secret}"]
+export fn ml_dsa_44_keygen(
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    reg ptr u8[32] randomness
+) -> reg ptr u8[VERIFICATION_KEY_SIZE], reg ptr u8[SIGNING_KEY_SIZE]
+{
+    _ = #init_msf();
+
+    verification_key, signing_key = keygen_internal(verification_key, signing_key, randomness);
+
+    return verification_key, signing_key;
+}
+
+#[sct="{ptr: transient, val: transient} *
+       {ptr: transient, val: secret} *
+       transient * transient *
+       {ptr: transient, val: secret} ->
+       {ptr: transient, val: transient}"]
+export fn ml_dsa_44_sign(
+    reg ptr u8[SIGNATURE_SIZE] signature,
+    reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    reg u64 message,
+    reg u64 message_size,
+    reg ptr u8[32] randomness
+) -> reg ptr u8[SIGNATURE_SIZE]
+{
+    _ = #init_msf();
+
+    signature = sign_internal(signature, signing_key, message, message_size, randomness);
+
+    return signature;
+}
+
+#[sct="{ptr: transient, val: transient} *
+       transient * transient *
+       {ptr: transient, val: transient} ->
+       public"]
+export fn ml_dsa_44_verify(
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg u64 message message_size,
+    reg ptr u8[SIGNATURE_SIZE] signature
+) -> reg u64 {
+    reg u64 verification_result;
+
+    _ = #init_msf();
+
+    verification_result = verify_internal(verification_key, message, message_size, signature);
+
+    return verification_result;
+}

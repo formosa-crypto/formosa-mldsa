@@ -1,0 +1,141 @@
+inline
+fn _decompose(reg u32 r) -> reg u32, reg u32 {
+    reg u32 temp high_bits low_bits;
+
+    // Compute ceil((r + 127) >> 7);
+    high_bits = r;
+    high_bits += 127;
+    high_bits >>s= 7;
+
+    // Compute (( (ceil(r + 127) >> 7) * 11_275) + (1 << 23) ) >> 24;
+    high_bits *= 11_275;
+    high_bits += (1 << 23);
+    high_bits >>s= 24;
+
+    // Compute high_bits ^= ((43 - high_bits) >> 31) & high_bits;
+    // to handle the corner case.
+    temp = 43;
+    temp -= high_bits;
+    temp >>s= 31;
+    temp &= high_bits;
+
+    high_bits ^= temp;
+
+    // Compute low_bits = r - (r1 * (GAMMA2 * 2));
+    temp = high_bits;
+    temp *= GAMMA2 * 2;
+
+    low_bits = r;
+    low_bits -= temp;
+
+    // Compute low_bits -= (((MODULUS - 1) / 2 - low_bits) >> 31) & MODULUS
+    // to account for the corner case.
+    temp = (MODULUS - 1) / 2;
+    temp -= low_bits;
+    temp >>s= 31;
+    temp &= MODULUS;
+
+    low_bits -= temp;
+
+    return low_bits, high_bits;
+}
+
+inline
+fn _use_hint(reg u32 a hint) -> reg u32 {
+    reg u32 high_bits low_bits;
+
+    reg u64 msf = #init_msf();
+
+    inline bool b;
+
+    low_bits, high_bits = _decompose(a);
+
+    b = hint != 0;
+    if (b) {
+        msf = #update_msf(b, msf);
+
+        b = low_bits >s 0;
+        if (b) {
+            msf = #update_msf(b, msf);
+
+            b = high_bits == 43;
+            if (b) {
+                msf = #update_msf(b, msf);
+
+                high_bits = 0;
+            } else {
+                msf = #update_msf(!b, msf);
+
+                high_bits += 1;
+            }
+        } else {
+            msf = #update_msf(!b, msf);
+
+            b = high_bits == 0;
+            if (b) {
+                msf = #update_msf(b, msf);
+
+                high_bits = 43;
+            } else {
+                msf = #update_msf(!b, msf);
+
+                high_bits -= 1;
+            }
+        }
+    } else {
+        msf = #update_msf(!b, msf);
+    }
+
+    return high_bits;
+}
+
+namespace polynomial {
+    fn decompose (
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lows,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] highs
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL],
+         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u32 coefficient lower upper;
+
+        reg u64 i;
+
+        i = 0;
+        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
+            coefficient = polynomial[i];
+            lower, upper = _decompose(coefficient);
+
+            lows[i] = lower;
+            highs[i] = upper;
+
+            i += 1;
+        }
+
+        return lows, highs;
+    }
+
+    fn use_hints(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment hint_polynomial
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u32 coefficient hint;
+
+        reg u64 i;
+
+        i = 0;
+        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
+            coefficient = commitment[i];
+            hint = hint_polynomial[i];
+
+            coefficient = _use_hint(coefficient, hint);
+
+            commitment[i] = coefficient;
+
+            i += 1;
+        }
+
+        return commitment;
+    }
+
+}
