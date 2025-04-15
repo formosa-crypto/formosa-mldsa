@@ -34,7 +34,6 @@ require "sample/mask.jinc"
 require "encoding/commitment.jinc"
 from Common require "sign.jinc"
 
-require "encoding/commitment.jinc"
 from Common require "verify.jinc"
 
 // N.B.: If it seems that some functions seemingly lack annotations to guide the

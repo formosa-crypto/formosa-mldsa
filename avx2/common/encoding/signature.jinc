@@ -4,7 +4,7 @@ namespace signature {
 
     inline
     fn encode(
-        reg ptr u8[SIGNATURE_SIZE] signature_pointer,
+        reg ptr u8[SIGNATURE_SIZE] signature,
         reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash,
         reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response,
         reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint
@@ -22,24 +22,23 @@ namespace signature {
         i = 0;
         while (i < COMMITMENT_HASH_SIZE) {
             byte = commitment_hash[i];
-            signature_pointer[i] = byte;
+            signature[i] = byte;
 
             i += 1;
         }
 
         for k = 0 to COLUMNS_IN_MATRIX_A {
             offset = START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE);
-            signature_pointer = gamma1::encode_polynomial(
-                signer_response[k * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                signature_pointer,
-                offset
+            signature[offset : ENCODED_GAMMA1_POLYNOMIAL_SIZE] = gamma1::encode_polynomial(
+                signature[offset : ENCODED_GAMMA1_POLYNOMIAL_SIZE],
+                signer_response[k * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
             );
         }
 
         // Clear the hints buffer
         i = 0;
         while (i < MAX_ONES_IN_HINT + ROWS_IN_MATRIX_A) {
-            signature_pointer[START_OF_HINT + i] = 0;
+            signature[START_OF_HINT + i] = 0;
             i += 1;
         }
 
@@ -58,18 +57,18 @@ namespace signature {
 
                 condition = hint_coefficient != 0;
                 if (hint_coefficient != 0) {
-                    signature_pointer[START_OF_HINT + hints_written] = (8u)j;
+                    signature[START_OF_HINT + hints_written] = (8u)j;
                     hints_written += 1;
                 }
 
                 j += 1;
             }
 
-            signature_pointer[START_OF_HINT + MAX_ONES_IN_HINT + i] = (8u) hints_written;
+            signature[START_OF_HINT + MAX_ONES_IN_HINT + i] = (8u) hints_written;
             i += 1;
         }
 
-        return signature_pointer;
+        return signature;
     }
 
     inline
