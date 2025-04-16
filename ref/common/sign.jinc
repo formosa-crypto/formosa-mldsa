@@ -8,17 +8,17 @@ fn derive_seed_for_mask(
 
     state = __keccak_init_ref1(state);
 
-    state[u8 0:32] = #copy(k);
-    state[u8 32:32] = #copy(randomness);
-    state[u8 64:MESSAGE_REPRESENTATIVE_SIZE] = #copy(message_representative);
-    state[u8 128] ^= 0x1f;
-    state[u8 SHAKE256_RATE - 1] ^= 0x80;
+    state[:u8 0:32] = #copy(k);
+    state[:u8 32:32] = #copy(randomness);
+    state[:u8 64:MESSAGE_REPRESENTATIVE_SIZE] = #copy(message_representative);
+    state[:u8 128] ^= 0x1f;
+    state[:u8 SHAKE256_RATE - 1] ^= 0x80;
 
     () = #spill(seed_for_mask);
     state = _keccakf1600_ref1(state);
     () = #unspill(seed_for_mask);
 
-    seed_for_mask = #copy(state[u8 0:64]);
+    seed_for_mask = #copy(state[:u8 0:64]);
 
     return seed_for_mask;
 }

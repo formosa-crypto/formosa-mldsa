@@ -33,7 +33,7 @@ fn test_consistency() -> reg bool {
 
     i = 0;
     while (i < 64) {
-        (u8)[message + i] = i;
+        [:u8 message + i] = i;
         i += 1;
     }
 

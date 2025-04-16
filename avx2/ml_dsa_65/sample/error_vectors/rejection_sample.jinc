@@ -46,12 +46,12 @@ write_out_8_coefficients(
 
     shuffle_table_idx = good;
     shuffle_table_idx <<= 3;
-    shuffles = (128u)shuffle_table_pointer.[u64 shuffle_table_idx];
+    shuffles = (128u)shuffle_table_pointer.[:u64 shuffle_table_idx];
 
     error_coefficients_128 = #VPSHUFB_128(coefficient_block, shuffles);
     error_coefficients = #VPMOVSX_8u8_8u32(error_coefficients_128);
 
-    error.[u256 bytes_filled] = error_coefficients;
+    error.[:u256 bytes_filled] = error_coefficients;
 
     _, _, _, _, _, good = #POPCNT_64(good);
     good <<= 2;
@@ -102,7 +102,7 @@ fn rejection_sample_multiple_blocks(
     _, _, _, _, done = #TEST_8(flg0, flg1);
 
     while (!done) {
-        bytestream = randombytes.[u128 xof_offset];
+        bytestream = randombytes.[:u128 xof_offset];
 
         coefficients = bytestream_to_coefficients(bytestream);
 

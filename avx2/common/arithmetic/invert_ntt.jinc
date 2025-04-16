@@ -14,12 +14,12 @@ namespace polynomial {
 
         coeffs_i_start = start;
         coeffs_i_start *= 32;
-        coeffs_i = polynomial.[u256 coeffs_i_start];
+        coeffs_i = polynomial.[:u256 coeffs_i_start];
         coeffs_i = #VPSHUFD_256(coeffs_i, 0b11_01_10_00);
 
         coeffs_i_plus_1_start = coeffs_i_start;
         coeffs_i_plus_1_start += 32;
-        coeffs_i_plus_1 = polynomial.[u256 coeffs_i_plus_1_start];
+        coeffs_i_plus_1 = polynomial.[:u256 coeffs_i_plus_1_start];
         coeffs_i_plus_1 = #VPSHUFD_256(coeffs_i_plus_1, 0b11_01_10_00);
 
         low_values = #VPUNPCKL_4u64(coeffs_i, coeffs_i_plus_1);
@@ -36,8 +36,8 @@ namespace polynomial {
         coeffs_i = #VPSHUFD_256(coeffs_i, 0b11_01_10_00);
         coeffs_i_plus_1 = #VPSHUFD_256(coeffs_i_plus_1, 0b11_01_10_00);
 
-        polynomial.[u256 coeffs_i_start] = coeffs_i;
-        polynomial.[u256 coeffs_i_plus_1_start] = coeffs_i_plus_1;
+        polynomial.[:u256 coeffs_i_start] = coeffs_i;
+        polynomial.[:u256 coeffs_i_plus_1_start] = coeffs_i_plus_1;
 
         return polynomial;
     }
@@ -74,11 +74,11 @@ namespace polynomial {
 
         coeffs_i_start = start;
         coeffs_i_start *= 32;
-        coeffs_i = polynomial.[u256 coeffs_i_start];
+        coeffs_i = polynomial.[:u256 coeffs_i_start];
 
         coeffs_i_plus_1_start = coeffs_i_start;
         coeffs_i_plus_1_start += 32;
-        coeffs_i_plus_1 = polynomial.[u256 coeffs_i_plus_1_start];
+        coeffs_i_plus_1 = polynomial.[:u256 coeffs_i_plus_1_start];
 
         low_values = #VPUNPCKL_4u64(coeffs_i, coeffs_i_plus_1);
         high_values = #VPUNPCKH_4u64(coeffs_i, coeffs_i_plus_1);
@@ -91,8 +91,8 @@ namespace polynomial {
         coeffs_i = #VPUNPCKL_4u64(sums, differences);
         coeffs_i_plus_1 = #VPUNPCKH_4u64(sums, differences);
 
-        polynomial.[u256 coeffs_i_start] = coeffs_i;
-        polynomial.[u256 coeffs_i_plus_1_start] = coeffs_i_plus_1;
+        polynomial.[:u256 coeffs_i_start] = coeffs_i;
+        polynomial.[:u256 coeffs_i_plus_1_start] = coeffs_i_plus_1;
 
         return polynomial;
     }
@@ -129,11 +129,11 @@ namespace polynomial {
 
         coeffs_i_start = start;
         coeffs_i_start *= 32;
-        coeffs_i = polynomial.[u256 coeffs_i_start];
+        coeffs_i = polynomial.[:u256 coeffs_i_start];
 
         coeffs_i_plus_1_start = coeffs_i_start;
         coeffs_i_plus_1_start += 32;
-        coeffs_i_plus_1 = polynomial.[u256 coeffs_i_plus_1_start];
+        coeffs_i_plus_1 = polynomial.[:u256 coeffs_i_plus_1_start];
 
         low_values = #VPERM2I128(coeffs_i, coeffs_i_plus_1, 0x20);
         high_values = #VPERM2I128(coeffs_i, coeffs_i_plus_1, 0x31);
@@ -146,8 +146,8 @@ namespace polynomial {
         coeffs_i = #VPERM2I128(sums, differences, 0x20);
         coeffs_i_plus_1 = #VPERM2I128(sums, differences, 0x31);
 
-        polynomial.[u256 coeffs_i_start] = coeffs_i;
-        polynomial.[u256 coeffs_i_plus_1_start] = coeffs_i_plus_1;
+        polynomial.[:u256 coeffs_i_start] = coeffs_i;
+        polynomial.[:u256 coeffs_i_plus_1_start] = coeffs_i_plus_1;
 
         return polynomial;
     }
@@ -193,20 +193,20 @@ namespace polynomial {
         while (i < offset) {
             index_i = i;
             index_i *= 32;
-            coeffs_i = polynomial.[u256 index_i];
+            coeffs_i = polynomial.[:u256 index_i];
 
             index_i_plus_step_by = i;
             index_i_plus_step_by += step_by;
             index_i_plus_step_by *= 32;
-            coeffs_i_plus_step_by = polynomial.[u256 index_i_plus_step_by];
+            coeffs_i_plus_step_by = polynomial.[:u256 index_i_plus_step_by];
 
             a_minus_b = #VPSUB_8u32(coeffs_i_plus_step_by, coeffs_i);
 
             coeffs_i = #VPADD_8u32(coeffs_i, coeffs_i_plus_step_by);
             coeffs_i_plus_step_by = montgomery_multiply_and_reduce(a_minus_b, zetas);
 
-            polynomial.[u256 index_i] = coeffs_i;
-            polynomial.[u256 index_i_plus_step_by] = coeffs_i_plus_step_by;
+            polynomial.[:u256 index_i] = coeffs_i;
+            polynomial.[:u256 index_i_plus_step_by] = coeffs_i_plus_step_by;
 
             i += 1;
         }
@@ -347,10 +347,10 @@ namespace polynomial {
 
         i = 0;
         while(i < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
-            coefficients = polynomial.[u256 i];
+            coefficients = polynomial.[:u256 i];
 
             coefficients = montgomery_multiply_and_reduce(coefficients, twiddle_factors);
-            polynomial.[u256 i] = coefficients;
+            polynomial.[:u256 i] = coefficients;
 
             i += 32;
         }

@@ -33,7 +33,7 @@ fn hash_verification_key(
         while(state_offset < SHAKE256_RATE) {
             byte = verification_key[verification_key_offset];
 
-            state[u8 state_offset] ^= byte;
+            state[:u8 state_offset] ^= byte;
 
             verification_key_offset += 1;
             state_offset += 1;
@@ -50,14 +50,14 @@ fn hash_verification_key(
     while(verification_key_offset < VERIFICATION_KEY_SIZE) {
         byte = verification_key[verification_key_offset];
 
-        state[u8 state_offset] ^= byte;
+        state[:u8 state_offset] ^= byte;
 
         verification_key_offset += 1;
         state_offset += 1;
     }
 
-    state[u8 state_offset] ^= 0x1f;
-    state[u8 SHAKE256_RATE - 1] ^= 0x80;
+    state[:u8 state_offset] ^= 0x1f;
+    state[:u8 SHAKE256_RATE - 1] ^= 0x80;
 
     // ... then squeeze.
 
@@ -67,7 +67,7 @@ fn hash_verification_key(
 
     state_offset = 0;
     while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
-        byte = state[u8 state_offset];
+        byte = state[:u8 state_offset];
         hash[state_offset] = byte;
         state_offset += 1;
     }
@@ -105,7 +105,7 @@ fn derive_message_representative(
     state_offset = 0;
     while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
         byte = hash_of_verification_key[state_offset];
-        state[u8 state_offset] = byte;
+        state[:u8 state_offset] = byte;
 
         state_offset += 1;
     }
@@ -120,26 +120,26 @@ fn derive_message_representative(
             ?{}, state_offset = #set0_64();
         }
 
-        byte = (u8) [message + message_offset];
+        byte = [:u8 message + message_offset];
         message_offset += 1;
 
-        state[u8 state_offset] ^= byte;
+        state[:u8 state_offset] ^= byte;
         state_offset += 1;
     }
 
     // Absorb separator byte
     state, state_offset = shake256_consider_permute(state, state_offset);
-    state[u8 state_offset] ^= 0x1f;
+    state[:u8 state_offset] ^= 0x1f;
 
     // Finish
     state, state_offset = shake256_consider_permute(state, state_offset);
-    state[u8 SHAKE256_RATE-1] ^= 0x80;
+    state[:u8 SHAKE256_RATE-1] ^= 0x80;
 
     state = _keccakf1600_ref1(state);
 
     state_offset = 0;
     while(state_offset < MESSAGE_REPRESENTATIVE_SIZE) {
-        byte = state[u8 state_offset];
+        byte = state[:u8 state_offset];
         message_representative[state_offset] = byte;
         state_offset += 1;
     }
@@ -173,7 +173,7 @@ fn derive_commitment_hash(
     // Absorb message_representative
     while (state_offset < MESSAGE_REPRESENTATIVE_SIZE) {
         byte = message_representative[state_offset];
-        state[u8 state_offset] = byte;
+        state[:u8 state_offset] = byte;
         state_offset += 1;
     }
 
@@ -183,7 +183,7 @@ fn derive_commitment_hash(
             byte = encoded_commitment[encoded_commitment_offset];
             encoded_commitment_offset += 1;
 
-            state[u8 state_offset] ^= byte;
+            state[:u8 state_offset] ^= byte;
             state_offset += 1;
         }
 
@@ -200,13 +200,13 @@ fn derive_commitment_hash(
         byte = encoded_commitment[encoded_commitment_offset];
         encoded_commitment_offset += 1;
 
-        state[u8 state_offset] ^= byte;
+        state[:u8 state_offset] ^= byte;
         state_offset += 1;
     }
 
     // Absorb separator byte and finish
-    state[u8 state_offset] ^= 0x1f;
-    state[u8 SHAKE256_RATE - 1] ^= 0x80;
+    state[:u8 state_offset] ^= 0x1f;
+    state[:u8 SHAKE256_RATE - 1] ^= 0x80;
 
     // Now squeeze
 
@@ -214,7 +214,7 @@ fn derive_commitment_hash(
     state_offset = 0;
 
     while(state_offset < COMMITMENT_HASH_SIZE) {
-        byte = state[u8 state_offset];
+        byte = state[:u8 state_offset];
         commitment_hash[state_offset] = byte;
         state_offset += 1;
     }

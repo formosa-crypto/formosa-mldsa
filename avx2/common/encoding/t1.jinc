@@ -57,18 +57,18 @@ namespace t1 {
         // The last 10 encoded bytes of output (resulting from the 32 input bytes)
         // will need to be written out carefully.
         while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
-            coefficients = t1.[u256 input_offset];
+            coefficients = t1.[:u256 input_offset];
             input_offset += 32;
 
             bytestream = coefficients_to_bytestream(coefficients);
 
-            t1_encoded.[u128 output_offset] = bytestream;
+            t1_encoded.[:u128 output_offset] = bytestream;
             output_offset += 10;
         }
-        coefficients = t1.[u256 input_offset];
+        coefficients = t1.[:u256 input_offset];
 
         bytestream = coefficients_to_bytestream(coefficients);
-        final_encoded_output.[u128 0] = bytestream;
+        final_encoded_output.[:u128 0] = bytestream;
 
         for i = 0 to 10 {
             t1_encoded[output_offset + i] = final_encoded_output[i];
@@ -132,7 +132,7 @@ namespace t1 {
         output_offset = 0;
         while (input_offset < T1_POLYNOMIAL_ENCODED_SIZE - 10) {
             // We process only 10 bytes at a time.
-            bytestream = t1_encoded.[u128 input_offset];
+            bytestream = t1_encoded.[:u128 input_offset];
             input_offset += 10;
 
             coefficients = #VINSERTI128(coefficients, bytestream, 0);
@@ -146,11 +146,11 @@ namespace t1 {
 
             coefficients = #VPAND_256(coefficients, mask);
 
-            t1.[u256 output_offset] = coefficients;
+            t1.[:u256 output_offset] = coefficients;
             output_offset += 32;
         }
 
-        bytestream = t1_encoded.[u128 T1_POLYNOMIAL_ENCODED_SIZE - 16];
+        bytestream = t1_encoded.[:u128 T1_POLYNOMIAL_ENCODED_SIZE - 16];
         bytestream = #VPSRLDQ_128(bytestream, 6);
 
         coefficients = #VINSERTI128(coefficients, bytestream, 0);
@@ -164,7 +164,7 @@ namespace t1 {
 
         coefficients = #VPAND_256(coefficients, mask);
 
-        t1.[u256 output_offset] = coefficients;
+        t1.[:u256 output_offset] = coefficients;
 
         return t1;
     }

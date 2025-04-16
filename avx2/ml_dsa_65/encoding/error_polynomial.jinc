@@ -29,35 +29,35 @@ namespace error_polynomial {
         input_offset = 0;
         output_offset = 0;
         while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
-            c0 = polynomial.[u256 input_offset];
+            c0 = polynomial.[:u256 input_offset];
             c0 = #VPSUB_8u32(eta, c0);
             input_offset += 32;
 
-            c1 = polynomial.[u256 input_offset];
+            c1 = polynomial.[:u256 input_offset];
             c1 = #VPSUB_8u32(eta, c1);
             input_offset += 32;
 
-            c2 = polynomial.[u256 input_offset];
+            c2 = polynomial.[:u256 input_offset];
             c2 = #VPSUB_8u32(eta, c2);
             input_offset += 32;
 
-            c3 = polynomial.[u256 input_offset];
+            c3 = polynomial.[:u256 input_offset];
             c3 = #VPSUB_8u32(eta, c3);
             input_offset += 32;
 
-            c4 = polynomial.[u256 input_offset];
+            c4 = polynomial.[:u256 input_offset];
             c4 = #VPSUB_8u32(eta, c4);
             input_offset += 32;
 
-            c5 = polynomial.[u256 input_offset];
+            c5 = polynomial.[:u256 input_offset];
             c5 = #VPSUB_8u32(eta, c5);
             input_offset += 32;
 
-            c6 = polynomial.[u256 input_offset];
+            c6 = polynomial.[:u256 input_offset];
             c6 = #VPSUB_8u32(eta, c6);
             input_offset += 32;
 
-            c7 = polynomial.[u256 input_offset];
+            c7 = polynomial.[:u256 input_offset];
             c7 = #VPSUB_8u32(eta, c7);
             input_offset += 32;
 
@@ -77,7 +77,7 @@ namespace error_polynomial {
 
             c0 = #VPSHUFB_256(c0, encoding_shuffles);
 
-            encoded.[u256 output_offset] = c0;
+            encoded.[:u256 output_offset] = c0;
             output_offset += 32;
         }
 
@@ -126,7 +126,7 @@ namespace error_polynomial {
         input_offset = 0;
         output_offset = 0;
         while (input_offset < ENCODED_ERROR_POLYNOMIAL_SIZE) {
-            bytes = encoded.[u128 input_offset];
+            bytes = encoded.[:u128 input_offset];
             input_offset += 16;
 
             byte_group = 0;
@@ -140,7 +140,7 @@ namespace error_polynomial {
 
                 coefficients = #VPSUB_8u32(eta, coefficients);
 
-                decoded.[u256 output_offset] = coefficients;
+                decoded.[:u256 output_offset] = coefficients;
                 output_offset += 32;
 
                 bytes = #VPSRLDQ_128(bytes, 4);

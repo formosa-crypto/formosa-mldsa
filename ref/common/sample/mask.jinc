@@ -7,18 +7,18 @@ fn absorb_for_shake256(
     reg u16 v;
 
     state = __keccak_init_ref1(state);
-    state[u8 0:64] = #copy(rho_prime);
+    state[:u8 0:64] = #copy(rho_prime);
 
     v = domain_separator;
     v &= 0xFF;
-    state[u8 64] = (8u)v;
+    state[:u8 64] = (8u)v;
 
     v = domain_separator;
     v >>= 8;
-    state[u8 65] = (8u)v;
+    state[:u8 65] = (8u)v;
 
-    state[u8 66] ^= 0x1f;
-    state[u8 SHAKE256_RATE - 1] ^= 0x80;
+    state[:u8 66] ^= 0x1f;
+    state[:u8 SHAKE256_RATE - 1] ^= 0x80;
 
     return state;
 }
@@ -56,7 +56,7 @@ fn sample_mask_polynomial(
 
         i = 0;
         while(i < SHAKE256_RATE) {
-            byte = state[u8 i];
+            byte = state[:u8 i];
             i += 1;
 
             mask_encoded[mask_encoded_offset] = byte;

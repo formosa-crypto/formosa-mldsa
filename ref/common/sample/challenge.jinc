@@ -12,10 +12,10 @@ fn absorb_to_generate_challenges(
 
     for i = 0 to COMMITMENT_HASH_SIZE {
         byte = commitment_hash[i];
-        state[u8 i] = byte;
+        state[:u8 i] = byte;
     }
-    state[u8 COMMITMENT_HASH_SIZE] = 0x1f;
-    state[u8 SHAKE256_RATE - 1] = 0x80;
+    state[:u8 COMMITMENT_HASH_SIZE] = 0x1f;
+    state[:u8 SHAKE256_RATE - 1] = 0x80;
 
     return state;
 }
@@ -45,7 +45,7 @@ namespace sample {
 
         signs = 0;
         for j = 0 to 8 {
-            byte = (64u)state[u8 j];
+            byte = (64u)state[:u8 j];
             byte <<= 8 * j;
 
             signs |= byte;
@@ -68,7 +68,7 @@ namespace sample {
 
                     xof_offset = 0;
                 }
-                #declassify sample_at = (64u) state[u8 xof_offset];
+                #declassify sample_at = (64u) state[:u8 xof_offset];
                 _ = #init_msf();
 
                 xof_offset += 1;

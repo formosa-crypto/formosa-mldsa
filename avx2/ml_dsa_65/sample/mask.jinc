@@ -16,12 +16,12 @@ namespace sample {
             );
         domain_separator += 4;
 
-        mask[COEFFICIENTS_IN_POLYNOMIAL * 4 : COEFFICIENTS_IN_POLYNOMIAL] =
+        mask[BYTES_PER_UNCOMPRESSED_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
                 sample_mask_polynomial_1x
                 (
                     rho_prime,
                     domain_separator,
-                    mask[COEFFICIENTS_IN_POLYNOMIAL * 4 : COEFFICIENTS_IN_POLYNOMIAL]
+                    mask[BYTES_PER_UNCOMPRESSED_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
                 );
         domain_separator += 1;
 

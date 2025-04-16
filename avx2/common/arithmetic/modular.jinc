@@ -64,16 +64,16 @@ namespace polynomial {
 
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
-            lhs_coeffs = lhs.[u256 offset];
-            rhs_coeffs = rhs.[u256 offset];
+            lhs_coeffs = lhs.[:u256 offset];
+            rhs_coeffs = rhs.[:u256 offset];
             product_coeffs = montgomery_multiply_and_reduce(lhs_coeffs, rhs_coeffs);
-            product.[u256 offset] = product_coeffs;
+            product.[:u256 offset] = product_coeffs;
             offset += 32;
 
-            lhs_coeffs = lhs.[u256 offset];
-            rhs_coeffs = rhs.[u256 offset];
+            lhs_coeffs = lhs.[:u256 offset];
+            rhs_coeffs = rhs.[:u256 offset];
             product_coeffs = montgomery_multiply_and_reduce(lhs_coeffs, rhs_coeffs);
-            product.[u256 offset] = product_coeffs;
+            product.[:u256 offset] = product_coeffs;
             offset += 32;
         }
 
@@ -94,13 +94,13 @@ namespace polynomial {
 
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
-            lhs = polynomial.[u256 offset];
+            lhs = polynomial.[:u256 offset];
 
             mask = #VPCMPGT_8u32(zero, lhs);
             rhs = #VPAND_256(modulus, mask);
 
             lhs = #VPADD_8u32(lhs, rhs);
-            polynomial.[u256 offset] = lhs;
+            polynomial.[:u256 offset] = lhs;
 
             offset += 32;
         }
@@ -122,7 +122,7 @@ namespace polynomial {
         offset = 0;
         while(offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
             // t = (a + (1 << 22)) >> 23
-            a = polynomial.[u256 offset];
+            a = polynomial.[:u256 offset];
             t = #VPADD_8u32(a, two_pow_22);
             t = #VPSRA_8u32(t, 23);
 
@@ -130,7 +130,7 @@ namespace polynomial {
             t = #VPMULL_8u32(t, modulus);
             a = #VPSUB_8u32(a, t);
 
-            polynomial.[u256 offset] = a;
+            polynomial.[:u256 offset] = a;
 
             offset += 32;
         }

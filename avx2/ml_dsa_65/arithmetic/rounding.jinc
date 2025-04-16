@@ -34,8 +34,8 @@ namespace polynomial {
         shift = CONSTANTS_TABLE[4]; // 512
 
         offset = 0;
-        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
-            coefficients = polynomial.[u256 offset];
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            coefficients = polynomial.[:u256 offset];
 
             // Compute the upper bits fist
 
@@ -56,8 +56,8 @@ namespace polynomial {
             comparisons = #VPAND_256(comparisons, modulus);
             lower = #VPSUB_8u32(lower, comparisons);
 
-            lows.[u256 offset] = lower;
-            highs.[u256 offset] = upper;
+            lows.[:u256 offset] = lower;
+            highs.[:u256 offset] = upper;
 
             offset += 32;
         }
@@ -86,17 +86,17 @@ namespace polynomial {
         lows, highs = decompose(commitment, lows, highs);
 
         offset = 0;
-        while (offset < COEFFICIENTS_IN_POLYNOMIAL * 4) {
-            low = lows.[u256 offset];
-            hints = hint_polynomial.[u256 offset];
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            low = lows.[:u256 offset];
+            hints = hint_polynomial.[:u256 offset];
 
             hints = #VPSIGN_8s32(hints, low);
 
-            high = highs.[u256 offset];
+            high = highs.[:u256 offset];
             coefficients = #VPADD_8u32(high, hints);
             coefficients = #VPAND_256(coefficients, mask);
 
-            commitment.[u256 offset] = coefficients;
+            commitment.[:u256 offset] = coefficients;
 
             offset += 32;
         }

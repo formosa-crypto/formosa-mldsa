@@ -29,36 +29,36 @@ namespace matrix_A {
 
         for i = 0 to 4
         {
-            t64 = rho[u64 i];
-            state[u64 4 * i] ^= t64;
+            t64 = rho[:u64 i];
+            state[:u64 4 * i] ^= t64;
 
-            t64 = rho[u64 i];
-            state[u64 4 * i + 1] ^= t64;
+            t64 = rho[:u64 i];
+            state[:u64 4 * i + 1] ^= t64;
 
-            t64 = rho[u64 i];
-            state[u64 4 * i + 2] ^= t64;
+            t64 = rho[:u64 i];
+            state[:u64 4 * i + 2] ^= t64;
 
-            t64 = rho[u64 i];
-            state[u64 4 * i + 3] ^= t64;
+            t64 = rho[:u64 i];
+            state[:u64 4 * i + 3] ^= t64;
         }
 
         t16 = domain_separators[0];
-        state[u16 64] ^= t16;
-        state[u8 130] ^= 0x1F;
+        state[:u16 64] ^= t16;
+        state[:u8 130] ^= 0x1F;
 
         t16 = domain_separators[1];
-        state[u16 68] ^= t16;
-        state[u8 138] ^= 0x1F;
+        state[:u16 68] ^= t16;
+        state[:u8 138] ^= 0x1F;
 
         t16 = domain_separators[2];
-        state[u16 72] ^= t16;
-        state[u8 146] ^= 0x1F;
+        state[:u16 72] ^= t16;
+        state[:u8 146] ^= 0x1F;
 
         t16 = domain_separators[3];
-        state[u16 76] ^= t16;
-        state[u8 154] ^= 0x1F;
+        state[:u16 76] ^= t16;
+        state[:u8 154] ^= 0x1F;
 
-        t0 = shake_sep[u256 0];
+        t0 = shake_sep[:u256 0];
         t1 = state[SHAKE128_RATE / 8 - 1];
         t0 = t0 ^ t1;
         state[SHAKE128_RATE / 8 - 1] = t0;

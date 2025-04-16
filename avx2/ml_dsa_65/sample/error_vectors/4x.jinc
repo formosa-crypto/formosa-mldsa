@@ -28,7 +28,7 @@ namespace error_4x {
 
         for i = 0 to 8 {
             // N.B.: SEED_FOR_ERROR_VECTORS_SIZE is always 64.
-            t64 = rho_prime.[u64 8 * i];
+            t64 = rho_prime.[:u64 8 * i];
             t256 = (256u)t64;
             t256 = #VPBROADCAST_4u64(t256);
             state[i] = t256;

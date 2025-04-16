@@ -28,21 +28,21 @@ namespace commitment {
         while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
             // Since each coefficient is only 4-bits long, we load 64 coefficients,
             // allowing us to pack the entire 256-bit AVX2 register.
-            c0 = commitment.[u256 input_offset];
+            c0 = commitment.[:u256 input_offset];
             input_offset += 32;
-            c1 = commitment.[u256 input_offset];
+            c1 = commitment.[:u256 input_offset];
             input_offset += 32;
-            c2 = commitment.[u256 input_offset];
+            c2 = commitment.[:u256 input_offset];
             input_offset += 32;
-            c3 = commitment.[u256 input_offset];
+            c3 = commitment.[:u256 input_offset];
             input_offset += 32;
-            c4 = commitment.[u256 input_offset];
+            c4 = commitment.[:u256 input_offset];
             input_offset += 32;
-            c5 = commitment.[u256 input_offset];
+            c5 = commitment.[:u256 input_offset];
             input_offset += 32;
-            c6 = commitment.[u256 input_offset];
+            c6 = commitment.[:u256 input_offset];
             input_offset += 32;
-            c7 = commitment.[u256 input_offset];
+            c7 = commitment.[:u256 input_offset];
             input_offset += 32;
 
             c0 = #VPACKUS_8u32(c0, c1);
@@ -61,7 +61,7 @@ namespace commitment {
 
             c0 = #VPSHUFB_256(c0, encoding_shuffles);
 
-            encoded.[u256 output_offset] = c0;
+            encoded.[:u256 output_offset] = c0;
             output_offset += 32;
         }
 

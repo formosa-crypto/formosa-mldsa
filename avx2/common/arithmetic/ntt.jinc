@@ -14,12 +14,12 @@ namespace polynomial {
 
         lhs_start = start;
         lhs_start *= 32;
-        lhs = polynomial.[u256 lhs_start];
+        lhs = polynomial.[:u256 lhs_start];
         lhs = #VPSHUFD_256(lhs, 0b11_01_10_00);
 
         rhs_start = lhs_start;
         rhs_start += 32;
-        rhs = polynomial.[u256 rhs_start];
+        rhs = polynomial.[:u256 rhs_start];
         rhs = #VPSHUFD_256(rhs, 0b11_01_10_00);
 
         summands = #VPUNPCKL_4u64(lhs, rhs);
@@ -36,8 +36,8 @@ namespace polynomial {
         rhs = #VPUNPCKH_4u64(add_terms, sub_terms);
         rhs = #VPSHUFD_256(rhs, 0b11_01_10_00);
 
-        polynomial.[u256 lhs_start] = lhs;
-        polynomial.[u256 rhs_start] = rhs;
+        polynomial.[:u256 lhs_start] = lhs;
+        polynomial.[:u256 rhs_start] = rhs;
 
         return polynomial;
     }
@@ -74,11 +74,11 @@ namespace polynomial {
 
         lhs_start = start;
         lhs_start *= 32;
-        lhs = polynomial.[u256 lhs_start];
+        lhs = polynomial.[:u256 lhs_start];
 
         rhs_start = lhs_start;
         rhs_start += 32;
-        rhs = polynomial.[u256 rhs_start];
+        rhs = polynomial.[:u256 rhs_start];
 
         summands = #VPUNPCKL_4u64(lhs, rhs);
 
@@ -89,10 +89,10 @@ namespace polynomial {
         sub_terms = #VPSUB_8u32(summands, zeta_products);
 
         lhs = #VPUNPCKL_4u64(add_terms, sub_terms);
-        polynomial.[u256 lhs_start] = lhs;
+        polynomial.[:u256 lhs_start] = lhs;
 
         rhs = #VPUNPCKH_4u64(add_terms, sub_terms);
-        polynomial.[u256 rhs_start] = rhs;
+        polynomial.[:u256 rhs_start] = rhs;
 
         return polynomial;
     }
@@ -131,12 +131,12 @@ namespace polynomial {
 
         lhs_start = start;
         lhs_start *= 32;
-        lhs = polynomial.[u256 lhs_start];
+        lhs = polynomial.[:u256 lhs_start];
         lhs_truncated = (128u)lhs;
 
         rhs_start = lhs_start;
         rhs_start += 32;
-        rhs = polynomial.[u256 rhs_start];
+        rhs = polynomial.[:u256 rhs_start];
         rhs_truncated = (128u)rhs;
 
         summands = #set0_256();
@@ -153,10 +153,10 @@ namespace polynomial {
         rhs_truncated = (128u)sub_terms;
         lhs = #VINSERTI128(lhs, lhs_truncated, 0);
         lhs = #VINSERTI128(lhs, rhs_truncated, 1);
-        polynomial.[u256 lhs_start] = lhs;
+        polynomial.[:u256 lhs_start] = lhs;
 
         rhs = #VPERM2I128(sub_terms, add_terms, 0b0001_0011);
-        polynomial.[u256 rhs_start] = rhs;
+        polynomial.[:u256 rhs_start] = rhs;
 
         return polynomial;
     }
@@ -205,20 +205,20 @@ namespace polynomial {
         while (i < bound) {
             index = i;
             index *= 32;
-            coeffs_i = polynomial.[u256 index];
+            coeffs_i = polynomial.[:u256 index];
 
             index_plus_step = i;
             index_plus_step += step_by;
             index_plus_step *= 32;
-            coeffs_i_plus_step = polynomial.[u256 index_plus_step];
+            coeffs_i_plus_step = polynomial.[:u256 index_plus_step];
 
             product = montgomery_multiply_and_reduce(coeffs_i_plus_step, zetas);
 
             coeffs_i_plus_step = #VPSUB_8u32(coeffs_i, product);
-            polynomial.[u256 index_plus_step] = coeffs_i_plus_step;
+            polynomial.[:u256 index_plus_step] = coeffs_i_plus_step;
 
             coeffs_i = #VPADD_8u32(coeffs_i, product);
-            polynomial.[u256 index] = coeffs_i;
+            polynomial.[:u256 index] = coeffs_i;
 
             i += 1;
         }
@@ -308,7 +308,7 @@ namespace polynomial {
         index_i_plus_step_by = start;
         index_i_plus_step_by += step_by;
         index_i_plus_step_by *= 32;
-        coeffs_i_plus_step_by = polynomial.[u256 index_i_plus_step_by]; 
+        coeffs_i_plus_step_by = polynomial.[:u256 index_i_plus_step_by]; 
 
         constants = (256u)#VMOV_32(zeta);
         constants = #VPBROADCAST_8u32(constants);
@@ -334,13 +334,13 @@ namespace polynomial {
 
         index_i = start;
         index_i *= 32;
-        coeffs_i = polynomial.[u256 index_i];
+        coeffs_i = polynomial.[:u256 index_i];
 
         coeffs_i_plus_step_by = #VPSUB_8u32(coeffs_i, t);
-        polynomial.[u256 index_i_plus_step_by] = coeffs_i_plus_step_by;
+        polynomial.[:u256 index_i_plus_step_by] = coeffs_i_plus_step_by;
 
         coeffs_i = #VPADD_8u32(coeffs_i, t);
-        polynomial.[u256 index_i] = coeffs_i;
+        polynomial.[:u256 index_i] = coeffs_i;
 
         return polynomial;
     }

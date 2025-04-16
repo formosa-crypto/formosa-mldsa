@@ -10,11 +10,11 @@ namespace polynomial {
 
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
-            lhs = lhs_pointer.[u256 offset];
-            rhs = rhs_pointer.[u256 offset];
+            lhs = lhs_pointer.[:u256 offset];
+            rhs = rhs_pointer.[:u256 offset];
 
             sum = #VPADD_8u32(lhs, rhs);
-            sum_pointer.[u256 offset] = sum;
+            sum_pointer.[:u256 offset] = sum;
 
             offset += 32;
         }
@@ -32,11 +32,11 @@ namespace polynomial {
 
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
-            lhs = lhs_pointer.[u256 offset];
-            rhs = rhs_pointer.[u256 offset];
+            lhs = lhs_pointer.[:u256 offset];
+            rhs = rhs_pointer.[:u256 offset];
 
             difference = #VPSUB_8u32(lhs, rhs);
-            difference_pointer.[u256 offset] = difference;
+            difference_pointer.[:u256 offset] = difference;
 
             offset += 32;
         }
@@ -54,11 +54,11 @@ namespace polynomial {
 
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
-            lhs = polynomial.[u256 offset];
-            rhs = running_total.[u256 offset];
+            lhs = polynomial.[:u256 offset];
+            rhs = running_total.[:u256 offset];
 
             sum = #VPADD_8u32(lhs, rhs);
-            running_total.[u256 offset] = sum;
+            running_total.[:u256 offset] = sum;
 
             offset += 32;
         }
@@ -77,7 +77,7 @@ namespace polynomial {
 
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
-            polynomial.[u256 offset] = zero_u256;
+            polynomial.[:u256 offset] = zero_u256;
             offset += 32;
         }
 
@@ -109,7 +109,7 @@ namespace polynomial {
         result = 0;
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
-            coefficients = polynomial.[u256 offset];
+            coefficients = polynomial.[:u256 offset];
 
             coefficients = #VPABS_8u32(coefficients);
             exceeds = #VPCMPGT_8u32(coefficients, threshold_vector);
@@ -137,10 +137,10 @@ namespace polynomial {
 
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
-            coefficients = polynomial.[u256 offset];
+            coefficients = polynomial.[:u256 offset];
             coefficients = #VPSLL_8u32(coefficients, BITS_IN_LOWER_PART_OF_T);
 
-            polynomial.[u256 offset] = coefficients;
+            polynomial.[:u256 offset] = coefficients;
 
             offset += 32;
         }

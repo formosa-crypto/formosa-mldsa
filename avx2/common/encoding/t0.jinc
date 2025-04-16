@@ -55,19 +55,19 @@ namespace t0 {
         input_offset = 0;
         output_offset = 0;
         while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
-            coefficients = t0.[u256 input_offset];
+            coefficients = t0.[:u256 input_offset];
             input_offset += 32;
 
             bytestream = coefficients_to_bytestream(coefficients);
 
-            t0_encoded.[u128 output_offset] = bytestream;
+            t0_encoded.[:u128 output_offset] = bytestream;
             output_offset += 13;
         }
 
-        coefficients = t0.[u256 input_offset];
+        coefficients = t0.[:u256 input_offset];
 
         bytestream = coefficients_to_bytestream(coefficients);
-        final_encoded_output.[u128 0] = bytestream;
+        final_encoded_output.[:u128 0] = bytestream;
 
         for i = 0 to 13 {
             t0_encoded[output_offset + i] = final_encoded_output[i];
@@ -154,21 +154,21 @@ namespace t0 {
         output_offset = 0;
         while (input_offset < T0_POLYNOMIAL_ENCODED_SIZE - 13) {
             // We process only 13 bytes at a time.
-            bytestream = t0_encoded.[u128 input_offset];
+            bytestream = t0_encoded.[:u128 input_offset];
             input_offset += 13;
 
             coefficients = bytestream_to_coefficients(bytestream);
 
-            t0.[u256 output_offset] = coefficients;
+            t0.[:u256 output_offset] = coefficients;
             output_offset += 32;
         }
 
-        bytestream = t0_encoded.[u128 T0_POLYNOMIAL_ENCODED_SIZE - 16];
+        bytestream = t0_encoded.[:u128 T0_POLYNOMIAL_ENCODED_SIZE - 16];
         bytestream = #VPSRLDQ_128(bytestream, 3);
 
         coefficients = bytestream_to_coefficients(bytestream);
 
-        t0.[u256 output_offset] = coefficients;
+        t0.[:u256 output_offset] = coefficients;
         output_offset += 32;
 
         return t0;

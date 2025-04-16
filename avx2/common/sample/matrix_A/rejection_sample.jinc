@@ -74,7 +74,7 @@ fn rejection_sample_multiple_blocks(
     _, _, _, _, done = #TEST_8(flg0, flg1);
 
     while (!done) {
-        potential_coefficients = randombytes.[u256 input_offset];
+        potential_coefficients = randombytes.[:u256 input_offset];
         potential_coefficients = bytestream_to_potential_coefficients(potential_coefficients);
         input_offset += 24;
 
@@ -90,10 +90,10 @@ fn rejection_sample_multiple_blocks(
 
         shuffle_table_idx = good_lower;
         shuffle_table_idx <<= 4;
-        shuffles = shuffle_table_pointer.[u128 shuffle_table_idx];
+        shuffles = shuffle_table_pointer.[:u128 shuffle_table_idx];
 
         lower_coefficients = #VPSHUFB_128(lower_coefficients, shuffles);
-        polynomial.[u128 bytes_filled] = lower_coefficients;
+        polynomial.[:u128 bytes_filled] = lower_coefficients;
 
         _, _, _, _, _, good_lower = #POPCNT_64(good_lower);
         good_lower <<= 2;
@@ -107,10 +107,10 @@ fn rejection_sample_multiple_blocks(
 
         shuffle_table_idx = good_upper;
         shuffle_table_idx <<= 4;
-        shuffles = shuffle_table_pointer.[u128 shuffle_table_idx];
+        shuffles = shuffle_table_pointer.[:u128 shuffle_table_idx];
 
         upper_coefficients = #VPSHUFB_128(upper_coefficients, shuffles);
-        polynomial.[u128 bytes_filled] = upper_coefficients;
+        polynomial.[:u128 bytes_filled] = upper_coefficients;
 
         _, _, _, _, _, good_upper = #POPCNT_64(good_upper);
         good_upper <<= 2;

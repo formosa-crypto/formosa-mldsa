@@ -13,18 +13,18 @@ fn absorb_to_generate_errors(
     i = 0;
     while(i < SEED_FOR_ERROR_VECTORS_SIZE) {
         byte = rho_prime[i];
-        state[u8 i] = byte;
+        state[:u8 i] = byte;
         i += 1;
     }
 
-    state[u8 SEED_FOR_ERROR_VECTORS_SIZE] = (8u)index;
+    state[:u8 SEED_FOR_ERROR_VECTORS_SIZE] = (8u)index;
 
     // This can be set to 0 since index is never greater than
     // ROWS_IN_MATRIX_A + COLUMNS_IN_MATRIX_A.
-    state[u8 65] = 0;
+    state[:u8 65] = 0;
 
-    state[u8 66] = 0x1f;
-    state[u8 SHAKE256_RATE - 1] = 0x80;
+    state[:u8 66] = 0x1f;
+    state[:u8 SHAKE256_RATE - 1] = 0x80;
 
     return state;
 }
@@ -52,7 +52,7 @@ fn rejection_sample_less_than_eta(
         if (b) {
             msf = #update_msf(b, msf);
 
-            byte = state[u8 xof_offset];
+            byte = state[:u8 xof_offset];
 
             #declassify try_coefficient = (32u)byte;
             try_coefficient &= 0x0F;
