@@ -1,95 +1,11 @@
-inline
-fn _decompose(reg u32 r) -> reg u32, reg u32 {
-    reg u32 temp high_bits low_bits;
-
-    // Compute ceil((r + 127) >> 7);
-    high_bits = r;
-    high_bits += 127;
-    high_bits >>s= 7;
-
-    // Compute (( (ceil(r + 127) >> 7) * 11_275) + (1 << 23) ) >> 24;
-    high_bits *= 11_275;
-    high_bits += (1 << 23);
-    high_bits >>s= 24;
-
-    // Compute high_bits ^= ((43 - high_bits) >> 31) & high_bits;
-    // to handle the corner case.
-    temp = 43;
-    temp -= high_bits;
-    temp >>s= 31;
-    temp &= high_bits;
-
-    high_bits ^= temp;
-
-    // Compute low_bits = r - (r1 * (GAMMA2 * 2));
-    temp = high_bits;
-    temp *= GAMMA2 * 2;
-
-    low_bits = r;
-    low_bits -= temp;
-
-    // Compute low_bits -= (((MODULUS - 1) / 2 - low_bits) >> 31) & MODULUS
-    // to account for the corner case.
-    temp = (MODULUS - 1) / 2;
-    temp -= low_bits;
-    temp >>s= 31;
-    temp &= MODULUS;
-
-    low_bits -= temp;
-
-    return low_bits, high_bits;
-}
-
-inline
-fn _use_hint(reg u32 a hint) -> reg u32 {
-    reg u32 high_bits low_bits;
-
-    reg u64 msf = #init_msf();
-
-    inline bool b;
-
-    low_bits, high_bits = _decompose(a);
-
-    b = hint != 0;
-    if (b) {
-        msf = #update_msf(b, msf);
-
-        b = low_bits >s 0;
-        if (b) {
-            msf = #update_msf(b, msf);
-
-            b = high_bits == 43;
-            if (b) {
-                msf = #update_msf(b, msf);
-
-                high_bits = 0;
-            } else {
-                msf = #update_msf(!b, msf);
-
-                high_bits += 1;
-            }
-        } else {
-            msf = #update_msf(!b, msf);
-
-            b = high_bits == 0;
-            if (b) {
-                msf = #update_msf(b, msf);
-
-                high_bits = 43;
-            } else {
-                msf = #update_msf(!b, msf);
-
-                high_bits -= 1;
-            }
-        }
-    } else {
-        msf = #update_msf(!b, msf);
-    }
-
-    return high_bits;
-}
-
 namespace polynomial {
+    u256[5] CONSTANTS_TABLE = {
+        (8u32)[11_275, 11_275, 11_275, 11_275, 11_275, 11_275, 11_275, 11_275],
+        (8u32)[ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA],
+        (8u32)[127, 127, 127, 127, 127, 127, 127, 127],
+        (8u32)[128, 128, 128, 128, 128, 128, 128, 128],
+        (8u32)[43, 43, 43, 43, 43, 43, 43, 43]
+    };
     fn decompose (
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lows,
@@ -97,19 +13,57 @@ namespace polynomial {
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL],
          reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u32 coefficient lower upper;
+        reg u256 modulus modulus_halved;
+        reg u256 v alpha;
+        reg u256 offs shift max;
+        reg u256 coefficients;
 
-        reg u64 i;
+        reg u256 lower upper mask zeros;
 
-        i = 0;
-        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
-            coefficient = polynomial[i];
-            lower, upper = _decompose(coefficient);
+        reg u64 offset;
 
-            lows[i] = lower;
-            highs[i] = upper;
+        modulus = MODULUS_VECTOR;
+        modulus_halved = #VPSRL_8u32(modulus, 1);
 
-            i += 1;
+        v = CONSTANTS_TABLE[0]; // 11_275
+        alpha = CONSTANTS_TABLE[1]; // ALPHA
+        offs = CONSTANTS_TABLE[2]; // 127
+        shift = CONSTANTS_TABLE[3]; // 128
+        max = CONSTANTS_TABLE[4]; // 43
+
+        zeros = #set0_256();
+
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            coefficients = polynomial.[:u256 offset];
+
+            // Compute the upper bits fist
+
+            // Compute ceil((r + 127) >> 7);
+            upper = #VPADD_8u32(coefficients, offs);
+            upper = #VPSRL_8u32(upper, 7);
+
+            // Compute ((upper * 11_275) + (1 << 23)) >> 24;
+            upper = #VPMULHU_16u16(upper, v);
+            upper = #VPMULHRS_16u16(upper, shift);
+
+            // Compute high_bits ^= ((43 - high_bits) >> 31) & high_bits;
+            // to handle the corner case.
+            mask = #VPSUB_8u32(max, upper);
+            mask = #VPCMPGT_8u32(zeros, mask);
+            upper = #VPANDN_256(mask, upper);
+
+            lower = #VPMULL_8u32(upper, alpha);
+            lower = #VPSUB_8u32(coefficients, lower);
+
+            coefficients = #VPCMPGT_8u32(lower, modulus_halved);
+            coefficients = #VPAND_256(coefficients, modulus);
+            lower = #VPSUB_8u32(lower, coefficients);
+
+            lows.[:u256 offset] = lower;
+            highs.[:u256 offset] = upper;
+
+            offset += 32;
         }
 
         return lows, highs;
@@ -119,20 +73,41 @@ namespace polynomial {
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment hint_polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u32 coefficient hint;
+        reg u256 zeros;
+        reg u256 hints;
+        reg u256 high low t;
+        reg u256 max;
 
-        reg u64 i;
+        stack u32[COEFFICIENTS_IN_POLYNOMIAL] highs lows;
 
-        i = 0;
-        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
-            coefficient = commitment[i];
-            hint = hint_polynomial[i];
+        reg u64 offset;
 
-            coefficient = _use_hint(coefficient, hint);
+        max = CONSTANTS_TABLE[4]; // 43
 
-            commitment[i] = coefficient;
+        zeros = #set0_256();
 
-            i += 1;
+        lows, highs = decompose(commitment, lows, highs);
+
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            low = lows.[:u256 offset];
+            high = highs.[:u256 offset];
+            hints = hint_polynomial.[:u256 offset];
+
+            t = #BLENDV_8u32(zeros, hints, low);
+            t = #VPSLL_8u32(t, 1);
+            hints = #VPSUB_8u32(hints, t);
+
+            high = #VPADD_8u32(high, hints);
+
+            high = #BLENDV_8u32(high, max, high);
+            low = #VPCMPGT_8u32(high, max);
+
+            high = #BLENDV_8u32(high, zeros, low);
+
+            commitment.[:u256 offset] = high;
+
+            offset += 32;
         }
 
         return commitment;

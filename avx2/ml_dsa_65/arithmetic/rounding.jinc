@@ -56,6 +56,7 @@ namespace polynomial {
             comparisons = #VPAND_256(comparisons, modulus);
             lower = #VPSUB_8u32(lower, comparisons);
 
+            // TODO: Perhaps we can skip writing out to memory here?
             lows.[:u256 offset] = lower;
             highs.[:u256 offset] = upper;
 

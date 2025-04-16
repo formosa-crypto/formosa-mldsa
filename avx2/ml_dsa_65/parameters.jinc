@@ -13,7 +13,6 @@ param int GAMMA1 = (1 << 19);
 param int BITS_TO_ENCODE_GAMMA1_COEFFICIENT = 20;
 
 param int GAMMA2 = (MODULUS - 1) / 32;
-param int ALPHA = 2 * GAMMA2;
 
 param int MAX_ONES_IN_HINT = 55;
 
@@ -29,6 +28,7 @@ param int ONES_IN_VERIFIER_CHALLENGE = 49;
 // ----------------------------------------------------------------------
 // The constants below are all determined from the values specified above.
 // ----------------------------------------------------------------------
+param int ALPHA = 2 * GAMMA2;
 
 param int T0_ENCODED_SIZE = ROWS_IN_MATRIX_A * T0_POLYNOMIAL_ENCODED_SIZE;
 param int T1_ENCODED_SIZE = ROWS_IN_MATRIX_A * T1_POLYNOMIAL_ENCODED_SIZE;
