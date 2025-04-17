@@ -1,54 +1,100 @@
 namespace commitment {
+    u256[4] ENCODING_CONSTANTS_TABLE = {
+        (32u8)[
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1,
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1,
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1,
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1
+        ],
+        (16u16)[
+            (1 << 12), 1, (1 << 12), 1, (1 << 12), 1, (1 << 12), 1,
+            (1 << 12), 1, (1 << 12), 1, (1 << 12), 1, (1 << 12), 1
+        ],
+        (8u32)[7, 3, 6, 2, 5, 1, 4, 0],
+        (32u8)[
+            -1, -1, -1, -1, 14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0,
+            -1, -1, -1, -1, 14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0
+        ]
+    };
+    fn coefficients_to_bytestream(reg u256 c0 c1 c2 c3) -> reg u128, reg u128 {
+        reg u256 shifts;
+        reg u128 bytestream_lower, bytestream_upper;
+
+        c0 = #VPACKUS_8u32(c0, c1);
+        c1 = #VPACKUS_8u32(c2, c3);
+
+        c0 = #VPACKUS_16u16(c0, c1);
+
+        shifts = ENCODING_CONSTANTS_TABLE[0];
+        c0 = #VPMADDUBSW_256(c0, shifts);
+
+        shifts = ENCODING_CONSTANTS_TABLE[1];
+        c0 = #VPMADDWD_256(c0, shifts);
+
+        shifts = ENCODING_CONSTANTS_TABLE[2];
+        c0 = #VPERMD(shifts, c0);
+
+        shifts = ENCODING_CONSTANTS_TABLE[3];
+        c0 = #VPSHUFB_256(c0, shifts);
+
+        bytestream_lower = (128u)c0;
+        bytestream_upper = #VEXTRACTI128(c0, 1);
+
+        return bytestream_lower, bytestream_upper;
+    }
+
     inline
     fn encode_polynomial(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] raw,
         reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded
     ) -> reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
     {
-        reg u32 encoded_byte temp;
-        reg u32 t0 t1 t2 t3;
+        reg u256 c0 c1 c2 c3;
+        reg u128 bytestream_lower, bytestream_upper;
 
-        reg u64 i = 0;
-        reg u64 out_offset = 0;
+        stack u8[16] final_encoded_bytes;
 
-        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
-            t0 = polynomial[i + 0];
-            t1 = polynomial[i + 1];
-            t2 = polynomial[i + 2];
-            t3 = polynomial[i + 3];
+        reg u64 input_offset output_offset;
 
-            // r[3*i+0]  = a->coeffs[4*i+0];
-            // r[3*i+0] |= a->coeffs[4*i+1] << 6;
-            encoded_byte = t0;
-            temp = t1;
-            temp <<= 6;
+        input_offset = 0;
+        output_offset = 0;
+        while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 128) {
+            c0 = raw.[:u256 input_offset];
+            input_offset += 32;
+            c1 = raw.[:u256 input_offset];
+            input_offset += 32;
+            c2 = raw.[:u256 input_offset];
+            input_offset += 32;
+            c3 = raw.[:u256 input_offset];
+            input_offset += 32;
 
-            encoded_byte |= temp;
+            bytestream_lower, bytestream_upper = coefficients_to_bytestream(c0, c1, c2, c3);
 
-            encoded[out_offset + 0] = (8u)encoded_byte;
+            encoded.[:u128 output_offset] = bytestream_lower;
+            output_offset += 12;
 
-            // r[3*i+1]  = a->coeffs[4*i+1] >> 2;
-            // r[3*i+1] |= a->coeffs[4*i+2] << 4;
-            encoded_byte = t1 >> 2;
-            temp = t2;
-            temp <<= 4;
+            encoded.[:u128 output_offset] = bytestream_upper;
+            output_offset += 12;
+        }
+        c0 = raw.[:u256 input_offset];
+        input_offset += 32;
+        c1 = raw.[:u256 input_offset];
+        input_offset += 32;
+        c2 = raw.[:u256 input_offset];
+        input_offset += 32;
+        c3 = raw.[:u256 input_offset];
+        input_offset += 32;
 
-            encoded_byte |= temp;
+        bytestream_lower, bytestream_upper = coefficients_to_bytestream(c0, c1, c2, c3);
+        encoded.[:u128 output_offset] = bytestream_lower;
+        output_offset += 12;
 
-            encoded[out_offset + 1] = (8u)encoded_byte;
-
-            // r[3*i+2]  = a->coeffs[4*i+2] >> 4;
-            // r[3*i+2] |= a->coeffs[4*i+3] << 2;
-            encoded_byte = t2 >> 4;
-            temp = t3;
-            temp <<= 2;
-
-            encoded_byte |= temp;
-
-            encoded[out_offset + 2] = (8u)encoded_byte;
-
-            i += 4;
-            out_offset += 3;
+        final_encoded_bytes.[:u128 0] = bytestream_upper;
+        input_offset = 0;
+        while (input_offset < 12) {
+            encoded[output_offset] = final_encoded_bytes[input_offset];
+            output_offset += 1;
+            input_offset += 1;
         }
 
         return encoded;
