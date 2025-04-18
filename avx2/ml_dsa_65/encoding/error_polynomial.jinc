@@ -73,7 +73,7 @@ namespace error_polynomial {
             c1 = #VPMADDUBSW_256(c1, shift);
 
             c0 = #VPACKUS_16u16(c0, c1);
-            c0 = #VPERMQ(c0, 0b1_1_0_1_1_0_0_0);
+            c0 = #VPERMQ(c0, 0b11_01_10_00);
 
             c0 = #VPSHUFB_256(c0, encoding_shuffles);
 
