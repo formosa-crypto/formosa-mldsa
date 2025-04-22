@@ -1,216 +1,153 @@
 namespace gamma1 {
+    u256[2] ENCODING_SHIFTS_TABLE = {
+        (8u32)[0, 14, 0, 14, 0, 14, 0, 14],
+        (4u64)[28, 0, 28, 0]
+    };
+    fn coefficients_to_bytestream(reg u256 gamma1, reg u256 coefficients) -> reg u128, reg u128 {
+        reg u256 shifts;
+        reg u256 bytestream every_other;
+        reg u128 bytestream_lower, bytestream_upper;
+
+        coefficients = #VPSUB_8u32(gamma1, coefficients);
+
+        shifts = ENCODING_SHIFTS_TABLE[0];
+        bytestream = #VPSLLV_8u32(coefficients, shifts);
+        bytestream = #VPSRL_4u64(bytestream, 14);
+
+        every_other = #VPSRLDQ_256(bytestream, 8);
+        every_other = #VPSLL_4u64(every_other, 36);
+
+        bytestream = #VPADD_4u64(bytestream, every_other);
+        shifts = ENCODING_SHIFTS_TABLE[1];
+        bytestream = #VPSRLV_4u64(bytestream, shifts);
+
+        bytestream_lower = #VEXTRACTI128(bytestream, 0);
+        bytestream_upper = #VEXTRACTI128(bytestream, 1);
+
+        return bytestream_lower, bytestream_upper;
+    }
+
+
     inline
     fn encode_polynomial(
-        reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] encoded,
+        reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] output,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE]
     {
-        reg u32 encoded_byte temp;
-        reg u32 t0 t1 t2 t3;
+        reg u256 coefficients;
+        reg u128 lower upper;
+        reg u256 gamma1;
 
-        reg u64 out_offset = 0;
-        reg u64 i = 0;
+        reg u64 temp;
+        reg u64 input_offset output_offset;
+        stack u8[16] final_output_block;
 
-        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
-            // t[0] = GAMMA1 - a->coeffs[4*i+0];
-            t0 = GAMMA1;
-            t0 -= polynomial[i + 0];
+        inline int i;
 
-            // t[1] = GAMMA1 - a->coeffs[4*i+1];
-            t1 = GAMMA1;
-            t1 -= polynomial[i + 1];
+        temp = GAMMA1;
+        gamma1 = (256u)#VMOV_64(temp);
+        gamma1 = #VPBROADCAST_8u32(gamma1);
 
-            // t[2] = GAMMA1 - a->coeffs[4*i+2];
-            t2 = GAMMA1;
-            t2 -= polynomial[i + 2];
+        input_offset = 0;
+        output_offset = 0;
+        while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
+            coefficients = polynomial.[:u256 input_offset];
+            input_offset += 32;
 
-            // t[3] = GAMMA1 - a->coeffs[4*i+3];
-            t3 = GAMMA1;
-            t3 -= polynomial[i + 3];
+            lower, upper = coefficients_to_bytestream(gamma1, coefficients);
 
-            // encoded[9*i+0]  = t[0];
-            // encoded[9*i+1]  = t[0] >> 8;
-            encoded[out_offset + 0] = (8u) t0;
+            output.[:u128 output_offset] = lower;
+            output_offset += 9;
 
-            encoded_byte = t0;
-            encoded_byte >>= 8;
-            encoded[out_offset + 1] = (8u) encoded_byte;
-
-            // encoded[9*i+2]  = t[0] >> 16;
-            // encoded[9*i+2] |= t[1] << 2;
-            encoded_byte = t0 >> 16;
-
-            temp = t1;
-            temp <<= 2;
-
-            encoded_byte |= temp;
-            encoded[out_offset + 2] = (8u) encoded_byte;
-
-            // encoded[9*i+3]  = t[1] >> 6;
-            encoded_byte = t1;
-            encoded_byte >>= 6;
-            encoded[out_offset + 3] = (8u) encoded_byte;
-
-            // encoded[9*i+4]  = t[1] >> 14;
-            // encoded[9*i+4] |= t[2] << 4;
-            encoded_byte = t1 >> 14;
-
-            temp = t2;
-            temp <<= 4;
-
-            encoded_byte |= temp;
-
-            encoded[out_offset + 4] = (8u) encoded_byte;
-
-            // encoded[9*i+5]  = t[2] >> 4;
-            encoded_byte = t2;
-            encoded_byte >>= 4;
-            encoded[out_offset + 5] = (8u) encoded_byte;
-
-            // encoded[9*i+6]  = t[2] >> 12;
-            // encoded[9*i+6] |= t[3] << 6;
-            encoded_byte = t2;
-            encoded_byte >>= 12;
-
-            temp = t3;
-            temp <<= 6;
-            encoded_byte |= temp;
-            encoded[out_offset + 6] = (8u) encoded_byte;
-
-            // encoded[9*i+7]  = t[3] >> 2;
-            encoded_byte = t3;
-            encoded_byte >>= 2;
-            encoded[out_offset + 7] = (8u) encoded_byte;
-
-            // encoded[9*i+8]  = t[3] >> 10;
-            encoded_byte = t3 >> 10;
-            encoded[out_offset + 8] = (8u) encoded_byte;
-
-            i += 4;
-            out_offset += 9;
+            output.[:u128 output_offset] = upper;
+            output_offset += 9;
         }
 
-        return encoded;
+        coefficients = polynomial.[:u256 input_offset];
+
+        lower, upper = coefficients_to_bytestream(gamma1, coefficients);
+
+        output.[:u128 output_offset] = lower;
+        output_offset += 9;
+
+        final_output_block.[:u128 0] = upper;
+        for i = 0 to 9 {
+            output[output_offset + i] = final_output_block[i];
+        }
+
+        return output;
     }
 
+    u256[2] DECODING_SHIFTS_TABLE = {
+        (32u8)[-1, 15, 14, 13, -1, 13, 12, 11, -1, 11, 10, 9, -1, 9, 8, 7,
+               -1, 8, 7, 6, -1, 6, 5, 4, -1, 4, 3, 2, -1, 2, 1, 0],
+        (8u32)[6, 4, 2, 0, 6, 4, 2, 0]
+    };
     inline
     fn decode_to_polynomial(
         reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] bytes,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        inline int GAMMA1_MASK = (1 << BITS_TO_ENCODE_GAMMA1_COEFFICIENT) - 1;
+        reg u128 sixteen_bytes;
+        reg u256 coefficients;
+        reg u256 gamma1 gamma1_times_2_mask;
+        reg u256 shifts;
 
-        reg u32 coefficient temp;
+        reg u128 temp1;
 
-        reg u64 output_offset = 0;
-        reg u64 input_offset = 0;
+        reg u64 temp;
+        reg u64 output_offset input_offset;
 
+        temp = GAMMA1;
+        temp1 = #VMOV_64(temp);
+        gamma1 = #VPBROADCAST_8u32(temp1);
+
+        temp = (GAMMA1 << 1) - 1;
+        temp1 = #VMOV_64(temp);
+        gamma1_times_2_mask = #VPBROADCAST_8u32(temp1);
+
+        coefficients = #set0_256();
+
+        input_offset = 0;
+        output_offset = 0;
         while (input_offset < ENCODED_GAMMA1_POLYNOMIAL_SIZE) {
-            // r->coeffs[4*i+0]  = bytes[9*i+0];
-            // r->coeffs[4*i+0] |= (uint32_t)bytes[9*i+1] << 8;
-            // r->coeffs[4*i+0] |= (uint32_t)bytes[9*i+2] << 16;
-            // r->coeffs[4*i+0] &= GAMMA1_MASK;
-            // r->coeffs[4*i+0] = GAMMA1 - r->coeffs[4*i+0];
+            sixteen_bytes = bytes.[:u128 input_offset];
+            input_offset += 2;
 
-            coefficient = (32u)bytes[input_offset + 0];
+            coefficients = #VINSERTI128(coefficients, sixteen_bytes, 0);
 
-            temp = (32u)bytes[input_offset + 1];
-            temp <<= 8;
-            coefficient |= temp;
+            sixteen_bytes = bytes.[:u128 input_offset];
+            input_offset += 16;
 
-            temp = (32u)bytes[input_offset + 2];
-            temp <<= 16;
-            coefficient |= temp;
+            coefficients = #VINSERTI128(coefficients, sixteen_bytes, 1);
 
-            coefficient &= GAMMA1_MASK;
+            shifts = DECODING_SHIFTS_TABLE[0];
+            coefficients = #VPSHUFB_256(coefficients, shifts);
 
-            coefficient -= GAMMA1;
-            coefficient = -coefficient;
-            polynomial[output_offset + 0] = coefficient;
+            shifts = DECODING_SHIFTS_TABLE[1];
+            coefficients = #VPSRLV_8u32(coefficients, shifts);
 
-            // r->coeffs[4*i+1]  = bytes[9*i+2] >> 2;
-            // r->coeffs[4*i+1] |= (uint32_t)bytes[9*i+3] << 6;
-            // r->coeffs[4*i+1] |= (uint32_t)bytes[9*i+4] << 14;
-            // r->coeffs[4*i+1] &= GAMMA1_MASK;
-            // r->coeffs[4*i+1] = GAMMA1 - r->coeffs[4*i+1];
-            coefficient = (32u) bytes[input_offset + 2];
-            coefficient >>= 2;
+            coefficients = #VPAND_256(coefficients, gamma1_times_2_mask);
+            coefficients = #VPSUB_8u32(gamma1, coefficients);
 
-            temp = (32u) bytes[input_offset + 3];
-            temp <<= 6;
-            coefficient |= temp;
-
-            temp = (32u) bytes[input_offset + 4];
-            temp <<= 14;
-            coefficient |= temp;
-
-            coefficient &= GAMMA1_MASK;
-
-            coefficient -= GAMMA1;
-            coefficient = -coefficient;
-            polynomial[output_offset + 1] = coefficient;
-
-            // r->coeffs[4*i+2]  = bytes[9*i+4] >> 4;
-            // r->coeffs[4*i+2] |= (uint32_t)bytes[9*i+5] << 4;
-            // r->coeffs[4*i+2] |= (uint32_t)bytes[9*i+6] << 12;
-            // r->coeffs[4*i+2] &= GAMMA1_MASK;
-            // r->coeffs[4*i+2] = GAMMA1 - r->coeffs[4*i+2];
-            coefficient = (32u) bytes[input_offset + 4];
-            coefficient >>= 4;
-
-            temp = (32u) bytes[input_offset + 5];
-            temp <<= 4;
-            coefficient |= temp;
-
-            temp = (32u) bytes[input_offset + 6];
-            temp <<= 12;
-            coefficient |= temp;
-
-            coefficient &= GAMMA1_MASK;
-
-            coefficient -= GAMMA1;
-            coefficient = -coefficient;
-            polynomial[output_offset + 2] = coefficient;
-
-            // r->coeffs[4*i+3]  = bytes[9*i+6] >> 6;
-            // r->coeffs[4*i+3] |= (uint32_t)bytes[9*i+7] << 2;
-            // r->coeffs[4*i+3] |= (uint32_t)bytes[9*i+8] << 10;
-            // r->coeffs[4*i+3] &= GAMMA1_MASK;
-            // r->coeffs[4*i+3] = GAMMA1 - r->coeffs[4*i+3];
-            coefficient = (32u) bytes[input_offset + 6];
-            coefficient >>= 6;
-
-            temp = (32u) bytes[input_offset + 7];
-            temp <<= 2;
-            coefficient |= temp;
-
-            temp = (32u) bytes[input_offset + 8];
-            temp <<= 10;
-            coefficient |= temp;
-
-            coefficient &= GAMMA1_MASK;
-
-            coefficient -= GAMMA1;
-            coefficient = -coefficient;
-            polynomial[output_offset + 3] = coefficient;
-
-            input_offset += 9;
-            output_offset += 4;
-       }
+            polynomial.[:u256 output_offset] = coefficients;
+            output_offset += 32;
+        }
 
         return polynomial;
     }
 
     inline
     fn decode(
-        #spill_to_mmx reg ptr u8[GAMMA1_ENCODED_SIZE] encoded,
+        reg ptr u8[GAMMA1_ENCODED_SIZE] encoded,
         reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] decoded
     ) -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         inline int i;
 
         for i = 0 to COLUMNS_IN_MATRIX_A {
+
             decoded[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
                 decode_to_polynomial(
                     encoded[i * ENCODED_GAMMA1_POLYNOMIAL_SIZE : ENCODED_GAMMA1_POLYNOMIAL_SIZE],

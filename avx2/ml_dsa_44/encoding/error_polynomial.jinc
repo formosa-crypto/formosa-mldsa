@@ -185,6 +185,7 @@ namespace error_polynomial {
         return encoded;
     }
 
+    // TODO: Is it worthwhile vectorizing this function?
     fn decode(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
