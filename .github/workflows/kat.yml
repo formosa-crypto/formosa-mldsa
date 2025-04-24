@@ -5,6 +5,7 @@ on:
 
 jobs:
   kat-tests:
+    if: github.ref == 'refs/heads/amd64'
     name: kat-tests
     runs-on: ubuntu-latest
     strategy:

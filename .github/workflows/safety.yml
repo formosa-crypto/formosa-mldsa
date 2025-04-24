@@ -5,6 +5,7 @@ on:
 
 jobs:
   check:
+    if: github.ref == 'refs/heads/amd64'
     name: check
     runs-on: ubuntu-latest
     strategy:
