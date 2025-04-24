@@ -57,6 +57,10 @@ fn rejection_sample_multiple_blocks(
     reg u32 byte0 byte1 byte2;
     reg u32 coeff;
 
+    inline bool b;
+
+    #msf reg u64 msf = #init_msf();
+
     shuffle_table_pointer = SHUFFLE_TABLE;
 
     bytes_filled = 0;
@@ -90,6 +94,11 @@ fn rejection_sample_multiple_blocks(
 
         shuffle_table_idx = good_lower;
         shuffle_table_idx <<= 4;
+
+        // TODO: Remove this fence when it becomes possible to tell Jasmin
+        // that |shuffle_table_idx| will never exceed the bounds of
+        // |shuffle_table_pointer|.
+        msf = #init_msf();
         shuffles = shuffle_table_pointer.[:u128 shuffle_table_idx];
 
         lower_coefficients = #VPSHUFB_128(lower_coefficients, shuffles);
@@ -107,6 +116,7 @@ fn rejection_sample_multiple_blocks(
 
         shuffle_table_idx = good_upper;
         shuffle_table_idx <<= 4;
+        msf = #init_msf();
         shuffles = shuffle_table_pointer.[:u128 shuffle_table_idx];
 
         upper_coefficients = #VPSHUFB_128(upper_coefficients, shuffles);
@@ -136,7 +146,11 @@ fn rejection_sample_multiple_blocks(
 
     _, _, _, _, done = #TEST_8(flg0, flg1);
 
+    msf = #init_msf();
+
     while (!done) {
+        msf = #update_msf(!done, msf);
+
         byte0 = (32u)randombytes[input_offset];
         input_offset += 1;
 
@@ -152,11 +166,18 @@ fn rejection_sample_multiple_blocks(
         byte2 <<= 16;
         coeff |= byte2;
 
-        // Rejection-sample
         coeff &= 0x7F_FF_FF;
-        if coeff < MODULUS {
+
+        b = coeff < MODULUS;
+        if (b) {
+            msf = #update_msf(b, msf);
+
+            coeff = #protect_32(coeff, msf);
             polynomial[filled] = coeff;
+
             filled += 1;
+        } else {
+            msf = #update_msf(!b, msf);
         }
 
         _, cf, _, _, _ = #CMP_64(filled, COEFFICIENTS_IN_POLYNOMIAL);
