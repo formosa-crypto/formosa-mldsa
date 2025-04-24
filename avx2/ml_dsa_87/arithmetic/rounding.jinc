@@ -1,72 +1,11 @@
-inline
-fn _decompose(reg u32 r) -> reg u32, reg u32 {
-    reg u32 temp high_bits low_bits;
-
-    // a1  = (a + 127) >> 7;
-    high_bits = r;
-    high_bits += 127;
-    high_bits >>= 7;
-
-    // a1  = (high_bits * 1025 + (1 << 21)) >> 22;
-    temp = high_bits;
-    high_bits <<= 10;
-    high_bits += temp;
-
-    high_bits += 1 << 21;
-    high_bits >>= 22;
-
-    // a1 &= 15;
-    high_bits &= 15;
-
-    // *a0  = a - a1*2*GAMMA2;
-    temp = high_bits;
-    temp *= 2 * GAMMA2;
-    low_bits = r;
-    low_bits -= temp;
-
-    // *a0 -= (((Q-1)/2 - *a0) >> 31) & Q;
-    temp = (MODULUS - 1) / 2;
-    temp -= low_bits;
-    temp >>s= 31;
-    temp &= MODULUS;
-    low_bits -= temp;
-
-    return low_bits, high_bits;
-}
-
-inline
-fn _use_hint(reg u32 a hint) -> reg u32 {
-    reg u32 a0;
-    reg u32 a1;
-
-    reg u64 msf = #init_msf();
-
-    inline bool b;
-
-    a0, a1 = _decompose(a);
-
-    b = hint != 0;
-    if (b) {
-        msf = #update_msf(b, msf);
-
-        b = a0 >s 0;
-        if (b) {
-            msf = #update_msf(b, msf);
-            a1 += 1;
-            a1 &= 15;
-        } else {
-            msf = #update_msf(!b, msf);
-            a1 -= 1;
-            a1 &= 15;
-        }
-    } else {
-        msf = #update_msf(!b, msf);
-    }
-
-    return a1;
-}
-
 namespace polynomial {
+    u256[5] CONSTANTS_TABLE = {
+        (8u32)[15, 15, 15, 15, 15, 15, 15, 15],
+        (8u32)[1025, 1025, 1025, 1025, 1025, 1025, 1025, 1025],
+        (8u32)[ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA, ALPHA],
+        (8u32)[127, 127, 127, 127, 127, 127, 127, 127],
+        (8u32)[512, 512, 512, 512, 512, 512, 512, 512]
+    };
     fn decompose (
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lows,
@@ -74,19 +13,54 @@ namespace polynomial {
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL],
          reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u32 coefficient lower upper;
+        // We approximate 1 / 4092 as:
+        // ⌊2²² / 4092⌋ / 2²² = 1025 / 2²²
+        reg u256 modulus modulus_halved;
+        reg u256 v alpha;
+        reg u256 offs shift mask;
+        reg u256 coefficients comparisons;
 
-        reg u64 i;
+        reg u256 lower, upper;
 
-        i = 0;
-        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
-            coefficient = polynomial[i];
-            lower, upper = _decompose(coefficient);
+        reg u64 offset;
 
-            lows[i] = lower;
-            highs[i] = upper;
+        modulus = MODULUS_VECTOR;
+        modulus_halved = #VPSRL_8u32(modulus, 1);
 
-            i += 1;
+        mask = CONSTANTS_TABLE[0]; // 15
+        v = CONSTANTS_TABLE[1]; // 1025
+        alpha = CONSTANTS_TABLE[2]; // ALPHA
+        offs = CONSTANTS_TABLE[3]; // 127
+        shift = CONSTANTS_TABLE[4]; // 512
+
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            coefficients = polynomial.[:u256 offset];
+
+            // Compute the upper bits fist
+
+            // For each coefficient |r|, first compute
+            // ceil(r / 128)
+            upper = #VPADD_8u32(coefficients, offs);
+            upper = #VPSRL_8u32(upper, 7);
+
+            upper = #VPMULHU_16u16(upper, v);
+            upper = #VPMULHRS_16u16(upper, shift);
+            upper = #VPAND_256(upper, mask);
+
+            // Then compute the lower bits
+            lower = #VPMULL_8u32(upper, alpha);
+            lower = #VPSUB_8u32(coefficients, lower);
+            comparisons = #VPCMPGT_8u32(lower, modulus_halved);
+
+            comparisons = #VPAND_256(comparisons, modulus);
+            lower = #VPSUB_8u32(lower, comparisons);
+
+            // TODO: Perhaps we can skip writing out to memory here?
+            lows.[:u256 offset] = lower;
+            highs.[:u256 offset] = upper;
+
+            offset += 32;
         }
 
         return lows, highs;
@@ -96,20 +70,36 @@ namespace polynomial {
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment hint_polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u32 coefficient hint;
+        reg u256 zeros;
+        reg u256 hints;
+        reg u256 coefficients;
+        reg u256 high low;
+        reg u256 mask;
 
-        reg u64 i;
+        stack u32[COEFFICIENTS_IN_POLYNOMIAL] highs lows;
 
-        i = 0;
-        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
-            coefficient = commitment[i];
-            hint = hint_polynomial[i];
+        reg u64 offset;
 
-            coefficient = _use_hint(coefficient, hint);
+        mask = CONSTANTS_TABLE[0]; // 15
 
-            commitment[i] = coefficient;
+        ?{}, zeros = #set0_256();
 
-            i += 1;
+        lows, highs = decompose(commitment, lows, highs);
+
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            low = lows.[:u256 offset];
+            hints = hint_polynomial.[:u256 offset];
+
+            hints = #VPSIGN_8s32(hints, low);
+
+            high = highs.[:u256 offset];
+            coefficients = #VPADD_8u32(high, hints);
+            coefficients = #VPAND_256(coefficients, mask);
+
+            commitment.[:u256 offset] = coefficients;
+
+            offset += 32;
         }
 
         return commitment;

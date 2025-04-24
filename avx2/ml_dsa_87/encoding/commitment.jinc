@@ -1,23 +1,68 @@
 namespace commitment {
+    u256 ENCODING_SHUFFLES = (32u8)[
+        15, 14, 7, 6, 13, 12, 5, 4,
+        11, 10, 3, 2, 9, 8, 1, 0, 15,
+        14, 7, 6, 13, 12, 5, 4, 11, 10,
+        3, 2, 9, 8, 1, 0
+    ];
+
     inline
     fn encode_polynomial(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment,
         reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded
     ) -> reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
     {
-        reg u64 i = 0;
-        reg u32 encoded_byte;
+        reg u256 c0 c1 c2 c3 c4 c5 c6 c7;
+        reg u256 shift encoding_shuffles;
 
-        while (i < COEFFICIENTS_IN_POLYNOMIAL / 2) {
-            // encoded[i] = a->coeffs[2*i+0] | (a->coeffs[2*i+1] << 4);
-            encoded_byte = polynomial[2*i + 1];
-            encoded_byte <<= 4;
+        reg u64 input_offset output_offset temp;
 
-            encoded_byte |= polynomial[2*i + 0];
+        temp = (16 << 8) + 1;
+        shift = (256u)#VMOV(temp);
+        shift = #VPBROADCAST_16u16(shift);
 
-            encoded[i] = (8u)encoded_byte;
-            i += 1;
+        encoding_shuffles = ENCODING_SHUFFLES;
 
+        input_offset = 0;
+        output_offset = 0;
+        while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            // Since each coefficient is only 4-bits long, we load 64 coefficients,
+            // allowing us to pack the entire 256-bit AVX2 register.
+            c0 = commitment.[:u256 input_offset];
+            input_offset += 32;
+            c1 = commitment.[:u256 input_offset];
+            input_offset += 32;
+            c2 = commitment.[:u256 input_offset];
+            input_offset += 32;
+            c3 = commitment.[:u256 input_offset];
+            input_offset += 32;
+            c4 = commitment.[:u256 input_offset];
+            input_offset += 32;
+            c5 = commitment.[:u256 input_offset];
+            input_offset += 32;
+            c6 = commitment.[:u256 input_offset];
+            input_offset += 32;
+            c7 = commitment.[:u256 input_offset];
+            input_offset += 32;
+
+            c0 = #VPACKUS_8u32(c0, c1);
+            c1 = #VPACKUS_8u32(c2, c3);
+            c2 = #VPACKUS_8u32(c4, c5);
+            c3 = #VPACKUS_8u32(c6, c7);
+
+            c0 = #VPACKUS_16u16(c0, c1);
+            c1 = #VPACKUS_16u16(c2, c3);
+
+            c0 = #VPMADDUBSW_256(c0, shift);
+            c1 = #VPMADDUBSW_256(c1, shift);
+
+            c0 = #VPACKUS_16u16(c0, c1);
+            c0 = #VPERMQ(c0, 0b1_1_0_1_1_0_0_0);
+
+            c0 = #VPSHUFB_256(c0, encoding_shuffles);
+
+            encoded.[:u256 output_offset] = c0;
+            output_offset += 32;
         }
 
         return encoded;
@@ -32,7 +77,8 @@ namespace commitment {
         inline int i;
 
         for i = 0 to ROWS_IN_MATRIX_A {
-            encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE] =
+            encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE :
+                                   ENCODED_COMMITMENT_POLYNOMIAL_SIZE] =
             encode_polynomial(
                 commitment[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
                 encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE]

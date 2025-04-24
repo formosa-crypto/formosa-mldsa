@@ -24,6 +24,8 @@ from Common require "encoding/signature.jinc"
 from Common require "encoding/s1.jinc"
 from Common require "encoding/s2.jinc"
 
+require "sample/error_vectors/4x.jinc"
+require "sample/error_vectors.jinc"
 require "sample/matrix_A.jinc"
 require "sample/error_vectors.jinc"
 from Common require "keygen.jinc"
