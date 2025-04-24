@@ -10,23 +10,16 @@ JASMINCT ?= jasmin-ct
 
 # --------------------------------------------------------------------
 IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
-						 $(wildcard $(IMPLEMENTATION)/*.jinc) \
-						 $(wildcard $(IMPLEMENTATION)/arithmetic/*.jinc) \
-						 $(wildcard $(IMPLEMENTATION)/encoding/*.jinc) \
-						 $(wildcard $(IMPLEMENTATION)/sample/*.jinc) \
-						 $(wildcard $(IMPLEMENTATION)/sample/error_vectors/*.jinc) \
-						 $(wildcard $(COMMON)/*.jinc) \
-						 $(wildcard $(COMMON)/arithmetic/*.jinc) \
-						 $(wildcard $(COMMON)/encoding/*.jinc) \
-						 $(wildcard $(COMMON)/keccak/*.jinc) \
-						 $(wildcard $(COMMON)/sample/*.jinc) \
-						 $(wildcard $(COMMON)/sample/matrix_A/*.jinc) \
-						 $(wildcard $(COMMON)/sample/mask/*.jinc)
+                         $(shell find $(IMPLEMENTATION)/ -type f -name '*.jinc') \
+                         $(shell find $(COMMON)/ -type f -name '*.jinc')
 
 OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)
 
 $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
 	env JASMINPATH="Common=$(COMMON)" $(JASMINC) $(JASMINC_FLAGS) -o $@ $<
+
+$(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
+	$(CC) $^ -fPIC -shared -o $@
 
 # --------------------------------------------------------------------
 .PHONY: test
@@ -42,9 +35,6 @@ nist-drbg-kat-test: $(OUTPUT_FILE_NAME).so
 		--parameter-set=$(PARAMETER_SET) \
 		--implementation-type=$(IMPLEMENTATION_TYPE) \
 		tests/test_nist_drbg_kats.py
-
-$(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
-	$(CC) $^ -fPIC -shared -o $@
 
 .PHONY: check-ct
 check-ct: $(IMPLEMENTATION)/ml_dsa.jazz

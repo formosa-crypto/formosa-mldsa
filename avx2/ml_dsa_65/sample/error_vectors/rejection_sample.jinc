@@ -1,5 +1,3 @@
-require "shuffle_table.jinc"
-
 inline
 fn bytestream_to_coefficients(reg u128 bytestream) -> reg u256 {
     reg u256 coefficients odd_coefficients;
@@ -42,7 +40,7 @@ write_out_8_coefficients(
 
     good_overall >>= 8;
 
-    shuffle_table_pointer = SHUFFLE_TABLE;
+    shuffle_table_pointer = ERROR_VECTOR_SHUFFLE_TABLE;
 
     shuffle_table_idx = good;
     shuffle_table_idx <<= 3;

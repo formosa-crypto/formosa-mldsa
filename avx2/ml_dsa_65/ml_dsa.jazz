@@ -24,10 +24,10 @@ from Common require "encoding/signature.jinc"
 from Common require "encoding/s1.jinc"
 from Common require "encoding/s2.jinc"
 
-require "sample/matrix_A.jinc"
-
+from Common require "sample/error_vector_shuffles.jinc"
 require "sample/error_vectors/4x.jinc"
 require "sample/error_vectors.jinc"
+require "sample/matrix_A.jinc"
 from Common require "keygen.jinc"
 
 require "sample/mask.jinc"

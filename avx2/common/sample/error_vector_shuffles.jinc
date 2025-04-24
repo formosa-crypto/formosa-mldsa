@@ -1,4 +1,4 @@
-u8[2048] SHUFFLE_TABLE = {
+u8[2048] ERROR_VECTOR_SHUFFLE_TABLE = {
     0,  0,  0,  0,  0,  0,  0,  0,
     0,  0,  0,  0,  0,  0,  0,  0,
     1,  0,  0,  0,  0,  0,  0,  0,
