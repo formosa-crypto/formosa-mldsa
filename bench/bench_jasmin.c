@@ -81,7 +81,7 @@ int main(void) {
   uint8_t verification_key[VERIFICATION_KEY_SIZE];
   uint8_t signing_key[SIGNING_KEY_SIZE];
 
-  uint8_t message[65];
+  uint8_t message[67];
   uint8_t signature[SIGNATURE_SIZE];
 
   uint64_t observations[DATA_POINTS] = {0};
@@ -108,9 +108,11 @@ int main(void) {
          (unsigned long long)average(observations, DATA_POINTS));
 
   // Benchmark signing.
+  message[0] = 0;
+  message[1] = 0;
   for (size_t i = 0; i < DATA_POINTS; i++) {
     notrandombytes(signing_randomness, 32);
-    notrandombytes(message, 65);
+    notrandombytes(&message[2], 65);
 
     before = cpucycles();
     SIGN(signature, signing_key, message, sizeof(message), signing_randomness);
