@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 class ML_DSA:
-    def __init__(self, parameter_set, implementation_type):
+    def __init__(self, parameter_set, architecture, implementation_type):
         # TODO: Get these parameters directly from the source code.
         if parameter_set == "44":
             self.verification_key_size = 1312
@@ -20,8 +20,8 @@ class ML_DSA:
 
         self.parameter_set = parameter_set
 
-        ml_dsa_so = Path(__file__).parent.parent / "ml_dsa_{}_{}.so".format(
-            parameter_set, implementation_type
+        ml_dsa_so = Path(__file__).parent.parent / "ml_dsa_{}_{}_{}.so".format(
+            parameter_set, architecture, implementation_type
         )
         self.ml_dsa = ctypes.PyDLL(ml_dsa_so)
 

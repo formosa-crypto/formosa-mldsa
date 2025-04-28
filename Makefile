@@ -1,8 +1,9 @@
+ARCHITECTURE ?= amd64
 PARAMETER_SET ?= 65
 IMPLEMENTATION_TYPE ?= ref
 
-COMMON = $(IMPLEMENTATION_TYPE)/common
-IMPLEMENTATION = $(IMPLEMENTATION_TYPE)/ml_dsa_$(PARAMETER_SET)
+COMMON = $(ARCHITECTURE)/$(IMPLEMENTATION_TYPE)/common
+IMPLEMENTATION = $(ARCHITECTURE)/$(IMPLEMENTATION_TYPE)/ml_dsa_$(PARAMETER_SET)
 
 # --------------------------------------------------------------------
 JASMINC ?= jasminc
@@ -13,7 +14,7 @@ IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
                          $(shell find $(IMPLEMENTATION)/ -type f -name '*.jinc') \
                          $(shell find $(COMMON)/ -type f -name '*.jinc')
 
-OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)
+OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(ARCHITECTURE)_$(IMPLEMENTATION_TYPE)
 
 $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
 	env JASMINPATH="Common=$(COMMON)" $(JASMINC) $(JASMINC_FLAGS) -o $@ $<
@@ -26,6 +27,7 @@ $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 test: $(OUTPUT_FILE_NAME).so
 	python3 -m pytest \
 		--parameter-set=$(PARAMETER_SET) \
+		--architecture=$(ARCHITECTURE) \
 		--implementation-type=$(IMPLEMENTATION_TYPE) \
 		tests/
 
@@ -33,6 +35,7 @@ test: $(OUTPUT_FILE_NAME).so
 nist-drbg-kat-test: $(OUTPUT_FILE_NAME).so
 	python3 -m pytest \
 		--parameter-set=$(PARAMETER_SET) \
+		--architecture=$(ARCHITECTURE) \
 		--implementation-type=$(IMPLEMENTATION_TYPE) \
 		tests/test_nist_drbg_kats.py
 

@@ -12,6 +12,13 @@ def pytest_addoption(parser):
         choices=("44", "65", "87"),
     )
     parser.addoption(
+        "--architecture",
+        action="store",
+        default="amd64",
+        help="CPU architecture: amd64 or armv7m",
+        choices=("amd64", "armv7m"),
+    )
+    parser.addoption(
         "--implementation-type",
         action="store",
         default="ref",
@@ -24,5 +31,6 @@ def pytest_addoption(parser):
 def ml_dsa(request):
     return ml_dsa_wrapper.ML_DSA(
         request.config.getoption("--parameter-set"),
+        request.config.getoption("--architecture"),
         request.config.getoption("--implementation-type"),
     )
