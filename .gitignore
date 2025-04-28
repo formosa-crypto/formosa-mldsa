@@ -2,6 +2,7 @@
 *.o
 *.d
 *.so
+*.a
 __pycache__
 
 # For local debugging
