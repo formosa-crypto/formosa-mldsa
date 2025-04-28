@@ -15,8 +15,8 @@ def pytest_addoption(parser):
         "--architecture",
         action="store",
         default="amd64",
-        help="CPU architecture: amd64 or armv7m",
-        choices=("amd64", "armv7m"),
+        help="CPU architecture: x86-64 or arm-m4",
+        choices=("x86-64", "arm-m4"),
     )
     parser.addoption(
         "--implementation-type",
