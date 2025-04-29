@@ -2,7 +2,7 @@ export fn JASMIN_MLDSA_power2round(reg u32 pa0, reg u32 a) -> reg u32
 {
   reg u32 a0 a1;
   a0, a1 = __power2round_a0a1(a);
-  (u32)[pa0] = a0;
+  [:u32 pa0] = a0;
   a1 = a1;
   return a1;
 }
@@ -12,7 +12,7 @@ export fn JASMIN_MLDSA_decompose(reg u32 pa0, reg u32 a) -> reg u32
   reg u32 a0 a1 q;
   q = Q;
   a0, a1 = __decompose_a0a1(a, q);
-  (u32)[pa0] = a0;
+  [:u32 pa0] = a0;
   a1 = a1;
   return a1;
 }

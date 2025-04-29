@@ -88,7 +88,7 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
        /* zeta = zetas[++k]; */
        k += 1;
        zetas = ZETAS;
-       zeta = zetas[(int)k];
+       zeta = zetas[(uint)k];
        /* for (j = start; j < start + len; ++j)  */
        j = start;
        start_len = start + len;
@@ -96,15 +96,15 @@ inline fn __ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
        /* invariant j_len = j + len */
        while {
          /* t = JASMIN_MLDSA_montgomery_reduce((int64_t)zeta * a[j + len]); */
-         aj_len = a[(int) j_len];
+         aj_len = a[(uint) j_len];
          t = __mul_montgomery_reduce_8380417(zeta, aj_len);
          /* a[j + len] = a[j] - t; */
-         aj = a[(int) j];
+         aj = a[(uint) j];
          aj_len = aj - t;
-         a[(int) j_len] = aj_len;
+         a[(uint) j_len] = aj_len;
          /* a[j] = a[j] + t; */
          aj = aj + t;
-         a[(int) j] = aj;
+         a[(uint) j] = aj;
          j += 1;
          j_len += 1;
        } (j < start_len)
@@ -176,7 +176,7 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
       /* zeta = -zetas[--k]; */
       k -= 1;
       zetas = ZETAS;
-      zeta = zetas[(int)k]; zeta = -zeta;
+      zeta = zetas[(uint)k]; zeta = -zeta;
       /* for (j = start; j < start + len; ++j)  */
       j = start;
       start_len = start + len;
@@ -184,14 +184,14 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
       /* invariant j_len = j + len */
       while {
         /* t = a[j]; */
-        t = a[(int) j];
+        t = a[(uint) j];
         /* a[j] = t + a[j + len]; */
-        aj_len = a[(int) j_len]; aj = t + aj_len; a[(int) j] = aj;
+        aj_len = a[(uint) j_len]; aj = t + aj_len; a[(uint) j] = aj;
         /* a[j + len] = t - a[j + len]; */
         aj_len = t - aj_len;
         /* a[j + len] = JASMIN_MLDSA_montgomery_reduce((int64_t)zeta * a[j + len]); */
         aj_len = __mul_montgomery_reduce_8380417(zeta, aj_len);
-        a[(int) j_len] = aj_len;
+        a[(uint) j_len] = aj_len;
         j += 1;
         j_len += 1;
       } (j < start_len)
@@ -208,9 +208,9 @@ inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
   j = 0;
   while {
     /*   a[j] = JASMIN_MLDSA_montgomery_reduce((int64_t)f * a[j]); */
-    aj = a[(int) j];
+    aj = a[(uint) j];
     aj = __mul_montgomery_reduce_8380417(f, aj);
-    a[(int) j] = aj;
+    a[(uint) j] = aj;
   
     j+=1;
   } (j < N)

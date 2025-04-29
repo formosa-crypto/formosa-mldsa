@@ -12,18 +12,18 @@ inline fn __map1__reduce32_8380417(reg ptr u32[256] a) -> reg ptr u32[256]
   {
     for j=0 to 1
     {
-      elem = a[(int) i];
+      elem = a[i];
       elem = __reduce32_8380417(elem);
-      a[(int) i] = elem;
+      a[i] = elem;
       i += 1;
     }
   }
 
   for j=0 to (N % 1)
   {
-    elem = a[(int) i];
+    elem = a[i];
     elem = __reduce32_8380417(elem);
-    a[(int) i] = elem;
+    a[i] = elem;
     i += 1;
   }
 
@@ -41,18 +41,18 @@ inline fn __map1__caddq(reg ptr u32[256] a) -> reg ptr u32[256]
   {
     for j=0 to 1
     {
-      elem = a[(int) i];
+      elem = a[i];
       elem = __caddq(elem);
-      a[(int) i] = elem;
+      a[i] = elem;
       i += 1;
     }
   }
 
   for j=0 to (N % 1)
   {
-    elem = a[(int) i];
+    elem = a[i];
     elem = __caddq(elem);
-    a[(int) i] = elem;
+    a[i] = elem;
     i += 1;
   }
 

@@ -230,7 +230,6 @@ inline fn __set_row_ref(
 {
   inline int x x1 x2;
   reg u32 t0 t1 rc0 rc1;
-  reg ptr u32[24*2] RC;
   reg ptr u32[25*2] e;
 
   for x=0 to 5
@@ -261,7 +260,7 @@ inline fn __set_row_ref(
 
 inline fn __round_ref(reg ptr u32[25*2] e a, reg u32 rc0 rc1) -> reg ptr u32[25*2]
 {
-  stack ptr u32[25*2] e_s a_s;
+  stack ptr u32[25*2] e_s;
   stack u32 rc0_s rc1_s;
   stack u32[5*2] c d;
   inline int y;
@@ -306,9 +305,9 @@ inline fn __get_RC(
 
   RC = s_RC;
 
-  rc0 = RC[(int) c];
+  rc0 = RC[(uint) c];
   c += 1;
-  rc1 = RC[(int) c];
+  rc1 = RC[(uint) c];
   c += 1;
 
   return rc1, rc0, c;

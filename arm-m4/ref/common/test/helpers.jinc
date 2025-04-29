@@ -10,7 +10,7 @@ inline fn __mem_to_poly (reg u32 p) -> stack u32[N] {
   pa = a;
   i = 0;
   while (i < N) {
-    ai = (u32)[p + 4 * i];
+    ai = [:u32 p + 4 * i];
     pa[(int) i] = ai;
     i += 1;
   }
@@ -25,7 +25,7 @@ inline fn __poly_to_mem (stack u32[N] a, reg u32 p) {
   pa = a;
   while (i < N) {
     ai = pa[(int) i];
-    (u32)[p + 4 * i] = ai;
+    [:u32 p + 4 * i] = ai;
     i += 1;
   }
 }
@@ -36,7 +36,7 @@ inline fn __state_to_mem (reg ptr u32[25*2] pa, reg u32 p) {
   i = 0;
   while (i < 25*2) {
     ai = pa[(int) i];
-    (u32)[p + 4 * i] = ai;
+    [:u32 p + 4 * i] = ai;
     i += 1;
   }
 }
@@ -47,7 +47,7 @@ inline fn __buf_to_mem (reg ptr u8[SHAKE256_RATE] pa, reg u32 p) {
   i = 0;
   while (i < SHAKE256_RATE) {
     ai = (32u) pa[(int) i];
-    (u8)[p + i] = ai;
+    [:u8 p + i] = ai;
     i += 1;
   }
 }
@@ -62,7 +62,7 @@ inline fn __mem_to_seed (reg u32 p) -> stack u8[SEEDBYTES] {
   i = 0;
   while (i < SEEDBYTES  / 4) {
     ai = [p + 4*i];
-    pa[u32 (int) i] = ai;
+    pa[:u32 (int) i] = ai;
     i += 1;
   }
   inline int j;
@@ -82,7 +82,7 @@ inline fn __seed_to_mem (reg ptr u8[SEEDBYTES] pa, reg u32 p) {
   i = 0;
   while (i < SEEDBYTES) {
     ai = (32u) pa[(int) i];
-    (u8)[p + i] = ai;
+    [:u8 p + i] = ai;
     i += 1;
   }
 }
@@ -97,7 +97,7 @@ inline fn __mem_to_crhseed (reg u32 p) -> stack u8[CRHBYTES] {
   i = 0;
   while (i < CRHBYTES  / 4) {
     ai = [p + 4*i];
-    pa[u32 (int) i] = ai;
+    pa[:u32 (int) i] = ai;
     i += 1;
   }
   inline int j;
@@ -117,7 +117,7 @@ inline fn __crhseed_to_mem (reg ptr u8[CRHBYTES] pa, reg u32 p) {
   i = 0;
   while (i < CRHBYTES) {
     ai = (32u) pa[(int) i];
-    (u8)[p + i] = ai;
+    [:u8 p + i] = ai;
     i += 1;
   }
 }
@@ -129,7 +129,7 @@ inline fn __mem_to_polyeta (reg u32 p) -> stack u8[POLYETA_PACKEDBYTES] {
   pa = a;
   i = 0;
   while (i < POLYETA_PACKEDBYTES) {
-    ai = (32u) (u8)[p + i];
+    ai = (32u) [:u8 p + i];
     pa[(int) i] = ai;
     i += 1;
   }
@@ -143,7 +143,7 @@ inline fn __polyeta_to_mem (reg ptr u8[POLYETA_PACKEDBYTES] pa, reg u32 p) {
   i = 0;
   while (i < POLYETA_PACKEDBYTES) {
     ai = (32u) pa[(int) i];
-    (u8)[p + i] = ai;
+    [:u8 p + i] = ai;
     i += 1;
   }
 }
@@ -155,7 +155,7 @@ inline fn __mem_to_polyt0 (reg u32 p) -> stack u8[POLYT0_PACKEDBYTES] {
   pa = a;
   i = 0;
   while (i < POLYT0_PACKEDBYTES) {
-    ai = (32u) (u8)[p + i];
+    ai = (32u) [:u8 p + i];
     pa[(int) i] = ai;
     i += 1;
   }
@@ -169,7 +169,7 @@ inline fn __polyt0_to_mem (reg ptr u8[POLYT0_PACKEDBYTES] pa, reg u32 p) {
   i = 0;
   while (i < POLYT0_PACKEDBYTES) {
     ai = (32u) pa[(int) i];
-    (u8)[p + i] = ai;
+    [:u8 p + i] = ai;
     i += 1;
   }
 }
@@ -181,7 +181,7 @@ inline fn __mem_to_polyt1 (reg u32 p) -> stack u8[POLYT1_PACKEDBYTES] {
   pa = a;
   i = 0;
   while (i < POLYT1_PACKEDBYTES) {
-    ai = (32u) (u8)[p + i];
+    ai = (32u) [:u8 p + i];
     pa[(int) i] = ai;
     i += 1;
   }
@@ -195,7 +195,7 @@ inline fn __polyt1_to_mem (reg ptr u8[POLYT1_PACKEDBYTES] pa, reg u32 p) {
   i = 0;
   while (i < POLYT1_PACKEDBYTES) {
     ai = (32u) pa[(int) i];
-    (u8)[p + i] = ai;
+    [:u8 p + i] = ai;
     i += 1;
   }
 }
@@ -207,7 +207,7 @@ inline fn __mem_to_polyz (reg u32 p) -> stack u8[POLYZ_PACKEDBYTES] {
   pa = a;
   i = 0;
   while (i < POLYZ_PACKEDBYTES) {
-    ai = (32u) (u8)[p + i];
+    ai = (32u) [:u8 p + i];
     pa[(int) i] = ai;
     i += 1;
   }
@@ -222,7 +222,7 @@ inline fn __polyz_to_mem (reg ptr u8[POLYZ_PACKEDBYTES] pa, reg u32 p) {
 
   while (i < POLYZ_PACKEDBYTES) {
     ai = (32u) pa[(int) i];
-    (u8)[p + i] = ai;
+    [:u8 p + i] = ai;
     i += 1;
   }
 }
@@ -234,7 +234,7 @@ inline fn __polyw1_to_mem (reg ptr u8[POLYW1_PACKEDBYTES] pa, reg u32 p) {
 
   while (i < POLYW1_PACKEDBYTES) {
     ai = (32u) pa[(int) i];
-    (u8)[p + i] = ai;
+    [:u8 p + i] = ai;
     i += 1;
   }
 }

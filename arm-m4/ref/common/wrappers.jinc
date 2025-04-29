@@ -16,33 +16,9 @@ inline fn __store_imm(inline int imm) -> reg u32 {
   return out;
 }
 
-inline fn __add_large_imm(reg u32 in, inline int imm) -> reg u32 {
-  reg u32 out;
-  out = in + imm;
-  return out;
-}
-
 inline fn __imm_sub_reg_inplace(inline int imm, reg u32 in) -> reg u32 {
     in = imm - in;
     return in;
-}
-
-inline fn __imm_sub_reg(inline int imm, reg u32 in) -> reg u32 {
-    reg u32 out;
-    out = imm - in;
-    return out;
-}
-
-inline fn __set_if_true(reg u32 in, inline bool b) -> reg u32 {
-  reg u32 out;
-  out = in if b;
-  return out;
-}
-
-inline fn __set_if_true_plus_imm(reg u32 in, inline int i, inline bool b) -> reg u32 {
-  reg u32 out;
-  out = in + i if b;
-  return out;
 }
 
 inline fn __cmp_b(reg u32 in_1, reg u32 in_2) -> inline bool {
@@ -160,5 +136,29 @@ inline fn __rsb_lsl_inplace(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> r
 inline fn __rsb_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
   reg u32 out;
   out = #RSB(in_1, in_2 << nb_bits);
+  return out;
+}
+
+inline fn __add_large_imm(reg u32 in, inline int imm) -> reg u32 {
+  reg u32 out;
+  out = in + imm;
+  return out;
+}
+
+inline fn __imm_sub_reg(inline int imm, reg u32 in) -> reg u32 {
+    reg u32 out;
+    out = imm - in;
+    return out;
+}
+
+inline fn __set_if_true(reg u32 in, inline bool b) -> reg u32 {
+  reg u32 out;
+  out = in if b;
+  return out;
+}
+
+inline fn __set_if_true_plus_imm(reg u32 in, inline int i, inline bool b) -> reg u32 {
+  reg u32 out;
+  out = in + i if b;
   return out;
 }
