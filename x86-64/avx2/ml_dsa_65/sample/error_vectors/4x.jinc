@@ -52,7 +52,6 @@ namespace error_4x {
         return state;
     }
 
-    inline
     fn __shake256_squeeze_multiple_blocks_4x(
       reg ptr u256[25] state,
       reg ptr u8[REJECTION_SAMPLE_INPUT_SIZE] b0 b1 b2 b3
