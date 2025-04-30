@@ -15,27 +15,41 @@ from Common require "packing.jinc"
 require "packing.jinc"
 from Common require "ml_dsa.jinc"
 
-export fn JASMIN_MLDSA65_crypto_sign_keypair(reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES], reg u32 {
+export fn ml_dsa_65_keypair(
+    reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk,
+    reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk,
+    reg ptr u8[SEEDBYTES] seed
+) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES],
+     reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES], reg u32 {
   pk = pk; sk = sk;
   reg u32 status;
-  pk, sk, status = _crypto_sign_keypair(pk, sk);
+  pk, sk, status = _crypto_sign_keypair_seed(pk, sk, seed);
   pk = pk; sk = sk; status = status;
   return pk, sk, status;
 }
 
-export fn JASMIN_MLDSA65_crypto_sign_signature_ctx_internal(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], reg u32
+export fn ml_dsa_65_sign(
+    reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig,
+    reg ptr u32[3] ctx_m_rand,
+    reg ptr u32[2] ctxlen_mlen,
+    reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk
+) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], reg u32
 {
-  sig = sig; ctx_m = ctx_m; ctxlen_mlen_siglen = ctxlen_mlen_siglen; sk = sk;
+  sig = sig; ctx_m_rand = ctx_m_rand; ctxlen_mlen = ctxlen_mlen; sk = sk;
   reg u32 status;
-  sig, status = _crypto_sign_signature_ctx(sig, ctx_m, ctxlen_mlen_siglen, sk);
+  sig, status = _crypto_sign_signature_ctx_seed(sig, ctx_m_rand, ctxlen_mlen, sk);
   sig = sig; status = status;
   return sig, status;
 }
 
-export fn JASMIN_MLDSA65_crypto_sign_verify_ctx_internal(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u32[2] ctx_m, reg ptr u32[3] ctxlen_mlen_siglen, reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
-    sig = sig; ctx_m = ctx_m; ctxlen_mlen_siglen = ctxlen_mlen_siglen; pk = pk;
+export fn ml_dsa_65_verify(
+    reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig,
+    reg ptr u32[2] ctx_m,
+    reg ptr u32[2] ctxlen_mlen,
+    reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
+    sig = sig; ctx_m = ctx_m; ctxlen_mlen = ctxlen_mlen; pk = pk;
     reg u32 status;
-    status = _crypto_sign_verify_ctx(sig, ctx_m, ctxlen_mlen_siglen, pk);
+    status = _crypto_sign_verify_ctx(sig, ctx_m, ctxlen_mlen, pk);
     status = status;
     return status;
 }
