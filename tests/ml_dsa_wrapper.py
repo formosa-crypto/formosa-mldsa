@@ -21,7 +21,7 @@ class ML_DSA:
         self.parameter_set = parameter_set
 
         ml_dsa_so = Path(__file__).parent.parent / "ml_dsa_{}_{}_{}.so".format(
-            parameter_set, architecture, implementation_type
+            parameter_set, implementation_type, architecture
         )
         self.ml_dsa = ctypes.PyDLL(ml_dsa_so)
 

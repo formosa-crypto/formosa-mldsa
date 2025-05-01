@@ -1,27 +1,44 @@
-ARCHITECTURE ?= x86-64
+ARCHITECTURE ?= arm-m4
 PARAMETER_SET ?= 65
 IMPLEMENTATION_TYPE ?= ref
 
 COMMON = $(ARCHITECTURE)/$(IMPLEMENTATION_TYPE)/common
 IMPLEMENTATION = $(ARCHITECTURE)/$(IMPLEMENTATION_TYPE)/ml_dsa_$(PARAMETER_SET)
 
-# --------------------------------------------------------------------
 JASMINC ?= jasminc
 JASMINCT ?= jasmin-ct
 
+# --------------------------------------------------------------------
+#  Assembly generation
 # --------------------------------------------------------------------
 IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
                          $(shell find $(IMPLEMENTATION)/ -type f -name '*.jinc') \
                          $(shell find $(COMMON)/ -type f -name '*.jinc')
 
-OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(ARCHITECTURE)_$(IMPLEMENTATION_TYPE)
+OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)_$(ARCHITECTURE)
 
 $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
 	env JASMINPATH="Common=$(COMMON)" $(JASMINC) -arch=$(ARCHITECTURE) $(JASMINC_FLAGS) -o $@ $<
 
-$(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
+%_x86-64.so: %_x86-64.s
 	$(CC) $^ -fPIC -shared -o $@
 
+# Cross compile for ARM
+arm-api-wrapper.o: arm-m4/api-wrapper.c ml_dsa_65_ref_arm-m4.s
+	arm-none-eabi-gcc $^ -o $@ \
+		-I$(IMPLEMENTATION) \
+		-static \
+		-Wall \
+		-mcpu=cortex-m4 \
+		-mlittle-endian \
+		-mthumb \
+		-mfloat-abi=hard \
+		-mfpu=fpv4-sp-d16 \
+		--specs=nosys.specs \
+		-fPIC \
+
+# --------------------------------------------------------------------
+#  KAT testing and safety checking
 # --------------------------------------------------------------------
 .PHONY: test
 test: $(OUTPUT_FILE_NAME).so
@@ -39,6 +56,13 @@ nist-drbg-kat-test: $(OUTPUT_FILE_NAME).so
 		--implementation-type=$(IMPLEMENTATION_TYPE) \
 		tests/test_nist_drbg_kats.py
 
+.PHONY: run-interpreter
+run-interpreter: $(IMPLEMENTATION)/example.jazz $(IMPLEMENTATION)/ml_dsa.jazz
+	env JASMINPATH="Common=$(COMMON)" $(JASMINC) $< | grep 'true'
+
+# --------------------------------------------------------------------
+#  CT and SCT checking
+# --------------------------------------------------------------------
 .PHONY: check-ct
 check-ct: $(IMPLEMENTATION)/ml_dsa.jazz
 	env JASMINPATH="Common=$(COMMON)" $(JASMINCT) --doit $(JASMINCT_FLAGS) $^
@@ -47,14 +71,8 @@ check-ct: $(IMPLEMENTATION)/ml_dsa.jazz
 check-sct: $(IMPLEMENTATION)/ml_dsa.jazz
 	env JASMINPATH="Common=$(COMMON)" $(JASMINCT) $(JASMINCT_FLAGS) --speculative $^
 
-.PHONY: check-rsb
-check-rsb: $(IMPLEMENTATION)/ml_dsa.jazz
-	env JASMINPATH="Common=$(COMMON)" $(RSB_CHECKER) --speculative $^
-
-.PHONY: run-interpreter
-run-interpreter: $(IMPLEMENTATION)/example.jazz $(IMPLEMENTATION)/ml_dsa.jazz
-	env JASMINPATH="Common=$(COMMON)" $(JASMINC) $< | grep 'true'
-
+# --------------------------------------------------------------------
+#  Benchmarking
 # --------------------------------------------------------------------
 bench_jasmin.o: $(OUTPUT_FILE_NAME).s bench/bench_jasmin.c bench/notrandombytes.c $(IMPLEMENTATION)/api.h
 	$(CC) -Wall -Werror \

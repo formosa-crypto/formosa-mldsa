@@ -15,17 +15,16 @@ from Common require "packing.jinc"
 require "packing.jinc"
 from Common require "ml_dsa.jinc"
 
-export fn ml_dsa_65_keypair(
+export fn ml_dsa_65_keygen(
     reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk,
     reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk,
     reg ptr u8[SEEDBYTES] seed
 ) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES],
-     reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES], reg u32 {
+     reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] {
   pk = pk; sk = sk;
-  reg u32 status;
-  pk, sk, status = _crypto_sign_keypair_seed(pk, sk, seed);
-  pk = pk; sk = sk; status = status;
-  return pk, sk, status;
+  pk, sk = _crypto_sign_keypair_seed(pk, sk, seed);
+  pk = pk; sk = sk;
+  return pk, sk;
 }
 
 export fn ml_dsa_65_sign(
