@@ -24,24 +24,15 @@ $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
 	$(CC) $^ -fPIC -shared -o $@
 
 # Cross compile for ARM
-arm-api-wrapper.o: arm-m4/api-wrapper.c ml_dsa_65_ref_arm-m4.s
-	arm-none-eabi-gcc $^ -o $@ \
-		-I$(IMPLEMENTATION) \
-		-static \
-		-Wall \
-		-mcpu=cortex-m4 \
-		-mlittle-endian \
-		-mthumb \
-		-mfloat-abi=hard \
-		-mfpu=fpv4-sp-d16 \
-		--specs=nosys.specs \
-		-fPIC \
+# TODO: Make the second pre-req generic
+ml_dsa_arm-m4.o: arm-m4/api-wrapper.c ml_dsa_65_ref_arm-m4.s
+	arm-none-linux-gnueabihf-gcc -I$(IMPLEMENTATION) $^ -o $@
 
 # --------------------------------------------------------------------
 #  KAT testing and safety checking
 # --------------------------------------------------------------------
 .PHONY: test
-test: $(OUTPUT_FILE_NAME).so
+test:
 	python3 -m pytest \
 		--parameter-set=$(PARAMETER_SET) \
 		--architecture=$(ARCHITECTURE) \
@@ -49,7 +40,7 @@ test: $(OUTPUT_FILE_NAME).so
 		tests/
 
 .PHONY: nist-drbg-kat-test
-nist-drbg-kat-test: $(OUTPUT_FILE_NAME).so
+nist-drbg-kat-test:
 	python3 -m pytest \
 		--parameter-set=$(PARAMETER_SET) \
 		--architecture=$(ARCHITECTURE) \

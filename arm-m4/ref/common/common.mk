@@ -1,1 +1,0 @@
-JASMINC ?= jasminc

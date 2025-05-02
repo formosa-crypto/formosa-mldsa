@@ -144,7 +144,6 @@ fn _crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk, 
 
     () = #unspill(pk);
     rho = state[:u8 0:SEEDBYTES];
-    //() = #spill(s1, s2);
     pk = _pack_pk(pk, rho, t1);
 
     /* Compute H(rho, t1) and write secret key */
