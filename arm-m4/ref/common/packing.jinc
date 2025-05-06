@@ -73,22 +73,22 @@ fn _pack_sk(reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBY
     reg ptr u32[N] ns1;
     for i = 0 to L {
         ns1 = s1[i * N: N];
-	() = #spill(s1);
+    () = #spill(s1);
         nsk = sk[start_pos : POLYETA_PACKEDBYTES];
         sk[start_pos : POLYETA_PACKEDBYTES] = _polyeta_pack(nsk, ns1);
-	() = #unspill(s1);
-	start_pos += POLYETA_PACKEDBYTES;
+    () = #unspill(s1);
+    start_pos += POLYETA_PACKEDBYTES;
     }
 
     () = #unspill(s2);
     reg ptr u32[N] ns2;
     for i = 0 to K {
         ns2 = s2[i * N: N];
-	() = #spill(s2);
+    () = #spill(s2);
         nsk = sk[start_pos : POLYETA_PACKEDBYTES];
         sk[start_pos : POLYETA_PACKEDBYTES] = _polyeta_pack(nsk, ns2);
         () = #unspill(s2);
-	start_pos += POLYETA_PACKEDBYTES;
+    start_pos += POLYETA_PACKEDBYTES;
     }
     () = #unspill(t0);
 
@@ -97,10 +97,10 @@ fn _pack_sk(reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBY
     for i = 0 to K {
         nt0 = t0[i * N: N];
         nnsk = sk[start_pos : POLYT0_PACKEDBYTES];
-	() = #spill(t0);
+    () = #spill(t0);
         sk[start_pos : POLYT0_PACKEDBYTES] = _polyt0_pack(nnsk, nt0);
-	() = #unspill(t0);
-	start_pos += POLYT0_PACKEDBYTES;
+    () = #unspill(t0);
+    start_pos += POLYT0_PACKEDBYTES;
     }
 
     return sk;
@@ -137,7 +137,7 @@ fn _pack_sig(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u8[CTILDEBYTES] 
         nz = z[i * N: N];
         nsig = sig[start_pos : POLYZ_PACKEDBYTES];
         sig[start_pos : POLYZ_PACKEDBYTES] = _polyz_pack(nsig, nz);
-	start_pos += POLYZ_PACKEDBYTES;
+    start_pos += POLYZ_PACKEDBYTES;
     }
 
     reg u32 r0;
@@ -165,7 +165,7 @@ fn _pack_sig(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u8[CTILDEBYTES] 
            pptsig[k] = j;
            k += 1;
          }
-	 j += 1;
+     j += 1;
        }
        pptsig[i + OMEGA] = k;
     }
@@ -191,7 +191,7 @@ fn _pack_sig_nocopy(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u32[polyv
         nz = z[i * N: N];
         nsig = sig[start_pos : POLYZ_PACKEDBYTES];
         sig[start_pos : POLYZ_PACKEDBYTES] = _polyz_pack(nsig, nz);
-	start_pos += POLYZ_PACKEDBYTES;
+    start_pos += POLYZ_PACKEDBYTES;
     }
 
     reg u32 r0;
@@ -219,7 +219,7 @@ fn _pack_sig_nocopy(reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig, reg ptr u32[polyv
            pptsig[k] = j;
            k += 1;
          }
-	 j += 1;
+     j += 1;
        }
        pptsig[i + OMEGA] = k;
     }
@@ -315,7 +315,7 @@ fn _unpack_sk
         ns1 = s1[i * N: N];
         nsk = sk[start_pos : POLYETA_PACKEDBYTES];
         s1[i * N: N] = _polyeta_unpack(ns1, nsk);
-	start_pos += POLYETA_PACKEDBYTES;
+    start_pos += POLYETA_PACKEDBYTES;
     }
 
     () = #unspill(s2);
@@ -323,10 +323,10 @@ fn _unpack_sk
     for i = 0 to K {
         ns2 = s2[i * N: N];
         nsk = sk[start_pos : POLYETA_PACKEDBYTES];
-	() = #spill(sk);
+    () = #spill(sk);
         s2[i * N: N] = _polyeta_unpack(ns2, nsk);
         () = #unspill(sk);
-	start_pos += POLYETA_PACKEDBYTES;
+    start_pos += POLYETA_PACKEDBYTES;
     }
     () = #unspill(t0);
     () = #spill(s1, s2);
@@ -337,7 +337,7 @@ fn _unpack_sk
         nt0 = t0[i * N: N];
         nnsk = sk[start_pos : POLYT0_PACKEDBYTES];
         t0[i * N: N] = _polyt0_unpack(nt0, nnsk);
-	start_pos += POLYT0_PACKEDBYTES;
+    start_pos += POLYT0_PACKEDBYTES;
     }
     () = #unspill(rho);
     () = #unspill(tr);

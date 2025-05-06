@@ -88,7 +88,7 @@ inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -
 *              - uint8_t *sk: pointer to output private key (allocated
 *                             array of JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES bytes)
 *              - uint8_t *seed: pointer to input seed (allocated
-*                             array of 2 * SEEDBYTES + CRHBYTES bytes)*
+*                             array of SEEDBYTES bytes)*
 *
 * Returns 0 (success)
 **************************************************/

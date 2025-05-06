@@ -12,6 +12,24 @@ def shell(command, expect=0, cwd=None):
 
     return completed.stdout.decode("utf-8")
 
+def debug(signing_key, verification_key):
+    print("PK RHO")
+    print(":".join("{:02x}".format(byte) for byte in verification_key[0:32]))
+    print("PK T1")
+    print(":".join("{:02x}".format(byte) for byte in verification_key[32:]))
+    print("SK RHO")
+    print(":".join("{:02x}".format(byte) for byte in signing_key[0:32]))
+    print("SK K")
+    print(":".join("{:02x}".format(byte) for byte in signing_key[32:64]))
+    print("SK TR")
+    print(":".join("{:02x}".format(byte) for byte in signing_key[64:128]))
+    print("SK S1")
+    print(":".join("{:02x}".format(byte) for byte in signing_key[128:768]))
+    print("SK S2")
+    print(":".join("{:02x}".format(byte) for byte in signing_key[768:1536]))
+    print("SK T0")
+    print(":".join("{:02x}".format(byte) for byte in signing_key[1536:]))
+
 class ML_DSA:
     def __init__(self, parameter_set, architecture, implementation_type):
         # TODO: Get these parameters directly from the source code.
@@ -69,6 +87,9 @@ class ML_DSA:
                 self.ml_dsa.ml_dsa_65_keygen(
                     verification_key, signing_key, self.bytearray_to_ctype(randomness)
                 )
+
+                debug(signing_key.raw, verification_key.raw)
+                assert False
             else:
                 output = shell(['qemu-arm',
                                 #TODO: Don't hardcode this.
@@ -82,6 +103,7 @@ class ML_DSA:
 
                 verification_key = bytes.fromhex(output_split[0]);
                 signing_key = bytes.fromhex(output_split[1]);
+                debug(signing_key, verification_key)
 
             return (verification_key, signing_key)
 
