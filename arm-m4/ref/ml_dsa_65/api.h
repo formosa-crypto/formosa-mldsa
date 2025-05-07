@@ -23,8 +23,8 @@ int ml_dsa_65_sign(
 
 int ml_dsa_65_verify(
   uint8_t signature[SIGNATURE_SIZE],
-  const uint8_t* context_message[2],
-  const uint8_t* contextlen_messagelen[2],
+  uint8_t* context_message[2],
+  const size_t contextlen_messagelen[2],
   const uint8_t verification_key[VERIFICATION_KEY_SIZE]
 );
 

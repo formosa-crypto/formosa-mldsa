@@ -153,7 +153,6 @@ class ML_DSA:
                                 signing_key.hex()
                                 ]
                                )
-                print(output)
                 signature = bytes.fromhex(output);
         else:  # self.parameter_set == "87"
             self.ml_dsa.ml_dsa_87_sign(
@@ -166,7 +165,7 @@ class ML_DSA:
 
         return signature
 
-    def verify(self, verification_key, message, signature):
+    def verify(self, verification_key, context, message, signature):
         if self.parameter_set == "44":
             return self.ml_dsa.ml_dsa_44_verify(
                 verification_key,
@@ -175,12 +174,33 @@ class ML_DSA:
                 signature,
             )
         elif self.parameter_set == "65":
-            return self.ml_dsa.ml_dsa_65_verify(
-                verification_key,
-                self.bytearray_to_ctype(message),
-                len(message),
-                signature,
-            )
+            if self.architecture == 'x86-64':
+                message = context + message;
+                return self.ml_dsa.ml_dsa_65_verify(
+                    verification_key,
+                    self.bytearray_to_ctype(message),
+                    len(message),
+                    signature,
+                )
+            elif self.architecture == 'arm-m4':
+                context = context.hex()
+                message = message.hex()
+                output = shell(['qemu-arm',
+                                #TODO: Don't hardcode this.
+                                '-L',
+                                '/home/efgh/arm-none-linux-gnueabihf/arm-none-linux-gnueabihf/libc/',
+                                'ml_dsa_arm-m4.o',
+                                '2',
+                                str(len(context)),
+                                context,
+                                str(len(message)),
+                                message,
+                                signature.hex(),
+                                verification_key.hex()
+                                ]
+                               )
+                return int(output)
+
         else:  # self.parameter_set == "87"
             return self.ml_dsa.ml_dsa_87_verify(
                 verification_key,

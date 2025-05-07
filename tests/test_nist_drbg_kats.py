@@ -52,5 +52,5 @@ def test_against_nist_drbg_kats(ml_dsa, kats):
         ), print([hex(b) for b in signature[0:32]])
 
         # And lastly, verification.
-        #verification_result = ml_dsa.verify(verification_key.raw, message, signature)
-        #assert verification_result == 0
+        verification_result = ml_dsa.verify(verification_key, context, message, signature)
+        assert verification_result == 0

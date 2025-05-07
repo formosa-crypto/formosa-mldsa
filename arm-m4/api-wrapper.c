@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 
             ctx_m_rand[2] = randomness;
 
-            // Finally, the secret key
+            // Finally, the signing key
             result = base16_decode(argv[7], SIGNING_KEY_SIZE * 2, signing_key);
             assert(result == 0);
 
@@ -136,14 +136,53 @@ int main(int argc, char *argv[])
             break;
         }
         case 2: // Verify
-            break;
-            /*uint8_t ctx_m[2] = {argv[2], argv[4]};
-            size_t ctxlen_mlen[2] = {atoi(argv[3]), atoi(argv[5])}
-            int result;
+        {
+            uint8_t signature[SIGNATURE_SIZE];
+            uint8_t* ctx_m[2];
+            size_t ctxlen_mlen[2];
 
-            result = ml_dsa_65_verify(argv[1], ctx_m, ctxlen_mlen, argv[6]);
+            uint8_t context[255];
+            size_t encoded_context_len, context_len;
+
+            uint8_t* message;
+            size_t encoded_message_len, message_len;
+
+            uint8_t verification_key[VERIFICATION_KEY_SIZE];
+
+            // Decode the context
+            encoded_context_len = atoi(argv[2]);
+            context_len = base16_decode_len(encoded_context_len);
+
+            int result = base16_decode(argv[3], encoded_context_len, context);
+            assert(result == 0);
+
+            ctx_m[0] = context;
+            ctxlen_mlen[0] = context_len;
+
+            // Message
+            encoded_message_len = atoi(argv[4]);
+            message_len = base16_decode_len(encoded_message_len);
+
+            message = malloc(message_len);
+
+            result = base16_decode(argv[5], encoded_message_len, message);
+            assert(result == 0);
+
+            ctx_m[1] = message;
+            ctxlen_mlen[1] = message_len;
+
+            // Finally, the signature
+            result = base16_decode(argv[6], SIGNATURE_SIZE * 2, signature);
+            assert(result == 0);
+
+            // Finally, the verification key
+            result = base16_decode(argv[7], VERIFICATION_KEY_SIZE * 2, verification_key);
+            assert(result == 0);
+
+            result = ml_dsa_65_verify(signature, ctx_m, ctxlen_mlen, verification_key);
             printf("%d", result);
-            break;*/
+            break;
+        }
     }
 
     return EXIT_SUCCESS;
