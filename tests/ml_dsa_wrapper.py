@@ -88,8 +88,9 @@ class ML_DSA:
                     verification_key, signing_key, self.bytearray_to_ctype(randomness)
                 )
 
-                debug(signing_key.raw, verification_key.raw)
-                assert False
+                verification_key = verification_key.raw
+                signing_key = signing_key.raw
+
             else:
                 output = shell(['qemu-arm',
                                 #TODO: Don't hardcode this.
@@ -103,7 +104,6 @@ class ML_DSA:
 
                 verification_key = bytes.fromhex(output_split[0]);
                 signing_key = bytes.fromhex(output_split[1]);
-                debug(signing_key, verification_key)
 
             return (verification_key, signing_key)
 
@@ -113,9 +113,8 @@ class ML_DSA:
                 verification_key, signing_key, self.bytearray_to_ctype(randomness)
             )
 
-    def sign(self, signing_key, message, randomness):
+    def sign(self, signing_key, context, message, randomness):
         assert len(randomness) == 32
-        signature = ctypes.create_string_buffer(self.signature_size)
 
         if self.parameter_set == "44":
             self.ml_dsa.ml_dsa_44_sign(
@@ -126,13 +125,36 @@ class ML_DSA:
                 self.bytearray_to_ctype(randomness),
             )
         elif self.parameter_set == "65":
-            self.ml_dsa.ml_dsa_65_sign(
-                signature,
-                signing_key,
-                self.bytearray_to_ctype(message),
-                len(message),
-                self.bytearray_to_ctype(randomness),
-            )
+            if self.architecture == 'x86-64':
+                signature = ctypes.create_string_buffer(self.signature_size)
+                message = context + message;
+                self.ml_dsa.ml_dsa_65_sign(
+                    signature,
+                    signing_key,
+                    self.bytearray_to_ctype(message),
+                    len(message),
+                    self.bytearray_to_ctype(randomness),
+                )
+                signature = signature.raw
+            else:
+                context = context.hex()
+                message = message.hex()
+                output = shell(['qemu-arm',
+                                #TODO: Don't hardcode this.
+                                '-L',
+                                '/home/efgh/arm-none-linux-gnueabihf/arm-none-linux-gnueabihf/libc/',
+                                'ml_dsa_arm-m4.o',
+                                '1',
+                                str(len(context)),
+                                context,
+                                str(len(message)),
+                                message,
+                                randomness.hex(),
+                                signing_key.hex()
+                                ]
+                               )
+                print(output)
+                signature = bytes.fromhex(output);
         else:  # self.parameter_set == "87"
             self.ml_dsa.ml_dsa_87_sign(
                 signature,

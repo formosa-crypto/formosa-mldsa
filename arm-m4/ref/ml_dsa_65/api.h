@@ -16,7 +16,7 @@ void ml_dsa_65_keygen(
 
 int ml_dsa_65_sign(
   uint8_t signature[SIGNATURE_SIZE],
-  const uint8_t* context_message_randomness[3],
+  uint8_t* context_message_randomness[3],
   const size_t contextlen_messagelen[2],
   const uint8_t signing_key[SIGNING_KEY_SIZE]
 );
