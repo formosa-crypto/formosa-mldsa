@@ -22,9 +22,7 @@ def test_against_nist_drbg_kats(ml_dsa, kats):
         key_generation_seed = bytearray.fromhex(kat["key_generation_seed"])
         (verification_key, signing_key) = ml_dsa.generate_keypair(key_generation_seed)
 
-        sha3_256_hash_of_verification_key = hashlib.sha3_256(
-            verification_key
-        ).digest()
+        sha3_256_hash_of_verification_key = hashlib.sha3_256(verification_key).digest()
         assert sha3_256_hash_of_verification_key == bytes.fromhex(
             (kat["sha3_256_hash_of_verification_key"])
         )
@@ -35,10 +33,6 @@ def test_against_nist_drbg_kats(ml_dsa, kats):
         )
 
         # Then signing.
-
-        # We append [0,0] to signal an empty domain separation context, see
-        # the comment in ml_dsa.jazz for as to why this is done here instead
-        # of there.
         context = bytearray([])
         message = bytearray.fromhex(kat["message"])
 
@@ -52,5 +46,7 @@ def test_against_nist_drbg_kats(ml_dsa, kats):
         ), print([hex(b) for b in signature[0:32]])
 
         # And lastly, verification.
-        verification_result = ml_dsa.verify(verification_key, context, message, signature)
+        verification_result = ml_dsa.verify(
+            verification_key, context, message, signature
+        )
         assert verification_result == 0

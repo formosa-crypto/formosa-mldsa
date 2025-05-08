@@ -20,26 +20,24 @@ def test_against_pqc_kats(ml_dsa, kats):
         key_generation_seed = bytearray.fromhex(kat["key_generation_seed"])
         (verification_key, signing_key) = ml_dsa.generate_keypair(key_generation_seed)
 
-        sha3_256_hash_of_verification_key = hashlib.sha3_256(
-            verification_key.raw
-        ).digest()
+        sha3_256_hash_of_verification_key = hashlib.sha3_256(verification_key).digest()
         assert sha3_256_hash_of_verification_key == bytes.fromhex(
             (kat["sha3_256_hash_of_verification_key"])
         )
 
-        sha3_256_hash_of_signing_key = hashlib.sha3_256(signing_key.raw).digest()
+        sha3_256_hash_of_signing_key = hashlib.sha3_256(signing_key).digest()
         assert sha3_256_hash_of_signing_key == bytes.fromhex(
             (kat["sha3_256_hash_of_signing_key"])
         )
 
         # Then signing.
 
-        ctx = bytearray.fromhex(kat["context"])
-        message = bytearray([0, len(ctx)]) + ctx + bytearray.fromhex(kat["message"])
+        context = bytearray.fromhex(kat["context"])
+        message = bytearray.fromhex(kat["message"])
 
         signing_randomness = bytearray.fromhex(kat["signing_randomness"])
 
-        signature = ml_dsa.sign(signing_key.raw, message, signing_randomness)
+        signature = ml_dsa.sign(signing_key, context, message, signing_randomness)
 
         sha3_256_hash_of_signature = hashlib.sha3_256(signature).digest()
         assert sha3_256_hash_of_signature == bytes.fromhex(
@@ -47,5 +45,7 @@ def test_against_pqc_kats(ml_dsa, kats):
         ), print("Failure at KAT number {}".format(kat["count"]))
 
         # And lastly, verification.
-        verification_result = ml_dsa.verify(verification_key.raw, message, signature)
+        verification_result = ml_dsa.verify(
+            verification_key, context, message, signature
+        )
         assert verification_result == 0

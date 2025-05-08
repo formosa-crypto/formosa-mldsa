@@ -50,19 +50,17 @@ def test_wycheproof_sign(ml_dsa, signing_test_groups):
                 # part of the message.
                 continue
 
+            message = bytearray.fromhex(test["msg"])
             if "ctx" in test:
-                ctx = bytearray.fromhex(test["ctx"])
-                message = (
-                    bytearray([0, len(ctx)]) + ctx + bytearray.fromhex(test["msg"])
-                )
+                context = bytearray.fromhex(test["ctx"])
             else:
-                message = bytearray([0, 0]) + bytearray.fromhex(test["msg"])
+                context = bytearray([])
 
-            signature = ml_dsa.sign(signing_key, message, signing_seed)
+            signature = ml_dsa.sign(signing_key, context, message, signing_seed)
 
             if test["result"] == "valid":
-                actual_decoded = bytearray.fromhex(test["sig"])
-                assert signature.raw == actual_decoded, print(
+                expected_signature = bytearray.fromhex(test["sig"])
+                assert signature == expected_signature, print(
                     "Test case ID: {}.".format(test["tcId"])
                 )
 
@@ -101,17 +99,16 @@ def test_wycheproof_verify(ml_dsa, verification_test_groups):
                 # flag set stating that its length is incorrect.
                 assert "IncorrectSignatureLength" in test["flags"]
                 continue
-            signature = ml_dsa.bytearray_to_ctype(signature)
 
+            message = bytearray.fromhex(test["msg"])
             if "ctx" in test:
-                ctx = bytearray.fromhex(test["ctx"])
-                message = (
-                    bytearray([0, len(ctx)]) + ctx + bytearray.fromhex(test["msg"])
-                )
+                context = bytearray.fromhex(test["ctx"])
             else:
-                message = bytearray([0, 0]) + bytearray.fromhex(test["msg"])
+                context = bytearray([])
 
-            verification_result = ml_dsa.verify(verification_key, message, signature)
+            verification_result = ml_dsa.verify(
+                verification_key, context, message, signature
+            )
 
             if test["result"] == "valid":
                 assert verification_result == 0, print(

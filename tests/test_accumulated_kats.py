@@ -27,17 +27,21 @@ def test_accumulated_kats(ml_dsa, expected_final_hash):
 
         message_size = 33 * (i + 1)
         message = rng.read(message_size)
-        message = bytearray([0, 0]) + bytearray(message)
+
+        context = bytearray([])
+        message = bytearray(message)
 
         signing_randomness = bytearray(rng.read(32))
-        signature = ml_dsa.sign(signing_key, message, signing_randomness)
+        signature = ml_dsa.sign(signing_key, context, message, signing_randomness)
 
-        verification_result = ml_dsa.verify(verification_key, message, signature)
+        verification_result = ml_dsa.verify(
+            verification_key, context, message, signature
+        )
         assert verification_result == 0
 
-        kat_hasher.update(verification_key.raw)
-        kat_hasher.update(signing_key.raw)
-        kat_hasher.update(signature.raw)
+        kat_hasher.update(verification_key)
+        kat_hasher.update(signing_key)
+        kat_hasher.update(signature)
 
     final_hash = bytes(kat_hasher.read(32)).hex()
 

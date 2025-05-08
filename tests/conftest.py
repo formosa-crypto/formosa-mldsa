@@ -29,8 +29,15 @@ def pytest_addoption(parser):
 
 @pytest.fixture(scope="module")
 def ml_dsa(request):
-    return ml_dsa_wrapper.ML_DSA(
-        request.config.getoption("--parameter-set"),
-        request.config.getoption("--architecture"),
-        request.config.getoption("--implementation-type"),
-    )
+    architecture = request.config.getoption("--architecture")
+
+    if architecture == "x86-64":
+        return ml_dsa_wrapper.ML_DSA_X86_64(
+            request.config.getoption("--parameter-set"),
+            request.config.getoption("--implementation-type"),
+        )
+    else:
+        return ml_dsa_wrapper.ML_DSA_ARM_M4(
+            request.config.getoption("--parameter-set"),
+            request.config.getoption("--implementation-type"),
+        )
