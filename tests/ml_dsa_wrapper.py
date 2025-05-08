@@ -36,7 +36,6 @@ class ML_DSA_X86_64(ML_DSA):
             parameter_set,
             implementation_type,
         )
-        shell(["make", ml_dsa_so_name])
         ml_dsa = ctypes.PyDLL(Path(__file__).parent.parent / ml_dsa_so_name)
 
         self.parameter_set = parameter_set
@@ -119,17 +118,8 @@ class ML_DSA_X86_64(ML_DSA):
 
 class ML_DSA_ARM_M4(ML_DSA):
     def __init__(self, parameter_set, implementation_type):
-        shell(
-            [
-                "make",
-                "ARCHITECTURE=arm-m4",
-                "PARAMETER_SET={}".format(parameter_set),
-                "IMPLEMENTATION_TYPE={}".format(implementation_type),
-                "ml_dsa_arm-m4.o",
-            ]
-        )
-
         self.parameter_set = parameter_set
+        self.wrapper_name = "./ml_dsa_{}_{}_arm-m4.o".format(parameter_set, implementation_type)
 
         # TODO: For now, we only have an implementation of ML-DSA-65 on arm-m4,
         # should be easy to extend this class to cover the other 2 parameter-sets.
@@ -142,11 +132,7 @@ class ML_DSA_ARM_M4(ML_DSA):
 
         output = shell(
             [
-                "qemu-arm",
-                # TODO: Don't hardcode this.
-                "-L",
-                "/home/efgh/arm-none-linux-gnueabihf/arm-none-linux-gnueabihf/libc/",
-                "ml_dsa_arm-m4.o",
+                self.wrapper_name,
                 "0",
                 randomness.hex(),
             ]
@@ -163,11 +149,7 @@ class ML_DSA_ARM_M4(ML_DSA):
         message = message.hex()
         output = shell(
             [
-                "qemu-arm",
-                # TODO: Don't hardcode this.
-                "-L",
-                "/home/efgh/arm-none-linux-gnueabihf/arm-none-linux-gnueabihf/libc/",
-                "ml_dsa_arm-m4.o",
+                self.wrapper_name,
                 "1",
                 str(len(context)),
                 context,
@@ -185,11 +167,7 @@ class ML_DSA_ARM_M4(ML_DSA):
         message = message.hex()
         output = shell(
             [
-                "qemu-arm",
-                # TODO: Don't hardcode this.
-                "-L",
-                "/home/efgh/arm-none-linux-gnueabihf/arm-none-linux-gnueabihf/libc/",
-                "ml_dsa_arm-m4.o",
+                self.wrapper_name,
                 "2",
                 str(len(context)),
                 context,

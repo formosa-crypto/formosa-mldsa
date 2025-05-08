@@ -20,19 +20,27 @@ OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)_$(ARCHITECTURE
 $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
 	env JASMINPATH="Common=$(COMMON)" $(JASMINC) -arch=$(ARCHITECTURE) $(JASMINC_FLAGS) -o $@ $<
 
-%_x86-64.so: %_x86-64.s
-	$(CC) $^ -fPIC -shared -o $@
-
-# Cross compile for ARM
-# TODO: Make the second pre-req generic
-ml_dsa_arm-m4.o: arm-m4/api-wrapper.c ml_dsa_65_ref_arm-m4.s
-	arm-none-linux-gnueabihf-gcc -I$(IMPLEMENTATION) $^ -o $@
-
 # --------------------------------------------------------------------
 #  KAT testing and safety checking
 # --------------------------------------------------------------------
+# For x86-64: Generate a shared-library to pass to ctypes.
+$(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
+	$(CC) $^ -fPIC -shared -o $@
+
+# For ARM-M4: Generate a cross-compiled executable to be called by python.
+CROSS_COMPILER ?= arm-none-linux-gnueabihf-gcc
+$(OUTPUT_FILE_NAME).o: arm-m4/wrapper.c $(OUTPUT_FILE_NAME).s
+	$(CROSS_COMPILER) -fPIC -I$(IMPLEMENTATION) $^ -o $@
+
+TESTING_WRAPPER :=
+ifeq ($(ARCHITECTURE), x86-64)
+	TESTING_WRAPPER = $(OUTPUT_FILE_NAME).so
+else
+	TESTING_WRAPPER = $(OUTPUT_FILE_NAME).o
+endif
+
 .PHONY: test
-test:
+test: $(TESTING_WRAPPER)
 	python3 -m pytest \
 		--parameter-set=$(PARAMETER_SET) \
 		--architecture=$(ARCHITECTURE) \
@@ -40,7 +48,7 @@ test:
 		tests/
 
 .PHONY: nist-drbg-kat-test
-nist-drbg-kat-test:
+nist-drbg-kat-test: $(TESTING_WRAPPER)
 	python3 -m pytest \
 		--parameter-set=$(PARAMETER_SET) \
 		--architecture=$(ARCHITECTURE) \

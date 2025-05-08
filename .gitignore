@@ -8,3 +8,4 @@ __pycache__
 # For local debugging
 jout
 tags
+*.core
