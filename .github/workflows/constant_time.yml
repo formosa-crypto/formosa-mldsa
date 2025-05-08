@@ -23,6 +23,6 @@ jobs:
         cd jasmin-compiler/compiler
         nix-shell --run 'make'
     - name: Check whether the code is constant-time.
-      run: env JASMINCT='jasmin-compiler/compiler/jasmin-ct' PARAMETER_SET=${{ matrix.parameter_set }} make check-ct
+      run: make JASMINCT='jasmin-compiler/compiler/jasmin-ct' ARCHITECTURE='x86-64' PARAMETER_SET=${{ matrix.parameter_set }} check-ct
     - name: Check whether the code is speculative constant-time.
-      run: env JASMINCT='jasmin-compiler/compiler/jasmin-ct' PARAMETER_SET=${{ matrix.parameter_set }} make check-sct
+      run: make JASMINCT='jasmin-compiler/compiler/jasmin-ct' ARCHITECTURE='x86-64' PARAMETER_SET=${{ matrix.parameter_set }} check-sct

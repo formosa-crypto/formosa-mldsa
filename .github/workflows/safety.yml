@@ -24,4 +24,4 @@ jobs:
         cd jasmin-compiler/compiler
         nix-shell --run 'make'
     - name: Run the Jasmin interpreter on an example program
-      run: env JASMINC='jasmin-compiler/compiler/jasminc' PARAMETER_SET=${{ matrix.parameter_set }} IMPLEMENTATION_TYPE=${{ matrix.implementation_type }} make run-interpreter
+      run: make JASMINC='jasmin-compiler/compiler/jasminc' ARCHITECTURE='x86-64' PARAMETER_SET=${{ matrix.parameter_set }} IMPLEMENTATION_TYPE=${{ matrix.implementation_type }} run-interpreter

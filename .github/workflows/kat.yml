@@ -11,8 +11,14 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
+        architecture: ["arm-m4", "x86-64"]
         parameter_set: ["44", "65", "87"]
         implementation_type: ["ref", "avx2"]
+        exclude:
+          - architecture: "arm-m4"
+            parameter_set: "44"
+          - architecture: "arm-m4"
+            parameter_set: "87"
     steps:
     - uses: actions/checkout@master
     - uses: cachix/install-nix-action@v25
@@ -26,4 +32,4 @@ jobs:
     - name: Install pytest and pycryptodome
       run: python3 -m pip install pytest pycryptodome
     - name: Run known-answer tests
-      run: env JASMINC='jasmin-compiler/compiler/jasminc' PARAMETER_SET=${{ matrix.parameter_set }} IMPLEMENTATION_TYPE=${{ matrix.implementation_type }} make test
+      run: make JASMINC='jasmin-compiler/compiler/jasminc' ARCHITECTURE=${{ matrix.architecture}} PARAMETER_SET=${{ matrix.parameter_set }} IMPLEMENTATION_TYPE=${{ matrix.implementation_type }} test
