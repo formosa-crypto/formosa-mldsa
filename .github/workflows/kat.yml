@@ -16,9 +16,11 @@ jobs:
         implementation_type: ["ref", "avx2"]
         exclude:
           - architecture: "arm-m4"
-            parameter_set: "44"
+            implementation_type: "avx2"
           - architecture: "arm-m4"
             parameter_set: "87"
+          - architecture: "arm-m4"
+            parameter_set: "44"
     steps:
     - uses: actions/checkout@master
     - uses: cachix/install-nix-action@v25
