@@ -18,8 +18,8 @@ namespace row_vector {
 
     inline
     fn dot_product(
-        #spill_to_mmx reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs,
-        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output
+        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output,
+        #spill_to_mmx reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[COEFFICIENTS_IN_POLYNOMIAL] product;
@@ -31,13 +31,13 @@ namespace row_vector {
         for i = 0 to COLUMNS_IN_MATRIX_A {
             () = #unspill(lhs, rhs);
             product = polynomial::pointwise_montgomery_multiply_and_reduce(
+                product,
                 lhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
-                rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
-                product
+                rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
             );
 
             () = #unspill(output);
-            output = polynomial::add_to_running_total(product, output);
+            output = polynomial::pointwise_add_to_total(output, product);
             () = #spill(output);
         }
 
@@ -57,9 +57,9 @@ namespace row_vector {
         for i = 0 to ROWS_IN_MATRIX_A {
             out[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
                 dot_product(
+                    out[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
                     matrix_A[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL * i : COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
-                    vector,
-                    out[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
+                    vector
                 );
         }
 

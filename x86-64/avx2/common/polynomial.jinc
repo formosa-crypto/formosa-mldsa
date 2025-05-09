@@ -1,7 +1,8 @@
 require "arithmetic/modular.jinc"
 
 namespace polynomial {
-    fn add(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs_pointer rhs_pointer sum_pointer)
+    fn add(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] sum_pointer lhs_pointer rhs_pointer)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 lhs rhs sum;
@@ -23,9 +24,10 @@ namespace polynomial {
     }
 
     fn subtract(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs_pointer rhs_pointer difference_pointer
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] difference_pointer lhs_pointer rhs_pointer
     )
-    -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
+    -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
         reg u256 lhs rhs difference;
 
         reg u64 offset;
@@ -45,7 +47,7 @@ namespace polynomial {
     }
 
     inline
-    fn add_to_running_total(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial running_total)
+    fn pointwise_add_to_total(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] total polynomial)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 lhs rhs sum;
@@ -55,15 +57,15 @@ namespace polynomial {
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
             lhs = polynomial.[:u256 offset];
-            rhs = running_total.[:u256 offset];
+            rhs = total.[:u256 offset];
 
             sum = #VPADD_8u32(lhs, rhs);
-            running_total.[:u256 offset] = sum;
+            total.[:u256 offset] = sum;
 
             offset += 32;
         }
 
-        return running_total;
+        return total;
     }
 
     inline

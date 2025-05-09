@@ -11,9 +11,9 @@ namespace error_4x {
     require "rejection_sample.jinc"
 
     fn shake256_init(
+        reg ptr u256[25] state,
         reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
-        reg u16 starting_domain_separator,
-        reg ptr u256[25] state
+        reg u16 starting_domain_separator
     ) -> reg ptr u256[25]
     {
         reg u256 t256 zeros;
@@ -106,7 +106,7 @@ namespace error_4x {
         reg u8 flg0 flg1 done;
         reg bool cf zf;
 
-        xof_state = shake256_init(rho_prime, starting_domain_separator, xof_state);
+        xof_state = shake256_init(xof_state, rho_prime, starting_domain_separator);
 
         filled0 = 0;
         filled1 = 0;
@@ -127,19 +127,19 @@ namespace error_4x {
         );
 
         filled = filled0;
-        polynomial0, filled = rejection_sample_multiple_blocks(buf0, polynomial0);
+        polynomial0, filled = rejection_sample_multiple_blocks(polynomial0, buf0);
         filled0 = filled;
 
         filled = filled1;
-        polynomial1, filled = rejection_sample_multiple_blocks(buf1, polynomial1);
+        polynomial1, filled = rejection_sample_multiple_blocks(polynomial1, buf1);
         filled1 = filled;
 
         filled = filled2;
-        polynomial2, filled = rejection_sample_multiple_blocks(buf2, polynomial2);
+        polynomial2, filled = rejection_sample_multiple_blocks(polynomial2, buf2);
         filled2 = filled;
 
         filled = filled3;
-        polynomial3, filled = rejection_sample_multiple_blocks(buf3, polynomial3);
+        polynomial3, filled = rejection_sample_multiple_blocks(polynomial3, buf3);
         filled3 = filled;
 
         _, cf, _, _, zf = #CMP_64(filled0, COEFFICIENTS_IN_POLYNOMIAL);
@@ -174,19 +174,19 @@ namespace error_4x {
             );
 
             filled = filled0;
-            polynomial0, filled = rejection_sample_one_block(buf0[0:SHAKE256_RATE], polynomial0, filled);
+            polynomial0, filled = rejection_sample_one_block(polynomial0, filled, buf0[0:SHAKE256_RATE]);
             filled0 = filled;
 
             filled = filled1;
-            polynomial1, filled = rejection_sample_one_block(buf1[0:SHAKE256_RATE], polynomial1, filled);
+            polynomial1, filled = rejection_sample_one_block(polynomial1, filled, buf1[0:SHAKE256_RATE]);
             filled1 = filled;
 
             filled = filled2;
-            polynomial2, filled = rejection_sample_one_block(buf2[0:SHAKE256_RATE], polynomial2, filled);
+            polynomial2, filled = rejection_sample_one_block(polynomial2, filled, buf2[0:SHAKE256_RATE]);
             filled2 = filled;
 
             filled = filled3;
-            polynomial3, filled = rejection_sample_one_block(buf3[0:SHAKE256_RATE], polynomial3, filled);
+            polynomial3, filled = rejection_sample_one_block(polynomial3, filled, buf3[0:SHAKE256_RATE]);
             filled3 = filled;
 
             _, cf, _, _, _ = #CMP_64(filled0, COEFFICIENTS_IN_POLYNOMIAL);

@@ -54,7 +54,7 @@ fn montgomery_multiply_and_reduce(reg u256 lhs, reg u256 rhs) -> reg u256
 
 namespace polynomial {
     fn pointwise_montgomery_multiply_and_reduce(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs product
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] product lhs rhs
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 lhs_coeffs rhs_coeffs;

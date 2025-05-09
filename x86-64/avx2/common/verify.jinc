@@ -63,10 +63,10 @@ fn reconstruct_signer_commitment(
         t1_element = polynomial::ntt(t1_element);
 
         () = #unspill(challenge_as_ntt);
-        c_times_t1 = polynomial::pointwise_montgomery_multiply_and_reduce(challenge_as_ntt, t1_element, c_times_t1);
+        c_times_t1 = polynomial::pointwise_montgomery_multiply_and_reduce(c_times_t1, challenge_as_ntt, t1_element);
 
         commitment_element = commitment[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL];
-        commitment_element = polynomial::subtract(Az_element, c_times_t1, commitment_element);
+        commitment_element = polynomial::subtract(commitment_element, Az_element, c_times_t1);
         commitment_element = polynomial::reduce32(commitment_element);
         commitment_element = polynomial::invert_ntt_montgomery(commitment_element);
         commitment_element = polynomial::conditionally_add_modulus(commitment_element);
@@ -83,7 +83,7 @@ fn reconstruct_signer_commitment(
 }
 
 fn verify_internal(
-     reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
     #spill_to_mmx reg u64 message message_size,
     #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature_encoded
 ) -> reg u64 {
@@ -105,9 +105,9 @@ fn verify_internal(
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints;
 
     // TODO: Ensure we don't have to check the bounds here.
-    signer_response = gamma1::decode(signature_encoded[COMMITMENT_HASH_SIZE: GAMMA1_ENCODED_SIZE], signer_response);
+    signer_response = gamma1::decode(signer_response, signature_encoded[COMMITMENT_HASH_SIZE: GAMMA1_ENCODED_SIZE]);
 
-    hints, result = signature::decode_hint(signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE], hints);
+    hints, result = signature::decode_hint(hints, signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE]);
 
     if (result == 0) {
         () = #spill(message, message_size);

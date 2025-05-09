@@ -27,8 +27,8 @@ namespace error_polynomial {
     };
 
     fn encode(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
-        reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
+        reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE]
     {
         reg u256 c0 c1 c2 c3 c4 c5 c6 c7;

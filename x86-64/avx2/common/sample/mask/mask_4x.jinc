@@ -1,9 +1,9 @@
 u256 CONST_0123 = (4u64)[3, 2, 1, 0];
 
 fn absorb_for_shake256_4x(
+    reg ptr u256[25] state,
     reg ptr u8[64] rho_prime,
-    reg u16 starting_domain_separator,
-    reg ptr u256[25] state
+    reg u16 starting_domain_separator
 ) -> reg ptr u256[25]
 {
     reg u256 t256 zeros;
@@ -95,7 +95,7 @@ fn sample_mask_polynomial_4x(
     stack u8[EXPAND_TO_BUFFER_SIZE] mask_encoded0 mask_encoded1 mask_encoded2 mask_encoded3;
     stack u32[COEFFICIENTS_IN_POLYNOMIAL] mask0 mask1 mask2 mask3;
 
-    xof_state = absorb_for_shake256_4x(rho_prime, starting_domain_separator, xof_state);
+    xof_state = absorb_for_shake256_4x(xof_state, rho_prime, starting_domain_separator);
     xof_state, mask_encoded0, mask_encoded1, mask_encoded2, mask_encoded3 =
         shake256_squeeze_multiple_blocks_4x(
             xof_state,
@@ -105,10 +105,10 @@ fn sample_mask_polynomial_4x(
             mask_encoded3
         );
 
-    mask0 = gamma1::decode_to_polynomial(mask_encoded0[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE], mask0);
-    mask1 = gamma1::decode_to_polynomial(mask_encoded1[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE], mask1);
-    mask2 = gamma1::decode_to_polynomial(mask_encoded2[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE], mask2);
-    mask3 = gamma1::decode_to_polynomial(mask_encoded3[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE], mask3);
+    mask0 = gamma1::decode_to_polynomial(mask0, mask_encoded0[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);
+    mask1 = gamma1::decode_to_polynomial(mask1, mask_encoded1[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);
+    mask2 = gamma1::decode_to_polynomial(mask2, mask_encoded2[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);
+    mask3 = gamma1::decode_to_polynomial(mask3, mask_encoded3[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);
 
     return mask0, mask1, mask2, mask3;
 }

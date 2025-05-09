@@ -1,9 +1,9 @@
 namespace polynomial {
     // ----------- Layer 0 -------------
     fn butterfly_2(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 start,
-        reg u256 zetas,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+        reg u256 zetas
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 lhs rhs;
@@ -53,7 +53,7 @@ namespace polynomial {
         for i = 0 to 16 {
             start = i * 2;
             zetas = LAYER_0_ZETAS[i];
-            polynomial = butterfly_2(start, zetas, polynomial);
+            polynomial = butterfly_2(polynomial, start, zetas);
         }
 
         return polynomial;
@@ -61,9 +61,9 @@ namespace polynomial {
 
     // ----------- Layer 1 -------------
     fn butterfly_4(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 start,
-        reg u256 zetas,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+        reg u256 zetas
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 lhs rhs;
@@ -108,7 +108,7 @@ namespace polynomial {
         for i = 0 to 16 {
             start = i * 2;
             zetas = LAYER_1_ZETAS[i];
-            polynomial = butterfly_4(start, zetas, polynomial);
+            polynomial = butterfly_4(polynomial, start, zetas);
         }
 
         return polynomial;
@@ -116,9 +116,9 @@ namespace polynomial {
 
     // ----------- Layer 2 -------------
     fn butterfly_8(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 start,
-        reg u256 zetas,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+        reg u256 zetas
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u128 lhs_truncated rhs_truncated;
@@ -172,7 +172,7 @@ namespace polynomial {
         for i = 0 to 16 {
             start = i * 2;
             zetas = LAYER_2_ZETAS[i];
-            polynomial = butterfly_8(start, zetas, polynomial);
+            polynomial = butterfly_8(polynomial, start, zetas);
         }
 
         return polynomial;
@@ -180,11 +180,11 @@ namespace polynomial {
 
     // ----------- Layers 3,4,5 -------------
     fn ntt_round(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 step,
         reg u64 step_by,
         reg u64 start,
-        reg u256 zetas,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+        reg u256 zetas
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 coeffs_i coeffs_i_plus_step;
@@ -241,7 +241,7 @@ namespace polynomial {
         for i = 0 to 16 {
             start = i;
             zetas = LAYER_3_ZETAS[i];
-            polynomial = ntt_round(step, step_by, start, zetas, polynomial);
+            polynomial = ntt_round(polynomial, step, step_by, start, zetas);
         }
 
         return polynomial;
@@ -262,7 +262,7 @@ namespace polynomial {
         for i = 0 to 8 {
             start = i;
             zetas = LAYER_4_ZETAS[i];
-            polynomial = ntt_round(step, step_by, start, zetas, polynomial);
+            polynomial = ntt_round(polynomial, step, step_by, start, zetas);
         }
 
         return polynomial;
@@ -283,7 +283,7 @@ namespace polynomial {
         for i = 0 to 4 {
             start = i;
             zetas = LAYER_5_ZETAS[i];
-            polynomial = ntt_round(step, step_by, start, zetas, polynomial);
+            polynomial = ntt_round(polynomial, step, step_by, start, zetas);
         }
 
         return polynomial;
@@ -291,10 +291,10 @@ namespace polynomial {
 
     // ----------- Layers 6,7 -------------
     fn multiply(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 start,
         reg u64 step_by,
-        reg u32 zeta,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+        reg u32 zeta
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 prod02 prod13;
@@ -347,10 +347,10 @@ namespace polynomial {
 
     inline
     fn layer(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         inline int _start,
         inline int _step_by,
-        inline int _zeta,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+        inline int _zeta
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         inline int i;
@@ -361,7 +361,7 @@ namespace polynomial {
 
         for i = 0 to 4 {
             start = _start + i;
-            polynomial = multiply(start, step_by, zeta, polynomial);
+            polynomial = multiply(polynomial, start, step_by, zeta);
         }
 
         return polynomial;
@@ -377,17 +377,17 @@ namespace polynomial {
         inline int ZETA_60 = -2_608_894;
         inline int ZETA_61 = -518_909;
 
-        polynomial = layer(0, STEP_BY_7, ZETA_7, polynomial);
-        polynomial = layer(8, STEP_BY_7, ZETA_7, polynomial);
+        polynomial = layer(polynomial, 0, STEP_BY_7, ZETA_7);
+        polynomial = layer(polynomial, 8, STEP_BY_7, ZETA_7);
 
-        polynomial = layer(0, STEP_BY_6, ZETA_60, polynomial);
-        polynomial = layer(16, STEP_BY_6, ZETA_61, polynomial);
+        polynomial = layer(polynomial, 0, STEP_BY_6, ZETA_60);
+        polynomial = layer(polynomial, 16, STEP_BY_6, ZETA_61);
 
-        polynomial = layer(4, STEP_BY_7, ZETA_7, polynomial);
-        polynomial = layer(12, STEP_BY_7, ZETA_7, polynomial);
+        polynomial = layer(polynomial, 4, STEP_BY_7, ZETA_7);
+        polynomial = layer(polynomial, 12, STEP_BY_7, ZETA_7);
 
-        polynomial = layer(4, STEP_BY_6, ZETA_60, polynomial);
-        polynomial = layer(20, STEP_BY_6, ZETA_61, polynomial);
+        polynomial = layer(polynomial, 4, STEP_BY_6, ZETA_60);
+        polynomial = layer(polynomial, 20, STEP_BY_6, ZETA_61);
 
         return polynomial;
     }

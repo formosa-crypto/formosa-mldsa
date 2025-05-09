@@ -1,9 +1,9 @@
 namespace polynomial {
     inline
     fn make_hint(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] low_coefficients high_coefficients,
-        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints
-    ) -> reg u64, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] low_coefficients high_coefficients
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
     {
         reg u256 hint_block;
         reg u256 low abs_low high;
@@ -57,14 +57,14 @@ namespace polynomial {
             weight += num_hints;
         }
 
-        return weight, hints;
+        return hints, weight;
     }
 
     inline
     fn power2round(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] highbits,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lowbits
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lowbits,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL],
          reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {

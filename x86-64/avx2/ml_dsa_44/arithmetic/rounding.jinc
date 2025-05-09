@@ -7,9 +7,9 @@ namespace polynomial {
         (8u32)[43, 43, 43, 43, 43, 43, 43, 43]
     };
     fn decompose (
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lows,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] highs
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] highs,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL],
          reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -86,7 +86,7 @@ namespace polynomial {
 
         zeros = #set0_256();
 
-        lows, highs = decompose(commitment, lows, highs);
+        lows, highs = decompose(lows, highs, commitment);
 
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {

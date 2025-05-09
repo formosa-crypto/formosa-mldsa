@@ -19,9 +19,9 @@ namespace sample {
         mask[BYTES_PER_UNCOMPRESSED_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
                 sample_mask_polynomial_1x
                 (
+                    mask[BYTES_PER_UNCOMPRESSED_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
                     rho_prime,
-                    domain_separator,
-                    mask[BYTES_PER_UNCOMPRESSED_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                    domain_separator
                 );
         domain_separator += 1;
 

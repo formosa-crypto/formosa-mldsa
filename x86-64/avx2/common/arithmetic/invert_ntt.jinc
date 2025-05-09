@@ -1,9 +1,9 @@
 namespace polynomial {
     // ----------- Layer 0 -------------
     fn invert_at_layer_0(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 start,
-        reg u256 zetas,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+        reg u256 zetas
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 coeffs_i coeffs_i_plus_1;
@@ -53,7 +53,7 @@ namespace polynomial {
         for i = 0 to 16 {
             start = i * 2;
             zetas = ZETAS_TO_INVERT_LAYER_0[i];
-            polynomial = invert_at_layer_0(start, zetas, polynomial);
+            polynomial = invert_at_layer_0(polynomial, start, zetas);
         }
 
         return polynomial;
@@ -61,9 +61,9 @@ namespace polynomial {
 
     // ----------- Layer 1 -------------
     fn invert_at_layer_1(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 start,
-        reg u256 zetas,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+        reg u256 zetas
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 coeffs_i coeffs_i_plus_1;
@@ -108,7 +108,7 @@ namespace polynomial {
         for i = 0 to 16 {
             start = i * 2;
             zetas = ZETAS_TO_INVERT_LAYER_1[i];
-            polynomial = invert_at_layer_1(start, zetas, polynomial);
+            polynomial = invert_at_layer_1(polynomial, start, zetas);
         }
 
         return polynomial;
@@ -116,9 +116,9 @@ namespace polynomial {
 
     // ----------- Layer 2 -------------
     fn invert_at_layer_2(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 start,
-        reg u256 zetas,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+        reg u256 zetas
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 coeffs_i coeffs_i_plus_1;
@@ -163,7 +163,7 @@ namespace polynomial {
         for i = 0 to 16 {
             start = i * 2;
             zetas = ZETAS_TO_INVERT_LAYER_2[i];
-            polynomial = invert_at_layer_2(start, zetas, polynomial);
+            polynomial = invert_at_layer_2(polynomial, start, zetas);
         }
 
         return polynomial;
@@ -171,10 +171,10 @@ namespace polynomial {
 
     // ----------- Helper for layers 3 and beyond -------------
     fn invert_ntt_round(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 offset,
         reg u64 step_by,
-        reg u32 zeta,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+        reg u32 zeta
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 a_minus_b;
@@ -230,7 +230,7 @@ namespace polynomial {
             offset = i * STEP * 2 / COEFFICIENTS_PER_YMM_REGISTER;
             step_by = STEP_BY;
             zeta = ZETAS_TO_INVERT_LAYER_3[i];
-            polynomial = invert_ntt_round(offset, step_by, zeta, polynomial);
+            polynomial = invert_ntt_round(polynomial, offset, step_by, zeta);
         }
 
         return polynomial;
@@ -252,7 +252,7 @@ namespace polynomial {
             offset = i * STEP * 2 / COEFFICIENTS_PER_YMM_REGISTER;
             step_by = STEP_BY;
             zeta = ZETAS_TO_INVERT_LAYER_4[i];
-            polynomial = invert_ntt_round(offset, step_by, zeta, polynomial);
+            polynomial = invert_ntt_round(polynomial, offset, step_by, zeta);
         }
 
         return polynomial;
@@ -274,7 +274,7 @@ namespace polynomial {
             offset = i * STEP * 2 / COEFFICIENTS_PER_YMM_REGISTER;
             step_by = STEP_BY;
             zeta = ZETAS_TO_INVERT_LAYER_5[i];
-            polynomial = invert_ntt_round(offset, step_by, zeta, polynomial);
+            polynomial = invert_ntt_round(polynomial, offset, step_by, zeta);
         }
 
         return polynomial;
@@ -296,7 +296,7 @@ namespace polynomial {
             offset = i * STEP * 2 / COEFFICIENTS_PER_YMM_REGISTER;
             step_by = STEP_BY;
             zeta = ZETAS_TO_INVERT_LAYER_6[i];
-            polynomial = invert_ntt_round(offset, step_by, zeta, polynomial);
+            polynomial = invert_ntt_round(polynomial, offset, step_by, zeta);
         }
 
         return polynomial;
@@ -318,8 +318,8 @@ namespace polynomial {
         for i = 0 to 1 {
             offset = i * STEP * 2 / COEFFICIENTS_PER_YMM_REGISTER;
             step_by = STEP_BY;
-            zeta = 25847;
-            polynomial = invert_ntt_round(offset, step_by, zeta, polynomial);
+            zeta = 25_847;
+            polynomial = invert_ntt_round(polynomial, offset, step_by, zeta);
         }
 
         return polynomial;

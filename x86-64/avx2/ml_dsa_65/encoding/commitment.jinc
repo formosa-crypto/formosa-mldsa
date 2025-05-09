@@ -8,8 +8,8 @@ namespace commitment {
 
     inline
     fn encode_polynomial(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment,
-        reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded
+        reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment
     ) -> reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
     {
         reg u256 c0 c1 c2 c3 c4 c5 c6 c7;
@@ -80,8 +80,8 @@ namespace commitment {
             encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE :
                                    ENCODED_COMMITMENT_POLYNOMIAL_SIZE] =
             encode_polynomial(
-                commitment[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
+                encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE],
+                commitment[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
             );
         }
 

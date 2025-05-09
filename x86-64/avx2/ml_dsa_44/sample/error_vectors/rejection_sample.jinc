@@ -40,10 +40,10 @@ inline fn reduce_coefficients(reg u256 coefficients) -> reg u256 {
 
 inline fn
 write_out_8_coefficients(
-    reg u128 coefficient_block,
-    reg u64 good_overall,
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
     reg u64 bytes_filled,
-    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error
+    reg u64 good_overall,
+    reg u128 coefficient_block
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64, reg u64
 {
     reg u256 error_coefficients;
@@ -81,8 +81,8 @@ write_out_8_coefficients(
 }
 
 fn rejection_sample_multiple_blocks(
-    #secret reg ptr u8[REJECTION_SAMPLING_BYTES] randombytes,
-    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error
+    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
+    #secret reg ptr u8[REJECTION_SAMPLING_BYTES] randombytes
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
 {
     reg u128 bytestream;
@@ -136,14 +136,14 @@ fn rejection_sample_multiple_blocks(
 
         // Start with the first 8
         #declassify good_overall = good_overall;
-        error, bytes_filled, good_overall = write_out_8_coefficients(coefficient_block, good_overall, bytes_filled, error);
+        error, bytes_filled, good_overall = write_out_8_coefficients(error, bytes_filled, good_overall, coefficient_block);
 
         xof_offset += 4;
 
         if (bytes_filled < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
             // Then the next 8
             coefficient_block = #VPSRLDQ_128(coefficient_block, 8);
-            error, bytes_filled, good_overall = write_out_8_coefficients(coefficient_block, good_overall, bytes_filled, error);
+            error, bytes_filled, good_overall = write_out_8_coefficients(error, bytes_filled, good_overall, coefficient_block);
             xof_offset += 4;
 
             if (bytes_filled < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
@@ -151,13 +151,13 @@ fn rejection_sample_multiple_blocks(
                 coefficient_block = #VEXTRACTI128(coefficients, 1);
 
                 // Start with the first 8
-                error, bytes_filled, good_overall = write_out_8_coefficients(coefficient_block, good_overall, bytes_filled, error);
+                error, bytes_filled, good_overall = write_out_8_coefficients(error, bytes_filled, good_overall, coefficient_block);
                 xof_offset += 4;
 
                 if (bytes_filled < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
                     // Finally, the last 8
                     coefficient_block = #VPSRLDQ_128(coefficient_block, 8);
-                    error, bytes_filled, good_overall = write_out_8_coefficients(coefficient_block, good_overall, bytes_filled, error);
+                    error, bytes_filled, good_overall = write_out_8_coefficients(error, bytes_filled, good_overall, coefficient_block);
                     xof_offset += 4;
                 }
             }
@@ -237,9 +237,9 @@ fn rejection_sample_multiple_blocks(
 }
 
 fn rejection_sample_one_block(
-    reg ptr u8[SHAKE256_RATE] randombytes,
     reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
-    reg u64 filled
+    reg u64 filled,
+    reg ptr u8[SHAKE256_RATE] randombytes
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
 {
     reg u64 xof_offset;
