@@ -11,13 +11,12 @@ JASMINCT ?= jasmin-ct
 # --------------------------------------------------------------------
 #  Assembly generation
 # --------------------------------------------------------------------
-IMPLEMENTATION_SOURCES = $(IMPLEMENTATION)/ml_dsa.jazz \
-                         $(shell find $(IMPLEMENTATION)/ -type f -name '*.jinc') \
+IMPLEMENTATION_SOURCES = $(shell find $(IMPLEMENTATION)/ -type f -name '*.jinc') \
                          $(shell find $(COMMON)/ -type f -name '*.jinc')
 
 OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)_$(ARCHITECTURE)
 
-$(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION_SOURCES)
+$(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION)/ml_dsa.jazz $(IMPLEMENTATION_SOURCES)
 	env JASMINPATH="Common=$(COMMON)" $(JASMINC) -arch=$(ARCHITECTURE) $(JASMINC_FLAGS) -o $@ $<
 
 # --------------------------------------------------------------------

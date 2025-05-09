@@ -1,7 +1,7 @@
 require "arithmetic/modular.jinc"
 
 namespace polynomial {
-    fn add(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs sum)
+    fn add(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] sum lhs rhs)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
         reg u32 lhs_coefficient rhs_coefficient;
 
@@ -20,7 +20,7 @@ namespace polynomial {
         return sum;
     }
 
-    fn subtract(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs difference)
+    fn subtract(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] difference lhs rhs)
     -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
         reg u32 lhs_coefficient rhs_coefficient;
 
@@ -39,25 +39,26 @@ namespace polynomial {
     }
 
     inline
-    fn sum_coefficients(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f sum)
+    fn pointwise_add_to_total(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] total polynomial)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u32 v32 result;
+        reg u32 coefficient running_total;
 
-        reg u64 i;
-        ?{}, i = #set0_64();
+        reg u64 i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            v32 = f[i];
-            result = sum[i];
-            result += v32;
-            sum[i] = result;
+            coefficient = polynomial[i];
+            running_total = total[i];
+            running_total += coefficient;
+
+            total[i] = running_total;
             i += 1;
         }
-        return sum;
+
+        return total;
     }
 
     fn pointwise_montgomery_product(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] lhs rhs product
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] product lhs rhs
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u64 lhs_coefficient rhs_coefficient;
@@ -95,19 +96,18 @@ namespace polynomial {
         return polynomial;
     }
 
-    fn conditionally_add_modulus(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f)
+    fn conditionally_add_modulus(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 i;
-        reg u32 val;
-        ?{}, i = #set0_64();
+        reg u32 coefficient;
+        reg u64 i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            val = f[i];
-            val = coefficient::conditionally_add_modulus(val);
-            f[i] = val;
+            coefficient = polynomial[i];
+            coefficient = coefficient::conditionally_add_modulus(coefficient);
+            polynomial[i] = coefficient;
             i += 1;
         }
-        return f;
+        return polynomial;
     }
 
     inline
@@ -135,9 +135,9 @@ namespace polynomial {
 
     inline
     fn make_hint(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f0 f1,
-        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints
-    ) -> reg u32, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] f0 f1
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u32
     {
         reg u32 weight a0 a1 hint;
         #spill_to_mmx reg u64 i;
@@ -164,7 +164,7 @@ namespace polynomial {
             i += 1;
         }
 
-        return weight, hints;
+        return hints, weight;
     }
 
     fn reduce32(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)

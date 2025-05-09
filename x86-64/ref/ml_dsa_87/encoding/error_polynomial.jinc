@@ -3,8 +3,9 @@ require "../parameters.jinc"
 // N.B.: This file varies according to parameter set.
 
 namespace error_polynomial {
-    fn encode(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
-              reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
+    fn encode(
+        reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE]
     {
             reg u32 encoded_byte;

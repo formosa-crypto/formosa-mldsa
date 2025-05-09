@@ -1,5 +1,3 @@
-require "../hashing.jinc"
-
 inline
 fn absorb_for_shake128(
     reg ptr u64[25] state,
@@ -30,9 +28,9 @@ fn absorb_for_shake128(
 }
 
 fn rejection_sample_less_than_field_modulus(
-    reg ptr u64[25] state,
     #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result,
-    #spill_to_mmx reg u64 sampled
+    #spill_to_mmx reg u64 sampled,
+    reg ptr u64[25] state
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
 {
     reg u64 xof_offset;
@@ -84,10 +82,10 @@ fn rejection_sample_less_than_field_modulus(
 
 inline
 fn sample_polynomial(
+    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result,
     reg ptr u8[32] rho,
     inline int i,
-    inline int j,
-    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result
+    inline int j
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
 {
     #spill_to_mmx reg u64 coefficients_sampled;
@@ -99,14 +97,14 @@ fn sample_polynomial(
     () = #unspill(result);
 
     coefficients_sampled = 0;
-    result, coefficients_sampled = rejection_sample_less_than_field_modulus(state, result, coefficients_sampled);
+    result, coefficients_sampled = rejection_sample_less_than_field_modulus(result, coefficients_sampled, state);
 
     while (coefficients_sampled < COEFFICIENTS_IN_POLYNOMIAL) {
         () = #spill(coefficients_sampled, result);
         state = _keccakf1600_ref1(state);
         () = #unspill(coefficients_sampled, result);
 
-        result, coefficients_sampled = rejection_sample_less_than_field_modulus(state, result, coefficients_sampled);
+        result, coefficients_sampled = rejection_sample_less_than_field_modulus(result, coefficients_sampled, state);
     }
 
     return result;
@@ -130,10 +128,10 @@ namespace sample {
                 matrix_A[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
                     sample_polynomial
                     (
+                        matrix_A[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
                         rho,
                         i,
-                        j,
-                        matrix_A[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                        j
                     );
             }
         }

@@ -66,10 +66,10 @@ fn reconstruct_signer_commitment(
         t1_element = polynomial::ntt(t1_element);
 
         () = #unspill(challenge_as_ntt);
-        c_times_t1 = polynomial::pointwise_montgomery_product(challenge_as_ntt, t1_element, c_times_t1);
+        c_times_t1 = polynomial::pointwise_montgomery_product(c_times_t1, challenge_as_ntt, t1_element);
 
         commitment_element = commitment[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL];
-        commitment_element = polynomial::subtract(Az_element, c_times_t1, commitment_element);
+        commitment_element = polynomial::subtract(commitment_element, Az_element, c_times_t1);
         commitment_element = polynomial::reduce32(commitment_element);
         commitment_element = polynomial::invert_ntt_montgomery(commitment_element);
         commitment_element = polynomial::conditionally_add_modulus(commitment_element);
@@ -113,12 +113,12 @@ fn verify_internal(
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints;
 
-    signer_response = gamma1::decode(signature_encoded[COMMITMENT_HASH_SIZE: GAMMA1_ENCODED_SIZE], signer_response);
+    signer_response = gamma1::decode(signer_response, signature_encoded[COMMITMENT_HASH_SIZE: GAMMA1_ENCODED_SIZE]);
 
     #declassify signer_response_outside_bounds = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
     _ = #init_msf();
     if (signer_response_outside_bounds == 0) {
-        #declassify hints, result = signature::decode_hint(signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE], hints);
+        #declassify hints, result = signature::decode_hint(hints, signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE]);
 
         if (result == 0) {
             () = #spill(message, message_size);

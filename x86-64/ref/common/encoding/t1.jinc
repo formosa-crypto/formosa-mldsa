@@ -1,7 +1,7 @@
 namespace t1 {
     fn encode_polynomial(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1,
-        reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] t1_encoded
+        reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1
     ) -> reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE]
     {
         reg u64 i;
@@ -13,14 +13,14 @@ namespace t1 {
 
         i = 0;
         while(i < COEFFICIENTS_IN_POLYNOMIAL / 4) {
-            // t1_encoded[5*i+0] = t1[4*i+0] >> 0;
+            // encoded[5*i+0] = t1[4*i+0] >> 0;
 
             encoded_bytes = t1[input_offset];
 
-            t1_encoded[output_offset] = (8u)encoded_bytes;
+            encoded[output_offset] = (8u)encoded_bytes;
             output_offset += 1;
 
-            // t1_encoded[5*i+1] = (t1[4*i+0] >> 8) | (t1[4*i+1] << 2);
+            // encoded[5*i+1] = (t1[4*i+0] >> 8) | (t1[4*i+1] << 2);
 
             encoded_bytes = t1[input_offset];
             encoded_bytes >>= 8;
@@ -30,10 +30,10 @@ namespace t1 {
             encoded_byte <<= 2;
             encoded_bytes |= encoded_byte;
 
-            t1_encoded[output_offset] = (8u)encoded_bytes;
+            encoded[output_offset] = (8u)encoded_bytes;
             output_offset += 1;
 
-            // t1_encoded[5*i+2] = (t1[4*i+1] >> 6) | (t1[4*i+2] << 4);
+            // encoded[5*i+2] = (t1[4*i+1] >> 6) | (t1[4*i+2] << 4);
 
             encoded_bytes = t1[input_offset];
             encoded_bytes >>= 6;
@@ -43,10 +43,10 @@ namespace t1 {
             encoded_byte <<= 4;
             encoded_bytes |= encoded_byte;
 
-            t1_encoded[output_offset] = (8u)encoded_bytes;
+            encoded[output_offset] = (8u)encoded_bytes;
             output_offset += 1;
 
-            // t1_encoded[5*i+3] = (t1[4*i+2] >> 4) | (t1[4*i+3] << 6);
+            // encoded[5*i+3] = (t1[4*i+2] >> 4) | (t1[4*i+3] << 6);
 
             encoded_bytes = t1[input_offset];
             encoded_bytes >>= 4;
@@ -56,22 +56,22 @@ namespace t1 {
             encoded_byte <<= 6;
             encoded_bytes |= encoded_byte;
 
-            t1_encoded[output_offset] = (8u)encoded_bytes;
+            encoded[output_offset] = (8u)encoded_bytes;
             output_offset += 1;
 
-            // t1_encoded[5*i+4] = (t1[4*i+3] >> 2);
+            // encoded[5*i+4] = (t1[4*i+3] >> 2);
 
             encoded_bytes = t1[input_offset];
             encoded_bytes >>= 2;
 
-            t1_encoded[output_offset] = (8u)encoded_bytes;
+            encoded[output_offset] = (8u)encoded_bytes;
             output_offset += 1;
 
             input_offset += 1;
             i += 1;
         }
 
-        return t1_encoded;
+        return encoded;
     }
 
     inline fn
@@ -87,8 +87,8 @@ namespace t1 {
         for j = 0 to ROWS_IN_MATRIX_A {
             encoded[j * T1_POLYNOMIAL_ENCODED_SIZE : T1_POLYNOMIAL_ENCODED_SIZE] =
                 encode_polynomial(
-                    t1[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL],
-                    encoded[j * T1_POLYNOMIAL_ENCODED_SIZE : T1_POLYNOMIAL_ENCODED_SIZE]
+                    encoded[j * T1_POLYNOMIAL_ENCODED_SIZE : T1_POLYNOMIAL_ENCODED_SIZE],
+                    t1[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL]
                 );
 
             () = #unspill(t1);
@@ -99,7 +99,7 @@ namespace t1 {
 
     fn decode_polynomial(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1,
-        reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] t1_encoded
+        reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] encoded
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u64 i output_offset input_offset;
@@ -111,10 +111,10 @@ namespace t1 {
 
         i = 0;
         while (i < COEFFICIENTS_IN_POLYNOMIAL / 4) {
-            coefficient = (32u)t1_encoded[input_offset];
+            coefficient = (32u)encoded[input_offset];
             input_offset += 1;
 
-            temp1 = (32u)t1_encoded[input_offset];
+            temp1 = (32u)encoded[input_offset];
             input_offset += 1;
 
             temp2 = temp1;
@@ -126,7 +126,7 @@ namespace t1 {
             output_offset += 1; 
 
             coefficient = temp2 >> 2;
-            temp1 = (32u)t1_encoded[input_offset];
+            temp1 = (32u)encoded[input_offset];
             input_offset += 1;
 
             temp2 = temp1;
@@ -138,7 +138,7 @@ namespace t1 {
             output_offset += 1; 
 
             coefficient = temp2 >> 4;
-            temp1 = (32u)t1_encoded[input_offset];
+            temp1 = (32u)encoded[input_offset];
             input_offset += 1;
 
             temp2 = temp1;
@@ -151,7 +151,7 @@ namespace t1 {
 
             coefficient = temp2 >> 6;
 
-            temp1 = (32u)t1_encoded[input_offset];
+            temp1 = (32u)encoded[input_offset];
             input_offset += 1;
 
             temp1 <<= 2;
@@ -165,5 +165,4 @@ namespace t1 {
 
         return t1;
     }
-
 }

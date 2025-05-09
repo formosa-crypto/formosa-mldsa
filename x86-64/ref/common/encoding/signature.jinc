@@ -85,8 +85,8 @@ namespace signature {
 
     inline
     fn decode_hint(
-        reg ptr u8[HINT_ENCODED_SIZE] hint_encoded,
-        reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints
+        reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints,
+        reg ptr u8[HINT_ENCODED_SIZE] hint_encoded
     ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64
     {
         reg u64 j;

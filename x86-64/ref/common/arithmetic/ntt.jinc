@@ -23,10 +23,10 @@ u32[256] ZETAS_TIMES_MONTGOMERY_R = {
 namespace polynomial {
     inline
     fn ntt_at_layer(
-        inline int LAYER,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 zeta_i,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
-    ) -> reg u64, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+        inline int LAYER
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
     {
         inline int STEP = 1 << LAYER;
         inline int ROUNDS = 128 >> LAYER;
@@ -72,7 +72,7 @@ namespace polynomial {
             round += 1;
         }
 
-        return zeta_i, polynomial;
+        return polynomial, zeta_i;
     }
     fn ntt(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -80,7 +80,7 @@ namespace polynomial {
 
         inline int LAYER;
         for LAYER = 7 downto -1 {
-            zeta_i, polynomial = ntt_at_layer(LAYER, zeta_i, polynomial);
+            polynomial, zeta_i = ntt_at_layer(polynomial, zeta_i, LAYER);
         }
 
         return polynomial;
@@ -88,10 +88,10 @@ namespace polynomial {
 
     inline
     fn invert_ntt_at_layer(
-        inline int LAYER,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 zeta_i,
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
-    ) -> reg u64, reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+        inline int LAYER
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
     {
         inline int STEP = 1 << LAYER;
         inline int ROUNDS = 128 >> LAYER;
@@ -136,7 +136,7 @@ namespace polynomial {
             round += 1;
         }
 
-        return zeta_i, polynomial;
+        return polynomial, zeta_i;
     }
 
     fn invert_ntt_montgomery(
@@ -152,7 +152,7 @@ namespace polynomial {
 
         zeta_i = 255;
         for LAYER = 0 to 8 {
-            zeta_i, polynomial = invert_ntt_at_layer(LAYER, zeta_i, polynomial);
+            polynomial, zeta_i = invert_ntt_at_layer(polynomial, zeta_i, LAYER);
         }
 
         j = 0;

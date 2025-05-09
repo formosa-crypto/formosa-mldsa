@@ -7,8 +7,8 @@ namespace t0 {
         return coefficient;
     }
     fn encode_polynomial(
-        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0,
-        reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE] encoded
+        reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE] encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0
     ) -> reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE]
     {
         stack u32[8] t;
@@ -220,8 +220,8 @@ namespace t0 {
         for j = 0 to ROWS_IN_MATRIX_A {
             encoded[j * T0_POLYNOMIAL_ENCODED_SIZE : T0_POLYNOMIAL_ENCODED_SIZE] =
                 encode_polynomial(
-                    t0[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL],
-                    encoded[j * T0_POLYNOMIAL_ENCODED_SIZE : T0_POLYNOMIAL_ENCODED_SIZE]
+                    encoded[j * T0_POLYNOMIAL_ENCODED_SIZE : T0_POLYNOMIAL_ENCODED_SIZE],
+                    t0[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL]
                 );
             () = #unspill(t0);
         }

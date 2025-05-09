@@ -89,8 +89,8 @@ fn sign_internal(
     seed_for_mask = derive_seed_for_mask(signing_key[32:32], randomness, message_representative, seed_for_mask);
 
     () = #unspill(signing_key);
-    s1 = s1::decode(signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE], s1);
-    s2 = s2::decode(signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY: S2_ENCODED_SIZE], s2);
+    s1 = s1::decode(s1, signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE]);
+    s2 = s2::decode(s2, signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY: S2_ENCODED_SIZE]);
     t0 = t0::decode(t0, signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]);
 
     s1 = row_vector::ntt(s1);
@@ -162,7 +162,7 @@ fn sign_internal(
                 if(infinity_norm_check_result == 0) {
                     #declassify w0_minus_cs2_plus_ct0 = column_vector::add(w0_minus_cs2, ct0);
 
-                    ones_in_hint, hint = column_vector::make_hint(w0_minus_cs2_plus_ct0, w1);
+                    hint, ones_in_hint = column_vector::make_hint(w0_minus_cs2_plus_ct0, w1);
 
                     _ = #init_msf();
                     if(ones_in_hint <= MAX_ONES_IN_HINT) {
