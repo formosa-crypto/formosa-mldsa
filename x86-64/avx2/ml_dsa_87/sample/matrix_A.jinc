@@ -1,6 +1,6 @@
 namespace sample {
     inline
-    fn matrix_A(
+    fn __matrix_A(
         #public reg ptr u8[32] rho
     ) -> stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -22,7 +22,7 @@ namespace sample {
             matrix_A[(index + 1) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
             matrix_A[(index + 2) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
             matrix_A[(index + 3) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
-                = matrix_A::sample_4_polynomials(
+                = matrix_A::__sample_4_polynomials(
                     rho,
                     domain_separators
                 );

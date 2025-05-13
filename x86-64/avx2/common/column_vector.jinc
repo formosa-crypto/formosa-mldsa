@@ -43,7 +43,7 @@ namespace column_vector {
     }
 
     inline
-    fn power2round(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+    fn __power2round(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
         -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
            stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -53,7 +53,7 @@ namespace column_vector {
         for i = 0 to ROWS_IN_MATRIX_A {
             t1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
             t0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
-                = polynomial::power2round(
+                = polynomial::__power2round(
                       t1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
                       t0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
                       vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
@@ -64,7 +64,7 @@ namespace column_vector {
     }
 
     inline
-    fn add(
+    fn __add(
         #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs
     ) -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -87,7 +87,7 @@ namespace column_vector {
     }
 
     inline
-    fn conditionally_add_modulus(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+    fn __conditionally_add_modulus(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
         -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         inline int i;
@@ -100,7 +100,7 @@ namespace column_vector {
     }
 
     inline
-    fn decompose(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+    fn __decompose(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
     -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {

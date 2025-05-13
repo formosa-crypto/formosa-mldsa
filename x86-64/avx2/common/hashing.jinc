@@ -6,7 +6,7 @@ require "keccak/keccak1600.jinc"
 param int FULL_BLOCKS_IN_VERIFICATION_KEY = VERIFICATION_KEY_SIZE / SHAKE256_RATE;
 
 inline
-fn hash_verification_key(
+fn __hash_verification_key(
     #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
     #spill_to_mmx reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash
 ) -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE]
@@ -76,7 +76,7 @@ fn hash_verification_key(
 }
 
 inline
-fn shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u64[25], reg u64 {
+fn __shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u64[25], reg u64 {
     if (offset >= SHAKE256_RATE) {
         state = _keccakf1600_ref1(state);
         ?{}, offset = #set0_64();
@@ -84,7 +84,7 @@ fn shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u
     return state, offset;
 }
 inline
-fn derive_message_representative(
+fn __derive_message_representative(
     reg ptr u8[VERIFICATION_KEY_HASH_SIZE] hash_of_verification_key,
     #spill_to_mmx reg u64 message,
     #spill_to_mmx reg u64 message_size
@@ -128,11 +128,11 @@ fn derive_message_representative(
     }
 
     // Absorb separator byte
-    state, state_offset = shake256_consider_permute(state, state_offset);
+    state, state_offset = __shake256_consider_permute(state, state_offset);
     state[:u8 state_offset] ^= 0x1f;
 
     // Finish
-    state, state_offset = shake256_consider_permute(state, state_offset);
+    state, state_offset = __shake256_consider_permute(state, state_offset);
     state[:u8 SHAKE256_RATE-1] ^= 0x80;
 
     state = _keccakf1600_ref1(state);
@@ -155,7 +155,7 @@ fn derive_message_representative(
 param int FULL_COMMITMENT_BLOCKS_TO_ABSORB = (ENCODED_COMMITMENT_SIZE - 72) / SHAKE256_RATE;
 
 inline
-fn derive_commitment_hash(
+fn __derive_commitment_hash(
     reg ptr u8[64] message_representative,
     #spill_to_mmx reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment
     ) -> stack u8[COMMITMENT_HASH_SIZE]

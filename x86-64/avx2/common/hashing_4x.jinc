@@ -1,6 +1,6 @@
 require "keccak_4x/api.jinc"
 
-fn __shake128_squeezeblock4x(
+fn shake128_squeezeblock4x(
     reg ptr u256[25] state,
     reg ptr u8[SHAKE128_RATE] h0 h1 h2 h3
 ) ->
@@ -30,7 +30,7 @@ fn __shake128_squeezeblock4x(
     return state, h0, h1, h2, h3;
 }
 
-fn __shake256_squeezeblock4x(
+fn shake256_squeezeblock4x(
     reg ptr u256[25] state,
     reg ptr u8[SHAKE256_RATE] h0 h1 h2 h3
 ) ->

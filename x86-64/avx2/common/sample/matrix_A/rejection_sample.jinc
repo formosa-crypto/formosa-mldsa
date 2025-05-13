@@ -19,7 +19,7 @@ u256[3] DECODING_TABLE = {
 // Read in 32 bytes to fill up the YMM register, but we only use the first 24,
 // since 24 bytes already give us 8 potential coefficients.
 inline
-fn bytestream_to_potential_coefficients(reg u256 bytestream) -> reg u256 {
+fn __bytestream_to_potential_coefficients(reg u256 bytestream) -> reg u256 {
     reg u256 constants;
     reg u256 coefficients;
 
@@ -75,7 +75,7 @@ fn rejection_sample_multiple_blocks(
 
     while (!done) {
         potential_coefficients = randombytes.[:u256 input_offset];
-        potential_coefficients = bytestream_to_potential_coefficients(potential_coefficients);
+        potential_coefficients = __bytestream_to_potential_coefficients(potential_coefficients);
         input_offset += 24;
 
         compare_with_field_modulus = #VPCMPGT_8u32(modulus, potential_coefficients);

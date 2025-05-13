@@ -1,6 +1,6 @@
 namespace sample {
     inline
-    fn mask(stack u8[64] rho_prime, stack u16 domain_separator)
+    fn __mask(stack u8[64] rho_prime, stack u16 domain_separator)
         -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], stack u16
     {
         stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask;
@@ -9,7 +9,7 @@ namespace sample {
         mask[COEFFICIENTS_IN_POLYNOMIAL * 1 : COEFFICIENTS_IN_POLYNOMIAL],
         mask[COEFFICIENTS_IN_POLYNOMIAL * 2 : COEFFICIENTS_IN_POLYNOMIAL],
         mask[COEFFICIENTS_IN_POLYNOMIAL * 3 : COEFFICIENTS_IN_POLYNOMIAL] =
-            sample_mask_polynomial_4x
+            __sample_mask_polynomial_4x
             (
                 rho_prime,
                 domain_separator
@@ -20,7 +20,7 @@ namespace sample {
         mask[COEFFICIENTS_IN_POLYNOMIAL * 5 : COEFFICIENTS_IN_POLYNOMIAL],
         mask[COEFFICIENTS_IN_POLYNOMIAL * 6 : COEFFICIENTS_IN_POLYNOMIAL],
         _ =
-            sample_mask_polynomial_4x
+            __sample_mask_polynomial_4x
             (
                 rho_prime,
                 domain_separator

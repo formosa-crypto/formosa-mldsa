@@ -87,7 +87,7 @@ namespace matrix_A {
             b2[i*SHAKE128_RATE:SHAKE128_RATE],
             b3[i*SHAKE128_RATE:SHAKE128_RATE]
             =
-            __shake128_squeezeblock4x(
+            shake128_squeezeblock4x(
                 state,
                 b0[i*SHAKE128_RATE:SHAKE128_RATE],
                 b1[i*SHAKE128_RATE:SHAKE128_RATE],
@@ -100,7 +100,7 @@ namespace matrix_A {
     }
 
     inline
-    fn sample_4_polynomials(
+    fn __sample_4_polynomials(
         reg ptr u8[32] rho,
         stack u16[4] domain_separators
     ) -> stack u32[COEFFICIENTS_IN_POLYNOMIAL],
@@ -158,7 +158,7 @@ namespace matrix_A {
             buf1[0:SHAKE128_RATE],
             buf2[0:SHAKE128_RATE],
             buf3[0:SHAKE128_RATE]
-            = __shake128_squeezeblock4x(
+            = shake128_squeezeblock4x(
                 xof_state,
                 buf0[0:SHAKE128_RATE],
                 buf1[0:SHAKE128_RATE],

@@ -29,7 +29,7 @@ namespace gamma1 {
 
 
     inline
-    fn encode_polynomial(
+    fn __encode_polynomial(
         reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] output,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE]
@@ -84,7 +84,7 @@ namespace gamma1 {
         (8u32)[6, 4, 2, 0, 6, 4, 2, 0]
     };
     inline
-    fn decode_to_polynomial(
+    fn __decode_to_polynomial(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] bytes
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
@@ -139,7 +139,7 @@ namespace gamma1 {
     }
 
     inline
-    fn decode(
+    fn __decode(
         reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] decoded,
         reg ptr u8[GAMMA1_ENCODED_SIZE] encoded
     ) -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
@@ -149,7 +149,7 @@ namespace gamma1 {
         for i = 0 to COLUMNS_IN_MATRIX_A {
 
             decoded[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
-                decode_to_polynomial(
+                __decode_to_polynomial(
                     decoded[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
                     encoded[i * ENCODED_GAMMA1_POLYNOMIAL_SIZE : ENCODED_GAMMA1_POLYNOMIAL_SIZE]
                 );

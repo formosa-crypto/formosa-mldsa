@@ -66,7 +66,7 @@ export fn ml_dsa_65_keygen(
      reg ptr u8[SIGNING_KEY_SIZE]
 {
     () = #spill(randomness);
-    verification_key, signing_key = keygen_internal(verification_key, signing_key, randomness);
+    verification_key, signing_key = __keygen_internal(verification_key, signing_key, randomness);
 
     return verification_key, signing_key;
 }
@@ -84,7 +84,7 @@ export fn ml_dsa_65_sign(
     reg ptr u8[32] randomness
 ) -> reg ptr u8[SIGNATURE_SIZE]
 {
-    signature = sign_internal(signature, signing_key, message, message_size, randomness);
+    signature = __sign_internal(signature, signing_key, message, message_size, randomness);
 
     return signature;
 }
@@ -98,7 +98,7 @@ export fn ml_dsa_65_verify(
     #transient reg u64 message message_size,
     #transient reg ptr u8[SIGNATURE_SIZE] signature
 ) -> #public reg u64 {
-    #public reg u64 verification_result = verify_internal(verification_key, message, message_size, signature);
+    #public reg u64 verification_result = __verify_internal(verification_key, message, message_size, signature);
 
     return verification_result;
 }

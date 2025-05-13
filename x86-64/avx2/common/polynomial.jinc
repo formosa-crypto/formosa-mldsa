@@ -47,7 +47,7 @@ namespace polynomial {
     }
 
     inline
-    fn pointwise_add_to_total(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] total polynomial)
+    fn __pointwise_add_to_total(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] total polynomial)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 lhs rhs sum;
@@ -69,7 +69,7 @@ namespace polynomial {
     }
 
     inline
-    fn zero(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
+    fn __zero(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
         -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 zero_u256;
@@ -87,7 +87,7 @@ namespace polynomial {
     }
 
     inline
-    fn check_infinity_norm(
+    fn __check_infinity_norm(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         inline int threshold
     ) -> reg u8
@@ -132,7 +132,7 @@ namespace polynomial {
     }
 
     inline
-    fn shift_coefficients_left(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
+    fn __shift_coefficients_left(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
         reg u256 coefficients;
 
         reg u64 offset;

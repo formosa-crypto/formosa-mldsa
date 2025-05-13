@@ -77,8 +77,8 @@ namespace t1 {
         return t1_encoded;
     }
 
-    inline fn
-    encode(
+    inline
+    fn __encode(
         reg ptr u8[T1_ENCODED_SIZE] encoded,
         #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t1
     ) -> reg ptr u8[T1_ENCODED_SIZE]

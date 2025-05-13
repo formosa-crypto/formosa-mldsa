@@ -73,7 +73,7 @@ namespace error_4x {
             b2[i*SHAKE256_RATE:SHAKE256_RATE],
             b3[i*SHAKE256_RATE:SHAKE256_RATE]
             =
-            __shake256_squeezeblock4x(
+            shake256_squeezeblock4x(
                 state,
                 b0[i*SHAKE256_RATE:SHAKE256_RATE],
                 b1[i*SHAKE256_RATE:SHAKE256_RATE],
@@ -165,7 +165,7 @@ namespace error_4x {
             buf1[0:SHAKE256_RATE],
             buf2[0:SHAKE256_RATE],
             buf3[0:SHAKE256_RATE]
-            = __shake256_squeezeblock4x(
+            = shake256_squeezeblock4x(
                 xof_state,
                 buf0[0:SHAKE256_RATE],
                 buf1[0:SHAKE256_RATE],

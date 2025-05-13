@@ -346,7 +346,7 @@ namespace polynomial {
     }
 
     inline
-    fn layer(
+    fn __layer(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         inline int _start,
         inline int _step_by,
@@ -377,17 +377,17 @@ namespace polynomial {
         inline int ZETA_60 = -2_608_894;
         inline int ZETA_61 = -518_909;
 
-        polynomial = layer(polynomial, 0, STEP_BY_7, ZETA_7);
-        polynomial = layer(polynomial, 8, STEP_BY_7, ZETA_7);
+        polynomial = __layer(polynomial, 0, STEP_BY_7, ZETA_7);
+        polynomial = __layer(polynomial, 8, STEP_BY_7, ZETA_7);
 
-        polynomial = layer(polynomial, 0, STEP_BY_6, ZETA_60);
-        polynomial = layer(polynomial, 16, STEP_BY_6, ZETA_61);
+        polynomial = __layer(polynomial, 0, STEP_BY_6, ZETA_60);
+        polynomial = __layer(polynomial, 16, STEP_BY_6, ZETA_61);
 
-        polynomial = layer(polynomial, 4, STEP_BY_7, ZETA_7);
-        polynomial = layer(polynomial, 12, STEP_BY_7, ZETA_7);
+        polynomial = __layer(polynomial, 4, STEP_BY_7, ZETA_7);
+        polynomial = __layer(polynomial, 12, STEP_BY_7, ZETA_7);
 
-        polynomial = layer(polynomial, 4, STEP_BY_6, ZETA_60);
-        polynomial = layer(polynomial, 20, STEP_BY_6, ZETA_61);
+        polynomial = __layer(polynomial, 4, STEP_BY_6, ZETA_60);
+        polynomial = __layer(polynomial, 20, STEP_BY_6, ZETA_61);
 
         return polynomial;
     }

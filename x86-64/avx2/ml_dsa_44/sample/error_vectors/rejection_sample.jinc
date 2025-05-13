@@ -1,5 +1,5 @@
 inline
-fn bytestream_to_coefficients(reg u128 bytestream) -> reg u256 {
+fn __bytestream_to_coefficients(reg u128 bytestream) -> reg u256 {
     reg u256 coefficients odd_coefficients;
     reg u256 mask;
     reg u64 temp;
@@ -124,7 +124,7 @@ fn rejection_sample_multiple_blocks(
     while (!done) {
         bytestream = randombytes.[:u128 xof_offset];
 
-        coefficients = bytestream_to_coefficients(bytestream);
+        coefficients = __bytestream_to_coefficients(bytestream);
 
         comparisons = #VPSUB_32u8(coefficients, bound);
         good_overall = #MOVEMASK_32u8(comparisons);
