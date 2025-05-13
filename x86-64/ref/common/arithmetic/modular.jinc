@@ -1,7 +1,7 @@
 param int INVERSE_OF_MODULUS_MOD_MONTGOMERY_R = 58_728_449;
 
 inline
-fn montgomery_reduce(reg u64 a) -> reg u32
+fn __montgomery_reduce(reg u64 a) -> reg u32
 {
     reg u32 a32;
     reg u64 v64;
@@ -26,7 +26,7 @@ fn montgomery_reduce(reg u64 a) -> reg u32
 
 namespace coefficient {
     inline
-    fn reduce32(reg u32 coefficient) -> reg u32
+    fn __reduce32(reg u32 coefficient) -> reg u32
     {
         reg u32 t quotient;
 
@@ -45,7 +45,7 @@ namespace coefficient {
     }
 
     inline
-    fn conditionally_add_modulus(reg u32 coefficient) -> reg u32 {
+    fn __conditionally_add_modulus(reg u32 coefficient) -> reg u32 {
         reg u32 add_by;
         reg u32 result;
 

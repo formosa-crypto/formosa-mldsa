@@ -22,7 +22,7 @@ u32[256] ZETAS_TIMES_MONTGOMERY_R = {
 
 namespace polynomial {
     inline
-    fn ntt_at_layer(
+    fn __ntt_at_layer(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 zeta_i,
         inline int LAYER
@@ -56,7 +56,7 @@ namespace polynomial {
                 zeta = (64s)zetas[zeta_i];
 
                 t64 *= zeta;
-                t = montgomery_reduce(t64);
+                t = __montgomery_reduce(t64);
 
                 left = polynomial[offset];
                 left -= t;
@@ -80,14 +80,14 @@ namespace polynomial {
 
         inline int LAYER;
         for LAYER = 7 downto -1 {
-            polynomial, zeta_i = ntt_at_layer(polynomial, zeta_i, LAYER);
+            polynomial, zeta_i = __ntt_at_layer(polynomial, zeta_i, LAYER);
         }
 
         return polynomial;
     }
 
     inline
-    fn invert_ntt_at_layer(
+    fn __invert_ntt_at_layer(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         reg u64 zeta_i,
         inline int LAYER
@@ -127,7 +127,7 @@ namespace polynomial {
                 t64 = (64s)t;
 
                 t64 *= zeta;
-                t = montgomery_reduce(t64);
+                t = __montgomery_reduce(t64);
                 polynomial[offset + STEP] = t;
 
                 offset += 1;
@@ -152,7 +152,7 @@ namespace polynomial {
 
         zeta_i = 255;
         for LAYER = 0 to 8 {
-            polynomial, zeta_i = invert_ntt_at_layer(polynomial, zeta_i, LAYER);
+            polynomial, zeta_i = __invert_ntt_at_layer(polynomial, zeta_i, LAYER);
         }
 
         j = 0;
@@ -160,7 +160,7 @@ namespace polynomial {
             coefficient64 = (64s)polynomial[j];
             coefficient64 *= 41_978;
 
-            coefficient = montgomery_reduce(coefficient64);
+            coefficient = __montgomery_reduce(coefficient64);
             polynomial[j] = coefficient;
 
             j += 1;

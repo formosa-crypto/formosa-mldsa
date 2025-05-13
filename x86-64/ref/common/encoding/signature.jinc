@@ -3,7 +3,7 @@ namespace signature {
     param int START_OF_HINT = START_OF_GAMMA1 + GAMMA1_ENCODED_SIZE;
 
     inline
-    fn encode(
+    fn __encode(
         reg ptr u8[SIGNATURE_SIZE] signature,
         reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash,
         reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response,
@@ -31,7 +31,7 @@ namespace signature {
         for k = 0 to COLUMNS_IN_MATRIX_A {
             polynomial_encoded = signature[START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE];
             polynomial = signer_response[k * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            polynomial_encoded = gamma1::encode_polynomial(polynomial_encoded, polynomial);
+            polynomial_encoded = gamma1::__encode_polynomial(polynomial_encoded, polynomial);
             signature[START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE] = polynomial_encoded;
         }
 
@@ -84,7 +84,7 @@ namespace signature {
     }
 
     inline
-    fn decode_hint(
+    fn __decode_hint(
         reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints,
         reg ptr u8[HINT_ENCODED_SIZE] hint_encoded
     ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64

@@ -1,5 +1,5 @@
 inline
-fn absorb_to_generate_errors(
+fn __absorb_to_generate_errors(
     reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
     reg u16 index
 ) -> stack u64[25] {
@@ -107,7 +107,7 @@ fn rejection_sample_less_than_eta(
 }
 
 inline
-fn sample_error_polynomial(
+fn __sample_error_polynomial(
     reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
     inline int i,
     #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error
@@ -117,7 +117,7 @@ fn sample_error_polynomial(
     stack u64[25] state;
 
     () = #spill(error);
-    state = absorb_to_generate_errors(rho_prime, i);
+    state = __absorb_to_generate_errors(rho_prime, i);
     state = _keccakf1600_ref1(state);
     () = #unspill(error);
 
@@ -137,7 +137,7 @@ fn sample_error_polynomial(
 
 namespace sample {
     inline
-    fn error_vectors(stack u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime)
+    fn __error_vectors(stack u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime)
         -> #secret stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
            #secret stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
         stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
@@ -147,7 +147,7 @@ namespace sample {
 
         for i = 0 to COLUMNS_IN_MATRIX_A {
             s1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
-                sample_error_polynomial
+                __sample_error_polynomial
                 (
                     rho_prime,
                     i,
@@ -157,7 +157,7 @@ namespace sample {
 
         for i = 0 to ROWS_IN_MATRIX_A {
             s2[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
-                sample_error_polynomial
+                __sample_error_polynomial
                 (
                     rho_prime,
                     COLUMNS_IN_MATRIX_A + i,

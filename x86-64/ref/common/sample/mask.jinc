@@ -1,5 +1,5 @@
 inline
-fn absorb_for_shake256(
+fn __absorb_for_shake256(
     reg ptr u8[64] rho_prime,
     reg u16 domain_separator
 ) -> stack u64[25]
@@ -32,7 +32,7 @@ param int SHAKE256_BLOCKS_FOR_GAMMA1_ENCODED_POLYNOMIAL =
     (ENCODED_GAMMA1_POLYNOMIAL_SIZE + SHAKE256_RATE - 1) / SHAKE256_RATE;
 
 inline
-fn sample_mask_polynomial(
+fn __sample_mask_polynomial(
     reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] mask,
     reg ptr u8[64] rho_prime,
     reg u16 domain_separator
@@ -46,7 +46,7 @@ fn sample_mask_polynomial(
 
     inline int block_being_squeezed;
 
-    state = absorb_for_shake256(rho_prime, domain_separator);
+    state = __absorb_for_shake256(rho_prime, domain_separator);
 
     mask_encoded_offset = 0;
     for block_being_squeezed = 0 to SHAKE256_BLOCKS_FOR_GAMMA1_ENCODED_POLYNOMIAL {
@@ -68,14 +68,14 @@ fn sample_mask_polynomial(
         block_being_squeezed += 1;
     }
 
-    mask = gamma1::decode_to_polynomial(mask, mask_encoded[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);
+    mask = gamma1::__decode_to_polynomial(mask, mask_encoded[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);
 
     return mask;
 }
 
 namespace sample {
     inline
-    fn mask(stack u8[64] rho_prime, stack u16 domain_separator)
+    fn __mask(stack u8[64] rho_prime, stack u16 domain_separator)
         -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], stack u16
     {
         stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask;
@@ -84,7 +84,7 @@ namespace sample {
 
         for i = 0 to COLUMNS_IN_MATRIX_A {
             mask[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
-                sample_mask_polynomial
+                __sample_mask_polynomial
                 (
                     mask[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
                     rho_prime,

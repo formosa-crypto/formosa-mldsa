@@ -1,6 +1,6 @@
 namespace coefficient {
     inline
-    fn power2round(reg u32 r) -> reg u32, reg u32 {
+    fn __power2round(reg u32 r) -> reg u32, reg u32 {
         /*
         int32_t a1; //high bits
 
@@ -24,7 +24,7 @@ namespace coefficient {
     }
 
     inline
-    fn make_hint(reg u32 a0, reg u32 a1, reg u64 msf) -> reg u32, #msf reg u64 {
+    fn __make_hint(reg u32 a0, reg u32 a1, reg u64 msf) -> reg u32, #msf reg u64 {
         reg u32 result;
         inline bool condition;
 
@@ -66,7 +66,7 @@ namespace coefficient {
     }
 
     inline
-    fn check_norm(#secret reg u32 coefficient, inline int threshold) -> stack u8
+    fn __check_norm(#secret reg u32 coefficient, inline int threshold) -> stack u8
     {
         reg u32 sign_mask;
         stack u32 c;

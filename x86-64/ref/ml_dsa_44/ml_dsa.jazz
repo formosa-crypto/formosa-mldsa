@@ -56,7 +56,7 @@ export fn ml_dsa_44_keygen(
 {
     _ = #init_msf();
 
-    verification_key, signing_key = keygen_internal(verification_key, signing_key, randomness);
+    verification_key, signing_key = __keygen_internal(verification_key, signing_key, randomness);
 
     return verification_key, signing_key;
 }
@@ -76,7 +76,7 @@ export fn ml_dsa_44_sign(
 {
     _ = #init_msf();
 
-    signature = sign_internal(signature, signing_key, message, message_size, randomness);
+    signature = __sign_internal(signature, signing_key, message, message_size, randomness);
 
     return signature;
 }
@@ -94,7 +94,7 @@ export fn ml_dsa_44_verify(
 
     _ = #init_msf();
 
-    verification_result = verify_internal(verification_key, message, message_size, signature);
+    verification_result = __verify_internal(verification_key, message, message_size, signature);
 
     return verification_result;
 }

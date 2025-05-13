@@ -2,7 +2,7 @@ from Common require "arithmetic/rounding.jinc"
 
 namespace coefficient {
     inline
-    fn decompose(reg u32 r) -> reg u32, reg u32 {
+    fn __decompose(reg u32 r) -> reg u32, reg u32 {
         reg u32 temp high_bits low_bits;
 
         // a1  = (a + 127) >> 7;
@@ -38,13 +38,13 @@ namespace coefficient {
     }
 
     inline
-    fn use_hint(reg u32 a hint, reg u64 msf) -> reg u32, #msf reg u64 {
+    fn __use_hint(reg u32 a hint, reg u64 msf) -> reg u32, #msf reg u64 {
         reg u32 a0;
         reg u32 a1;
 
         inline bool b;
 
-        a0, a1 = decompose(a);
+        a0, a1 = __decompose(a);
 
         b = hint != 0;
         if (b) {

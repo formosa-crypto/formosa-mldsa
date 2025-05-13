@@ -1,6 +1,6 @@
 namespace s1 {
     inline
-    fn encode(
+    fn __encode(
         reg ptr u8[S1_ENCODED_SIZE] encoded,
         #spill_to_mmx reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1
     ) -> reg ptr u8[S1_ENCODED_SIZE]
@@ -21,7 +21,7 @@ namespace s1 {
     }
 
     inline
-    fn decode(
+    fn __decode(
         reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1,
         #spill_to_mmx reg ptr u8[S1_ENCODED_SIZE] encoded
     ) -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]

@@ -1,5 +1,5 @@
 inline
-fn absorb_to_generate_challenges(
+fn __absorb_to_generate_challenges(
     reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash
 ) -> stack u64[25] {
     stack u64[25] state;
@@ -22,7 +22,7 @@ fn absorb_to_generate_challenges(
 
 namespace sample {
     inline
-    fn challenge(
+    fn __challenge(
         #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output_challenge,
         reg ptr u8[COMMITMENT_HASH_SIZE] seed
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
@@ -37,7 +37,7 @@ namespace sample {
 
         inline int j;
 
-        state = absorb_to_generate_challenges(seed);
+        state = __absorb_to_generate_challenges(seed);
 
         () = #spill(output_challenge);
         state = _keccakf1600_ref1(state);

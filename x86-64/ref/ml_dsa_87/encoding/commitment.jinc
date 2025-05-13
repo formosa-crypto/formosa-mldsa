@@ -1,6 +1,6 @@
 namespace commitment {
     inline
-    fn encode_polynomial(
+    fn __encode_polynomial(
         reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
@@ -24,7 +24,7 @@ namespace commitment {
     }
 
     inline
-    fn encode(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] commitment)
+    fn __encode(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] commitment)
         -> stack u8[ENCODED_COMMITMENT_SIZE]
     {
         stack u8[ENCODED_COMMITMENT_SIZE] encoded_commitment;
@@ -34,7 +34,7 @@ namespace commitment {
         for i = 0 to ROWS_IN_MATRIX_A {
             encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE :
                                    ENCODED_COMMITMENT_POLYNOMIAL_SIZE] =
-            encode_polynomial(
+            __encode_polynomial(
                 encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE],
                 commitment[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
             );

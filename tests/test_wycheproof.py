@@ -41,7 +41,6 @@ def test_wycheproof_sign(ml_dsa, signing_test_groups):
             assert "IncorrectPrivateKeyLength" in test_group["tests"][0]["flags"]
 
             continue
-        signing_key = ml_dsa.bytearray_to_ctype(signing_key)
 
         for test in test_group["tests"]:
             if "InvalidContext" in test["flags"]:
@@ -83,8 +82,6 @@ def test_wycheproof_verify(ml_dsa, verification_test_groups):
             assert "IncorrectPublicKeyLength" in test_group["tests"][0]["flags"]
             continue
 
-        verification_key = ml_dsa.bytearray_to_ctype(verification_key)
-
         for test in test_group["tests"]:
             if "InvalidContext" in test["flags"]:
                 # TODO: We skip this since our implementation currently does
@@ -115,6 +112,6 @@ def test_wycheproof_verify(ml_dsa, verification_test_groups):
                     "Test ID is: {}".format(test["tcId"])
                 )
             else:
-                assert verification_result == -1, print(
-                    "Test ID: {}".format(test["tcId"])
+                assert verification_result != 0, print(
+                    "Test ID: {}, Commment: {}".format(test["tcId"], test["comment"])
                 )

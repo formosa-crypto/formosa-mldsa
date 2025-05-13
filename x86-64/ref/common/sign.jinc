@@ -29,7 +29,7 @@ fn derive_seed_for_mask(
        {ptr: public, val: secret} ->
        {ptr: public, val: transient}"]
 inline
-fn sign_internal(
+fn __sign_internal(
     #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature,
     #spill_to_mmx reg ptr u8[SIGNING_KEY_SIZE] signing_key,
     reg u64 pointer_to_message,
@@ -73,7 +73,7 @@ fn sign_internal(
     reg u8 infinity_norm_check_result;
 
     () = #spill(randomness, signature, signing_key);
-    message_representative = derive_message_representative(
+    message_representative = __derive_message_representative(
         signing_key[64:VERIFICATION_KEY_HASH_SIZE],
         pointer_to_message,
         message_size);
@@ -82,16 +82,16 @@ fn sign_internal(
     #declassify seed_for_matrix_A = signing_key[0:32];
 
     _ = #init_msf();
-    matrix_A = sample::matrix_A(seed_for_matrix_A);
+    matrix_A = sample::__matrix_A(seed_for_matrix_A);
 
     () = #unspill(randomness);
     () = #unspill(signing_key);
     seed_for_mask = derive_seed_for_mask(signing_key[32:32], randomness, message_representative, seed_for_mask);
 
     () = #unspill(signing_key);
-    s1 = s1::decode(s1, signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE]);
-    s2 = s2::decode(s2, signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY: S2_ENCODED_SIZE]);
-    t0 = t0::decode(t0, signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]);
+    s1 = s1::__decode(s1, signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE]);
+    s2 = s2::__decode(s2, signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY: S2_ENCODED_SIZE]);
+    t0 = t0::__decode(t0, signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]);
 
     s1 = row_vector::ntt(s1);
     s2 = column_vector::ntt(s2);
@@ -111,58 +111,58 @@ fn sign_internal(
     // The security of this rejection sampling loop CANNOT be established through
     // type-checking alone, and requires proving work in EasyCrypt.
     while (exit_rejection_sampling_loop != 1) {
-        mask, domain_separator_for_mask = sample::mask(seed_for_mask, domain_separator_for_mask);
+        mask, domain_separator_for_mask = sample::__mask(seed_for_mask, domain_separator_for_mask);
 
         mask_as_ntt = #copy(mask);
         mask_as_ntt = row_vector::ntt(mask_as_ntt);
-        w = row_vector::multiply_with_matrix_A(matrix_A, mask_as_ntt);
+        w = row_vector::__multiply_with_matrix_A(matrix_A, mask_as_ntt);
         w = column_vector::reduce32(w);
         w = column_vector::invert_ntt_montgomery(w);
 
-        w = column_vector::conditionally_add_modulus(w);
-        #declassify w0, w1 = column_vector::decompose(w);
+        w = column_vector::__conditionally_add_modulus(w);
+        #declassify w0, w1 = column_vector::__decompose(w);
 
-        commitment_encoded = commitment::encode(w1);
+        commitment_encoded = commitment::__encode(w1);
 
         () = #spill(domain_separator_for_mask);
-        commitment_hash = derive_commitment_hash(message_representative, commitment_encoded);
+        commitment_hash = __derive_commitment_hash(message_representative, commitment_encoded);
 
-        verifier_challenge = sample::challenge(verifier_challenge, commitment_hash);
+        verifier_challenge = sample::__challenge(verifier_challenge, commitment_hash);
         () = #unspill(domain_separator_for_mask);
 
         verifier_challenge = polynomial::ntt(verifier_challenge);
 
-        cs1 = row_vector::multiply_by_polynomial(s1, verifier_challenge);
+        cs1 = row_vector::__multiply_by_polynomial(s1, verifier_challenge);
         cs1 = row_vector::invert_ntt_montgomery(cs1);
-        signer_response = row_vector::add(cs1, mask);
+        signer_response = row_vector::__add(cs1, mask);
         signer_response = row_vector::reduce32(signer_response);
-        infinity_norm_check_result = row_vector::check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
+        infinity_norm_check_result = row_vector::__check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
         #declassify infinity_norm_check_result = infinity_norm_check_result;
 
         _ = #init_msf();
 
         if(infinity_norm_check_result == 0) {
-            cs2 = column_vector::multiply_by_polynomial(s2, verifier_challenge);
+            cs2 = column_vector::__multiply_by_polynomial(s2, verifier_challenge);
             cs2 = column_vector::invert_ntt_montgomery(cs2);
-            w0_minus_cs2 = column_vector::subtract(w0, cs2);
+            w0_minus_cs2 = column_vector::__subtract(w0, cs2);
             w0_minus_cs2 = column_vector::reduce32(w0_minus_cs2);
-            infinity_norm_check_result = column_vector::check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
+            infinity_norm_check_result = column_vector::__check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
             #declassify infinity_norm_check_result = infinity_norm_check_result;
 
             _ = #init_msf();
 
             if(infinity_norm_check_result == 0) {
-                ct0 = column_vector::multiply_by_polynomial(t0, verifier_challenge);
+                ct0 = column_vector::__multiply_by_polynomial(t0, verifier_challenge);
                 ct0 = column_vector::invert_ntt_montgomery(ct0);
                 ct0 = column_vector::reduce32(ct0);
-                infinity_norm_check_result = column_vector::check_infinity_norm(ct0, GAMMA2);
+                infinity_norm_check_result = column_vector::__check_infinity_norm(ct0, GAMMA2);
                 #declassify infinity_norm_check_result = infinity_norm_check_result;
 
                 _ = #init_msf();
                 if(infinity_norm_check_result == 0) {
-                    #declassify w0_minus_cs2_plus_ct0 = column_vector::add(w0_minus_cs2, ct0);
+                    #declassify w0_minus_cs2_plus_ct0 = column_vector::__add(w0_minus_cs2, ct0);
 
-                    hint, ones_in_hint = column_vector::make_hint(w0_minus_cs2_plus_ct0, w1);
+                    hint, ones_in_hint = column_vector::__make_hint(w0_minus_cs2_plus_ct0, w1);
 
                     _ = #init_msf();
                     if(ones_in_hint <= MAX_ONES_IN_HINT) {
@@ -178,6 +178,6 @@ fn sign_internal(
     #declassify signer_response = signer_response;
     #declassify hint = hint;
     #declassify commitment_hash = commitment_hash;
-    signature = signature::encode(signature, commitment_hash, signer_response, hint);
+    signature = signature::__encode(signature, commitment_hash, signer_response, hint);
     return signature;
 }

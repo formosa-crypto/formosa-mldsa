@@ -1,5 +1,5 @@
 inline
-fn absorb_for_shake128(
+fn __absorb_for_shake128(
     reg ptr u64[25] state,
     reg const ptr u8[32] rho,
     inline int i,
@@ -81,7 +81,7 @@ fn rejection_sample_less_than_field_modulus(
 }
 
 inline
-fn sample_polynomial(
+fn __sample_polynomial(
     #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result,
     reg ptr u8[32] rho,
     inline int i,
@@ -92,7 +92,7 @@ fn sample_polynomial(
     stack u64[25] state;
 
     () = #spill(result);
-    state = absorb_for_shake128(state, rho, i, j);
+    state = __absorb_for_shake128(state, rho, i, j);
     state = _keccakf1600_ref1(state);
     () = #unspill(result);
 
@@ -112,7 +112,7 @@ fn sample_polynomial(
 
 namespace sample {
     inline
-    fn matrix_A(
+    fn __matrix_A(
          #spill_to_mmx reg ptr u8[32] rho
     ) -> stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -126,7 +126,7 @@ namespace sample {
             for j = 0 to COLUMNS_IN_MATRIX_A {
                 () = #unspill(rho);
                 matrix_A[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
-                    sample_polynomial
+                    __sample_polynomial
                     (
                         matrix_A[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
                         rho,

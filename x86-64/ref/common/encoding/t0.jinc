@@ -208,7 +208,7 @@ namespace t0 {
         return encoded;
     }
 
-    inline fn encode(
+    inline fn __encode(
         reg ptr u8[T0_ENCODED_SIZE] encoded,
         #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0
     ) -> reg ptr u8[T0_ENCODED_SIZE]
@@ -230,7 +230,7 @@ namespace t0 {
     }
 
     inline
-    fn decode_polynomial(
+    fn __decode_polynomial(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0,
         reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE] src
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
@@ -422,7 +422,7 @@ namespace t0 {
     }
 
     inline fn
-    decode(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0,
+    __decode(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0,
            reg ptr u8[T0_ENCODED_SIZE] encoded) ->
            reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -430,7 +430,7 @@ namespace t0 {
 
         for i = 0 to ROWS_IN_MATRIX_A {
             t0[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL] =
-                decode_polynomial(
+                __decode_polynomial(
                     t0[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL],
                     encoded[T0_POLYNOMIAL_ENCODED_SIZE * i : T0_POLYNOMIAL_ENCODED_SIZE]
                 );
