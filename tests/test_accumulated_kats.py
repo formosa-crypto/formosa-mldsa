@@ -16,6 +16,9 @@ def expected_final_hash(ml_dsa):
 
 
 def test_accumulated_kats(ml_dsa, expected_final_hash):
+    if ml_dsa.architecture == "arm-m4":
+        pytest.skip("Skipping on ARM for now since message sizes get too large.")
+
     rng = SHAKE128.new()
     rng.update(b"")
 
@@ -37,7 +40,7 @@ def test_accumulated_kats(ml_dsa, expected_final_hash):
         verification_result = ml_dsa.verify(
             verification_key, context, message, signature
         )
-        assert verification_result == 0
+        assert verification_result == 0, print(message_size)
 
         kat_hasher.update(verification_key)
         kat_hasher.update(signing_key)

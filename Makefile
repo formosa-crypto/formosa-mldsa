@@ -29,7 +29,7 @@ $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 # For ARM-M4: Generate a cross-compiled executable to be called by python.
 CROSS_COMPILER ?= arm-none-linux-gnueabihf-gcc
 $(OUTPUT_FILE_NAME).o: arm-m4/wrapper.c $(OUTPUT_FILE_NAME).s
-	$(CROSS_COMPILER) -fPIC -I$(IMPLEMENTATION) $^ -o $@
+	$(CROSS_COMPILER) -Wall -fPIC -I$(IMPLEMENTATION) $^ -o $@
 
 TESTING_WRAPPER :=
 ifeq ($(ARCHITECTURE), x86-64)
@@ -92,4 +92,4 @@ bench/pqclean_ml_dsa_65_avx2/libml-dsa-65_avx2.a:
 # --------------------------------------------------------------------
 .PHONY: clean
 clean:
-	rm -fr *.s *.so *.o
+	rm -fr *.s *.so *.o *.core

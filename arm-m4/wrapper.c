@@ -2,172 +2,150 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include "api.h"
-
-const uint8_t ASCIItoBase16[128] = {
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0x0,  0x1,  0x2,  0x3,  0x4,  0x5,  0x6,  0x7,  0x8,  0x9,  0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xA,  0xB,  0xC,  0xD,  0xE,  0xF,  0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xA,  0xB,  0xC,  0xD,  0xE,  0xF,  0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-};
-
-size_t base16_decode_len(const size_t in_len) { return in_len >> 1; }
-
-static int base16_decode(const uint8_t *in, const size_t in_len, uint8_t *out) {
-  if ((in_len % 2) != 0 || !in || !out) {
-    return -1;
-  }
-
-  for (size_t i = 0; (i + 1) < in_len; i += 2) {
-    uint8_t byte1 = ASCIItoBase16[in[i]];
-    if (byte1 == 0xFF) {
-      return -1;
-    }
-    uint8_t byte2 = ASCIItoBase16[in[i + 1]];
-    if (byte2 == 0xFF) {
-      return -1;
-    }
-    *out++ = (uint8_t)(byte1 << 4) | byte2;
-  }
-  return (0);
-}
 
 int main(int argc, char *argv[]) {
   int operation = atoi(argv[1]);
   switch (operation) {
   case 0: // Keygen
   {
-    uint8_t verification_key[VERIFICATION_KEY_SIZE];
-    uint8_t signing_key[SIGNING_KEY_SIZE];
+    // Inputs, read in binary from stdin
     uint8_t randomness[32];
 
-    int result = base16_decode(argv[2], 64, randomness);
-    assert(result == 0);
+    // Outputs, written in binary to stdout
+    uint8_t verification_key[VERIFICATION_KEY_SIZE];
+    uint8_t signing_key[SIGNING_KEY_SIZE];
+
+    int num_bytes = read(0, randomness, 32);
+    assert(num_bytes == 32);
 
     ml_dsa_65_keygen(verification_key, signing_key, randomness);
 
-    for (size_t i = 0; i < VERIFICATION_KEY_SIZE; i++) {
-      printf("%02x", verification_key[i]);
-    }
-    printf(":");
+    num_bytes = write(1, verification_key, VERIFICATION_KEY_SIZE);
+    assert(num_bytes == VERIFICATION_KEY_SIZE);
 
-    for (size_t i = 0; i < SIGNING_KEY_SIZE; i++) {
-      printf("%02x", signing_key[i]);
-    }
+    num_bytes = write(1, signing_key, SIGNING_KEY_SIZE);
+    assert(num_bytes == SIGNING_KEY_SIZE);
 
     break;
   }
   case 1: // Sign
   {
-    uint8_t signature[SIGNATURE_SIZE];
+    // Inputs
+    uint8_t context_len;
+    uint8_t* context;
+
+    size_t message_len;
+    uint8_t* message;
+
     uint8_t *ctx_m_rand[3];
     size_t ctxlen_mlen[2];
-
-    uint8_t context[255];
-    size_t encoded_context_len, context_len;
-
-    uint8_t *message;
-    size_t encoded_message_len, message_len;
 
     uint8_t randomness[32];
 
     uint8_t signing_key[SIGNING_KEY_SIZE];
 
-    // Decode the context
-    encoded_context_len = atoi(argv[2]);
-    context_len = base16_decode_len(encoded_context_len);
+    // Outputs
+    uint8_t signature[SIGNATURE_SIZE];
 
-    int result = base16_decode(argv[3], encoded_context_len, context);
-    assert(result == 0);
+    // Get the context
+    int num_bytes = read(0, &context_len, 1);
+    assert(num_bytes == 1);
+
+    context = malloc(context_len);
+
+    num_bytes = read(0, context, context_len);
+    assert(num_bytes == context_len);
 
     ctx_m_rand[0] = context;
     ctxlen_mlen[0] = context_len;
 
-    // Message
-    encoded_message_len = atoi(argv[4]);
-    message_len = base16_decode_len(encoded_message_len);
+    // Get the message
+    num_bytes = read(0, &message_len, 4);
+    assert(num_bytes == 4);
 
     message = malloc(message_len);
 
-    result = base16_decode(argv[5], encoded_message_len, message);
-    assert(result == 0);
+    num_bytes = read(0, message, message_len);
+    assert(num_bytes == message_len);
 
     ctx_m_rand[1] = message;
     ctxlen_mlen[1] = message_len;
 
     // Next, the randomness
-    result = base16_decode(argv[6], 64, randomness);
-    assert(result == 0);
+    num_bytes = read(0, randomness, 32);
+    assert(num_bytes == 32);
 
     ctx_m_rand[2] = randomness;
 
     // Finally, the signing key
-    result = base16_decode(argv[7], SIGNING_KEY_SIZE * 2, signing_key);
+    num_bytes = read(0, signing_key, SIGNING_KEY_SIZE);
+    assert(num_bytes == SIGNING_KEY_SIZE);
+
+    int result = ml_dsa_65_sign(signature, ctx_m_rand, ctxlen_mlen, signing_key);
     assert(result == 0);
 
-    result = ml_dsa_65_sign(signature, ctx_m_rand, ctxlen_mlen, signing_key);
-    assert(result == 0);
+    num_bytes = write(1, signature, SIGNATURE_SIZE);
+    assert(num_bytes == SIGNATURE_SIZE);
 
-    for (size_t i = 0; i < SIGNATURE_SIZE; i++) {
-      printf("%02x", signature[i]);
-    }
     break;
   }
   case 2: // Verify
   {
-    uint8_t signature[SIGNATURE_SIZE];
+    // Inputs
+    uint8_t context_len;
+    uint8_t* context;
+
+    size_t message_len;
+    uint8_t* message;
+
     uint8_t *ctx_m[2];
     size_t ctxlen_mlen[2];
 
-    uint8_t context[255];
-    size_t encoded_context_len, context_len;
-
-    uint8_t *message;
-    size_t encoded_message_len, message_len;
+    uint8_t signature[SIGNATURE_SIZE];
 
     uint8_t verification_key[VERIFICATION_KEY_SIZE];
 
-    // Decode the context
-    encoded_context_len = atoi(argv[2]);
-    context_len = base16_decode_len(encoded_context_len);
+    // Get the context
+    int num_bytes = read(0, &context_len, 1);
+    assert(num_bytes == 1);
 
-    int result = base16_decode(argv[3], encoded_context_len, context);
-    assert(result == 0);
+    context = malloc(context_len);
+
+    num_bytes = read(0, context, context_len);
+    assert(num_bytes == context_len);
 
     ctx_m[0] = context;
     ctxlen_mlen[0] = context_len;
 
-    // Message
-    encoded_message_len = atoi(argv[4]);
-    message_len = base16_decode_len(encoded_message_len);
+    // Get the message
+    num_bytes = read(0, &message_len, 4);
+    assert(num_bytes == 4);
 
     message = malloc(message_len);
 
-    result = base16_decode(argv[5], encoded_message_len, message);
-    assert(result == 0);
+    num_bytes = read(0, message, message_len);
+    assert(num_bytes == message_len);
 
     ctx_m[1] = message;
     ctxlen_mlen[1] = message_len;
 
-    // Finally, the signature
-    result = base16_decode(argv[6], SIGNATURE_SIZE * 2, signature);
-    assert(result == 0);
+    // Next, the signature
+    num_bytes = read(0, signature, SIGNATURE_SIZE);
+    assert(num_bytes == SIGNATURE_SIZE);
 
     // Finally, the verification key
-    result =
-        base16_decode(argv[7], VERIFICATION_KEY_SIZE * 2, verification_key);
-    assert(result == 0);
+    num_bytes = read(0, verification_key, VERIFICATION_KEY_SIZE);
+    assert(num_bytes == VERIFICATION_KEY_SIZE);
 
-    result = ml_dsa_65_verify(signature, ctx_m, ctxlen_mlen, verification_key);
-    printf("%d", result);
+    int8_t result = ml_dsa_65_verify(signature, ctx_m, ctxlen_mlen, verification_key);
+
+    num_bytes = write(1, &result, 1);
+    assert(num_bytes == 1);
+
     break;
   }
   }

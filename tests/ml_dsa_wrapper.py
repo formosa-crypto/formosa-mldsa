@@ -6,16 +6,6 @@ from abc import ABC, abstractmethod
 import subprocess
 
 
-def shell(command, expect=0, cwd=None):
-    completed = subprocess.run(command, cwd=cwd, capture_output=True)
-
-    if completed.returncode != expect:
-        print(completed.stderr.decode("utf-8"))
-        raise Exception("Error {}. Expected {}.".format(completed.returncode, expect))
-
-    return completed.stdout.decode("utf-8")
-
-
 class ML_DSA(ABC):
     @abstractmethod
     def generate_keypair(self, randomness):
@@ -39,6 +29,7 @@ class ML_DSA_X86_64(ML_DSA):
         ml_dsa = ctypes.PyDLL(Path(__file__).parent.parent / ml_dsa_so_name)
 
         self.parameter_set = parameter_set
+        self.architecture = "x86-64"
 
         # While we could get this parameters from the source code, they
         # change so infrequently that we might as well just hardcode them
@@ -77,8 +68,6 @@ class ML_DSA_X86_64(ML_DSA):
         return char_array.from_buffer_copy(ba)
 
     def generate_keypair(self, randomness):
-        assert len(randomness) == 32
-
         verification_key = ctypes.create_string_buffer(self.verification_key_size)
         signing_key = ctypes.create_string_buffer(self.signing_key_size)
 
@@ -89,8 +78,6 @@ class ML_DSA_X86_64(ML_DSA):
         return (verification_key.raw, signing_key.raw)
 
     def sign(self, signing_key, context, message, randomness):
-        assert len(randomness) == 32
-
         signature = ctypes.create_string_buffer(self.signature_size)
 
         # TODO: Handle this in the Jasmin code.
@@ -116,10 +103,23 @@ class ML_DSA_X86_64(ML_DSA):
         )
 
 
+def shell(command, expect=0, cwd=None):
+    completed = subprocess.run(command, cwd=cwd, capture_output=True)
+
+    if completed.returncode != expect:
+        print(completed.stderr.decode("utf-8"))
+        raise Exception("Error {}. Expected {}.".format(completed.returncode, expect))
+
+    return completed.stdout.decode("utf-8")
+
+
 class ML_DSA_ARM_M4(ML_DSA):
     def __init__(self, parameter_set, implementation_type):
         self.parameter_set = parameter_set
-        self.wrapper_name = "./ml_dsa_{}_{}_arm-m4.o".format(parameter_set, implementation_type)
+        self.wrapper_name = "./ml_dsa_{}_{}_arm-m4.o".format(
+            parameter_set, implementation_type
+        )
+        self.architecture = "arm-m4"
 
         # TODO: For now, we only have an implementation of ML-DSA-65 on arm-m4,
         # should be easy to extend this class to cover the other 2 parameter-sets.
@@ -128,53 +128,41 @@ class ML_DSA_ARM_M4(ML_DSA):
         self.signature_size = 3309
 
     def generate_keypair(self, randomness):
-        assert len(randomness) == 32
-
-        output = shell(
-            [
-                self.wrapper_name,
-                "0",
-                randomness.hex(),
-            ]
+        output = subprocess.check_output(
+            [self.wrapper_name, "0"], input=randomness, text=False
         )
-        output_split = output.split(":")
 
-        verification_key = bytes.fromhex(output_split[0])
-        signing_key = bytes.fromhex(output_split[1])
+        verification_key = output[0 : self.verification_key_size]
+        signing_key = output[self.verification_key_size :]
 
         return (verification_key, signing_key)
 
     def sign(self, signing_key, context, message, randomness):
-        context = context.hex()
-        message = message.hex()
-        output = shell(
-            [
-                self.wrapper_name,
-                "1",
-                str(len(context)),
-                context,
-                str(len(message)),
-                message,
-                randomness.hex(),
-                signing_key.hex(),
-            ]
+        input_bytes = (
+            len(context).to_bytes(1, byteorder="little")
+            + context
+            + len(message).to_bytes(4, byteorder="little")
+            + message
+            + randomness
+            + signing_key
         )
 
-        return bytes.fromhex(output)
+        output = subprocess.check_output(
+            [self.wrapper_name, "1"], input=input_bytes, text=False
+        )
+
+        return output
 
     def verify(self, verification_key, context, message, signature):
-        context = context.hex()
-        message = message.hex()
-        output = shell(
-            [
-                self.wrapper_name,
-                "2",
-                str(len(context)),
-                context,
-                str(len(message)),
-                message,
-                signature.hex(),
-                verification_key.hex(),
-            ]
+        input_bytes = (
+            len(context).to_bytes(1, byteorder="little")
+            + context
+            + len(message).to_bytes(4, byteorder="little")
+            + message
+            + signature
+            + verification_key
         )
-        return int(output)
+        output = subprocess.check_output(
+            [self.wrapper_name, "2"], input=input_bytes, text=False
+        )
+        return int.from_bytes(output)
