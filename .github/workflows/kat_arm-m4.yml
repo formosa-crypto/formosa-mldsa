@@ -5,7 +5,7 @@ on:
 
 jobs:
   arm-m4-kat-tests:
-    if: false #github.ref == 'refs/heads/amd64'
+    if: github.ref == 'refs/heads/amd64'
     name: kat-tests
     runs-on: ubuntu-latest
     strategy:
@@ -31,4 +31,4 @@ jobs:
     - name: Install pytest and pycryptodome
       run: python3 -m pip install pytest pycryptodome
     - name: Run known-answer tests
-      run: make JASMINC='jasmin-compiler/compiler/jasminc' CROSS_COMPILER='arm-linux-gnueabihf-gcc' ARCHITECTURE='arm-m4' PARAMETER_SET=${{ matrix.parameter_set }} IMPLEMENTATION_TYPE=${{ matrix.implementation_type }} test
+      run: env QEMU_LD_PREFIX=/usr/arm-linux-gnueabihf make JASMINC='jasmin-compiler/compiler/jasminc' CROSS_COMPILER='arm-linux-gnueabihf-gcc' ARCHITECTURE='arm-m4' PARAMETER_SET=${{ matrix.parameter_set }} IMPLEMENTATION_TYPE=${{ matrix.implementation_type }} test

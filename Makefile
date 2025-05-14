@@ -29,7 +29,7 @@ $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 # For ARM-M4: Generate a cross-compiled executable to be called by python.
 CROSS_COMPILER ?= arm-none-linux-gnueabihf-gcc
 $(OUTPUT_FILE_NAME).o: arm-m4/wrapper.c $(OUTPUT_FILE_NAME).s
-	$(CROSS_COMPILER) -Wall -fPIC -I$(IMPLEMENTATION) $^ -o $@
+	$(CROSS_COMPILER) -Wall -I$(IMPLEMENTATION) $^ -o $@ -no-pie
 
 TESTING_WRAPPER :=
 ifeq ($(ARCHITECTURE), x86-64)
