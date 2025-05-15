@@ -232,12 +232,12 @@ fn _stream128_refill_buffer(
     stack u32 sctr;
     stack ptr u32[N] sa;
     sctr = ctr; sa = a;
-    state = _keccakf1600_ref(state); 
+    state = _keccakf1600_ref(state);
     a = sa; pos = 0; ctr = sctr; q = __Q();
   }
   reg u32[3] buf;
   inline int i;
-  for i = 0 to 3 { buf[i] = state[ pos]; pos += 1; }  
+  for i = 0 to 3 { buf[i] = state[pos]; pos += 1; }
   return state, a, pos, ctr, q, buf;
 }
 

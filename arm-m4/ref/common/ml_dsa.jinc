@@ -1,6 +1,6 @@
 // TODO: factorize, this is almost a copy of the previous function
 fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
-                                     reg ptr u8[ JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] inp) -> reg ptr u8[TRBYTES]
+                                     reg ptr u8[VERIFICATION_KEY_SIZE] inp) -> reg ptr u8[TRBYTES]
 {
   stack u32[25*2] state;
   reg ptr u32[25*2] pstate;
@@ -13,7 +13,7 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
 
   i = 0;
   while {
-    last = (JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES >> 2) - (SHAKE256_RATE >> 2);
+    last = (VERIFICATION_KEY_SIZE >> 2) - (SHAKE256_RATE >> 2);
   }
   (i < last)
   {
@@ -32,7 +32,7 @@ fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
   }
 
   j = 0;
-  while(i < JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES >> 2) {
+  while(i < VERIFICATION_KEY_SIZE >> 2) {
     t = inp[:u32 i];
     s = pstate[j];
     t ^= s;
@@ -84,15 +84,15 @@ inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -
 * Description: Generates public and private key.
 *
 * Arguments:   - uint8_t *pk: pointer to output public key (allocated
-*                             array of JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES bytes)
+*                             array of VERIFICATION_KEY_SIZE bytes)
 *              - uint8_t *sk: pointer to output private key (allocated
-*                             array of JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES bytes)
+*                             array of SIGNING_KEY_SIZE bytes)
 *              - uint8_t *seed: pointer to input seed (allocated
 *                             array of SEEDBYTES bytes)*
 *
 * Returns 0 (success)
 **************************************************/
-fn _crypto_sign_keypair_seed(reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk, reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk, reg ptr u8[SEEDBYTES] seedbuf) -> reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES], reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] {
+fn _crypto_sign_keypair_seed(reg ptr u8[VERIFICATION_KEY_SIZE] pk, reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] seedbuf) -> reg ptr u8[VERIFICATION_KEY_SIZE], reg ptr u8[SIGNING_KEY_SIZE] {
     stack u8[TRBYTES] tr;
     stack u32[matKL] mat;
     stack u32[polyvecl] s1, s1hat;
@@ -360,11 +360,11 @@ fn _shake256_inc_finalize(
 * Returns 0 (success) or -1 (context string too long)
 **************************************************/
 fn _crypto_sign_signature_ctx_seed
-  (reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig,
+  (reg ptr u8[SIGNATURE_SIZE] sig,
    reg ptr u32[3] ctx_m_rand,
    reg ptr u32[2] ctxlen_mlen,
-   reg ptr u8[JASMIN_MLDSA_CRYPTO_SECRETKEYBYTES] sk)
-   -> reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES], reg u32
+   reg ptr u8[SIGNING_KEY_SIZE] sk)
+   -> reg ptr u8[SIGNATURE_SIZE], reg u32
 {
   sig = sig; ctx_m_rand = ctx_m_rand; ctxlen_mlen = ctxlen_mlen; sk = sk;
   reg u32 status;
@@ -607,10 +607,10 @@ fn _crypto_sign_signature_ctx_seed
 * Returns 0 if signature could be verified correctly and -1 otherwise
 **************************************************/
 fn _crypto_sign_verify_ctx(
-    reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig,
+    reg ptr u8[SIGNATURE_SIZE] sig,
     reg ptr u32[2] ctx_m,
     reg ptr u32[2] ctxlen_mlen,
-    reg ptr u8[JASMIN_MLDSA_CRYPTO_PUBLICKEYBYTES] pk) -> reg u32 {
+    reg ptr u8[VERIFICATION_KEY_SIZE] pk) -> reg u32 {
     reg u32 status;
 
     stack u8[SEEDBYTES] rho;

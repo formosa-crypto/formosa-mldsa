@@ -544,8 +544,8 @@ inline fn __extr_rej_sample(
 ) -> reg ptr u32[N], reg u32
 {
     t = __ubfx(t, 0, 23);
-  a, ctr = __rej_sample(a, ctr, t, q);
-  return a, ctr;
+    a, ctr = __rej_sample(a, ctr, t, q);
+    return a, ctr;
 }
 
 fn _poly_uniform(reg ptr u32[N] a,

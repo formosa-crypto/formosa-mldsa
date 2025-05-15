@@ -56,7 +56,7 @@ nist-drbg-kat-test: $(TESTING_WRAPPER)
 
 .PHONY: run-interpreter
 run-interpreter: $(IMPLEMENTATION)/example.jazz $(IMPLEMENTATION)/ml_dsa.jazz
-	env JASMINPATH="Common=$(COMMON)" $(JASMINC) $< | grep 'true'
+	env JASMINPATH="Common=$(COMMON)" $(JASMINC) -arch=$(ARCHITECTURE) $< | grep 'true'
 
 # --------------------------------------------------------------------
 #  CT and SCT checking

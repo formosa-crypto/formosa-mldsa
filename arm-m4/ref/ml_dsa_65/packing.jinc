@@ -14,7 +14,7 @@
 fn _unpack_sig(reg ptr u8[CTILDEBYTES] c,
                reg ptr u32[polyvecl] z,
                reg ptr u32[polyveck] h,
-               reg ptr u8[JASMIN_MLDSA_CRYPTO_BYTES] sig) ->
+               reg ptr u8[SIGNATURE_SIZE] sig) ->
          reg ptr u8[CTILDEBYTES], reg ptr u32[polyvecl], reg ptr u32[polyveck], reg u32 {
     // fixme this should be in the export function not here
     sig = sig; c = c; z = z; h = h;

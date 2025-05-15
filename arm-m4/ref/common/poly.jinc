@@ -571,7 +571,7 @@ inline fn __rej_sample(
   inline bool b;
   b = __cmp_b(t, q);
 
-  a[(uint) ctr] = t if b;
+  a[ctr] = t if b;
   ctr = ctr + 1 if b;
 
   return a, ctr;
