@@ -64,6 +64,9 @@ void JASMIN_MLDSA_ntt(int32_t a[N]) {
 inline fn __mul_montgomery_reduce_8380417(reg u32 x, reg u32 y) -> reg u32 {
   reg u32 aux_hi aux_lo t;
 
+  aux_lo = 0;
+  aux_hi = 0;
+
   aux_lo, aux_hi = __smull(aux_lo, aux_hi, x, y);
   t = __montgomery_reduce_8380417(aux_lo, aux_hi);
 
