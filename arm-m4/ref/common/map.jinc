@@ -1,6 +1,3 @@
-// /////////////////////////////////////////////////////////////////////////////
-// maps
-
 inline fn __map1__reduce32_8380417(reg ptr u32[256] a) -> reg ptr u32[256]
 {
   reg u32 i; // ideally: reg size i; // similar to size_t
@@ -28,7 +25,7 @@ inline fn __map1__reduce32_8380417(reg ptr u32[256] a) -> reg ptr u32[256]
   }
 
   return a;
-}//<>
+}
 
 inline fn __map1__caddq(reg ptr u32[256] a) -> reg ptr u32[256]
 {
@@ -57,4 +54,4 @@ inline fn __map1__caddq(reg ptr u32[256] a) -> reg ptr u32[256]
   }
 
   return a;
-}//<>
+}

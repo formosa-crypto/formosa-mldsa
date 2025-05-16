@@ -139,12 +139,13 @@ fn _shake256_inc_finalize(
 *
 * Returns 0 (success) or -1 (context string too long)
 **************************************************/
-fn _crypto_sign_signature_ctx_seed
-  (reg ptr u8[SIGNATURE_SIZE] sig,
+fn _crypto_sign_signature_ctx_seed(
+   #public reg ptr u8[SIGNATURE_SIZE] sig,
    reg ptr u32[3] ctx_m_rand,
    reg ptr u32[2] ctxlen_mlen,
-   reg ptr u8[SIGNING_KEY_SIZE] sk)
-   -> reg ptr u8[SIGNATURE_SIZE], reg u32
+   #secret reg ptr u8[SIGNING_KEY_SIZE] sk
+)
+   -> #public reg ptr u8[SIGNATURE_SIZE], reg u32
 {
   sig = sig; ctx_m_rand = ctx_m_rand; ctxlen_mlen = ctxlen_mlen; sk = sk;
   reg u32 status;
@@ -249,8 +250,11 @@ fn _crypto_sign_signature_ctx_seed
       stack u32[N] s_cp;
       reg ptr u32[polyveck] w1 w0;
       reg ptr u32[N] cp;
-      mat = s_mat; rho = s_rho;
+      mat = s_mat;
+
+      #declassify rho = s_rho;
       mat = _polyvec_matrix_expand(mat, rho); s_mat = mat;
+
       s1 = s_s1; s1 = _polyvecl_ntt(s1); s_s1 = s1;
       s2 = s_s2; s2 = _polyveck_ntt(s2); s_s2 = s2;
       t0 = s_t0; t0 = _polyveck_ntt(t0); s_t0 = t0;
@@ -309,6 +313,8 @@ fn _crypto_sign_signature_ctx_seed
         sigseed = sig[0:SEEDBYTES];
         () = #spill(sig);
         cp = s_cp;
+
+        #declassify sigctilde = sigctilde;
         cp = _poly_challenge(cp, sigctilde);
         cp = _poly_ntt(cp);
         /* Compute z, reject if it reveals secret */
@@ -358,6 +364,11 @@ fn _crypto_sign_signature_ctx_seed
                 continue = 1;
               } else {
                 () = #unspill(sig);
+
+                // TODO: See if we can remove these declassifys
+                #declassify h = h;
+                #declassify s_signer_response = s_signer_response;
+                #declassify sig = sig;
                 sig = _pack_sig_nocopy(sig, s_signer_response, h);
                 () = #spill(sig);
                 continue = 0;
@@ -369,5 +380,7 @@ fn _crypto_sign_signature_ctx_seed
       status = 0;
       () = #unspill(sig);
   }
+
+  #declassify sig = sig;
   return sig, status;
 }
