@@ -7,7 +7,11 @@
 *              - const uint8_t rho[]: byte array containing rho
 *              - const polyveck *t1: pointer to vector t1
 **************************************************/
-fn _pack_pk(reg ptr u8[VERIFICATION_KEY_SIZE] pk, reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1) -> reg ptr u8[VERIFICATION_KEY_SIZE] {
+fn _pack_pk(
+    reg ptr u8[VERIFICATION_KEY_SIZE] pk,
+    reg ptr u8[SEEDBYTES] rho,
+    reg ptr u32[polyveck] t1
+) -> reg ptr u8[VERIFICATION_KEY_SIZE] {
     pk = pk; rho = rho; t1 = t1;
 
     inline int i;

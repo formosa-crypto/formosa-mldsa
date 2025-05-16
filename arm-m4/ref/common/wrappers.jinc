@@ -46,7 +46,7 @@ inline fn __ubfx(reg u32 in, inline int pos, inline int width) -> reg u32 {
   return in;
 }
 
-inline fn __smull(reg u32 in_1, reg u32 in_2, reg u32 out_low, reg u32 out_high) -> reg u32, reg u32 {
+inline fn __smull(reg u32 out_low, reg u32 out_high, reg u32 in_1, reg u32 in_2) -> reg u32, reg u32 {
   out_low, out_high = #SMULL(in_1, in_2);
   return out_low, out_high;
 }

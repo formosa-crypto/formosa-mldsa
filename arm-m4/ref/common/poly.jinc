@@ -118,10 +118,10 @@ inline fn __poly_add_inplace(reg ptr u32[N] a b) -> reg ptr u32[N]
   i = 0;
   while(i < N)
   {
-    coeff_a = a[(uint) i];
-    coeff_b = b[(uint) i];
+    coeff_a = a[i];
+    coeff_b = b[i];
     coeff_a = __poly_add_body(coeff_a, coeff_b);
-    a[(uint) i] = coeff_a;
+    a[i] = coeff_a;
 
     i += 1;
   }
@@ -141,9 +141,9 @@ fn _poly_add2_inplace(reg ptr u32[N] a) -> reg ptr u32[N]
   i = 0;
   while(i < N)
   {
-    coeff_a = a[(uint) i];
+    coeff_a = a[i];
     coeff_a = __poly_add_body(coeff_a, coeff_a);
-    a[(uint) i] = coeff_a;
+    a[i] = coeff_a;
 
     i += 1;
   }
@@ -180,7 +180,7 @@ inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
 
   reg u32 i; i = 0;
   while {
-    t = a[(uint) i];
+    t = a[i];
     // FIXME for arm
     //t = -t if t <s 0;
     if (t <s 0) {
@@ -245,7 +245,7 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[CTILDEBYTES] seed) -> reg ptr u3
   // FIXME improve this loop
   i = 0;
   while (i < N) {
-    c[(uint) i] = aux;
+    c[i] = aux;
     i += 1;
   }
 
@@ -262,17 +262,17 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[CTILDEBYTES] seed) -> reg ptr u3
           pos = 0;
       }
 
-      b = (32u) state[:u8 (uint) pos];
+      b = (32u) state[:u8 pos];
       pos += 1;
     } (b > j)
 
-    aux = c[(uint) b];
-    c[(uint) j] = aux;
+    aux = c[b];
+    c[j] = aux;
 
     aux = signs[0] & 1;
     aux <<= 1;
     aux = __imm_sub_reg_inplace(1, aux);
-    c[(uint) b] = aux;
+    c[b] = aux;
 
     signs = shift_right(signs, 1);
 
@@ -305,10 +305,10 @@ fn _poly_decompose_inplace (reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32
   i = 0;
   while (i < N) {
     reg u32 a0_, a1_, a_;
-    a_ = a1[(uint) i];
+    a_ = a1[i];
     a0_, a1_ = __decompose_a0a1(a_, q);
-    a0[(uint) i] = a0_;
-    a1[(uint) i] = a1_;
+    a0[i] = a0_;
+    a1[i] = a1_;
     i += 1;
   }
 
@@ -318,7 +318,7 @@ fn _poly_decompose_inplace (reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32
 
 inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
   reg u32 c;
-  c = a[(uint) i];
+  c = a[i];
   c = __imm_sub_reg_inplace(ETA, c);
   return c;
 }
@@ -339,10 +339,10 @@ inline fn __poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr
   q = __Q();
   i = 0;
   while(i < N) {
-    b_ = b[(uint) i];
-    h_ = h[(uint) i];
+    b_ = b[i];
+    h_ = h[i];
     b_ = __use_hint(b_, h_, q);
-    b[(uint) i] = b_;
+    b[i] = b_;
     i += 1;
   }
   return b;
@@ -408,9 +408,9 @@ inline fn __poly_pointwise_montgomery(reg ptr u32[N] c, reg ptr u32[N] a, reg pt
   i = 0;
   while(i < N)
   {
-    a_ = a[(uint) i]; b_ = b[(uint) i];
+    a_ = a[i]; b_ = b[i];
     c_ = __mul_montgomery_reduce_8380417(a_, b_);
-    c[(uint) i] = c_;
+    c[i] = c_;
     i += 1;
   }
   return c;
@@ -421,10 +421,10 @@ inline fn __poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a
   i = 0;
   while(i < N)
   {
-    a_ = a[(uint) i];
-    c_ = c[(uint) i];
+    a_ = a[i];
+    c_ = c[i];
     c_ = __mul_montgomery_reduce_8380417(a_, c_);
-    c[(uint) i] = c_;
+    c[i] = c_;
     i += 1;
   }
   return c;
@@ -460,10 +460,10 @@ inline fn __poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a
   i = 0; s = 0;
   while(i < N)
   {
-    a0_ = a0[(uint) i];
-    a1_ = a1[(uint) i];
+    a0_ = a0[i];
+    a1_ = a1[i];
     h_ = __make_hint(a0_, a1_, gamma2);
-    h[(uint) i] = h_;
+    h[i] = h_;
     s += h_;
     i += 1;
   }
@@ -495,9 +495,9 @@ fn _poly_power2round_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u3
   i = 0;
   while(i < N)
   {
-    a_ = a1[(uint) i];
+    a_ = a1[i];
     a0_, a1_ = __power2round_a0a1(a_);
-    a0[(uint) i] = a0_; a1[(uint) i] = a1_;
+    a0[i] = a0_; a1[i] = a1_;
     i += 1;
   }
   return (a1, a0);
@@ -517,9 +517,9 @@ inline fn __poly_shiftl(reg ptr u32[N] a) -> reg ptr u32[N] {
   i = 0;
   while(i < N)
   {
-    a_ = a[(uint) i];
+    a_ = a[i];
     a_ <<= D;
-    a[(uint) i] = a_;
+    a[i] = a_;
     i += 1;
   }
   return a;
@@ -547,10 +547,10 @@ inline fn __poly_sub_inplace(reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[
 
   i = 0;
   while(i < N) {
-    a_ = a[(uint) i];
-    b_ = b[(uint) i];
+    a_ = a[i];
+    b_ = b[i];
     c_ = a_ - b_;
-    a[(uint) i] = c_;
+    a[i] = c_;
     i += 1;
   }
   return a;
@@ -571,8 +571,10 @@ inline fn __rej_sample(
   inline bool b;
   b = __cmp_b(t, q);
 
-  a[ctr] = t if b;
-  ctr = ctr + 1 if b;
+  if (b) {
+    a[ctr] = t;
+    ctr = ctr + 1;
+  }
 
   return a, ctr;
 }

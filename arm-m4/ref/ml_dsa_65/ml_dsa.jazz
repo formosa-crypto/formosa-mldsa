@@ -13,42 +13,50 @@ from Common require "polyvec.jinc"
 from Common require "packing.jinc"
 
 require "packing.jinc"
-from Common require "ml_dsa.jinc"
+from Common require "keygen.jinc"
+from Common require "sign.jinc"
+from Common require "verify.jinc"
 
 export fn ml_dsa_65_keygen(
-    reg ptr u8[VERIFICATION_KEY_SIZE] pk,
-    reg ptr u8[SIGNING_KEY_SIZE] sk,
-    reg ptr u8[SEEDBYTES] seed
-) -> reg ptr u8[VERIFICATION_KEY_SIZE],
-     reg ptr u8[SIGNING_KEY_SIZE] {
-  pk = pk; sk = sk;
-  pk, sk = _crypto_sign_keypair_seed(pk, sk, seed);
-  pk = pk; sk = sk;
-  return pk, sk;
+    #public reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    #secret reg ptr u8[SEEDBYTES] seed
+) -> #public reg ptr u8[VERIFICATION_KEY_SIZE],
+     #secret reg ptr u8[SIGNING_KEY_SIZE] {
+  verification_key = verification_key;
+  signing_key = signing_key;
+
+  verification_key, signing_key = _crypto_sign_keypair_seed(verification_key, signing_key, seed);
+
+  #declassify verification_key = verification_key;
+  signing_key = signing_key;
+
+  return verification_key, signing_key;
 }
 
 export fn ml_dsa_65_sign(
-    reg ptr u8[SIGNATURE_SIZE] sig,
-    reg ptr u32[3] ctx_m_rand,
-    reg ptr u32[2] ctxlen_mlen,
-    reg ptr u8[SIGNING_KEY_SIZE] sk
-) -> reg ptr u8[SIGNATURE_SIZE], reg u32
+    #public reg ptr u8[SIGNATURE_SIZE] sig,
+    #secret reg ptr u32[3] ctx_m_rand,
+    #public reg ptr u32[2] ctxlen_mlen,
+    #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key
+) -> #public reg ptr u8[SIGNATURE_SIZE], #public reg u32
 {
-  sig = sig; ctx_m_rand = ctx_m_rand; ctxlen_mlen = ctxlen_mlen; sk = sk;
+  sig = sig; ctx_m_rand = ctx_m_rand; ctxlen_mlen = ctxlen_mlen; signing_key = signing_key;
   reg u32 status;
-  sig, status = _crypto_sign_signature_ctx_seed(sig, ctx_m_rand, ctxlen_mlen, sk);
+  sig, status = _crypto_sign_signature_ctx_seed(sig, ctx_m_rand, ctxlen_mlen, signing_key);
   sig = sig; status = status;
   return sig, status;
 }
 
 export fn ml_dsa_65_verify(
-    reg ptr u8[SIGNATURE_SIZE] sig,
-    reg ptr u32[2] ctx_m,
-    reg ptr u32[2] ctxlen_mlen,
-    reg ptr u8[VERIFICATION_KEY_SIZE] pk) -> reg u32 {
-    sig = sig; ctx_m = ctx_m; ctxlen_mlen = ctxlen_mlen; pk = pk;
+    #public reg ptr u8[SIGNATURE_SIZE] sig,
+    #public reg ptr u32[2] ctx_m,
+    #public reg ptr u32[2] ctxlen_mlen,
+    #public reg ptr u8[VERIFICATION_KEY_SIZE] verification_key
+) -> #public reg u32 {
+    sig = sig; ctx_m = ctx_m; ctxlen_mlen = ctxlen_mlen; verification_key = verification_key;
     reg u32 status;
-    status = _crypto_sign_verify_ctx(sig, ctx_m, ctxlen_mlen, pk);
+    status = _crypto_sign_verify_ctx(sig, ctx_m, ctxlen_mlen, verification_key);
     status = status;
     return status;
 }
