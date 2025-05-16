@@ -4,7 +4,7 @@ on:
   push:
 
 jobs:
-  check:
+  safety-sanity-check:
     if: github.ref == 'refs/heads/amd64'
     name: check
     runs-on: ubuntu-latest
