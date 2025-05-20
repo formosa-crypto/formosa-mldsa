@@ -62,17 +62,11 @@ inline fn shift_right(reg u32[2] x, inline int i) -> reg u32[2]
 *
 * Arguments:   - poly *a: pointer to input/output polynomial
 **************************************************/
-inline fn __poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N]
+fn _poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N]
 {
   a = __map1__reduce32_8380417(a);
   return a;
 }
-
-fn _poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N] {
-   a = __poly_reduce(a);
-   return a;
-}
-
 
 /*************************************************
 * Name:        JASMIN_MLDSA_poly_caddq
@@ -271,7 +265,7 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[CTILDEBYTES] seed) -> reg ptr u3
 
     aux = signs[0] & 1;
     aux <<= 1;
-    aux = __imm_sub_reg_inplace(1, aux);
+    aux = __imm_sub_reg(1, aux);
     c[b] = aux;
 
     signs = shift_right(signs, 1);
@@ -296,7 +290,7 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[CTILDEBYTES] seed) -> reg ptr u3
 *              - const poly *a: pointer to input polynomial
 **************************************************/
 // equivalent to _poly_decompose(a1, a0, a1)
-fn _poly_decompose_inplace (reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[N], reg ptr u32[N] {
+fn _poly_decompose_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[N], reg ptr u32[N] {
   reg u32 i;
   reg u32 q;
 
@@ -319,7 +313,7 @@ fn _poly_decompose_inplace (reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32
 inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
   reg u32 c;
   c = a[i];
-  c = __imm_sub_reg_inplace(ETA, c);
+  c = __imm_sub_reg(ETA, c);
   return c;
 }
 

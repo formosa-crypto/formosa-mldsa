@@ -52,15 +52,15 @@ fn _polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
 *              - const uint8_t *a: byte array with bit-packed polynomial
 **************************************************/
 
-inline fn __polyeta_unpack(
+inline fn _polyeta_unpack(
     reg ptr u32[N] r,
     reg ptr u8[POLYETA_PACKEDBYTES] a
 ) -> reg ptr u32[N] {
-
   reg u32 i, j;
   reg u32 t0 t1;
   reg u32 aux;
   i = 0; j = 0;
+
   while(i < N) {
     aux = (32u) a[j];
     t0 =  aux & 0x0F;
@@ -71,11 +71,6 @@ inline fn __polyeta_unpack(
     i += 1;
     j +=1 ;
   }
-  return r;
-}
-
-fn _polyeta_unpack(reg ptr u32[N] r, reg ptr u8[POLYETA_PACKEDBYTES] a) -> reg ptr u32[N] {
-  r = __polyeta_unpack(r, a);
   return r;
 }
 

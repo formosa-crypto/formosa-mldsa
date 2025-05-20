@@ -58,7 +58,7 @@ inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
   /* (Q - 1) / 2 = 1023 * 2^12 */
   aux = 1023;
   // (Q - 1) / 2 - *a0
-  aux = __rsb_lsl_inplace(a0, aux, 12);
+  aux = __rsb_lsl(a0, aux, 12);
   aux = __and_asr(q, aux, 31);
   a0 -= aux;
 
