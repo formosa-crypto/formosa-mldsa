@@ -13,18 +13,19 @@ namespace signature {
         reg u64 i j hints_written hint_offset;
         reg u32 hint_coefficient;
 
-        reg u8 byte;
+        reg u128 bytes;
 
         inline int k;
         inline int offset;
         inline bool condition;
 
         i = 0;
+        // TODO: See if this can be made a slice to signature.
         while (i < COMMITMENT_HASH_SIZE) {
-            byte = commitment_hash[i];
-            signature[i] = byte;
+            bytes = commitment_hash.[:u128 i];
+            signature.[:u128 i] = bytes;
 
-            i += 1;
+            i += 16;
         }
 
         for k = 0 to COLUMNS_IN_MATRIX_A {
@@ -36,6 +37,7 @@ namespace signature {
         }
 
         // Clear the hints buffer
+        // TODO: Use avx2 to zero this.
         i = 0;
         while (i < MAX_ONES_IN_HINT + ROWS_IN_MATRIX_A) {
             signature[START_OF_HINT + i] = 0;

@@ -1,3 +1,5 @@
+param int iQ = 8380417;
+
 param int N = 256;
 param int SEEDBYTES = 32;
 param int CRHBYTES = 64;
@@ -5,37 +7,6 @@ param int TRBYTES = 64;
 param int RNDBYTES = 32;
 param int D = 13;
 
-u32 Q = iQ;
-u32 MINUS_Q = -iQ; // this should be -Q
-
-param int POLYVECH_PACKEDBYTES = (OMEGA + K);
-
 param int PQC_SHAKECTX_BYTES = 25;
 param int SHAKE256_RATE = 136;
 param int SHAKE128_RATE = 168;
-
-param int VERIFICATION_KEY_SIZE = (SEEDBYTES + K*POLYT1_PACKEDBYTES);
-param int SIGNING_KEY_SIZE = (2*SEEDBYTES + TRBYTES + L*POLYETA_PACKEDBYTES + K*POLYETA_PACKEDBYTES + K*POLYT0_PACKEDBYTES);
-param int SIGNATURE_SIZE = (CTILDEBYTES + L*POLYZ_PACKEDBYTES + POLYVECH_PACKEDBYTES);
-
-
-param int polyvecl = N * L;
-param int polyveck = N * K;
-
-inline fn __Q() -> reg u32 {
- // Q = 8380417 = 11 1111 1111 0000 0000 0000 1
-  reg u32 q;
-  q = 0x3FF;
-  q <<= 13;
-  q |= 1;
-  return q;
-}
-
-inline fn __MINUS_Q() -> reg u32 {
- // -Q = -8380417 = 1 1111 1111 000 0000 000 1 1111 1111 1111
-  reg u32 mq, q;
-  q = __Q();
-  mq = -q;
-  return mq;
-}
-

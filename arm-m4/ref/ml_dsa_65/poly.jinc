@@ -238,7 +238,7 @@ fn _poly_uniform(reg ptr u32[N] a,
   reg u32 ctr, ctr4, pos, q, t;
   reg u32[3] buf;
 
-  ctr = 0; pos = 0; q = __Q();
+  ctr = 0; pos = 0; q = iQ;
 
   while { ctr4 = ctr + 4; } (ctr4 < N) {
     state, a, pos, ctr, q, buf = _stream128_refill_buffer(state, a, pos, ctr, q);

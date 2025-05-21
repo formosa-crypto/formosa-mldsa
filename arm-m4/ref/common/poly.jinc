@@ -162,7 +162,7 @@ inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
   reg u32 r;
   reg u32 q;
   r = 0;
-  q = __Q();
+  q = iQ;
   q -= 1;
   q = q >> 3;
 
@@ -175,11 +175,7 @@ inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
   reg u32 i; i = 0;
   while {
     #declassify t = a[i];
-    // FIXME for arm
-    //t = -t if t <s 0;
-    if (t <s 0) {
-       t = -t;
-    }
+    t = -t if t <s 0;
 
     i += 1;
 
@@ -236,7 +232,6 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[CTILDEBYTES] seed) -> reg ptr u3
   pos = 8;
 
   aux = 0;
-  // FIXME improve this loop
   i = 0;
   while (i < N) {
     c[i] = aux;
@@ -294,7 +289,7 @@ fn _poly_decompose_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[
   reg u32 i;
   reg u32 q;
 
-  q = __Q();
+  q = iQ;
 
   i = 0;
   while (i < N) {
@@ -330,7 +325,7 @@ inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
 inline fn __poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] {
   reg u32 i, b_, h_, q;
 
-  q = __Q();
+  q = iQ;
   i = 0;
   while(i < N) {
     b_ = b[i];
@@ -447,7 +442,6 @@ fn _poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg
 *
 * Returns number of 1 bits.
 **************************************************/
-/* FIXME: is it constant time? Check __make_hint */
 inline fn __poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> reg u32, reg ptr u32[N]{
   reg u32 i, s, a0_, a1_, h_, gamma2;
   gamma2 = iGAMMA2;

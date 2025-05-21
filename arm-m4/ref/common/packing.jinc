@@ -441,17 +441,18 @@ fn _pack_sig_nocopy(
         start_pos += POLYZ_PACKEDBYTES;
     }
 
-    reg u32 r0;
-    r0 = 0;
-    reg ptr u8[OMEGA + K]  pptsig;
-    pptsig = sig[start_pos : OMEGA + K];
-    // FIXME use a while loop ?
-    // FIXME use 32 bits 0 ? OMEGA + K = 75 + 8 = 83 = 20 * 4 + 3
-    for i = 0 to OMEGA + K {
-        pptsig[i] = r0;
+    reg u32 zero = 0;
+    reg ptr u8[OMEGA + K] pointer_to_hint = sig[start_pos : OMEGA + K];
+    reg u32 j = 0;
+    while (j < (OMEGA + K)/4) {
+        pointer_to_hint.[:u32 j] = zero;
+        j += 4;
+    }
+    while (j < (OMEGA + K)/4 + ((OMEGA + K)%4)) {
+        pointer_to_hint[j] = zero;
+        j += 1;
     }
 
-    reg u32 j;
     reg u32 hj;
     reg u32 k;
     k = 0;
@@ -463,14 +464,14 @@ fn _pack_sig_nocopy(
        while (j < N) {
          hj = nh[j];
          if hj != 0 {
-           pptsig[k] = j;
+           pointer_to_hint[k] = j;
            k += 1;
          }
-     j += 1;
+         j += 1;
        }
-       pptsig[i + OMEGA] = k;
+       pointer_to_hint[i + OMEGA] = k;
     }
-    sig[start_pos : OMEGA + K] = pptsig;
+    sig[start_pos : OMEGA + K] = pointer_to_hint;
 
     return sig;
 }

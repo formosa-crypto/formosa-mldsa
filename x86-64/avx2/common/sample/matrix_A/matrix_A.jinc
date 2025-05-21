@@ -22,8 +22,8 @@ namespace matrix_A {
         reg u16 t16;
         reg u64 t64;
 
+        t0 = #set0_256();
         for i = 0 to 25 {
-            t0 = #set0_256();
             state[i] = t0;
         }
 

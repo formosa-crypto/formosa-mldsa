@@ -1,4 +1,3 @@
-// TODO: Ideally, we'd short circuit on failure.
 inline
 fn __compare_commitment_hashes(reg ptr u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg u64 {
     reg u128 lhs_bytes rhs_bytes;

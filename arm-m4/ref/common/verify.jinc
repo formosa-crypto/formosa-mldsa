@@ -36,116 +36,110 @@ fn _crypto_sign_verify_ctx(
 
     inline int i;
 
-    status = 0;
-
     ctxlen = ctxlen_mlen[0];
 
-    if (ctxlen > 255) { status = - 1; }
+    if (ctxlen <= 255) {
+        () = #spill(ctxlen_mlen, ctx_m, ctxlen, status);
+        rho, t1 = _unpack_pk(rho, t1, pk);
 
-    () = #spill(ctxlen_mlen, ctx_m, ctxlen, status);
-    rho, t1 = _unpack_pk(rho, t1, pk);
+        () = #spill(pk);
+        c, z, h, status = _unpack_sig(c, z, h, sig);
+        () = #unspill(pk);
+        () = #spill(sig);
 
-    reg u32 chk;
-    () = #spill(pk);
-    c, z, h, chk = _unpack_sig(c, z, h, sig);
-    () = #unspill(pk);
-    () = #unspill(status);
-    () = #spill(sig);
+        if (status == 0) {
+            reg u32 bound;
+            bound = iGAMMA1 - BETA;
+            status = _polyvecl_chknorm(z, bound);
 
-    //FIXME for arm or improve riscv suport
-    if (chk == 1) { status = -1; }
+            if (status == 0) {
+                mu = _shake256_PUBLICKEYBYTES_TRBYTES(mu, pk);
 
-    if (status == 0) {
-      reg u32 bound;
-      bound = iGAMMA1 - BETA;
-      chk = _polyvecl_chknorm(z, bound);
-      if (chk == 1) { status = -1; }
+                pstate = state;
 
-      if (status == 0) {
-        () = #spill(status);
-        mu = _shake256_PUBLICKEYBYTES_TRBYTES(mu, pk);
+                // TRBYTES (64) + 2 < SHAKE256_RATE (136)
+                pstate = __add_crh_ref(pstate, mu); // TRBYTES = CRHBYTES
 
-        pstate = state;
+                () = #unspill(ctxlen_mlen, ctx_m);
+                mu2 = mu[0 : 2];
+                t = 0;
+                mu2[0] = (8u)t;
+                t = ctxlen_mlen[0];
+                mu2[1] = (8u)t;
+                mu[0 : 2] = mu2;
 
-        // TRBYTES (64) + 2 < SHAKE256_RATE (136)
-        pstate = __add_crh_ref(pstate, mu); // TRBYTES = CRHBYTES
+                () = #spill(ctxlen_mlen, t, ctx_m);
+                pstate = __add_mu_ref(pstate, TRBYTES, mu2);
+                () = #spill(mu2);
+                pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
+                pos = TRBYTES + 2;
+                ctx = ctx_m[0];
+                () = #spill(ctx_m, ctxlen_mlen);
+                () = #unspill(ctxlen);
+                pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+                () = #unspill(ctx_m, ctxlen_mlen);
+                mlen = ctxlen_mlen[1];
+                m = ctx_m[1];
+                pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
+                pstate = _shake256_inc_finalize(pstate, pos);
+                pstate = _keccakf1600_ref(pstate);
 
-        () = #unspill(ctxlen_mlen, ctx_m);
-        mu2 = mu[0 : 2];
-        t = 0;
-        mu2[0] = (8u)t;
-        t = ctxlen_mlen[0];
-        mu2[1] = (8u)t;
-        mu[0 : 2] = mu2;
+                // FIXME define a function for that
+                for i = 0 to CRHBYTES/4 {
+                    t = pstate[i];
+                    mu[:u32 i] = t;
+                }
+                state = pstate;
+                () = #spill(pstate);
 
-        () = #spill(ctxlen_mlen, t, ctx_m);
-        pstate = __add_mu_ref(pstate, TRBYTES, mu2);
-        () = #spill(mu2);
-        pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
-        pos = TRBYTES + 2;
-        ctx = ctx_m[0];
-        () = #spill(ctx_m, ctxlen_mlen);
-        () = #unspill(ctxlen);
-        pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
-        () = #unspill(ctx_m, ctxlen_mlen);
-        mlen = ctxlen_mlen[1];
-        m = ctx_m[1];
-        pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
-        pstate = _shake256_inc_finalize(pstate, pos);
-        pstate = _keccakf1600_ref(pstate);
+                cp = _poly_challenge(cp, c[0:CTILDEBYTES]);
+                mat = _polyvec_matrix_expand(mat, rho);
 
-        // FIXME define a function for that
-        for i = 0 to CRHBYTES/4 {
-          t = pstate[i];
-          mu[:u32 i] = t;
-        }
-        state = pstate;
-        () = #spill(pstate);
+                z = _polyvecl_ntt(z);
+                w1 = _polyvec_matrix_pointwise_montgomery(w1, mat, z);
 
-        cp = _poly_challenge(cp, c[0:CTILDEBYTES]);
-        mat = _polyvec_matrix_expand(mat, rho);
+                cp = _poly_ntt(cp);
+                t1 = _polyveck_shiftl(t1);
+                t1 = _polyveck_ntt(t1);
+                t1 = _polyveck_pointwise_poly_montgomery_inplace(t1, cp);
 
-        z = _polyvecl_ntt(z);
-        w1 = _polyvec_matrix_pointwise_montgomery(w1, mat, z);
+                w1 = _polyveck_sub_inplace(w1, t1);
+                w1 = _polyveck_reduce(w1);
+                w1 = _polyveck_invntt_tomont(w1);
 
-        cp = _poly_ntt(cp);
-        t1 = _polyveck_shiftl(t1);
-        t1 = _polyveck_ntt(t1);
-        t1 = _polyveck_pointwise_poly_montgomery_inplace(t1, cp);
+                w1 = _polyveck_caddq(w1);
+                w1 = _polyveck_use_hint_inplace(w1, h);
+                buf = _polyveck_pack_w1(buf, w1);
 
-        w1 = _polyveck_sub_inplace(w1, t1);
-        w1 = _polyveck_reduce(w1);
-        w1 = _polyveck_invntt_tomont(w1);
+                pstate = state;
+                pstate = __add_crh_ref(pstate, mu);
+                pstate = __add_zero_after_add(pstate, CRHBYTES);
+                pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, buf);
+                pstate = _shake256_inc_finalize(pstate, pos);
+                pstate = _keccakf1600_ref(pstate);
+                // FIXME define a function for that
+                for i = 0 to CTILDEBYTES/4 {
+                    t = pstate[i];
+                    c2[:u32 i] = t;
+                }
 
-        w1 = _polyveck_caddq(w1);
-        w1 = _polyveck_use_hint_inplace(w1, h);
-        buf = _polyveck_pack_w1(buf, w1);
-
-        pstate = state;
-        pstate = __add_crh_ref(pstate, mu);
-        pstate = __add_zero_after_add(pstate, CRHBYTES);
-        pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, buf);
-        pstate = _shake256_inc_finalize(pstate, pos);
-        pstate = _keccakf1600_ref(pstate);
-        // FIXME define a function for that
-        for i = 0 to CTILDEBYTES/4 {
-          t = pstate[i];
-          c2[:u32 i] = t;
-        }
-
-        // FIXME : must break early if needed
-        () = #unspill(status);
-        reg u32 ci c2i;
-        for i = 0 to CTILDEBYTES {
-          if (status == 0) {
-            ci = (32u)c[i];
-            #declassify c2i = (32u)c2[i];
-            if (ci != c2i) {
-              status = i + 1;
+                reg u32 ci c2i;
+                status = 0;
+                for i = 0 to CTILDEBYTES {
+                    if (status == 0) {
+                        ci = (32u)c[i];
+                        #declassify c2i = (32u)c2[i];
+                        if (ci != c2i) {
+                            status = i + 1;
+                        }
+                    }
+                }
             }
-          }
         }
-      }
+    }
+
+    if (status != 0) {
+        status = -1;
     }
 
     return status;
