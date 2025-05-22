@@ -2,7 +2,7 @@
 
 LIB=libml-dsa-65_avx2.a
 HEADERS=align.h api.h cdecl.h consts.h fips202x4.h ntt.h packing.h params.h poly.h polyvec.h rejsample.h rounding.h sign.h symmetric.h  shuffle.inc 
-OBJECTS=consts.o fips202x4.o packing.o poly.o polyvec.o rejsample.o rounding.o sign.o symmetric-shake.o  f1600x4.o invntt.o ntt.o pointwise.o shuffle.o 
+OBJECTS=consts.o fips202.o fips202x4.o packing.o poly.o polyvec.o rejsample.o rounding.o sign.o symmetric-shake.o  f1600x4.o invntt.o ntt.o pointwise.o shuffle.o 
 KECCAK4XDIR=keccak4x
 KECCAK4XOBJ=KeccakP-1600-times4-SIMD256.o
 KECCAK4X=$(KECCAK4XDIR)/$(KECCAK4XOBJ)

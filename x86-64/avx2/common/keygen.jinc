@@ -111,7 +111,7 @@ fn __keygen_internal(
 
     // ... and finish serializing the signing key.
     verification_key_pointer_copy = verification_key;
-    verification_key_hash = __hash_verification_key(verification_key_pointer_copy, verification_key_hash);
+    verification_key_hash = hash_verification_key(verification_key_hash, verification_key_pointer_copy);
 
     // TODO: See if this copy can be removed.
     () = #unspill(signing_key);

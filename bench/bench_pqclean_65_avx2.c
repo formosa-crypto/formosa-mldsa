@@ -9,6 +9,8 @@
 
 #define DATA_POINTS 10000
 
+#define MESSAGE_SIZE 127
+
 // Utility functions and macros.
 
 #define _STRINGIFY(x) #x
@@ -81,7 +83,7 @@ int main(void) {
   uint8_t verification_key[PQCLEAN_MLDSA65_AVX2_CRYPTO_PUBLICKEYBYTES];
   uint8_t signing_key[PQCLEAN_MLDSA65_AVX2_CRYPTO_SECRETKEYBYTES];
 
-  uint8_t message[65];
+  uint8_t message[MESSAGE_SIZE];
   uint8_t signature[PQCLEAN_MLDSA65_AVX2_CRYPTO_BYTES];
   size_t signature_size;
 
@@ -111,7 +113,7 @@ int main(void) {
   // Benchmark signing.
   for (size_t i = 0; i < DATA_POINTS; i++) {
     notrandombytes(signing_randomness, 32);
-    notrandombytes(message, 65);
+    notrandombytes(message, MESSAGE_SIZE);
 
     before = cpucycles();
     PQCLEAN_MLDSA65_AVX2_crypto_sign_signature_ctx(signature, &signature_size, message, sizeof(message), NULL, 0, signing_key, signing_randomness);

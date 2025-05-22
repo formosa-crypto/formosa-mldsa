@@ -80,11 +80,8 @@ bench_jasmin.o: $(OUTPUT_FILE_NAME).s bench/bench_jasmin.c bench/notrandombytes.
 		  -DVERIFY=ml_dsa_$(PARAMETER_SET)_verify \
 		  $^ -I $(IMPLEMENTATION) -o $@
 
-bench_pqclean_65_avx2.o: bench/bench_pqclean_65_avx2.c bench/notrandombytes.c bench/pqclean_ml_dsa_65_avx2/libml-dsa-65_avx2.a fips202.o
+bench_pqclean_65_avx2.o: bench/bench_pqclean_65_avx2.c bench/notrandombytes.c bench/pqclean_ml_dsa_65_avx2/libml-dsa-65_avx2.a
 	$(CC) -Wall -Werror $^ -o $@
-
-fips202.o: bench/pqclean_ml_dsa_65_avx2/fips202.c
-	$(CC) -Wall -Werror $< -c -o $@
 
 bench/pqclean_ml_dsa_65_avx2/libml-dsa-65_avx2.a:
 	$(MAKE) -C bench/pqclean_ml_dsa_65_avx2

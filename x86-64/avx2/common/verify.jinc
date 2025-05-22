@@ -130,7 +130,7 @@ fn __verify_internal(
 
         // Compute the expected commitment hash
         () = #unspill(verification_key);
-        verification_key_hash = __hash_verification_key(verification_key, verification_key_hash);
+        verification_key_hash = hash_verification_key(verification_key_hash, verification_key);
         () = #unspill(message, message_size);
 
         message_representative = __derive_message_representative(

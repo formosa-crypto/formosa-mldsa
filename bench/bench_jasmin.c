@@ -9,6 +9,8 @@
 
 #define DATA_POINTS 10000
 
+#define MESSAGE_SIZE 129
+
 // Utility functions and macros.
 
 #define _STRINGIFY(x) #x
@@ -81,7 +83,7 @@ int main(void) {
   uint8_t verification_key[VERIFICATION_KEY_SIZE];
   uint8_t signing_key[SIGNING_KEY_SIZE];
 
-  uint8_t message[67];
+  uint8_t message[MESSAGE_SIZE];
   uint8_t signature[SIGNATURE_SIZE];
 
   uint64_t observations[DATA_POINTS] = {0};
@@ -112,7 +114,7 @@ int main(void) {
   message[1] = 0;
   for (size_t i = 0; i < DATA_POINTS; i++) {
     notrandombytes(signing_randomness, 32);
-    notrandombytes(&message[2], 65);
+    notrandombytes(&message[2], MESSAGE_SIZE - 2);
 
     before = cpucycles();
     SIGN(signature, signing_key, message, sizeof(message), signing_randomness);
