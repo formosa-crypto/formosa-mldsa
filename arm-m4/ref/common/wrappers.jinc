@@ -148,13 +148,13 @@ inline fn __imm_sub_reg(inline int imm, reg u32 in) -> reg u32 {
 }
 
 inline fn __set_if_true(reg u32 in, inline bool b) -> reg u32 {
-  reg u32 out;
+  reg u32 out = 0;
   out = in if b;
   return out;
 }
 
 inline fn __set_if_true_plus_imm(reg u32 in, inline int i, inline bool b) -> reg u32 {
-  reg u32 out;
+  reg u32 out = 0;
   out = in + i if b;
   return out;
 }

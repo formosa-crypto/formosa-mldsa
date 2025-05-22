@@ -110,31 +110,6 @@ inline fn _ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
 *
 * Arguments:   - uint32_t p[N]: input/output coefficient array
 **************************************************/
-/*
-void JASMIN_MLDSA_invntt_tomont(int32_t a[N]) {
-    unsigned int start, len, j, k;
-    int32_t t, zeta;
-    const int32_t f = 41978; // mont^2/256
-
-    k = 256;
-    for (len = 1; len < N; len <<= 1) {
-        for (start = 0; start < N; start = j + len) {
-            zeta = -zetas[--k];
-            for (j = start; j < start + len; ++j) {
-                t = a[j];
-                a[j] = t + a[j + len];
-                a[j + len] = t - a[j + len];
-                a[j + len] = JASMIN_MLDSA_montgomery_reduce((int64_t)zeta * a[j + len]);
-            }
-        }
-    }
-
-    for (j = 0; j < N; ++j) {
-        a[j] = JASMIN_MLDSA_montgomery_reduce((int64_t)f * a[j]);
-    }
-}
-*/
-
 inline fn __invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
 
   reg u32 len start j k;

@@ -39,7 +39,7 @@ fn _crypto_sign_verify_ctx(
     ctxlen = ctxlen_mlen[0];
 
     if (ctxlen <= 255) {
-        () = #spill(ctxlen_mlen, ctx_m, ctxlen, status);
+        () = #spill(ctxlen_mlen, ctx_m, ctxlen);
         rho, t1 = _unpack_pk(rho, t1, pk);
 
         () = #spill(pk);

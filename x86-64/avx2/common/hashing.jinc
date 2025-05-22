@@ -1,10 +1,38 @@
 require "keccak/keccak1600.jinc"
 
+fn absorb_full_shake256_block(
+    reg ptr u64[25] state,
+    reg ptr u8[SHAKE256_RATE] block
+) -> reg ptr u64[25]
+{
+    reg u64 i = 0;
+    reg u256 rhs, lhs;
+    reg u64 last_8_bytes;
+
+    // SHAKE256_RATE - 8 = 136 - 8 = 128, which is divisible by 32.
+    while (i < SHAKE256_RATE - 8) {
+        lhs = state.[:u256 i];
+        rhs = block.[:u256 i];
+
+        lhs = #VPXOR_256(lhs, rhs);
+        state.[:u256 i] = lhs;
+
+        i += 32;
+    }
+
+    // Now absorb the last 8 bytes.
+    last_8_bytes = block.[:u64 128];
+    state.[:u64 128] ^= last_8_bytes;
+
+    state = _keccakf1600_ref1(state);
+
+    return state;
+}
+
 // N.B.: While this is only used in hash_verification_key(), making it an inline int
 // wouldn't work; it's used in a while loop condition, which causes issues for
 // the RSB-checker.
 param int FULL_BLOCKS_IN_VERIFICATION_KEY = VERIFICATION_KEY_SIZE / SHAKE256_RATE;
-
 inline
 fn __hash_verification_key(
     #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
@@ -29,23 +57,14 @@ fn __hash_verification_key(
     state = __keccak_init_ref1(state);
 
     while(verification_key_offset < FULL_BLOCKS_IN_VERIFICATION_KEY * SHAKE256_RATE) {
-        while(state_offset < SHAKE256_RATE) {
-            byte = verification_key[verification_key_offset];
-
-            state[:u8 state_offset] ^= byte;
-
-            verification_key_offset += 1;
-            state_offset += 1;
-        }
-
-        () = #spill(verification_key, verification_key_offset);
-        state = _keccakf1600_ref1(state);
-        () = #unspill(verification_key, verification_key_offset);
-
-        state_offset = 0;
+        () = #spill(verification_key_offset, verification_key);
+        state = absorb_full_shake256_block(state, verification_key[verification_key_offset : SHAKE256_RATE]);
+        () = #unspill(verification_key_offset, verification_key);
+        verification_key_offset += SHAKE256_RATE;
     }
 
     // Now absorb the last partial block.
+    state_offset = 0;
     while(verification_key_offset < VERIFICATION_KEY_SIZE) {
         byte = verification_key[verification_key_offset];
 
@@ -63,7 +82,6 @@ fn __hash_verification_key(
     state = _keccakf1600_ref1(state);
 
     () = #unspill(hash);
-    state_offset = 0;
 
     // VERIFICATION_KEY_HASH_SIZE is always 64.
     copied_32_bytes = state.[:u256 0];
@@ -98,17 +116,20 @@ fn __derive_message_representative(
     reg u64 state_offset;
     #spill_to_mmx reg u64 message_offset;
 
+    reg u256 copied_32_bytes;
+
     // Absorb ...
 
     state = __keccak_init_ref1(state);
 
-    state_offset = 0;
-    while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
-        byte = hash_of_verification_key[state_offset];
-        state[:u8 state_offset] = byte;
+    // VERIFICATION_KEY_HASH_SIZE is always 64.
+    copied_32_bytes = hash_of_verification_key.[:u256 0];
+    state.[:u256 0] = copied_32_bytes;
 
-        state_offset += 1;
-    }
+    copied_32_bytes = hash_of_verification_key.[:u256 32];
+    state.[:u256 32] = copied_32_bytes;
+
+    state_offset = 64;
 
     message_offset = 0;
     while(message_offset < message_size) {
@@ -137,12 +158,12 @@ fn __derive_message_representative(
 
     state = _keccakf1600_ref1(state);
 
-    state_offset = 0;
-    while(state_offset < MESSAGE_REPRESENTATIVE_SIZE) {
-        byte = state[:u8 state_offset];
-        message_representative[state_offset] = byte;
-        state_offset += 1;
-    }
+    // MESSAGE_REPRESENTATIVE_SIZE is always 64.
+    copied_32_bytes = state.[:u256 0];
+    message_representative.[:u256 0] = copied_32_bytes;
+
+    copied_32_bytes = state.[:u256 32];
+    message_representative.[:u256 32] = copied_32_bytes;
 
     return message_representative;
 }
@@ -160,42 +181,53 @@ fn __derive_commitment_hash(
     #spill_to_mmx reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment
     ) -> stack u8[COMMITMENT_HASH_SIZE]
 {
-
     stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
     stack u64[25] state;
     reg u8 byte;
     reg u64 state_offset;
+    reg u64 copied_8_bytes;
     #spill_to_mmx reg u64 encoded_commitment_offset;
+
+    reg u256 copied_32_bytes;
+    reg u128 copied_16_bytes;
 
     state = __keccak_init_ref1(state);
     state_offset = 0;
 
-    // Absorb message_representative
-    while (state_offset < MESSAGE_REPRESENTATIVE_SIZE) {
-        byte = message_representative[state_offset];
-        state[:u8 state_offset] = byte;
-        state_offset += 1;
-    }
+    // Absorb message_representative (always 64 bytes)
+    copied_32_bytes = message_representative.[:u256 0];
+    state.[:u256 0] = copied_32_bytes;
 
-    encoded_commitment_offset = 0;
-    while (encoded_commitment_offset < 72 + (FULL_COMMITMENT_BLOCKS_TO_ABSORB * SHAKE256_RATE)) {
-        while(state_offset < SHAKE256_RATE) {
-            byte = encoded_commitment[encoded_commitment_offset];
-            encoded_commitment_offset += 1;
+    copied_32_bytes = message_representative.[:u256 32];
+    state.[:u256 32] = copied_32_bytes;
 
-            state[:u8 state_offset] ^= byte;
-            state_offset += 1;
-        }
+    // Absorb the first 72 bytes of the commitment
+    copied_32_bytes = encoded_commitment.[:u256 0];
+    state.[:u256 64] = copied_32_bytes;
 
+    copied_32_bytes = encoded_commitment.[:u256 32];
+    state.[:u256 96] = copied_32_bytes;
+
+    copied_8_bytes = encoded_commitment.[:u64 64];
+    state.[:u64 128] = copied_8_bytes;
+
+    // We have SHAKE256_RATE bytes in the state, permute
+    () = #spill(encoded_commitment);
+    state = _keccakf1600_ref1(state);
+    () = #unspill(encoded_commitment);
+
+    // Now absorb all the full blocks in the encoded commitment
+    encoded_commitment_offset = 72;
+    while(encoded_commitment_offset < FULL_COMMITMENT_BLOCKS_TO_ABSORB * SHAKE256_RATE) {
         () = #spill(encoded_commitment, encoded_commitment_offset);
-        state = _keccakf1600_ref1(state);
+        state = absorb_full_shake256_block(state, encoded_commitment[encoded_commitment_offset : SHAKE256_RATE]);
         () = #unspill(encoded_commitment, encoded_commitment_offset);
-
-        state_offset = 0;
+        encoded_commitment_offset += SHAKE256_RATE;
     }
 
-    // Now absorb the last partial block. This will be skipped in ML-DSA-87
+    // Finally, absorb the last partial block. This will be skipped in ML-DSA-87
     // where ENCODED_COMMITMENT_SIZE = 1024.
+    state_offset = 0;
     while(encoded_commitment_offset < ENCODED_COMMITMENT_SIZE) {
         byte = encoded_commitment[encoded_commitment_offset];
         encoded_commitment_offset += 1;
@@ -211,12 +243,13 @@ fn __derive_commitment_hash(
     // Now squeeze
 
     state = _keccakf1600_ref1(state);
-    state_offset = 0;
 
+    // COMMITMENT_HASH_SIZE is always a multiple of 16.
+    state_offset = 0;
     while(state_offset < COMMITMENT_HASH_SIZE) {
-        byte = state[:u8 state_offset];
-        commitment_hash[state_offset] = byte;
-        state_offset += 1;
+        copied_16_bytes = state.[:u128 state_offset];
+        commitment_hash.[:u128 state_offset] = copied_16_bytes;
+        state_offset += 16;
     }
     return commitment_hash;
 }

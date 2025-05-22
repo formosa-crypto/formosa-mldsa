@@ -1,7 +1,7 @@
 from Common require "wrappers.jinc"
 from Common require "keccakf1600.jinc"
 
-from Common require "params.jinc"
+from Common require "constants.jinc"
 require "params.jinc"
 
 from Common require "reduce.jinc"
