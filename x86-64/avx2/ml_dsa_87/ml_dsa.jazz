@@ -9,8 +9,13 @@ from Common require "arithmetic/zetas.jinc"
 from Common require "arithmetic/ntt.jinc"
 from Common require "arithmetic/invert_ntt.jinc"
 
+from Common require "keccak/keccak1600.jinc"
+from Common require "keccak_avx2/keccakf1600_avx2.jinc"
+from Common require "keccak_avx2/keccak1600_avx2.jinc"
+from Common require "keccak_4x/api.jinc"
 from Common require "hashing.jinc"
 from Common require "hashing_4x.jinc"
+
 from Common require "sample/matrix_A/matrix_A.jinc"
 from Common require "sample/challenge.jinc"
 from Common require "sample/mask/mask_1x.jinc"

@@ -1,4 +1,3 @@
-require "keccakf1600.jinc"
 require "keccakf1600_4x.jinc"
 
 inline fn __keccak_init_avx2() -> reg u256[7]
