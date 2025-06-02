@@ -32,7 +32,7 @@ fn shake256_squeeze_128_bytes(reg ptr u8[128] array, reg u256[7] state) -> reg p
 
     // [ 0, 0 ]
     t128_0 = (128u) state[0];
-    array.[:u64 0] = #VMOVLPD(t128_0);
+    array.[:u64 0] = t128_0;
     // [ 1, 2, 3, 4 ]
     array.[:u256 8] = state[1];
 
@@ -46,7 +46,7 @@ fn shake256_squeeze_128_bytes(reg ptr u8[128] array, reg u256[7] state) -> reg p
     // [ 5, 15 ]
     //  state[2] = TTT[0];
     t128_1 = #VEXTRACTI128(state[2], 1);
-    array.[:u64 40] = #VMOVLPD(t128_1);
+    array.[:u64 40] = t128_1;
 
     // [ 6, 7, 8, 9 ]
     t256_4 = #VPBLEND_8u32(t256_0, t256_3, (8u1)[1,1,0,0,0,0,1,1]);
@@ -54,14 +54,14 @@ fn shake256_squeeze_128_bytes(reg ptr u8[128] array, reg u256[7] state) -> reg p
 
     // [ 10, 20 ]
     t128_0 = (128u) state[2];
-    array.[:u64 80] = #VMOVLPD(t128_0);
+    array.[:u64 80] = t128_0;
 
     // [ 11, 12, 13, 14 ]
     t256_4 = #VPBLEND_8u32(t256_3, t256_1, (8u1)[1,1,0,0,0,0,1,1]);
     array.[:u256 88] = t256_4;
 
     // [ 15 ]
-    array.[:u64 120] = #VMOVHPD(t128_1);
+    array.[:u64 120] = #VPEXTR_64(t128_1, 1);
 
     return array;
 }
