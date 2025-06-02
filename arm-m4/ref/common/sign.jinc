@@ -370,7 +370,7 @@ fn _crypto_sign_signature_ctx_seed(
                         s_w0 = w0; w1 = s_w1;
                         reg u32 n;
                         n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
-                        if (n > OMEGA) {
+                        if (n > MAX_ONES_IN_HINT) {
                             continue = 1;
                         } else {
                             () = #unspill(sig);

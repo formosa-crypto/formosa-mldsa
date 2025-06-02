@@ -14,7 +14,7 @@ require "poly.jinc"
 from Common require "polyvec.jinc"
 from Common require "packing.jinc"
 
-require "packing.jinc"
+from Common require "encoding/signature.jinc"
 from Common require "keygen.jinc"
 from Common require "sign.jinc"
 from Common require "verify.jinc"

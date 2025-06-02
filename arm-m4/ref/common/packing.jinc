@@ -442,13 +442,13 @@ fn _pack_sig_nocopy(
     }
 
     reg u32 zero = 0;
-    reg ptr u8[OMEGA + K] pointer_to_hint = sig[start_pos : OMEGA + K];
+    reg ptr u8[MAX_ONES_IN_HINT + K] pointer_to_hint = sig[start_pos : MAX_ONES_IN_HINT + K];
     reg u32 j = 0;
-    while (j < (OMEGA + K)/4) {
+    while (j < (MAX_ONES_IN_HINT + K)/4) {
         pointer_to_hint.[:u32 j] = zero;
         j += 4;
     }
-    while (j < (OMEGA + K)/4 + ((OMEGA + K)%4)) {
+    while (j < (MAX_ONES_IN_HINT + K)/4 + ((MAX_ONES_IN_HINT + K)%4)) {
         pointer_to_hint[j] = zero;
         j += 1;
     }
@@ -469,9 +469,9 @@ fn _pack_sig_nocopy(
          }
          j += 1;
        }
-       pointer_to_hint[i + OMEGA] = k;
+       pointer_to_hint[i + MAX_ONES_IN_HINT] = k;
     }
-    sig[start_pos : OMEGA + K] = pointer_to_hint;
+    sig[start_pos : MAX_ONES_IN_HINT + K] = pointer_to_hint;
 
     return sig;
 }
