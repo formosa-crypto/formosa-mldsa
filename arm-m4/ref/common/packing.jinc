@@ -430,7 +430,7 @@ fn _pack_sig_nocopy(
     inline int start_pos;
     start_pos = 0;
 
-    start_pos += CTILDEBYTES;
+    start_pos += COMMITMENT_HASH_SIZE;
 
     reg ptr u32[N] nz;
     reg ptr u8[POLYZ_PACKEDBYTES] nsig;

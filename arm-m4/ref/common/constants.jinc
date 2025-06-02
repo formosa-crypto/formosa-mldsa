@@ -1,6 +1,8 @@
 param int iQ = 8380417;
 
 param int N = 256;
+param int LOG_2_N = 8;
+
 param int SEEDBYTES = 32;
 param int CRHBYTES = 64;
 param int TRBYTES = 64;

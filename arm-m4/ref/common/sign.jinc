@@ -309,15 +309,15 @@ fn _crypto_sign_signature_ctx_seed(
             pstate = _keccakf1600_ref(pstate);
 
             // FIXME define a function for that
-            reg ptr u8[CTILDEBYTES] sigctilde;
+            reg ptr u8[COMMITMENT_HASH_SIZE] sigctilde;
             () = #unspill(sig);
-            sigctilde = sig[0:CTILDEBYTES];
-            for i = 0 to CTILDEBYTES/4 {
+            sigctilde = sig[0:COMMITMENT_HASH_SIZE];
+            for i = 0 to COMMITMENT_HASH_SIZE/4 {
                 t = pstate[i];
                 sigctilde[:u32 i] = t;
             }
             state = pstate;
-            sig[0:CTILDEBYTES] = sigctilde;
+            sig[0:COMMITMENT_HASH_SIZE] = sigctilde;
 
             reg ptr u8[SEEDBYTES] sigseed;
             sigseed = sig[0:SEEDBYTES];
