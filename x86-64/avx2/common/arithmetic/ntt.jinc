@@ -1,0 +1,410 @@
+namespace polynomial {
+    // ----------- Layer 0 -------------
+    fn butterfly_2(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg u64 start,
+        reg u256 zetas
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 lhs rhs;
+        reg u256 summands zeta_products;
+        reg u256 add_terms sub_terms;
+
+        reg u64 lhs_start rhs_start;
+
+        lhs_start = start;
+        lhs_start *= 32;
+        lhs = polynomial.[:u256 lhs_start];
+        lhs = #VPSHUFD_256(lhs, 0b11_01_10_00);
+
+        rhs_start = lhs_start;
+        rhs_start += 32;
+        rhs = polynomial.[:u256 rhs_start];
+        rhs = #VPSHUFD_256(rhs, 0b11_01_10_00);
+
+        summands = #VPUNPCKL_4u64(lhs, rhs);
+
+        zeta_products = #VPUNPCKH_4u64(lhs, rhs);
+        zeta_products = montgomery_multiply_and_reduce(zeta_products, zetas);
+
+        add_terms = #VPADD_8u32(summands, zeta_products);
+        sub_terms = #VPSUB_8u32(summands, zeta_products);
+
+        lhs = #VPUNPCKL_4u64(add_terms, sub_terms);
+        lhs = #VPSHUFD_256(lhs, 0b11_01_10_00);
+
+        rhs = #VPUNPCKH_4u64(add_terms, sub_terms);
+        rhs = #VPSHUFD_256(rhs, 0b11_01_10_00);
+
+        polynomial.[:u256 lhs_start] = lhs;
+        polynomial.[:u256 rhs_start] = rhs;
+
+        return polynomial;
+    }
+    fn ntt_at_layer_0(
+         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 start;
+        reg u256 zetas;
+
+        inline int i;
+
+        for i = 0 to 16 {
+            start = i * 2;
+            zetas = LAYER_0_ZETAS[i];
+            polynomial = butterfly_2(polynomial, start, zetas);
+        }
+
+        return polynomial;
+    }
+
+    // ----------- Layer 1 -------------
+    fn butterfly_4(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg u64 start,
+        reg u256 zetas
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 lhs rhs;
+        reg u256 summands zeta_products;
+        reg u256 add_terms sub_terms;
+
+        reg u64 lhs_start rhs_start;
+
+        lhs_start = start;
+        lhs_start *= 32;
+        lhs = polynomial.[:u256 lhs_start];
+
+        rhs_start = lhs_start;
+        rhs_start += 32;
+        rhs = polynomial.[:u256 rhs_start];
+
+        summands = #VPUNPCKL_4u64(lhs, rhs);
+
+        zeta_products = #VPUNPCKH_4u64(lhs, rhs);
+        zeta_products = montgomery_multiply_and_reduce(zeta_products, zetas);
+
+        add_terms = #VPADD_8u32(summands, zeta_products);
+        sub_terms = #VPSUB_8u32(summands, zeta_products);
+
+        lhs = #VPUNPCKL_4u64(add_terms, sub_terms);
+        polynomial.[:u256 lhs_start] = lhs;
+
+        rhs = #VPUNPCKH_4u64(add_terms, sub_terms);
+        polynomial.[:u256 rhs_start] = rhs;
+
+        return polynomial;
+    }
+    fn ntt_at_layer_1(
+         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 start;
+        reg u256 zetas;
+
+        inline int i;
+
+        for i = 0 to 16 {
+            start = i * 2;
+            zetas = LAYER_1_ZETAS[i];
+            polynomial = butterfly_4(polynomial, start, zetas);
+        }
+
+        return polynomial;
+    }
+
+    // ----------- Layer 2 -------------
+    fn butterfly_8(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg u64 start,
+        reg u256 zetas
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u128 lhs_truncated rhs_truncated;
+        reg u256 lhs rhs;
+
+        reg u256 summands zeta_products;
+        reg u256 add_terms sub_terms;
+
+        reg u64 lhs_start rhs_start;
+
+        lhs_start = start;
+        lhs_start *= 32;
+        lhs = polynomial.[:u256 lhs_start];
+        lhs_truncated = (128u)lhs;
+
+        rhs_start = lhs_start;
+        rhs_start += 32;
+        rhs = polynomial.[:u256 rhs_start];
+        rhs_truncated = (128u)rhs;
+
+        summands = #set0_256();
+        summands = #VINSERTI128(summands, lhs_truncated, 0);
+        summands = #VINSERTI128(summands, rhs_truncated, 1);
+
+        zeta_products = #VPERM2I128(rhs, lhs, 0b0001_0011);
+        zeta_products = montgomery_multiply_and_reduce(zeta_products, zetas);
+
+        add_terms = #VPADD_8u32(summands, zeta_products);
+        sub_terms = #VPSUB_8u32(summands, zeta_products);
+
+        lhs_truncated = (128u)add_terms;
+        rhs_truncated = (128u)sub_terms;
+        lhs = #VINSERTI128(lhs, lhs_truncated, 0);
+        lhs = #VINSERTI128(lhs, rhs_truncated, 1);
+        polynomial.[:u256 lhs_start] = lhs;
+
+        rhs = #VPERM2I128(sub_terms, add_terms, 0b0001_0011);
+        polynomial.[:u256 rhs_start] = rhs;
+
+        return polynomial;
+    }
+    fn ntt_at_layer_2(
+         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 start;
+        reg u256 zetas;
+
+        inline int i;
+
+        for i = 0 to 16 {
+            start = i * 2;
+            zetas = LAYER_2_ZETAS[i];
+            polynomial = butterfly_8(polynomial, start, zetas);
+        }
+
+        return polynomial;
+    }
+
+    // ----------- Layers 3,4,5 -------------
+    fn ntt_round(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg u64 step,
+        reg u64 step_by,
+        reg u64 start,
+        reg u256 zetas
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 coeffs_i coeffs_i_plus_step;
+        reg u256 product;
+
+        reg u64 offset bound;
+        reg u64 i index index_plus_step;
+
+        offset = start;
+        offset *= step;
+        offset *= 2;
+        // Divide by COEFFICIENTS_PER_YMM_REGISTER = 8
+        offset >>= 3;
+
+        i = offset;
+        bound = offset;
+        bound += step_by;
+        while (i < bound) {
+            index = i;
+            index *= 32;
+            coeffs_i = polynomial.[:u256 index];
+
+            index_plus_step = i;
+            index_plus_step += step_by;
+            index_plus_step *= 32;
+            coeffs_i_plus_step = polynomial.[:u256 index_plus_step];
+
+            product = montgomery_multiply_and_reduce(coeffs_i_plus_step, zetas);
+
+            coeffs_i_plus_step = #VPSUB_8u32(coeffs_i, product);
+            polynomial.[:u256 index_plus_step] = coeffs_i_plus_step;
+
+            coeffs_i = #VPADD_8u32(coeffs_i, product);
+            polynomial.[:u256 index] = coeffs_i;
+
+            i += 1;
+        }
+
+        return polynomial;
+    }
+    fn ntt_at_layer_3(
+         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 start;
+        reg u256 zetas;
+        reg u64 step step_by;
+
+        step = 1 << 3;
+        step_by = (1 << 3) / COEFFICIENTS_PER_YMM_REGISTER;
+
+        inline int i;
+
+        for i = 0 to 16 {
+            start = i;
+            zetas = LAYER_3_ZETAS[i];
+            polynomial = ntt_round(polynomial, step, step_by, start, zetas);
+        }
+
+        return polynomial;
+    }
+    fn ntt_at_layer_4(
+         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 start;
+        reg u256 zetas;
+        reg u64 step step_by;
+
+        step = 1 << 4;
+        step_by = (1 << 4) / COEFFICIENTS_PER_YMM_REGISTER;
+
+        inline int i;
+
+        for i = 0 to 8 {
+            start = i;
+            zetas = LAYER_4_ZETAS[i];
+            polynomial = ntt_round(polynomial, step, step_by, start, zetas);
+        }
+
+        return polynomial;
+    }
+    fn ntt_at_layer_5(
+         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 start;
+        reg u256 zetas;
+        reg u64 step step_by;
+
+        step = 1 << 5;
+        step_by = (1 << 5) / COEFFICIENTS_PER_YMM_REGISTER;
+
+        inline int i;
+
+        for i = 0 to 4 {
+            start = i;
+            zetas = LAYER_5_ZETAS[i];
+            polynomial = ntt_round(polynomial, step, step_by, start, zetas);
+        }
+
+        return polynomial;
+    }
+
+    // ----------- Layers 6,7 -------------
+    fn multiply(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg u64 start,
+        reg u64 step_by,
+        reg u32 zeta
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 prod02 prod13;
+        reg u256 c02 c13;
+        reg u256 res02 res13 t;
+        reg u256 coeffs_i coeffs_i_plus_step_by;
+        reg u256 constants;
+
+        reg u64 index_i index_i_plus_step_by;
+
+        index_i_plus_step_by = start;
+        index_i_plus_step_by += step_by;
+        index_i_plus_step_by *= 32;
+        coeffs_i_plus_step_by = polynomial.[:u256 index_i_plus_step_by]; 
+
+        constants = (256u)#VMOV_32(zeta);
+        constants = #VPBROADCAST_8u32(constants);
+        prod02 = #VPMUL_256(coeffs_i_plus_step_by, constants);
+
+        coeffs_i_plus_step_by = #VPSHUFD_256(coeffs_i_plus_step_by, 0b11_11_01_01);
+        constants = #VPSHUFD_256(constants, 0b11_11_01_01);
+        prod13 = #VPMUL_256(coeffs_i_plus_step_by, constants);
+
+        constants = INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR;
+        c02 = #VPMUL_256(prod02, constants);
+        c13 = #VPMUL_256(prod13, constants);
+
+        constants = MODULUS_VECTOR;
+        c02 = #VPMUL_256(c02, constants);
+        c13 = #VPMUL_256(c13, constants);
+
+        res02 = #VPSUB_8u32(prod02, c02);
+        res13 = #VPSUB_8u32(prod13, c13);
+
+        res02 = #VPSHUFD_256(res02, 0b11_11_01_01);
+        t = #VPBLEND_8u32(res02, res13, (8u1)[1, 0, 1, 0, 1, 0, 1, 0]);
+
+        index_i = start;
+        index_i *= 32;
+        coeffs_i = polynomial.[:u256 index_i];
+
+        coeffs_i_plus_step_by = #VPSUB_8u32(coeffs_i, t);
+        polynomial.[:u256 index_i_plus_step_by] = coeffs_i_plus_step_by;
+
+        coeffs_i = #VPADD_8u32(coeffs_i, t);
+        polynomial.[:u256 index_i] = coeffs_i;
+
+        return polynomial;
+    }
+
+    inline
+    fn __layer(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        inline int _start,
+        inline int _step_by,
+        inline int _zeta
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        inline int i;
+        reg u64 start step_by zeta;
+
+        step_by = _step_by;
+        zeta = _zeta;
+
+        for i = 0 to 4 {
+            start = _start + i;
+            polynomial = multiply(polynomial, start, step_by, zeta);
+        }
+
+        return polynomial;
+    }
+    fn ntt_at_layer_7_and_6(
+         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        inline int STEP_BY_7 = 2 * COEFFICIENTS_PER_YMM_REGISTER;
+        inline int STEP_BY_6 = (1 << 6) / COEFFICIENTS_PER_YMM_REGISTER;
+
+        inline int ZETA_7 = 25_847;
+        inline int ZETA_60 = -2_608_894;
+        inline int ZETA_61 = -518_909;
+
+        polynomial = __layer(polynomial, 0, STEP_BY_7, ZETA_7);
+        polynomial = __layer(polynomial, 8, STEP_BY_7, ZETA_7);
+
+        polynomial = __layer(polynomial, 0, STEP_BY_6, ZETA_60);
+        polynomial = __layer(polynomial, 16, STEP_BY_6, ZETA_61);
+
+        polynomial = __layer(polynomial, 4, STEP_BY_7, ZETA_7);
+        polynomial = __layer(polynomial, 12, STEP_BY_7, ZETA_7);
+
+        polynomial = __layer(polynomial, 4, STEP_BY_6, ZETA_60);
+        polynomial = __layer(polynomial, 20, STEP_BY_6, ZETA_61);
+
+        return polynomial;
+    }
+
+    // ----------- And finally, the full NTT. -------------
+    fn ntt(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        polynomial = ntt_at_layer_7_and_6(polynomial);
+        polynomial = ntt_at_layer_5(polynomial);
+        polynomial = ntt_at_layer_4(polynomial);
+        polynomial = ntt_at_layer_3(polynomial);
+        polynomial = ntt_at_layer_2(polynomial);
+        polynomial = ntt_at_layer_1(polynomial);
+        polynomial = ntt_at_layer_0(polynomial);
+
+        return polynomial;
+    }
+}

@@ -1,0 +1,28 @@
+param int K = 6;
+param int L = 5;
+param int ETA = 4;
+param int TAU = 49;
+param int BETA = 196;
+param int MAX_ONES_IN_HINT = 55;
+param int COMMITMENT_HASH_SIZE = 48;
+
+param int POLYZ_PACKEDBYTES = 640; // N/2 * 5
+param int POLYW1_PACKEDBYTES = 128; // N/2
+param int POLYETA_PACKEDBYTES = 128;
+
+param int POLYT1_PACKEDBYTES  = 320; // N/4 * 5
+param int POLYT0_PACKEDBYTES = 416; // N/8 * 13
+
+param int iGAMMA1 = (1 << 19);
+
+param int iGAMMA2 = ((iQ-1)/32);
+
+param int HINT_ENCODED_SIZE = (MAX_ONES_IN_HINT + K);
+
+param int VERIFICATION_KEY_SIZE = (SEEDBYTES + K*POLYT1_PACKEDBYTES);
+
+param int SIGNING_KEY_SIZE = (2*SEEDBYTES + VERIFICATION_KEY_HASH_SIZE + L*POLYETA_PACKEDBYTES + K*POLYETA_PACKEDBYTES + K*POLYT0_PACKEDBYTES);
+param int SIGNATURE_SIZE = (COMMITMENT_HASH_SIZE + L*POLYZ_PACKEDBYTES + HINT_ENCODED_SIZE);
+
+param int polyvecl = N * L;
+param int polyveck = N * K;

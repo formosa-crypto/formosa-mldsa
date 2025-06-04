@@ -1,0 +1,34 @@
+name: "Safety sanity-check"
+on:
+  pull_request:
+  push:
+
+jobs:
+  safety-sanity-check:
+    if: github.ref == 'refs/heads/amd64'
+    name: check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture: ["arm-m4", "x86-64"]
+        parameter_set: ["44", "65", "87"]
+        implementation_type: ["ref", "avx2"]
+        exclude:
+          - architecture: "arm-m4"
+            implementation_type: "avx2"
+          - architecture: "arm-m4"
+            parameter_set: "44"
+          - architecture: "arm-m4"
+            parameter_set: "87"
+    steps:
+    - uses: actions/checkout@v4
+    - uses: cachix/install-nix-action@v25
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    - name: Build the Jasmin compiler
+      run: |
+        git clone --branch main --depth 1 https://gitlab.com/jasmin-lang/jasmin-compiler.git
+        cd jasmin-compiler/compiler
+        nix-shell --run 'make'
+    - name: Run the Jasmin interpreter on an example program
+      run: make JASMINC='jasmin-compiler/compiler/jasminc' ARCHITECTURE=${{ matrix.architecture }} PARAMETER_SET=${{ matrix.parameter_set }} IMPLEMENTATION_TYPE=${{ matrix.implementation_type }} run-interpreter

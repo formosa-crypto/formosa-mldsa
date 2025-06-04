@@ -1,0 +1,537 @@
+/*************************************************
+* Name:        JASMIN_MLDSA_polyt0_pack
+*
+* Description: Bit-pack polynomial t0 with coefficients in ]-2^{D-1}, 2^{D-1}].
+*
+* Arguments:   - uint8_t *r: pointer to output byte array with at least
+*                            POLYT0_PACKEDBYTES bytes
+*              - const poly *a: pointer to input polynomial
+**************************************************/
+fn _polyt0_pack(reg ptr u8[POLYT0_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYT0_PACKEDBYTES] {
+  reg u32 i, j, aux;
+  reg u32[7] t;
+  reg u32 t7;
+  inline int k;
+
+  i = 0; j = 0;
+  while(i < N)
+  {
+    for k = 0 to 7 {
+      t[k] = a[i]; i += 1;
+      t[k] = __imm_sub_reg((1 << (D - 1)), t[k]);
+    }
+    /* r[13 * i + 0]  =  (uint8_t) t[0];           */
+    r[j] = t[0]; j += 1;   // j = 1
+
+    /* r[13 * i + 1]  =  (uint8_t) (t[0] >>  8);   */
+    /* r[13 * i + 1] |=  (uint8_t) (t[1] <<  5);   */
+    aux = t[0] >> 8;
+    aux = __or_lsl_inplace(aux, t[1], 5);
+    r[j] = aux; j += 1;  // j = 2
+
+    /* r[13 * i + 2]  =  (uint8_t) (t[1] >>  3);   */
+    aux = t[1] >> 3;
+    r[j] = aux; j += 1;   // j = 3
+
+    /* r[13 * i + 3]  =  (uint8_t) (t[1] >> 11);   */
+    /* r[13 * i + 3] |=  (uint8_t) (t[2] <<  2);   */
+    aux = t[1] >> 11;
+    aux = __or_lsl_inplace(aux, t[2], 2);
+    r[j] = aux; j += 1;  // j = 4
+
+    /* r[13 * i + 4]  =  (uint8_t) (t[2] >>  6);   */
+    /* r[13 * i + 4] |=  (uint8_t) (t[3] <<  7);   */
+    aux = t[2] >> 6;
+    aux = __or_lsl_inplace(aux, t[3], 7);
+    r[j] = aux; j += 1; // j = 5
+
+    /* r[13 * i + 5]  =  (uint8_t) (t[3] >>  1);   */
+    aux = t[3] >> 1;
+    r[j] = aux; j += 1; // j = 6
+
+    /* r[13 * i + 6]  =  (uint8_t) (t[3] >>  9);   */
+    /* r[13 * i + 6] |=  (uint8_t) (t[4] <<  4);   */
+    aux = t[3] >> 9;
+    aux = __or_lsl_inplace(aux, t[4], 4);
+    r[j] = aux; j += 1; // j = 7
+
+    /* r[13 * i + 7]  =  (uint8_t) (t[4] >>  4);   */
+    aux = t[4] >> 4;
+    r[j] = aux; j += 1;  // j = 8
+
+    /* r[13 * i + 8]  =  (uint8_t) (t[4] >> 12);   */
+    /* r[13 * i + 8] |=  (uint8_t) (t[5] <<  1);   */
+    aux = t[4] >> 12;
+    aux = __or_lsl_inplace(aux, t[5], 1);
+    r[j] = aux; j += 1;  // j = 9
+
+    /* r[13 * i + 9]  =  (uint8_t) (t[5] >>  7);   */
+    /* r[13 * i + 9] |=  (uint8_t) (t[6] <<  6);   */
+    aux = t[5] >> 7;
+    aux = __or_lsl_inplace(aux, t[6], 6);
+    r[j] = aux; j += 1;  // j = 10
+
+    /* r[13 * i + 10]  =  (uint8_t) (t[6] >>  2);  */
+    aux = t[6] >> 2;
+    r[j] = aux; j += 1;  // j = 11
+
+    /* r[13 * i + 11]  =  (uint8_t) (t[6] >> 10);  */
+    /* r[13 * i + 11] |=  (uint8_t) (t[7] <<  3);  */
+    t7 = a[i]; i += 1;
+    t7 = __imm_sub_reg((1 << (D - 1)), t7);
+
+    aux = t[6] >> 10;
+    aux = __or_lsl_inplace(aux, t7, 3);
+    r[j] = aux; j += 1; // j = 12
+
+    /* r[13 * i + 12]  =  (uint8_t) (t[7] >>  5);  */
+    aux = t7 >> 5;
+    r[j] = aux; j += 1;  // j = 13
+  }
+  return r;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_polyt0_unpack
+*
+* Description: Unpack polynomial t0 with coefficients in ]-2^{D-1}, 2^{D-1}].
+*
+* Arguments:   - poly *r: pointer to output polynomial
+*              - const uint8_t *a: byte array with bit-packed polynomial
+**************************************************/
+fn _polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) -> reg ptr u32[N] {
+  reg u32 i, j, a_;
+  reg u32[8] t;
+
+  i = 0; j = 0;
+  while(i < N) {
+    /*  r->coeffs[8 * i + 0]  = a[13 * i + 0];
+        r->coeffs[8 * i + 0] |= (uint32_t)a[13 * i + 1] << 8;
+        r->coeffs[8 * i + 0] &= 0x1FFF; */
+
+    t[0] = (32u) a[j]; j += 1;  // j = 1
+    a_ = (32u) a[j]; j += 1;    // j = 2  a_ = a[1]
+
+    t[0] = __or_lsl_inplace(t[0], a_, 8);
+    t[0] = __ubfx(t[0], 0, 13);
+    t[0] = __imm_sub_reg((1 << (D - 1)), t[0]);
+    r[i] = t[0]; i += 1;
+
+    /*  r->coeffs[8 * i + 1]  = a[13 * i + 1] >> 5;
+        r->coeffs[8 * i + 1] |= (uint32_t)a[13 * i + 2] << 3;
+        r->coeffs[8 * i + 1] |= (uint32_t)a[13 * i + 3] << 11;
+        r->coeffs[8 * i + 1] &= 0x1FFF; */
+    t[1] = a_ >> 5;
+    a_ = (32u) a[j]; j += 1; // j = 3
+    t[1] = __or_lsl_inplace(t[1], a_, 3);
+    a_ = (32u) a[j]; j += 1; // j = 4 a_ = a[3]
+    t[1] = __or_lsl_inplace(t[1], a_, 11);
+    t[1] = __ubfx(t[1], 0, 13);
+    t[1] = __imm_sub_reg((1 << (D - 1)), t[1]);
+    r[i] = t[1]; i += 1;
+
+    /*  r->coeffs[8 * i + 2]  = a[13 * i + 3] >> 2;
+        r->coeffs[8 * i + 2] |= (uint32_t)a[13 * i + 4] << 6;
+        r->coeffs[8 * i + 2] &= 0x1FFF; */
+    t[2] = a_ >> 2;
+    a_ = (32u) a[j]; j += 1;  // j = 5  a_ = a[4]
+    t[2] = __or_lsl_inplace(t[2], a_, 6);
+    t[2] = __ubfx(t[2], 0, 13);
+
+    t[2] = __imm_sub_reg((1 << (D - 1)), t[2]);
+    r[i] = t[2]; i += 1;
+
+    /*  r->coeffs[8 * i + 3]  = a[13 * i + 4] >> 7;
+        r->coeffs[8 * i + 3] |= (uint32_t)a[13 * i + 5] << 1;
+        r->coeffs[8 * i + 3] |= (uint32_t)a[13 * i + 6] << 9;
+        r->coeffs[8 * i + 3] &= 0x1FFF; */
+    t[3] = a_ >> 7;
+    a_ = (32u) a[j]; j += 1;  // j = 6
+    t[3] = __or_lsl_inplace(t[3], a_, 1);
+    a_ = (32u) a[j]; j += 1; // j = 7 a_ = a[6]
+    t[3] = __or_lsl_inplace(t[3], a_, 9);
+    t[3] = __ubfx(t[3], 0, 13);
+    t[3] = __imm_sub_reg((1 << (D - 1)), t[3]);
+    r[i] = t[3]; i += 1;
+
+    /*  r->coeffs[8 * i + 4]  = a[13 * i + 6] >> 4;
+        r->coeffs[8 * i + 4] |= (uint32_t)a[13 * i + 7] << 4;
+        r->coeffs[8 * i + 4] |= (uint32_t)a[13 * i + 8] << 12;
+        r->coeffs[8 * i + 4] &= 0x1FFF; */
+    t[4] = a_ >> 4;
+    a_ = (32u) a[j]; j += 1;  // j = 8
+    t[4] = __or_lsl_inplace(t[4], a_, 4);
+    a_ = (32u) a[j]; j += 1; // j = 9   a_ = a[8]
+    t[4] = __or_lsl_inplace(t[4], a_, 12);
+    t[4] = __ubfx(t[4], 0, 13);
+    t[4] = __imm_sub_reg((1 << (D - 1)), t[4]);
+    r[i] = t[4]; i += 1;
+
+    /*  r->coeffs[8 * i + 5]  = a[13 * i + 8] >> 1;
+        r->coeffs[8 * i + 5] |= (uint32_t)a[13 * i + 9] << 7;
+        r->coeffs[8 * i + 5] &= 0x1FFF; */
+    t[5] = a_ >> 1;
+    a_ = (32u) a[j]; j += 1; // j = 10   a_ = a[9]
+    t[5] = __or_lsl_inplace(t[5], a_, 7);
+    t[5] = __ubfx(t[5], 0, 13);
+    t[5] = __imm_sub_reg((1 << (D - 1)), t[5]);
+    r[i] = t[5]; i += 1;
+
+    /*  r->coeffs[8 * i + 6]  = a[13 * i + 9] >> 6;
+        r->coeffs[8 * i + 6] |= (uint32_t)a[13 * i + 10] << 2;
+        r->coeffs[8 * i + 6] |= (uint32_t)a[13 * i + 11] << 10;
+        r->coeffs[8 * i + 6] &= 0x1FFF; */
+    t[6] = a_ >> 6;
+    a_ = (32u) a[j]; j += 1; // j = 11   a_ = a[10]
+    t[6] = __or_lsl_inplace(t[6], a_, 2);
+    a_ = (32u) a[j]; j += 1; // j = 12   a_ = a[11]
+    t[6] = __or_lsl_inplace(t[6], a_, 10);
+    t[6] = __ubfx(t[6], 0, 13);
+    t[6] = __imm_sub_reg((1 << (D - 1)), t[6]);
+    r[i] = t[6]; i += 1;
+
+    /*  r->coeffs[8 * i + 7]  = a[13 * i + 11] >> 3;
+        r->coeffs[8 * i + 7] |= (uint32_t)a[13 * i + 12] << 5;
+        r->coeffs[8 * i + 7] &= 0x1FFF; */
+    t[7] = a_ >> 3;
+    a_ = (32u) a[j]; j += 1; // j = 13   a_ = a[12]
+    t[7] = __or_lsl_inplace(t[7], a_, 5);
+    t[7] = __ubfx(t[7], 0, 13);
+    t[7] = __imm_sub_reg((1 << (D - 1)), t[7]);
+    r[i] = t[7]; i += 1;
+
+    /* This is moved up */
+    /*  r->coeffs[8 * i + 0] = (1 << (D - 1)) - r->coeffs[8 * i + 0];
+        r->coeffs[8 * i + 1] = (1 << (D - 1)) - r->coeffs[8 * i + 1];
+        r->coeffs[8 * i + 2] = (1 << (D - 1)) - r->coeffs[8 * i + 2];
+        r->coeffs[8 * i + 3] = (1 << (D - 1)) - r->coeffs[8 * i + 3];
+        r->coeffs[8 * i + 4] = (1 << (D - 1)) - r->coeffs[8 * i + 4];
+        r->coeffs[8 * i + 5] = (1 << (D - 1)) - r->coeffs[8 * i + 5];
+        r->coeffs[8 * i + 6] = (1 << (D - 1)) - r->coeffs[8 * i + 6];
+        r->coeffs[8 * i + 7] = (1 << (D - 1)) - r->coeffs[8 * i + 7]; */
+  }
+  return r;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_polyt1_pack
+*
+* Description: Bit-pack polynomial t1 with coefficients fitting in 10 bits.
+*              Input coefficients are assumed to be standard representatives.
+*
+* Arguments:   - uint8_t *r: pointer to output byte array with at least
+*                            POLYT1_PACKEDBYTES bytes
+*              - const poly *a: pointer to input polynomial
+**************************************************/
+fn _polyt1_pack(reg ptr u8[POLYT1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYT1_PACKEDBYTES] {
+  reg u32 i, j, aux;
+  reg u32[4] t;
+  inline int k;
+  i = 0; j = 0;
+  while(i < N)
+  {
+    for k = 0 to 4 {
+      t[k] = a[i]; i += 1;
+    }
+    /* r[5 * i + 0] = (uint8_t) (a->coeffs[4 * i + 0] >> 0); */
+    r[j] = t[0]; j += 1;
+
+    /* r[5 * i + 1] = (uint8_t) ((a->coeffs[4 * i + 0] >> 8) | (a->coeffs[4 * i + 1] << 2)); */
+    aux = t[0] >> 8;
+    aux = __or_lsl_inplace(aux, t[1], 2);
+    r[j] = aux; j += 1;
+
+    /* r[5 * i + 2] = (uint8_t) ((a->coeffs[4 * i + 1] >> 6) | (a->coeffs[4 * i + 2] << 4)); */
+    aux = t[1] >> 6;
+    aux = __or_lsl_inplace(aux, t[2], 4);
+    r[j] = aux; j += 1;
+
+    /* r[5 * i + 3] = (uint8_t) ((a->coeffs[4 * i + 2] >> 4) | (a->coeffs[4 * i + 3] << 6)); */
+    aux = t[2] >> 4;
+    aux = __or_lsl_inplace(aux, t[3], 6);
+    r[j] = aux; j += 1;
+
+    /* r[5 * i + 4] = (uint8_t) (a->coeffs[4 * i + 3] >> 2);                                 */
+    aux = t[3] >> 2;
+    r[j] = aux; j += 1;
+  }
+  return r;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_polyt1_unpack
+*
+* Description: Unpack polynomial t1 with 10-bit coefficients.
+*              Output coefficients are standard representatives.
+*
+* Arguments:   - poly *r: pointer to output polynomial
+*              - const uint8_t *a: byte array with bit-packed polynomial
+**************************************************/
+fn _polyt1_unpack(reg ptr u32[N] r, reg ptr u8[POLYT1_PACKEDBYTES] a) -> reg ptr u32[N] {
+  reg u32 i, j, aux;
+  reg u32[5] t;
+  inline int k;
+  i = 0; j = 0;
+  while(i < N)
+  {
+    for k = 0 to 5 {
+      t[k] = (32u) a[j]; j += 1;
+    }
+
+    /* r->coeffs[4 * i + 0] = ((a[5 * i + 0] >> 0) | ((uint32_t)a[5 * i + 1] << 8)) & 0x3FF; */
+    aux = t[0];
+    aux = __or_lsl_inplace(aux, t[1], 8);
+    aux = __ubfx(aux, 0, 10);
+    r[i] = aux; i += 1;
+
+    /* r->coeffs[4 * i + 1] = ((a[5 * i + 1] >> 2) | ((uint32_t)a[5 * i + 2] << 6)) & 0x3FF; */
+    aux = t[1] >> 2;
+    aux = __or_lsl_inplace(aux, t[2], 6);
+    aux = __ubfx(aux, 0, 10);
+    r[i] = aux;	i += 1;
+
+    /* r->coeffs[4 * i + 2] = ((a[5 * i + 2] >> 4) | ((uint32_t)a[5 * i + 3] << 4)) & 0x3FF; */
+    aux = t[2] >> 4;
+    aux = __or_lsl_inplace(aux, t[3], 4);
+    aux = __ubfx(aux, 0, 10);
+    r[i] = aux; i += 1;
+
+    /* r->coeffs[4 * i + 3] = ((a[5 * i + 3] >> 6) | ((uint32_t)a[5 * i + 4] << 2)) & 0x3FF; */
+    aux = t[3] >> 6;
+    aux = __or_lsl_inplace(aux, t[4], 2);
+    aux = __ubfx(aux, 0, 10);
+    r[i] = aux; i += 1;
+
+  }
+  return r;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_pack_pk
+*
+* Description: Bit-pack public key pk = (rho, t1).
+*
+* Arguments:   - uint8_t pk[]: output byte array
+*              - const uint8_t rho[]: byte array containing rho
+*              - const polyveck *t1: pointer to vector t1
+**************************************************/
+fn _pack_pk(
+    reg ptr u8[VERIFICATION_KEY_SIZE] pk,
+    reg ptr u8[SEEDBYTES] rho,
+    reg ptr u32[polyveck] t1
+) -> reg ptr u8[VERIFICATION_KEY_SIZE] {
+    pk = pk; rho = rho; t1 = t1;
+
+    inline int i;
+
+    reg ptr u8[SEEDBYTES] tpk;
+    tpk = pk[0:SEEDBYTES];
+    tpk = #copy(rho);
+    pk[0:SEEDBYTES] = tpk;
+
+    reg ptr u8[POLYT1_PACKEDBYTES] npk;
+    reg ptr u32[N] nt1;
+    for i = 0 to K {
+        nt1 = t1[i * N: N];
+        npk = pk[SEEDBYTES + i * POLYT1_PACKEDBYTES : POLYT1_PACKEDBYTES];
+        pk[SEEDBYTES + i * POLYT1_PACKEDBYTES : POLYT1_PACKEDBYTES] = _polyt1_pack(npk, nt1);
+    }
+
+    return pk;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_pack_sk
+*
+* Description: Bit-pack secret key sk = (rho, tr, key, t0, s1, s2).
+*
+* Arguments:   - uint8_t sk[]: output byte array
+*              - const uint8_t rho[]: byte array containing rho
+*              - const uint8_t tr[]: byte array containing tr
+*              - const uint8_t key[]: byte array containing key
+*              - const polyveck *t0: pointer to vector t0
+*              - const polyvecl *s1: pointer to vector s1
+*              - const polyveck *s2: pointer to vector s2
+**************************************************/
+fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr u8[VERIFICATION_KEY_HASH_SIZE] tr, reg ptr u8[SEEDBYTES] key, reg ptr u32[polyveck] t0, reg ptr u32[polyvecl] s1, reg ptr u32[polyveck] s2) -> reg ptr u8[SIGNING_KEY_SIZE] {
+    sk = sk; rho = rho; tr = tr; key = key; t0 = t0; s1 = s1; s2 = s2;
+
+    inline int i;
+    inline int current_position;
+    current_position = 0;
+
+    reg ptr u8[SEEDBYTES] tsk;
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] ttr;
+
+    tsk = sk[current_position : SEEDBYTES];
+    tsk = #copy(rho);
+    sk[current_position:SEEDBYTES] = tsk;
+    current_position += SEEDBYTES;
+
+    tsk = sk[current_position :  SEEDBYTES];
+    tsk = #copy(key);
+    sk[current_position : SEEDBYTES] = tsk;
+    current_position += SEEDBYTES;
+
+    ttr = sk[current_position : VERIFICATION_KEY_HASH_SIZE];
+    ttr = #copy(tr);
+    sk[current_position : VERIFICATION_KEY_HASH_SIZE] = ttr;
+    current_position += VERIFICATION_KEY_HASH_SIZE;
+
+    reg ptr u8[POLYETA_PACKEDBYTES] nsk;
+
+    () = #spill(t0);
+    () = #spill(s2);
+    reg ptr u32[N] ns1;
+    for i = 0 to L {
+        ns1 = s1[i * N: N];
+        () = #spill(s1);
+        nsk = sk[current_position : POLYETA_PACKEDBYTES];
+        sk[current_position : POLYETA_PACKEDBYTES] = _polyeta_pack(nsk, ns1);
+        () = #unspill(s1);
+        current_position += POLYETA_PACKEDBYTES;
+    }
+
+    () = #unspill(s2);
+    reg ptr u32[N] ns2;
+    for i = 0 to K {
+        ns2 = s2[i * N: N];
+        () = #spill(s2);
+        nsk = sk[current_position : POLYETA_PACKEDBYTES];
+        sk[current_position : POLYETA_PACKEDBYTES] = _polyeta_pack(nsk, ns2);
+        () = #unspill(s2);
+        current_position += POLYETA_PACKEDBYTES;
+    }
+    () = #unspill(t0);
+
+    reg ptr u32[N] nt0;
+    reg ptr u8[POLYT0_PACKEDBYTES] nnsk;
+    for i = 0 to K {
+        nt0 = t0[i * N: N];
+        nnsk = sk[current_position : POLYT0_PACKEDBYTES];
+        () = #spill(t0);
+        sk[current_position : POLYT0_PACKEDBYTES] = _polyt0_pack(nnsk, nt0);
+        () = #unspill(t0);
+        current_position += POLYT0_PACKEDBYTES;
+    }
+
+    return sk;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_unpack_pk
+*
+* Description: Unpack public key pk = (rho, t1).
+*
+* Arguments:   - const uint8_t rho[]: output byte array for rho
+*              - const polyveck *t1: pointer to output vector t1
+*              - uint8_t pk[]: byte array containing bit-packed pk
+**************************************************/
+fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[VERIFICATION_KEY_SIZE] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
+    pk = pk; rho = rho; t1 = t1;
+
+    inline int i;
+
+    reg ptr u8[SEEDBYTES] tpk;
+    tpk = pk[0 : SEEDBYTES];
+    rho = #copy(tpk);
+
+    reg ptr u8[POLYT1_PACKEDBYTES] npk;
+    reg ptr u32[N] nt1;
+    for i = 0 to K {
+        nt1 = t1[i * N: N];
+        npk = pk[SEEDBYTES + i * POLYT1_PACKEDBYTES : POLYT1_PACKEDBYTES];
+        t1[i * N : N] = _polyt1_unpack(nt1, npk);
+    }
+
+    return rho, t1;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_unpack_sk
+*
+* Description: Unpack secret key sk = (rho, tr, key, t0, s1, s2).
+*
+* Arguments:   - const uint8_t rho[]: output byte array for rho
+*              - const uint8_t tr[]: output byte array for tr
+*              - const uint8_t key[]: output byte array for key
+*              - const polyveck *t0: pointer to output vector t0
+*              - const polyvecl *s1: pointer to output vector s1
+*              - const polyveck *s2: pointer to output vector s2
+*              - uint8_t sk[]: byte array containing bit-packed sk
+**************************************************/
+fn _unpack_sk
+  (reg ptr u8[SEEDBYTES] rho,
+   reg ptr u8[VERIFICATION_KEY_HASH_SIZE] tr,
+   reg ptr u8[SEEDBYTES] key,
+   reg ptr u32[polyveck] t0,
+   reg ptr u32[polyvecl] s1,
+   reg ptr u32[polyveck] s2,
+   #secret reg ptr u8[SIGNING_KEY_SIZE] sk)
+     // rho, tr, key, t0, s1, s2
+  -> reg ptr u8[SEEDBYTES], reg ptr u8[VERIFICATION_KEY_HASH_SIZE], reg ptr u8[SEEDBYTES],
+     reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck]
+{
+    sk = sk; rho = rho; tr = tr; key = key; t0 = t0; s1 = s1; s2 = s2;
+
+    inline int i;
+    inline int current_position;
+    current_position = 0;
+
+    reg ptr u8[SEEDBYTES] tsk;
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] ttr;
+
+    tsk = sk[current_position : SEEDBYTES];
+    rho = #copy(tsk);
+    current_position += SEEDBYTES;
+
+    tsk = sk[current_position :  SEEDBYTES];
+    key = #copy(tsk);
+    current_position += SEEDBYTES;
+
+    ttr = sk[current_position : VERIFICATION_KEY_HASH_SIZE];
+    tr = #copy(ttr);
+    current_position += VERIFICATION_KEY_HASH_SIZE;
+
+    reg ptr u8[POLYETA_PACKEDBYTES] nsk;
+
+    () = #spill(t0);
+    () = #spill(s2);
+    () = #spill(rho);
+    () = #spill(tr);
+    () = #spill(key);
+    reg ptr u32[N] ns1;
+    for i = 0 to L {
+        ns1 = s1[i * N: N];
+        nsk = sk[current_position : POLYETA_PACKEDBYTES];
+        s1[i * N: N] = _polyeta_unpack(ns1, nsk);
+        current_position += POLYETA_PACKEDBYTES;
+    }
+
+    () = #unspill(s2);
+    reg ptr u32[N] ns2;
+    for i = 0 to K {
+        ns2 = s2[i * N: N];
+        nsk = sk[current_position : POLYETA_PACKEDBYTES];
+        () = #spill(sk);
+        s2[i * N: N] = _polyeta_unpack(ns2, nsk);
+        () = #unspill(sk);
+        current_position += POLYETA_PACKEDBYTES;
+    }
+    () = #unspill(t0);
+    () = #spill(s1, s2);
+
+    reg ptr u32[N] nt0;
+    reg ptr u8[POLYT0_PACKEDBYTES] nnsk;
+    for i = 0 to K {
+        nt0 = t0[i * N: N];
+        nnsk = sk[current_position : POLYT0_PACKEDBYTES];
+        t0[i * N: N] = _polyt0_unpack(nt0, nnsk);
+        current_position += POLYT0_PACKEDBYTES;
+    }
+    () = #unspill(rho);
+    () = #unspill(tr);
+    () = #unspill(key);
+    () = #unspill(s1,s2);
+    return rho, tr, key, t0, s1, s2;
+}

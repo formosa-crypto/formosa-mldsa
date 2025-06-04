@@ -1,0 +1,75 @@
+namespace commitment {
+    inline
+    fn __encode_polynomial(
+        reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
+    {
+        reg u32 encoded_byte temp;
+        reg u32 t0 t1 t2 t3;
+
+        reg u64 i = 0;
+        reg u64 out_offset = 0;
+
+        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
+            t0 = polynomial[i + 0];
+            t1 = polynomial[i + 1];
+            t2 = polynomial[i + 2];
+            t3 = polynomial[i + 3];
+
+            // r[3*i+0]  = a->coeffs[4*i+0];
+            // r[3*i+0] |= a->coeffs[4*i+1] << 6;
+            encoded_byte = t0;
+            temp = t1;
+            temp <<= 6;
+
+            encoded_byte |= temp;
+
+            encoded[out_offset + 0] = (8u)encoded_byte;
+
+            // r[3*i+1]  = a->coeffs[4*i+1] >> 2;
+            // r[3*i+1] |= a->coeffs[4*i+2] << 4;
+            encoded_byte = t1 >> 2;
+            temp = t2;
+            temp <<= 4;
+
+            encoded_byte |= temp;
+
+            encoded[out_offset + 1] = (8u)encoded_byte;
+
+            // r[3*i+2]  = a->coeffs[4*i+2] >> 4;
+            // r[3*i+2] |= a->coeffs[4*i+3] << 2;
+            encoded_byte = t2 >> 4;
+            temp = t3;
+            temp <<= 2;
+
+            encoded_byte |= temp;
+
+            encoded[out_offset + 2] = (8u)encoded_byte;
+
+            i += 4;
+            out_offset += 3;
+        }
+
+        return encoded;
+    }
+
+    inline
+    fn __encode(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] commitment)
+        -> stack u8[ENCODED_COMMITMENT_SIZE]
+    {
+        stack u8[ENCODED_COMMITMENT_SIZE] encoded_commitment;
+
+        inline int i;
+
+        for i = 0 to ROWS_IN_MATRIX_A {
+            encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE] =
+            __encode_polynomial(
+                encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE],
+                commitment[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+            );
+        }
+
+        return encoded_commitment;
+    }
+}

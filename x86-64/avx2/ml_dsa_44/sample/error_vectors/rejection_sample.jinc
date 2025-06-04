@@ -1,0 +1,313 @@
+inline
+fn __bytestream_to_coefficients(reg u128 bytestream) -> reg u256 {
+    reg u256 coefficients odd_coefficients;
+    reg u256 mask;
+    reg u64 temp;
+
+    temp = (1 << 4) - 1;
+    mask = (256u)#VMOV(temp);
+    mask = #VPBROADCAST_32u8(mask);
+
+    coefficients = #VPMOVZX_16u8_16u16(bytestream);
+
+    odd_coefficients = #VPSLL_16u16(coefficients, 4);
+
+    coefficients = #VPOR_256(coefficients, odd_coefficients);
+    coefficients = #VPAND_256(coefficients, mask);
+
+    return coefficients;
+}
+
+inline fn reduce_coefficients(reg u256 coefficients) -> reg u256 {
+    reg u256 multiplier quotient;
+    reg u64 temp;
+
+    temp = -6560;
+    multiplier = (256u)#VMOV(temp);
+    multiplier = #VPBROADCAST_8u32(multiplier);
+
+    quotient = #VPMULHRS_16u16(coefficients, multiplier);
+
+    temp = 5;
+    multiplier = (256u)#VMOV(temp);
+    multiplier = #VPBROADCAST_8u32(multiplier);
+    quotient = #VPMULL_16u16(quotient, multiplier);
+
+    coefficients = #VPADD_8u32(coefficients, quotient);
+
+    return coefficients;
+}
+
+inline fn
+write_out_8_coefficients(
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
+    reg u64 bytes_filled,
+    reg u64 good_overall,
+    reg u128 coefficient_block
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64, reg u64
+{
+    reg u256 error_coefficients;
+    reg u128 error_coefficients_128;
+    reg u128 shuffles;
+
+    reg ptr u8[2048] shuffle_table_pointer;
+    reg u64 shuffle_table_idx;
+
+    reg u64 good;
+
+    good = good_overall;
+    good &= 0xFF;
+
+    good_overall >>= 8;
+
+    shuffle_table_pointer = ERROR_VECTOR_SHUFFLE_TABLE;
+
+    shuffle_table_idx = good;
+    shuffle_table_idx <<= 3;
+    shuffles = (128u)shuffle_table_pointer.[:u64 shuffle_table_idx];
+
+    error_coefficients_128 = #VPSHUFB_128(coefficient_block, shuffles);
+    error_coefficients = #VPMOVSX_8u8_8u32(error_coefficients_128);
+
+    error_coefficients = reduce_coefficients(error_coefficients);
+
+    error.[:u256 bytes_filled] = error_coefficients;
+
+    _, _, _, _, _, good = #POPCNT_64(good);
+    good <<= 2;
+    bytes_filled += good;
+
+    return error, bytes_filled, good_overall;
+}
+
+fn rejection_sample_multiple_blocks(
+    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
+    #secret reg ptr u8[REJECTION_SAMPLING_BYTES] randombytes
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
+{
+    reg u128 bytestream;
+    reg u256 coefficients comparisons;
+    reg u128 coefficient_block;
+    reg u256 eta bound;
+
+    reg u64 good_overall;
+
+    reg u64 xof_offset;
+    reg u64 bytes_filled filled;
+
+    reg u64 temp;
+
+    reg u8 flg0 flg1;
+    reg bool cf done;
+
+    reg u32 coefficient temp_u32;
+
+    temp = ETA;
+    eta = (256u)#VMOV(temp);
+    eta = #VPBROADCAST_32u8(eta);
+
+    temp = 15;
+    bound = (256u)#VMOV(temp);
+    bound = #VPBROADCAST_32u8(bound);
+
+    bytes_filled = 0;
+    xof_offset = 0;
+
+    _, cf, _, _, _ = #CMP_64(bytes_filled, BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32);
+    flg0 = #SETcc(cf);
+
+    _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES - 16);
+    flg1 = #SETcc(cf);
+
+    _, _, _, _, done = #TEST_8(flg0, flg1);
+
+    while (!done) {
+        bytestream = randombytes.[:u128 xof_offset];
+
+        coefficients = __bytestream_to_coefficients(bytestream);
+
+        comparisons = #VPSUB_32u8(coefficients, bound);
+        good_overall = #MOVEMASK_32u8(comparisons);
+
+        coefficients = #VPSUB_32u8(eta, coefficients);
+
+        // Handle the first 16 coefficients
+        coefficient_block = #VEXTRACTI128(coefficients, 0);
+
+        // Start with the first 8
+        #declassify good_overall = good_overall;
+        error, bytes_filled, good_overall = write_out_8_coefficients(error, bytes_filled, good_overall, coefficient_block);
+
+        xof_offset += 4;
+
+        if (bytes_filled < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
+            // Then the next 8
+            coefficient_block = #VPSRLDQ_128(coefficient_block, 8);
+            error, bytes_filled, good_overall = write_out_8_coefficients(error, bytes_filled, good_overall, coefficient_block);
+            xof_offset += 4;
+
+            if (bytes_filled < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
+                // Then the next 16 coefficients
+                coefficient_block = #VEXTRACTI128(coefficients, 1);
+
+                // Start with the first 8
+                error, bytes_filled, good_overall = write_out_8_coefficients(error, bytes_filled, good_overall, coefficient_block);
+                xof_offset += 4;
+
+                if (bytes_filled < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
+                    // Finally, the last 8
+                    coefficient_block = #VPSRLDQ_128(coefficient_block, 8);
+                    error, bytes_filled, good_overall = write_out_8_coefficients(error, bytes_filled, good_overall, coefficient_block);
+                    xof_offset += 4;
+                }
+            }
+        }
+
+        _, cf, _, _, _ = #CMP_64(bytes_filled, BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32);
+        flg0 = #SETcc(cf);
+
+        _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES - 16);
+        flg1 = #SETcc(cf);
+
+        _, _, _, _, done = #TEST_8(flg0, flg1);
+    }
+
+    filled = bytes_filled;
+    filled >>= 2;
+
+    _, cf, _, _, _ = #CMP_64(filled, COEFFICIENTS_IN_POLYNOMIAL);
+    flg0 = #SETcc(cf);
+
+    _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES);
+    flg1 = #SETcc(cf);
+
+    _, _, _, _, done = #TEST_8(flg0, flg1);
+
+    while (!done) {
+        coefficient = (32u)randombytes[xof_offset];
+        #declassify coefficient &= 0xF;
+
+        if (coefficient < 15) {
+            temp_u32 = coefficient;
+            temp_u32 *= 205;
+            temp_u32 >>= 10;
+            temp_u32 *= 5;
+
+            coefficient -= temp_u32;
+
+            coefficient -= ETA;
+            coefficient = -coefficient;
+
+            error[filled] = coefficient;
+            filled += 1;
+        }
+
+        if (filled < COEFFICIENTS_IN_POLYNOMIAL) {
+            coefficient = (32u)randombytes[xof_offset];
+            #declassify coefficient >>= 4;
+
+            if (coefficient < 15) {
+                temp_u32 = coefficient;
+                temp_u32 *= 205;
+                temp_u32 >>= 10;
+                temp_u32 *= 5;
+
+                coefficient -= temp_u32;
+
+                coefficient -= ETA;
+                coefficient = -coefficient;
+
+                error[filled] = coefficient;
+                filled += 1;
+            }
+        }
+
+        xof_offset += 1;
+
+        _, cf, _, _, _ = #CMP_64(filled, COEFFICIENTS_IN_POLYNOMIAL);
+        flg0 = #SETcc(cf);
+
+        _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES);
+        flg1 = #SETcc(cf);
+
+        _, _, _, _, done = #TEST_8(flg0, flg1);
+    }
+
+    return error, filled;
+}
+
+fn rejection_sample_one_block(
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
+    reg u64 filled,
+    reg ptr u8[SHAKE256_RATE] randombytes
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
+{
+    reg u64 xof_offset;
+
+    reg u8 flg0 flg1;
+    reg bool cf done;
+
+    reg u32 coefficient temp;
+    xof_offset = 0;
+
+    _, cf, _, _, _ = #CMP_64(filled, COEFFICIENTS_IN_POLYNOMIAL);
+    flg0 = #SETcc(cf);
+
+    _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES);
+    flg1 = #SETcc(cf);
+
+    _, _, _, _, done = #TEST_8(flg0, flg1);
+
+    while (!done) {
+        coefficient = (32u)randombytes[xof_offset];
+        #declassify coefficient &= 0xF;
+
+        if (coefficient < 15) {
+            temp = coefficient;
+            temp *= 205;
+            temp >>= 10;
+            temp *= 5;
+
+            coefficient -= temp;
+
+            coefficient -= ETA;
+            coefficient = -coefficient;
+
+            error[filled] = coefficient;
+            filled += 1;
+        }
+
+        if (filled < COEFFICIENTS_IN_POLYNOMIAL) {
+            coefficient = (32u)randombytes[xof_offset];
+            #declassify coefficient >>= 4;
+
+            if (coefficient < 15) {
+                temp = coefficient;
+                temp *= 205;
+                temp >>= 10;
+                temp *= 5;
+
+                coefficient -= temp;
+
+                coefficient -= ETA;
+                coefficient = -coefficient;
+
+                error[filled] = coefficient;
+                filled += 1;
+            }
+        }
+
+        xof_offset += 1;
+
+        _, cf, _, _, _ = #CMP_64(filled, COEFFICIENTS_IN_POLYNOMIAL);
+        flg0 = #SETcc(cf);
+
+        _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES);
+        flg1 = #SETcc(cf);
+
+        _, _, _, _, done = #TEST_8(flg0, flg1);
+    }
+
+    return error, filled;
+}
+

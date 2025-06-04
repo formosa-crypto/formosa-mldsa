@@ -1,0 +1,61 @@
+param int INVERSE_OF_MODULUS_MOD_MONTGOMERY_R = 58_728_449;
+
+inline
+fn __montgomery_reduce(reg u64 a) -> reg u32
+{
+    reg u32 a32;
+    reg u64 v64;
+    reg u32 t;
+
+    // t = (int64_t)(int32_t)a*QINV;
+    a32 = (32s) a;
+    v64 = (64s) a32;
+    v64 *= INVERSE_OF_MODULUS_MOD_MONTGOMERY_R;
+    t = (32s) v64;
+
+    // t = (a - (int64_t)t*Q) >> 32;
+    v64 = (64s) t;
+    v64 *= -MODULUS;
+    v64 += a;
+    v64 >>= 32;
+    t = (32s) v64;
+
+    return t;
+}
+
+
+namespace coefficient {
+    inline
+    fn __reduce32(reg u32 coefficient) -> reg u32
+    {
+        reg u32 t quotient;
+
+        // t = (coefficient + (1 << 22)) >> 23;
+        t = coefficient;
+        t += (1 << 22);
+        t = t >>s 23;
+
+        // t = coefficient - t*Q;
+        quotient = t;
+        quotient *= MODULUS;
+        t = coefficient;
+        t -= quotient;
+
+        return t;
+    }
+
+    inline
+    fn __conditionally_add_modulus(reg u32 coefficient) -> reg u32 {
+        reg u32 add_by;
+        reg u32 result;
+
+        add_by = coefficient;
+        add_by >>s= 31;
+        add_by &= MODULUS;
+
+        result = coefficient;
+        result += add_by;
+
+        return result;
+    }
+}

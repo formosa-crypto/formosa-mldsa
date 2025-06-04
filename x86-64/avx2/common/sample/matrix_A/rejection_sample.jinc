@@ -1,0 +1,232 @@
+require "shuffle_table.jinc"
+
+u256[3] DECODING_TABLE = {
+    (8u32)[0, 5, 4, 3, 0, 2, 1, 0],
+    (32u8)[-1, 11, 10, 9, -1, 8, 7, 6,
+           -1, 5, 4, 3, -1, 2, 1, 0, -1,
+           11, 10, 9, -1, 8, 7, 6, -1,
+            5, 4, 3, -1, 2, 1, 0],
+    (8u32)[(1 << 23) - 1,
+           (1 << 23) - 1,
+           (1 << 23) - 1,
+           (1 << 23) - 1,
+           (1 << 23) - 1,
+           (1 << 23) - 1,
+           (1 << 23) - 1,
+           (1 << 23) - 1]
+};
+
+// Read in 32 bytes to fill up the YMM register, but we only use the first 24,
+// since 24 bytes already give us 8 potential coefficients.
+inline
+fn __bytestream_to_potential_coefficients(reg u256 bytestream) -> reg u256 {
+    reg u256 constants;
+    reg u256 coefficients;
+
+    constants = DECODING_TABLE[0];
+    coefficients = #VPERMD(constants, bytestream);
+
+    constants = DECODING_TABLE[1];
+    coefficients = #VPSHUFB_256(coefficients, constants);
+
+    constants = DECODING_TABLE[2];
+    coefficients = #VPAND_256(coefficients, constants);
+
+    return coefficients;
+}
+
+fn rejection_sample_multiple_blocks(
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+    reg ptr u8[REJECTION_SAMPLE_INPUT_SIZE] randombytes
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL],
+     reg u64
+{
+    reg u256 modulus potential_coefficients compare_with_field_modulus;
+    reg u128 shuffles lower_coefficients upper_coefficients;
+
+    reg u64 input_offset;
+    reg u64 good_lower good_upper good;
+    reg u64 filled bytes_filled;
+
+    reg ptr u8[256] shuffle_table_pointer;
+    reg u64 shuffle_table_idx;
+
+    reg u8 flg0 flg1;
+    reg bool cf done;
+
+    reg u32 byte0 byte1 byte2;
+    reg u32 coeff;
+
+    shuffle_table_pointer = SHUFFLE_TABLE;
+
+    bytes_filled = 0;
+    input_offset = 0;
+
+    modulus = MODULUS_VECTOR;
+
+    // In each iteration we can sample up to 8 coefficients, so 32 bytes.
+    _, cf, _, _, _ = #CMP_64(bytes_filled, BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32);
+    flg0 = #SETcc(cf);
+
+    _, cf, _, _, _ = #CMP_64(input_offset, REJECTION_SAMPLING_BYTES);
+    flg1 = #SETcc(cf);
+
+    _, _, _, _, done = #TEST_8(flg0, flg1);
+
+    while (!done) {
+        potential_coefficients = randombytes.[:u256 input_offset];
+        potential_coefficients = __bytestream_to_potential_coefficients(potential_coefficients);
+        input_offset += 24;
+
+        compare_with_field_modulus = #VPCMPGT_8u32(modulus, potential_coefficients);
+
+        good = #MOVEMASK_8u32(compare_with_field_modulus);
+
+        // Do the lower 4 coefficients first.
+        lower_coefficients = #VEXTRACTI128(potential_coefficients, 0);
+
+        good_lower = good;
+        good_lower &= 0xF;
+
+        shuffle_table_idx = good_lower;
+        shuffle_table_idx <<= 4;
+        shuffles = shuffle_table_pointer.[:u128 shuffle_table_idx];
+
+        lower_coefficients = #VPSHUFB_128(lower_coefficients, shuffles);
+        polynomial.[:u128 bytes_filled] = lower_coefficients;
+
+        _, _, _, _, _, good_lower = #POPCNT_64(good_lower);
+        good_lower <<= 2;
+        bytes_filled += good_lower;
+
+        // Then the upper 4 coefficients.
+        upper_coefficients = #VEXTRACTI128(potential_coefficients, 1);
+
+        good_upper = good;
+        good_upper >>= 4;
+
+        shuffle_table_idx = good_upper;
+        shuffle_table_idx <<= 4;
+        shuffles = shuffle_table_pointer.[:u128 shuffle_table_idx];
+
+        upper_coefficients = #VPSHUFB_128(upper_coefficients, shuffles);
+        polynomial.[:u128 bytes_filled] = upper_coefficients;
+
+        _, _, _, _, _, good_upper = #POPCNT_64(good_upper);
+        good_upper <<= 2;
+        bytes_filled += good_upper;
+
+        _, cf, _, _, _ = #CMP_64(bytes_filled, BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32);
+        flg0 = #SETcc(cf);
+
+        _, cf, _, _, _ = #CMP_64(input_offset, REJECTION_SAMPLING_BYTES);
+        flg1 = #SETcc(cf);
+
+        _, _, _, _, done = #TEST_8(flg0, flg1);
+    }
+
+    filled = bytes_filled;
+    filled >>= 2;
+
+    _, cf, _, _, _ = #CMP_64(filled, COEFFICIENTS_IN_POLYNOMIAL);
+    flg0 = #SETcc(cf);
+
+    _, cf, _, _, _ = #CMP_64(input_offset, REJECTION_SAMPLING_BYTES - 3);
+    flg1 = #SETcc(cf);
+
+    _, _, _, _, done = #TEST_8(flg0, flg1);
+
+    while (!done) {
+        byte0 = (32u)randombytes[input_offset];
+        input_offset += 1;
+
+        byte1 = (32u)randombytes[input_offset];
+        input_offset += 1;
+
+        byte2 = (32u)randombytes[input_offset];
+        input_offset += 1;
+
+        coeff = byte0;
+        byte1 <<= 8;
+        coeff |= byte1;
+        byte2 <<= 16;
+        coeff |= byte2;
+
+        // Rejection-sample
+        coeff &= 0x7F_FF_FF;
+        if coeff < MODULUS {
+            polynomial[filled] = coeff;
+            filled += 1;
+        }
+
+        _, cf, _, _, _ = #CMP_64(filled, COEFFICIENTS_IN_POLYNOMIAL);
+        flg0 = #SETcc(cf);
+
+        _, cf, _, _, _ = #CMP_64(input_offset, REJECTION_SAMPLING_BYTES - 3);
+        flg1 = #SETcc(cf);
+
+        _, _, _, _, done = #TEST_8(flg0, flg1);
+    }
+
+    return polynomial, filled;
+}
+
+fn rejection_sample_one_block(
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+    reg u64 filled,
+    reg ptr u8[SHAKE128_RATE] block
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL],
+     reg u64
+{
+    // Assume the XOF buffer is full.
+    //
+    // Extract until:
+    //   * The polynomial buffer is full, or
+    //   * The XOF buffer is empty.
+    //
+    // Note: This function relies on the fact that the amount of bytes
+    // needed to sample a coefficient mod q (3 bytes) aligns with the
+    // SHAKE128 rate (168 bytes).  That is why we don't have to stash
+    // any bytes in some scratch space between calls.
+    //
+
+    reg u32 byte0 byte1 byte2;
+    reg u8 stop_sampling;
+    reg u32 coeff;
+    reg u64 block_offset = 0;
+
+    stop_sampling = 0;
+    while (stop_sampling == 0) {
+        byte0 = (32u)block[block_offset];
+        block_offset += 1;
+
+        byte1 = (32u)block[block_offset];
+        block_offset += 1;
+
+        byte2 = (32u)block[block_offset];
+        block_offset += 1;
+
+        coeff = byte0;
+        byte1 <<= 8;
+        coeff |= byte1;
+        byte2 <<= 16;
+        coeff |= byte2;
+
+        // Rejection-sample
+        coeff &= 0x7F_FF_FF;
+        if coeff < MODULUS {
+            polynomial[filled] = coeff;
+            filled += 1;
+            if filled >= COEFFICIENTS_IN_POLYNOMIAL {
+                stop_sampling = 1;
+            }
+        }
+
+        if block_offset >= SHAKE128_RATE {
+            // We've run out of random bytes.
+            stop_sampling = 1;
+        }
+    }
+
+    return polynomial, filled;
+}

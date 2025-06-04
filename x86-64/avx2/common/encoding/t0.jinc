@@ -1,0 +1,194 @@
+namespace t0 {
+    u256[4] ENCODING_SHIFTS_TABLE = {
+        (8u32)[0, 19, 0, 19, 0, 19, 0, 19],
+        (8u32)[0, 0, 0, 0, 6, 4, 2, 0],
+        (8u32)[0, 6, 0, 6, 0, 6, 0, 6],
+        (4u64)[0, 0, 12, 0]
+    };
+    fn coefficients_to_bytestream(reg u256 coefficients) -> reg u128 {
+        reg u256 _bytestream second_4 shifts;
+        reg u128 bytestream;
+
+        shifts = HALF_OF_BITS_IN_T0_VECTOR;
+        coefficients = #VPSUB_8u32(shifts, coefficients);
+
+        // Combine the 2 adjacent coefficients
+        shifts = ENCODING_SHIFTS_TABLE[0];
+        _bytestream = #VPSLLV_8u32(coefficients, shifts);
+        _bytestream = #VPSRL_4u64(_bytestream, 19);
+
+        // Combine the 4 adjacent coefficients
+        shifts = ENCODING_SHIFTS_TABLE[1];
+        _bytestream = #VPERMD(shifts, _bytestream);
+
+        shifts = ENCODING_SHIFTS_TABLE[2];
+        _bytestream = #VPSLLV_8u32(_bytestream, shifts);
+        _bytestream = #VPSRL_4u64(_bytestream, 6);
+
+        second_4 = #VPSRLDQ_256(_bytestream, 8);
+        second_4 = #VPSLL_4u64(second_4, 52);
+
+        _bytestream = #VPADD_4u64(_bytestream, second_4);
+
+        shifts = ENCODING_SHIFTS_TABLE[3];
+        _bytestream = #VPSRLV_4u64(_bytestream, shifts);
+
+        // We should now have 104 bits starting at position 0 in the lower
+        // 128-bit lane of |bytestream|
+        bytestream = #VEXTRACTI128(_bytestream, 0);
+
+        return bytestream;
+    }
+    fn encode_polynomial(
+        reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE] t0_encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0
+    ) -> reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE]
+    {
+        reg u256 coefficients;
+        reg u128 bytestream;
+
+        reg u64 input_offset output_offset;
+        stack u8[16] final_encoded_output;
+
+        inline int i;
+
+        input_offset = 0;
+        output_offset = 0;
+        while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
+            coefficients = t0.[:u256 input_offset];
+            input_offset += 32;
+
+            bytestream = coefficients_to_bytestream(coefficients);
+
+            t0_encoded.[:u128 output_offset] = bytestream;
+            output_offset += 13;
+        }
+
+        coefficients = t0.[:u256 input_offset];
+
+        bytestream = coefficients_to_bytestream(coefficients);
+        final_encoded_output.[:u128 0] = bytestream;
+
+        for i = 0 to 13 {
+            t0_encoded[output_offset + i] = final_encoded_output[i];
+        }
+
+        return t0_encoded;
+    }
+
+    inline fn __encode(
+        reg ptr u8[T0_ENCODED_SIZE] encoded,
+        #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0
+    ) -> reg ptr u8[T0_ENCODED_SIZE]
+    {
+        inline int j;
+
+        () = #spill(t0);
+
+        for j = 0 to ROWS_IN_MATRIX_A {
+            encoded[j * T0_POLYNOMIAL_ENCODED_SIZE : T0_POLYNOMIAL_ENCODED_SIZE] =
+                encode_polynomial(
+                    encoded[j * T0_POLYNOMIAL_ENCODED_SIZE : T0_POLYNOMIAL_ENCODED_SIZE],
+                    t0[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL]
+                );
+            () = #unspill(t0);
+        }
+
+        return encoded;
+    }
+
+    u256[3] DECODING_TABLE = {
+        (32u8)[
+            -1, -1, 12, 11, -1, 11, 10, 9,
+            -1, -1, 9, 8, -1, 8, 7, 6, -1,
+            6, 5, 4, -1, -1, 4, 3, -1, 3,
+            2, 1, -1, -1, 1, 0
+        ],
+        (8u32)[3, 6, 1, 4, 7, 2, 5, 0],
+        (8u32)[
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK,
+            BITS_IN_LOWER_PART_OF_T_MASK
+        ]
+    };
+
+    fn bytestream_to_coefficients(reg u128 bytestream) -> reg u256 {
+        reg u256 coefficients;
+        reg u256 shifts mask;
+
+        coefficients = #set0_256();
+        coefficients = #VINSERTI128(coefficients, bytestream, 0);
+        coefficients = #VINSERTI128(coefficients, bytestream, 1);
+
+        shifts = DECODING_TABLE[0];
+        coefficients = #VPSHUFB_256(coefficients, shifts);
+
+        shifts = DECODING_TABLE[1];
+        coefficients = #VPSRLV_8u32(coefficients, shifts);
+
+        mask = DECODING_TABLE[2];
+        coefficients = #VPAND_256(coefficients, mask);
+
+        shifts = HALF_OF_BITS_IN_T0_VECTOR;
+        coefficients = #VPSUB_8u32(shifts, coefficients);
+
+        return coefficients;
+    }
+    inline
+    fn __decode_polynomial(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t0,
+        reg ptr u8[T0_POLYNOMIAL_ENCODED_SIZE] t0_encoded
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u128 bytestream;
+        reg u256 coefficients;
+
+        reg u64 input_offset output_offset;
+
+        input_offset = 0;
+        output_offset = 0;
+        while (input_offset < T0_POLYNOMIAL_ENCODED_SIZE - 13) {
+            // We process only 13 bytes at a time.
+            bytestream = t0_encoded.[:u128 input_offset];
+            input_offset += 13;
+
+            coefficients = bytestream_to_coefficients(bytestream);
+
+            t0.[:u256 output_offset] = coefficients;
+            output_offset += 32;
+        }
+
+        bytestream = t0_encoded.[:u128 T0_POLYNOMIAL_ENCODED_SIZE - 16];
+        bytestream = #VPSRLDQ_128(bytestream, 3);
+
+        coefficients = bytestream_to_coefficients(bytestream);
+
+        t0.[:u256 output_offset] = coefficients;
+        output_offset += 32;
+
+        return t0;
+    }
+
+    inline fn
+    decode(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0,
+           reg ptr u8[T0_ENCODED_SIZE] encoded) ->
+           reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        inline int i;
+
+        for i = 0 to ROWS_IN_MATRIX_A {
+            t0[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL] =
+                __decode_polynomial(
+                    t0[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL],
+                    encoded[T0_POLYNOMIAL_ENCODED_SIZE * i : T0_POLYNOMIAL_ENCODED_SIZE]
+                );
+        }
+
+        return t0;
+    }
+}

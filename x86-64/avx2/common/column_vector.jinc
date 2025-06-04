@@ -1,0 +1,122 @@
+require "polynomial.jinc"
+
+// A column vector has dimensions ROWS_IN_MATRIX_A * 1
+namespace column_vector {
+    fn reduce32(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+        -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
+        inline int i;
+
+        for i = 0 to ROWS_IN_MATRIX_A {
+            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::reduce32(vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]);
+        }
+
+        return vector;
+    }
+
+    fn ntt(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+        -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
+        inline int i;
+
+        for i = 0 to ROWS_IN_MATRIX_A {
+            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::ntt(
+                    vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                );
+        }
+
+        return vector;
+    }
+    fn invert_ntt_montgomery(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+    -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        inline int i;
+
+        for i = 0 to ROWS_IN_MATRIX_A {
+            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::invert_ntt_montgomery(
+                    vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                );
+        }
+
+        return vector;
+    }
+
+    inline
+    fn __power2round(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+        -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
+           stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t1 t0;
+
+        inline int i;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            t1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+            t0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                = polynomial::__power2round(
+                      t1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                      t0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                      vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                  );
+        }
+
+        return t1, t0;
+    }
+
+    inline
+    fn __add(
+        #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs
+    ) -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] sum;
+
+        inline int i;
+
+        () = #spill(lhs, rhs);
+
+        for i = 0 to ROWS_IN_MATRIX_A {
+            sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::add(
+                    sum[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
+                    lhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
+                    rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
+                );
+            () = #unspill(lhs, rhs);
+        }
+        return sum;
+    }
+
+    inline
+    fn __conditionally_add_modulus(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+        -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        inline int i;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::conditionally_add_modulus(vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]);
+        }
+
+        return vector;
+    }
+
+    inline
+    fn __decompose(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector)
+    -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
+       stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] low high;
+
+        inline int i;
+        for i = 0 to ROWS_IN_MATRIX_A {
+            low[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+            high[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::decompose(
+                    low[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                    high[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                    vector[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                );
+        }
+
+        return low, high;
+    }
+}

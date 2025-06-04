@@ -1,0 +1,186 @@
+namespace signature {
+    param int START_OF_GAMMA1 = COMMITMENT_HASH_SIZE;
+    param int START_OF_HINT = START_OF_GAMMA1 + GAMMA1_ENCODED_SIZE;
+
+    inline
+    fn __encode(
+        reg ptr u8[SIGNATURE_SIZE] signature,
+        reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash,
+        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response,
+        reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint
+    ) -> reg ptr u8[SIGNATURE_SIZE]
+    {
+        reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] polynomial_encoded;
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial;
+
+        reg u64 i j hints_written hint_offset;
+        reg u32 hint_coefficient;
+
+        reg u64 msf;
+
+        inline int k;
+        inline bool condition;
+
+        i = 0;
+        while (i < COMMITMENT_HASH_SIZE) {
+            signature[i] = commitment_hash[i];
+
+            i += 1;
+        }
+
+        for k = 0 to COLUMNS_IN_MATRIX_A {
+            polynomial_encoded = signature[START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE];
+            polynomial = signer_response[k * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
+            polynomial_encoded = gamma1::__encode_polynomial(polynomial_encoded, polynomial);
+            signature[START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE) : ENCODED_GAMMA1_POLYNOMIAL_SIZE] = polynomial_encoded;
+        }
+
+        // Clear the hints buffer
+        i = 0;
+        while (i < MAX_ONES_IN_HINT + ROWS_IN_MATRIX_A) {
+            signature[START_OF_HINT + i] = 0;
+            i += 1;
+        }
+
+
+        // Write out hints
+        msf = #init_msf();
+
+        hints_written = 0;
+        i = 0;
+        while {condition = i < ROWS_IN_MATRIX_A;} (condition) {
+            msf = #update_msf(condition, msf);
+
+            j = 0;
+            while {condition = j < COEFFICIENTS_IN_POLYNOMIAL;} (condition) {
+                msf = #update_msf(condition, msf);
+
+                hint_offset = i;
+                hint_offset <<= LOG_2_COEFFICIENTS_IN_POLYNOMIAL;
+                hint_offset += j;
+
+                hint_coefficient = hint[hint_offset];
+                hint_coefficient = #protect_32(hint_coefficient, msf);
+
+                condition = hint_coefficient != 0;
+                if (condition) {
+                    msf = #update_msf(condition, msf);
+
+                    signature[START_OF_HINT + hints_written] = (8u)j;
+                    hints_written += 1;
+                } else {
+                    msf = #update_msf(!condition, msf);
+                }
+
+                j += 1;
+            }
+            msf = #update_msf(!condition, msf);
+
+            signature[START_OF_HINT + MAX_ONES_IN_HINT + i] = (8u) hints_written;
+            i += 1;
+        }
+
+        return signature;
+    }
+
+    inline
+    fn __decode_hint(
+        reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints,
+        reg ptr u8[HINT_ENCODED_SIZE] hint_encoded
+    ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64
+    {
+        reg u64 j;
+        reg u8 done;
+        reg bool within_bounds;
+        reg u64 index;
+        reg u64 hint hint_at_j hint_at_j_minus_one;
+        reg u64 previous_true_hints_seen current_true_hints_seen;
+        reg u64 decoded_offset encoded_offset ill_formed_hint;
+
+        ill_formed_hint = 0;
+        previous_true_hints_seen = 0;
+
+        encoded_offset = 0;
+        while {
+            within_bounds = encoded_offset >= ROWS_IN_MATRIX_A;
+            done = #SETcc(within_bounds);
+            done |= ill_formed_hint;
+        } (done == 0) {
+            decoded_offset = encoded_offset;
+            decoded_offset <<= LOG_2_COEFFICIENTS_IN_POLYNOMIAL;
+            j = 0;
+
+            while (j < COEFFICIENTS_IN_POLYNOMIAL) {
+                index = #LEA_64(decoded_offset + j);
+                hints[index] = 0;
+                j += 1;
+            }
+
+            current_true_hints_seen = (64u)hint_encoded[MAX_ONES_IN_HINT + encoded_offset];
+            _ = #init_msf();
+
+            if (current_true_hints_seen < previous_true_hints_seen) {
+                ill_formed_hint = 1;
+            } else {
+                if (previous_true_hints_seen > MAX_ONES_IN_HINT) {
+                    ill_formed_hint = 1;
+                } else {
+                    j = previous_true_hints_seen;
+
+                    while {
+                        within_bounds = j >= current_true_hints_seen;
+                        done = #SETcc(within_bounds);
+                        done |= ill_formed_hint;
+                    } (done == 0) {
+                        // Coefficients are ordered for strong unforgeability
+                        hint_at_j = (64u)hint_encoded[j];
+                        _ = #init_msf();
+
+                        if (j > previous_true_hints_seen) {
+                            hint_at_j_minus_one = (64u)hint_encoded[j - 1];
+                            _ = #init_msf();
+
+                            if (hint_at_j <= hint_at_j_minus_one) {
+                                ill_formed_hint = 1;
+                            }
+                        }
+
+                        if (ill_formed_hint == 0) {
+                            // h->vec[i].coeffs[sig[j]] = 1;
+                            index = #LEA_64(decoded_offset + hint_at_j);
+                            hints[index] = 1;
+
+                            j += 1;
+
+                        }
+                    }
+                }
+            }
+
+            if (ill_formed_hint == 0) {
+                previous_true_hints_seen = current_true_hints_seen;
+                encoded_offset += 1;
+            }
+        }
+
+        encoded_offset = previous_true_hints_seen;
+        while {
+            within_bounds = encoded_offset >= MAX_ONES_IN_HINT;
+            done = #SETcc(within_bounds);
+            done |= ill_formed_hint;
+        } (done == 0) {
+            hint = (64u)hint_encoded[encoded_offset];
+            _ = #init_msf();
+
+            if(hint != 0) {
+                ill_formed_hint = 1;
+            }
+            encoded_offset += 1;
+        }
+
+        // Do this so we can indicate success with 0 and failure with -1.
+        ill_formed_hint = -ill_formed_hint;
+
+        return hints, ill_formed_hint;
+    }
+}

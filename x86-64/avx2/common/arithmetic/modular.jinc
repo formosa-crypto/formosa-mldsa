@@ -1,0 +1,140 @@
+param int INVERSE_OF_MODULUS_MOD_MONTGOMERY_R = 58_728_449;
+
+u256 INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR = (8u32)[
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R,
+    INVERSE_OF_MODULUS_MOD_MONTGOMERY_R
+];
+
+u256 TWO_POW_22_VECTOR = (8u32)[
+    1 << 22,
+    1 << 22,
+    1 << 22,
+    1 << 22,
+    1 << 22,
+    1 << 22,
+    1 << 22,
+    1 << 22
+];
+
+fn montgomery_multiply_and_reduce(reg u256 lhs, reg u256 rhs) -> reg u256
+{
+    reg u256 lhs_high rhs_high;
+    reg u256 product_low product_high;
+    reg u256 t_low t_high;
+
+    lhs_high = #VMOVSHDUP_256(lhs);
+    rhs_high = #VMOVSHDUP_256(rhs);
+
+    // Multiply
+    product_low = #VPMUL_256(lhs, rhs);
+    product_high = #VPMUL_256(lhs_high, rhs_high);
+
+    // Reduce
+    t_low = #VPMUL_256(product_low,
+            INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR);
+    t_high = #VPMUL_256(product_high,
+            INVERSE_OF_MODULUS_MOD_MONTGOMERY_R_VECTOR);
+    t_low = #VPMUL_256(t_low, MODULUS_VECTOR);
+    t_high = #VPMUL_256(t_high, MODULUS_VECTOR);
+
+    product_low = #VPSUB_4u64(product_low, t_low);
+    product_high = #VPSUB_4u64(product_high, t_high);
+
+    product_low = #VMOVSHDUP_256(product_low);
+    product_low = #VPBLEND_8u32(product_low, product_high, 0b1_0_1_0_1_0_1_0);
+
+    return product_low;
+}
+
+namespace polynomial {
+    fn pointwise_montgomery_multiply_and_reduce(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] product lhs rhs
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 lhs_coeffs rhs_coeffs;
+        reg u256 product_coeffs;
+
+        reg u64 offset;
+
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            lhs_coeffs = lhs.[:u256 offset];
+            rhs_coeffs = rhs.[:u256 offset];
+            product_coeffs = montgomery_multiply_and_reduce(lhs_coeffs, rhs_coeffs);
+            product.[:u256 offset] = product_coeffs;
+            offset += 32;
+
+            lhs_coeffs = lhs.[:u256 offset];
+            rhs_coeffs = rhs.[:u256 offset];
+            product_coeffs = montgomery_multiply_and_reduce(lhs_coeffs, rhs_coeffs);
+            product.[:u256 offset] = product_coeffs;
+            offset += 32;
+        }
+
+        return product;
+    }
+
+    fn conditionally_add_modulus(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 zero mask;
+        reg u256 lhs rhs;
+        reg u256 modulus;
+        reg u64 offset;
+
+        modulus = MODULUS_VECTOR;
+
+        ?{}, zero = #set0_256();
+
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            lhs = polynomial.[:u256 offset];
+
+            mask = #VPCMPGT_8u32(zero, lhs);
+            rhs = #VPAND_256(modulus, mask);
+
+            lhs = #VPADD_8u32(lhs, rhs);
+            polynomial.[:u256 offset] = lhs;
+
+            offset += 32;
+        }
+
+        return polynomial;
+    }
+
+    fn reduce32(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 two_pow_22 modulus;
+        reg u256 a t;
+
+        reg u64 offset;
+
+        two_pow_22 = TWO_POW_22_VECTOR;
+        modulus = MODULUS_VECTOR;
+
+        offset = 0;
+        while(offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            // t = (a + (1 << 22)) >> 23
+            a = polynomial.[:u256 offset];
+            t = #VPADD_8u32(a, two_pow_22);
+            t = #VPSRA_8u32(t, 23);
+
+            // t = a - t*Q
+            t = #VPMULL_8u32(t, modulus);
+            a = #VPSUB_8u32(a, t);
+
+            polynomial.[:u256 offset] = a;
+
+            offset += 32;
+        }
+
+        return polynomial;
+    }
+}

@@ -1,0 +1,299 @@
+namespace error_polynomial {
+    u256[5] ENCODING_CONSTANTS_TABLE = {
+        (32u8)[
+            (1 << 3), 1, (1 << 3), 1, (1 << 3), 1, (1 << 3), 1,
+            (1 << 3), 1, (1 << 3), 1, (1 << 3), 1, (1 << 3), 1,
+            (1 << 3), 1, (1 << 3), 1, (1 << 3), 1, (1 << 3), 1,
+            (1 << 3), 1, (1 << 3), 1, (1 << 3), 1, (1 << 3), 1
+        ],
+        (32u8)[
+            15, 14, 7, 6, 13, 12, 5, 4, 11, 10, 3, 2, 9, 8, 1, 0,
+            15, 14, 7, 6, 13, 12, 5, 4, 11, 10, 3, 2, 9, 8, 1, 0
+        ],
+        (32u8)[
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1,
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1,
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1,
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1
+        ],
+        (16u16)[
+            (1 << 12), 1, (1 << 12), 1, (1 << 12), 1, (1 << 12), 1,
+            (1 << 12), 1, (1 << 12), 1, (1 << 12), 1, (1 << 12), 1
+        ],
+        (32u8)[
+            -1, -1, -1, -1, 14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0,
+            -1, -1, -1, -1, 14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0
+        ]
+    };
+
+    fn encode(
+        reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE]
+    {
+        reg u256 c0 c1 c2 c3 c4 c5 c6 c7;
+        reg u256 encoding_constants;
+        reg u256 eta;
+
+        reg u64 input_offset output_offset temp;
+
+        stack u8[16] final_encoded_bytes;
+
+        temp = ETA;
+        eta = (256u)#VMOV(temp);
+        eta = #VPBROADCAST_8u32(eta);
+
+        input_offset = 0;
+        output_offset = 0;
+        while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 256) {
+            c0 = polynomial.[:u256 input_offset];
+            c0 = #VPSUB_8u32(eta, c0);
+            input_offset += 32;
+
+            c1 = polynomial.[:u256 input_offset];
+            c1 = #VPSUB_8u32(eta, c1);
+            input_offset += 32;
+
+            c2 = polynomial.[:u256 input_offset];
+            c2 = #VPSUB_8u32(eta, c2);
+            input_offset += 32;
+
+            c3 = polynomial.[:u256 input_offset];
+            c3 = #VPSUB_8u32(eta, c3);
+            input_offset += 32;
+
+            c4 = polynomial.[:u256 input_offset];
+            c4 = #VPSUB_8u32(eta, c4);
+            input_offset += 32;
+
+            c5 = polynomial.[:u256 input_offset];
+            c5 = #VPSUB_8u32(eta, c5);
+            input_offset += 32;
+
+            c6 = polynomial.[:u256 input_offset];
+            c6 = #VPSUB_8u32(eta, c6);
+            input_offset += 32;
+
+            c7 = polynomial.[:u256 input_offset];
+            c7 = #VPSUB_8u32(eta, c7);
+            input_offset += 32;
+
+            c0 = #VPACKUS_8u32(c0, c1);
+            c1 = #VPACKUS_8u32(c2, c3);
+            c2 = #VPACKUS_8u32(c4, c5);
+            c3 = #VPACKUS_8u32(c6, c7);
+
+            c0 = #VPACKUS_16u16(c0, c1);
+            c1 = #VPACKUS_16u16(c2, c3);
+
+            encoding_constants = ENCODING_CONSTANTS_TABLE[0];
+            c0 = #VPMADDUBSW_256(c0, encoding_constants);
+            c1 = #VPMADDUBSW_256(c1, encoding_constants);
+
+            c0 = #VPACKUS_16u16(c0, c1);
+            c0 = #VPERMQ(c0, 0b11_01_10_00);
+
+            encoding_constants = ENCODING_CONSTANTS_TABLE[1];
+            c0 = #VPSHUFB_256(c0, encoding_constants);
+
+            encoding_constants = ENCODING_CONSTANTS_TABLE[2];
+            c0 = #VPMADDUBSW_256(c0, encoding_constants);
+
+            encoding_constants = ENCODING_CONSTANTS_TABLE[3];
+            c0 = #VPMADDWD_256(c0, encoding_constants);
+
+            encoding_constants = ENCODING_CONSTANTS_TABLE[4];
+            c0 = #VPSHUFB_256(c0, encoding_constants);
+
+            encoded.[:u128 output_offset] = (128u)c0;
+            output_offset += 12;
+
+            encoded.[:u128 output_offset] = #VEXTRACTI128(c0, 1);
+            output_offset += 12;
+        }
+        c0 = polynomial.[:u256 input_offset];
+        c0 = #VPSUB_8u32(eta, c0);
+        input_offset += 32;
+
+        c1 = polynomial.[:u256 input_offset];
+        c1 = #VPSUB_8u32(eta, c1);
+        input_offset += 32;
+
+        c2 = polynomial.[:u256 input_offset];
+        c2 = #VPSUB_8u32(eta, c2);
+        input_offset += 32;
+
+        c3 = polynomial.[:u256 input_offset];
+        c3 = #VPSUB_8u32(eta, c3);
+        input_offset += 32;
+
+        c4 = polynomial.[:u256 input_offset];
+        c4 = #VPSUB_8u32(eta, c4);
+        input_offset += 32;
+
+        c5 = polynomial.[:u256 input_offset];
+        c5 = #VPSUB_8u32(eta, c5);
+        input_offset += 32;
+
+        c6 = polynomial.[:u256 input_offset];
+        c6 = #VPSUB_8u32(eta, c6);
+        input_offset += 32;
+
+        c7 = polynomial.[:u256 input_offset];
+        c7 = #VPSUB_8u32(eta, c7);
+        input_offset += 32;
+
+        c0 = #VPACKUS_8u32(c0, c1);
+        c1 = #VPACKUS_8u32(c2, c3);
+        c2 = #VPACKUS_8u32(c4, c5);
+        c3 = #VPACKUS_8u32(c6, c7);
+
+        c0 = #VPACKUS_16u16(c0, c1);
+        c1 = #VPACKUS_16u16(c2, c3);
+
+        encoding_constants = ENCODING_CONSTANTS_TABLE[0];
+        c0 = #VPMADDUBSW_256(c0, encoding_constants);
+        c1 = #VPMADDUBSW_256(c1, encoding_constants);
+
+        c0 = #VPACKUS_16u16(c0, c1);
+        c0 = #VPERMQ(c0, 0b11_01_10_00);
+
+        encoding_constants = ENCODING_CONSTANTS_TABLE[1];
+        c0 = #VPSHUFB_256(c0, encoding_constants);
+
+        encoding_constants = ENCODING_CONSTANTS_TABLE[2];
+        c0 = #VPMADDUBSW_256(c0, encoding_constants);
+
+        encoding_constants = ENCODING_CONSTANTS_TABLE[3];
+        c0 = #VPMADDWD_256(c0, encoding_constants);
+
+        encoding_constants = ENCODING_CONSTANTS_TABLE[4];
+        c0 = #VPSHUFB_256(c0, encoding_constants);
+
+        encoded.[:u128 output_offset] = (128u)c0;
+        output_offset += 12;
+
+        final_encoded_bytes.[:u128 0] = #VEXTRACTI128(c0, 1);
+
+        input_offset = 0;
+        while (input_offset < 12) {
+            encoded.[output_offset] = final_encoded_bytes[input_offset];
+            input_offset += 1;
+            output_offset += 1;
+        }
+
+        return encoded;
+    }
+
+    // TODO: Is it worthwhile vectorizing this function?
+    fn decode(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u32 t0 t1 t2;
+        reg u32 coefficient temp;
+
+        inline int ETA_BITS_MASK = (1 << 3) - 1;
+
+        reg u64 input_offset = 0;
+        reg u64 out_offset = 0;
+
+        while (input_offset < ENCODED_ERROR_POLYNOMIAL_SIZE) {
+            t0 = (32u) encoded[input_offset + 0];
+            t1 = (32u) encoded[input_offset + 1];
+            t2 = (32u) encoded[input_offset + 2];
+
+            // r->coeffs[8*i+0] = (a[3*i+0] >> 0) & 7;
+            // r->coeffs[8*i+0] = ETA - r->coeffs[8*i+0];
+            temp = t0;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset] = coefficient;
+
+            // r->coeffs[8*i+1] =  (a[3*i+0] >> 3) & 7;
+            // r->coeffs[8*i+1] = ETA - r->coeffs[8*i+1];
+            temp = t0;
+            temp >>= 3;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 1] = coefficient;
+
+            // r->coeffs[8*i+2] = ((a[3*i+0] >> 6) | (a[3*i+1] << 2)) & 7;
+            // r->coeffs[8*i+2] = ETA - r->coeffs[8*i+2];
+            temp = t0 >> 6;
+            temp = #LEA_32(4 * t1 + temp);
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 2] = coefficient;
+
+            // r->coeffs[8*i+3] =  (a[3*i+1] >> 1) & 7;
+            // r->coeffs[8*i+3] = ETA - r->coeffs[8*i+3];
+            temp = t1;
+            temp >>= 1;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 3] = coefficient;
+
+            // r->coeffs[8*i+4] =  (a[3*i+1] >> 4) & 7;
+            // r->coeffs[8*i+4] = ETA - r->coeffs[8*i+4];
+            temp = t1;
+            temp >>= 4;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 4] = coefficient;
+
+            // r->coeffs[8*i+5] = ((a[3*i+1] >> 7) | (a[3*i+2] << 1)) & 7;
+            // r->coeffs[8*i+5] = ETA - r->coeffs[8*i+5];
+            temp = t1 >> 7;
+            temp = #LEA_32(2 * t2 + temp);
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 5] = coefficient;
+
+            // r->coeffs[8*i+6] =  (a[3*i+2] >> 2) & 7;
+            // r->coeffs[8*i+6] = ETA - r->coeffs[8*i+6];
+            temp = t2;
+            temp >>= 2;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 6] = coefficient;
+
+            // r->coeffs[8*i+7] =  (a[3*i+2] >> 5) & 7;
+            // r->coeffs[8*i+7] = ETA - r->coeffs[8*i+7];
+            temp = t2 >> 5;
+            temp &= ETA_BITS_MASK;
+
+            coefficient = ETA;
+            coefficient -= temp;
+
+            polynomial[out_offset + 7] = coefficient;
+
+            input_offset += 3;
+            out_offset += 8;
+        }
+
+        return polynomial;
+    }
+}

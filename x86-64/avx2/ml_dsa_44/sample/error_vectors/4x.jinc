@@ -1,0 +1,212 @@
+namespace error_4x {
+    // Since each byte can be used to sample up to 2 coefficients, we could
+    // sample an entire ring element with just 128 bytes, but we'll sample
+    // 2 blocks = 136 * 2 = 272 bytes since 272 is divisible by 16.
+    param int BLOCKS = 2;
+
+    param int REJECTION_SAMPLING_BYTES = BLOCKS * SHAKE256_RATE;
+
+    // We don't need padding.
+    param int REJECTION_SAMPLE_INPUT_SIZE = REJECTION_SAMPLING_BYTES;
+    require "rejection_sample.jinc"
+
+    fn shake256_init(
+        reg ptr u256[25] state,
+        reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
+        reg u16 starting_domain_separator
+    ) -> reg ptr u256[25]
+    {
+        reg u256 t256 zeros;
+        reg u64 t64;
+
+        inline int i lane;
+
+        zeros = #set0_256();
+        for i = 0 to 25 {
+            state[i] = zeros;
+        }
+
+        for i = 0 to 8 {
+            // N.B.: SEED_FOR_ERROR_VECTORS_SIZE is always 64.
+            t64 = rho_prime.[:u64 8 * i];
+            t256 = (256u)t64;
+            t256 = #VPBROADCAST_4u64(t256);
+            state[i] = t256;
+        }
+
+        for lane = 0 to 4 {
+            t64 = (64u)starting_domain_separator;
+            t64 = #LEA_64(0x1F0000 + t64);
+
+            t256 = (256u)t64;
+            t256 = #VPBROADCAST_4u64(t256);
+            t256 = #VPADD_4u64(t256, CONST_0123);
+            state[8] = t256;
+        }
+
+        t64 = 0x8000000000000000;
+        t256 = (256u)t64;
+        t256 = #VPBROADCAST_4u64(t256);
+        state[16] = t256;
+
+        return state;
+    }
+
+    inline
+    fn __shake256_squeeze_multiple_blocks_4x(
+      reg ptr u256[25] state,
+      reg ptr u8[REJECTION_SAMPLE_INPUT_SIZE] b0 b1 b2 b3
+    ) ->
+      reg ptr u256[25],
+      reg ptr u8[REJECTION_SAMPLE_INPUT_SIZE],
+      reg ptr u8[REJECTION_SAMPLE_INPUT_SIZE],
+      reg ptr u8[REJECTION_SAMPLE_INPUT_SIZE],
+      reg ptr u8[REJECTION_SAMPLE_INPUT_SIZE]
+    {
+        inline int i;
+
+        for i = 0 to BLOCKS
+        {
+            state,
+            b0[i*SHAKE256_RATE:SHAKE256_RATE],
+            b1[i*SHAKE256_RATE:SHAKE256_RATE],
+            b2[i*SHAKE256_RATE:SHAKE256_RATE],
+            b3[i*SHAKE256_RATE:SHAKE256_RATE]
+            =
+            shake256_squeezeblock4x(
+                state,
+                b0[i*SHAKE256_RATE:SHAKE256_RATE],
+                b1[i*SHAKE256_RATE:SHAKE256_RATE],
+                b2[i*SHAKE256_RATE:SHAKE256_RATE],
+                b3[i*SHAKE256_RATE:SHAKE256_RATE]
+            );
+        }
+
+        return state, b0, b1, b2, b3;
+    }
+
+    inline
+    fn sample_polynomials(
+        reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
+        reg u16 starting_domain_separator
+    ) -> stack u32[COEFFICIENTS_IN_POLYNOMIAL],
+         stack u32[COEFFICIENTS_IN_POLYNOMIAL],
+         stack u32[COEFFICIENTS_IN_POLYNOMIAL],
+         stack u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u256[25] xof_state;
+
+        stack u8[REJECTION_SAMPLE_INPUT_SIZE] buf0 buf1 buf2 buf3;
+
+        stack u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial0 polynomial1 polynomial2 polynomial3;
+
+        reg u64 filled0 filled1 filled2 filled3;
+        reg u64 filled;
+
+        reg u8 flg0 flg1 done;
+        reg bool cf zf;
+
+        xof_state = shake256_init(xof_state, rho_prime, starting_domain_separator);
+
+        filled0 = 0;
+        filled1 = 0;
+        filled2 = 0;
+        filled3 = 0;
+
+        xof_state,
+        buf0,
+        buf1,
+        buf2,
+        buf3
+        = __shake256_squeeze_multiple_blocks_4x(
+            xof_state,
+            buf0,
+            buf1,
+            buf2,
+            buf3
+        );
+
+        filled = filled0;
+        polynomial0, filled = rejection_sample_multiple_blocks(polynomial0, buf0);
+        filled0 = filled;
+
+        filled = filled1;
+        polynomial1, filled = rejection_sample_multiple_blocks(polynomial1, buf1);
+        filled1 = filled;
+
+        filled = filled2;
+        polynomial2, filled = rejection_sample_multiple_blocks(polynomial2, buf2);
+        filled2 = filled;
+
+        filled = filled3;
+        polynomial3, filled = rejection_sample_multiple_blocks(polynomial3, buf3);
+        filled3 = filled;
+
+        _, cf, _, _, zf = #CMP_64(filled0, COEFFICIENTS_IN_POLYNOMIAL);
+        flg0 = #SETcc(cf);
+
+        _, cf, _, _, zf = #CMP_64(filled1, COEFFICIENTS_IN_POLYNOMIAL);
+        flg1 = #SETcc(cf);
+
+        _, _, _, _, _, done = #OR_8(flg0, flg1);
+
+        _, cf, _, _, zf = #CMP_64(filled2, COEFFICIENTS_IN_POLYNOMIAL);
+        flg0 = #SETcc(cf);
+
+        _, cf, _, _, zf = #CMP_64(filled3, COEFFICIENTS_IN_POLYNOMIAL);
+        flg1 = #SETcc(cf);
+
+        _, _, _, _, _, flg0 = #OR_8(flg0, flg1);
+        _, _, _, _, _, done = #OR_8(flg0, done);
+
+        while (done != 0) {
+            xof_state,
+            buf0[0:SHAKE256_RATE],
+            buf1[0:SHAKE256_RATE],
+            buf2[0:SHAKE256_RATE],
+            buf3[0:SHAKE256_RATE]
+            = shake256_squeezeblock4x(
+                xof_state,
+                buf0[0:SHAKE256_RATE],
+                buf1[0:SHAKE256_RATE],
+                buf2[0:SHAKE256_RATE],
+                buf3[0:SHAKE256_RATE]
+            );
+
+            filled = filled0;
+            polynomial0, filled = rejection_sample_one_block(polynomial0, filled, buf0[0:SHAKE256_RATE]);
+            filled0 = filled;
+
+            filled = filled1;
+            polynomial1, filled = rejection_sample_one_block(polynomial1, filled, buf1[0:SHAKE256_RATE]);
+            filled1 = filled;
+
+            filled = filled2;
+            polynomial2, filled = rejection_sample_one_block(polynomial2, filled, buf2[0:SHAKE256_RATE]);
+            filled2 = filled;
+
+            filled = filled3;
+            polynomial3, filled = rejection_sample_one_block(polynomial3, filled, buf3[0:SHAKE256_RATE]);
+            filled3 = filled;
+
+            _, cf, _, _, _ = #CMP_64(filled0, COEFFICIENTS_IN_POLYNOMIAL);
+            flg0 = #SETcc(cf);
+
+            _, cf, _, _, _ = #CMP_64(filled1, COEFFICIENTS_IN_POLYNOMIAL);
+            flg1 = #SETcc(cf);
+
+            _, _, _, _, _, done = #OR_8(flg0, flg1);
+
+            _, cf, _, _, _ = #CMP_64(filled2, COEFFICIENTS_IN_POLYNOMIAL);
+            flg0 = #SETcc(cf);
+
+            _, cf, _, _, zf = #CMP_64(filled3, COEFFICIENTS_IN_POLYNOMIAL);
+            flg1 = #SETcc(cf);
+
+            _, _, _, _, _, flg0 = #OR_8(flg0, flg1);
+            _, _, _, _, _, done = #OR_8(flg0, done);
+        }
+
+        return polynomial0, polynomial1, polynomial2, polynomial3;
+    }
+}

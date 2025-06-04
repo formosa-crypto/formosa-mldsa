@@ -1,0 +1,146 @@
+/*************************************************
+ * Description: Verifies signature.
+ *
+ * Arguments:   - uint8_t *m: pointer to input signature
+ *              - size_t siglen: length of signature
+ *              - const uint8_t *m: pointer to message
+ *              - size_t mlen: length of message
+ *              - const uint8_t *ctx: pointer to context string
+ *              - size_t ctxlen: length of context string
+ *              - const uint8_t *pk: pointer to bit-packed public key
+ *
+ * Returns 0 if signature could be verified correctly and -1 otherwise
+ **************************************************/
+fn _crypto_sign_verify_ctx(
+        reg ptr u8[SIGNATURE_SIZE] sig,
+        reg ptr u32[2] ctx_m,
+        reg ptr u32[2] ctxlen_mlen,
+        reg ptr u8[VERIFICATION_KEY_SIZE] pk
+        ) -> reg u32 {
+    reg u32 status;
+
+    stack u8[SEEDBYTES] rho;
+    stack u8[CRHBYTES] mu;
+    stack u8[COMMITMENT_HASH_SIZE] c c2;
+
+    stack u32[polyvecl] z;
+    stack u32[polyveck] h, w1, t1;
+    stack u32[matKL] mat;
+    stack u32[25*2] state;
+    stack u32[N] cp;
+    stack u8[K * POLYW1_PACKEDBYTES] buf;
+
+    reg u32 ctxlen m mlen ctx t pos;
+    reg ptr u32[25*2] pstate;
+    reg ptr u8[2] mu2;
+
+    inline int i;
+
+    ctxlen = ctxlen_mlen[0];
+
+    if (ctxlen <= 255) {
+        () = #spill(ctxlen_mlen, ctx_m, ctxlen);
+        rho, t1 = _unpack_pk(rho, t1, pk);
+
+        () = #spill(pk);
+        c, z, h, status = _unpack_sig(c, z, h, sig);
+        () = #unspill(pk);
+        () = #spill(sig);
+
+        if (status == 0) {
+            reg u32 bound;
+            bound = iGAMMA1 - BETA;
+            status = _polyvecl_chknorm(z, bound);
+
+            if (status == 0) {
+                mu = _hash_verification_key(mu, pk);
+
+                pstate = state;
+
+                // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
+                pstate = __add_crh_ref(pstate, mu); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
+
+                () = #unspill(ctxlen_mlen, ctx_m);
+                mu2 = mu[0 : 2];
+                t = 0;
+                mu2[0] = (8u)t;
+                t = ctxlen_mlen[0];
+                mu2[1] = (8u)t;
+                mu[0 : 2] = mu2;
+
+                () = #spill(ctxlen_mlen, t, ctx_m);
+                pstate = __add_mu_ref(pstate, VERIFICATION_KEY_HASH_SIZE, mu2);
+                () = #spill(mu2);
+                pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
+                pos = VERIFICATION_KEY_HASH_SIZE + 2;
+                ctx = ctx_m[0];
+                () = #spill(ctx_m, ctxlen_mlen);
+                () = #unspill(ctxlen);
+                pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+                () = #unspill(ctx_m, ctxlen_mlen);
+                mlen = ctxlen_mlen[1];
+                m = ctx_m[1];
+                pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
+                pstate = _shake256_inc_finalize(pstate, pos);
+                pstate = _keccakf1600_ref(pstate);
+
+                // FIXME define a function for that
+                for i = 0 to CRHBYTES/4 {
+                    t = pstate[i];
+                    mu[:u32 i] = t;
+                }
+                state = pstate;
+                () = #spill(pstate);
+
+                cp = _poly_challenge(cp, c[0:COMMITMENT_HASH_SIZE]);
+                mat = _polyvec_matrix_expand(mat, rho);
+
+                z = _polyvecl_ntt(z);
+                w1 = _polyvec_matrix_pointwise_montgomery(w1, mat, z);
+
+                cp = _poly_ntt(cp);
+                t1 = _polyveck_shiftl(t1);
+                t1 = _polyveck_ntt(t1);
+                t1 = _polyveck_pointwise_poly_montgomery_inplace(t1, cp);
+
+                w1 = _polyveck_sub_inplace(w1, t1);
+                w1 = _polyveck_reduce(w1);
+                w1 = _polyveck_invntt_tomont(w1);
+
+                w1 = _polyveck_caddq(w1);
+                w1 = _polyveck_use_hint_inplace(w1, h);
+                buf = _polyveck_pack_w1(buf, w1);
+
+                pstate = state;
+                pstate = __add_crh_ref(pstate, mu);
+                pstate = __add_zero_after_add(pstate, CRHBYTES);
+                pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, buf);
+                pstate = _shake256_inc_finalize(pstate, pos);
+                pstate = _keccakf1600_ref(pstate);
+                // FIXME define a function for that
+                for i = 0 to COMMITMENT_HASH_SIZE/4 {
+                    t = pstate[i];
+                    c2[:u32 i] = t;
+                }
+
+                reg u32 ci c2i;
+                status = 0;
+                for i = 0 to COMMITMENT_HASH_SIZE {
+                    if (status == 0) {
+                        ci = (32u)c[i];
+#declassify c2i = (32u)c2[i];
+                        if (ci != c2i) {
+                            status = i + 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (status != 0) {
+        status = -1;
+    }
+
+    return status;
+}

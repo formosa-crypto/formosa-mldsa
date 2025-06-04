@@ -1,0 +1,33 @@
+namespace sample {
+    inline
+    fn __matrix_A(
+        #public reg ptr u8[32] rho
+    ) -> stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
+        stack u16[4] domain_separators;
+
+        inline int row column chunk index lane;
+
+        for chunk = 0 to (ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A) / 4 {
+            index = 4 * chunk;
+
+            for lane = 0 to 4 {
+                row = (index + lane) / COLUMNS_IN_MATRIX_A;
+                column = (index + lane) % COLUMNS_IN_MATRIX_A;
+                domain_separators[lane] = (row << 8) | column;
+            }
+
+            matrix_A[(index + 0) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+            matrix_A[(index + 1) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+            matrix_A[(index + 2) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+            matrix_A[(index + 3) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                = matrix_A::__sample_4_polynomials(
+                    rho,
+                    domain_separators
+                );
+        }
+
+        return matrix_A;
+    }
+}

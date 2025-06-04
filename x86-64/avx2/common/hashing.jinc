@@ -1,0 +1,401 @@
+fn absorb_full_shake256_block(
+    reg ptr u64[25] state,
+    reg ptr u8[SHAKE256_RATE] block
+) -> reg ptr u64[25]
+{
+    reg u64 i = 0;
+    reg u256 lhs rhs;
+    reg u64 last_8_bytes;
+
+    // SHAKE256_RATE - 8 = 136 - 8 = 128, which is divisible by 32.
+    while (i < SHAKE256_RATE - 8) {
+        lhs = state.[:u256 i];
+        rhs = block.[:u256 i];
+
+        lhs = #VPXOR_256(lhs, rhs);
+        state.[:u256 i] = lhs;
+
+        i += 32;
+    }
+
+    // Now absorb the last 8 bytes.
+    last_8_bytes = block.[:u64 128];
+    state.[:u64 128] ^= last_8_bytes;
+
+    state = _keccakf1600_ref1(state);
+
+    return state;
+}
+
+fn shake256_avx2_absorb_full_block(
+    reg u256[7] state,
+    reg ptr u8[SHAKE256_RATE] block
+) -> reg u256[7]
+{
+    reg u64 t64;
+    reg u256 r0, r1, r2, r3, r4, r5, r6;
+    reg u128 t128_0, t128_1;
+
+    t64 = block.[:u64 0];
+    t128_0 = (128u) t64;
+    r0 = #VPBROADCAST_4u64(t128_0);
+    state[0] ^= r0;
+
+    r1 = block.[:u256 8];
+    state[1] ^= r1;
+
+    t64 = block.[:u64 40];
+    t128_1 = (128u) t64;
+
+    r3 = block.[:u256 48];
+
+    t64 = block.[:u64 80];
+    t128_0 = (128u) t64;
+
+    r4 = block.[:u256 88];
+
+    t64 = block.[:u64 120];
+    t128_1 = #VPINSR_2u64(t128_1, t64, 1);
+
+    t64 = block.[:u64 128];
+    r5 = (256u)#VMOV_64(t64);
+
+    t64 = 0;
+    t128_0 = #VPINSR_2u64(t128_0, t64, 1);
+    r2 = (2u128)[t128_1, t128_0];
+    state[2] ^= r2;
+
+    r6 = #set0_256();
+    state = __addstate_r3456_avx2(state, r3, r4, r5, r6);
+
+    return state;
+}
+
+fn stream_64_bytes(reg ptr u8[64] array, reg u256[7] state) -> reg ptr u8[64] {
+    reg u128 t128;
+    reg u256 t256;
+
+    // state[0] = [0, 0, 0, 0]
+    t128 = (128u)state[0];
+    array.[:u64 0] = #VMOVLPD(t128);
+    // [ 1, 2, 3, 4 ]
+    array.[:u256 8] = state[1];
+
+    // state[2] = [10, 20, 5, 15]
+    // state[3] = [16, 7, 8, 19]
+    // state[6] = [6, 12, 13, 9]
+    // t256 should contain [ 6, 7, 8, 9 ]
+    t256 = #VPBLEND_8u32(state[6], state[3], 0b0_0_0_0_1_1_0_0);
+
+    // We first need to get 8 bytes from state[2][2]
+    t128 = #VEXTRACTI128(state[2], 1);
+    array.[:u64 40] = #VMOVLPD(t128);
+
+    // We need 16 more bytes from t256
+    t128 = (128u)t256;
+    array.[:u128 48] = t128;
+
+    return array;
+}
+
+// N.B.: While this is only used in hash_verification_key(), making it an inline int
+// wouldn't work; it's used in a while loop condition, which causes issues for
+// the RSB-checker.
+param int FULL_BLOCKS_IN_VERIFICATION_KEY = VERIFICATION_KEY_SIZE / SHAKE256_RATE;
+fn hash_verification_key(
+    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash,
+    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key
+) -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE]
+{
+    reg u256[7] state;
+    #spill_to_mmx reg u64 verification_key_offset;
+
+    reg u64 t64;
+    reg u256 r0, r1, r2, r3, r4, r5, r6;
+    reg u128 t128_0, t128_1;
+
+    // Absorb ...
+
+    state = __state_init_avx2();
+
+    verification_key_offset = 0;
+    while(verification_key_offset < FULL_BLOCKS_IN_VERIFICATION_KEY * SHAKE256_RATE) {
+        state = shake256_avx2_absorb_full_block(state, verification_key[verification_key_offset : SHAKE256_RATE]);
+        verification_key_offset += SHAKE256_RATE;
+
+        state = _keccakf1600_avx2(state);
+    }
+
+    // Now absorb the last partial block.
+    // N.B.: VERIFICATION_KEY_SIZE for:
+    //
+    // ML-DSA-44: 1312 = SHAKE256_RATE * 9 + 88
+    // ML-DSA-65: 1952 = SHAKE256_RATE * 14 + 48
+    // ML-DSA-87: 2592 = SHAKE256_RATE * 19 + 8
+    //
+    if (ROWS_IN_MATRIX_A == 4) {
+        reg ptr u8[88] block = verification_key[verification_key_offset:88];
+
+        t64 = block.[:u64 0];
+        t128_0 = (128u) t64;
+        r0 = #VPBROADCAST_4u64(t128_0);
+        state[0] ^= r0;
+
+        r1 = block.[:u256 8];
+        state[1] ^= r1;
+
+        t64 = block.[:u64 40];
+        t128_1 = (128u) t64;
+
+        r3 = block.[:u256 48];
+
+        t64 = block.[:u64 80];
+        t128_0 = (128u) t64;
+
+        r4 = #set0_256();
+
+        t64 = 0;
+        t128_1 = #VPINSR_2u64(t128_1, t64, 1);
+
+        r5 = #set0_256();
+
+        t64 = 0;
+        t128_0 = #VPINSR_2u64(t128_0, t64, 1);
+        r2 = (2u128)[t128_1, t128_0];
+        state[2] ^= r2;
+
+        r6 = #set0_256();
+
+        state = __addstate_r3456_avx2(state, r3, r4, r5, r6);
+
+        // Finally, add the trail bit.
+        t64 = 0x1f;
+        r2 = (256u)#VMOV_64(t64);
+        state[4] ^= r2;
+    } else if (ROWS_IN_MATRIX_A == 6) {
+        reg ptr u8[48] block = verification_key[verification_key_offset:48];
+
+        t64 = block.[:u64 0];
+        t128_0 = (128u) t64;
+        r0 = #VPBROADCAST_4u64(t128_0);
+        state[0] ^= r0;
+
+        r1 = block.[:u256 8];
+        state[1] ^= r1;
+
+        t64 = block.[:u64 40];
+        t128_1 = (128u) t64;
+
+        t128_0 = #set0_128();
+
+        t64 = 0;
+        t128_1 = #VPINSR_2u64(t128_1, t64, 1);
+
+        r2 = (2u128)[t128_1, t128_0];
+        state[2] ^= r2;
+
+        // Finally, add the trail bit.
+        t64 = 0x1f;
+        r2 = (256u)#VMOV_64(t64);
+        state[6] ^= r2;
+    } else if (ROWS_IN_MATRIX_A == 8) {
+        reg ptr u8[8] block = verification_key[verification_key_offset:8];
+
+        t64 = block.[:u64 0];
+        t128_0 = (128u) t64;
+        r0 = #VPBROADCAST_4u64(t128_0);
+        state[0] ^= r0;
+
+        // Finally, add the trail bit.
+        t64 = 0x1f;
+        r0 = (256u)#VMOV_64(t64);
+        state[1] ^= r0;
+    }
+
+    state = __addratebit_avx2(state, SHAKE256_RATE);
+
+    // ... then squeeze.
+    state = _keccakf1600_avx2(state);
+
+    // VERIFICATION_KEY_HASH_SIZE is always 64.
+    verification_key_hash = stream_64_bytes(verification_key_hash, state);
+
+    return verification_key_hash;
+}
+
+inline
+fn __shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u64[25], reg u64 {
+    if (offset >= SHAKE256_RATE) {
+        state = _keccakf1600_ref1(state);
+        ?{}, offset = #set0_64();
+    }
+    return state, offset;
+}
+inline
+fn __derive_message_representative(
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash,
+    #spill_to_mmx reg u64 message,
+    #spill_to_mmx reg u64 message_size
+) -> stack u8[MESSAGE_REPRESENTATIVE_SIZE]
+{
+    stack u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative;
+
+    stack u64[25] state;
+
+    reg u8 byte;
+    reg u64 state_offset;
+    #spill_to_mmx reg u64 message_offset;
+
+    reg u256 copied_32_bytes;
+
+    // Absorb ...
+
+    state = __keccak_init_ref1(state);
+
+    // VERIFICATION_KEY_HASH_SIZE is always 64.
+    copied_32_bytes = verification_key_hash.[:u256 0];
+    state.[:u256 0] = copied_32_bytes;
+
+    copied_32_bytes = verification_key_hash.[:u256 32];
+    state.[:u256 32] = copied_32_bytes;
+
+    state_offset = 64;
+
+    message_offset = 0;
+    while(message_offset < message_size) {
+        if (state_offset >= SHAKE256_RATE) {
+            () = #spill(message, message_offset, message_size);
+            state = _keccakf1600_ref1(state);
+            () = #unspill(message, message_offset, message_size);
+
+            ?{}, state_offset = #set0_64();
+        }
+
+        byte = [:u8 message + message_offset];
+        message_offset += 1;
+
+        state[:u8 state_offset] ^= byte;
+        state_offset += 1;
+    }
+
+    // Absorb separator byte
+    state, state_offset = __shake256_consider_permute(state, state_offset);
+    state[:u8 state_offset] ^= 0x1f;
+
+    // Finish
+    state, state_offset = __shake256_consider_permute(state, state_offset);
+    state[:u8 SHAKE256_RATE-1] ^= 0x80;
+
+    state = _keccakf1600_ref1(state);
+
+    // MESSAGE_REPRESENTATIVE_SIZE is always 64.
+    copied_32_bytes = state.[:u256 0];
+    message_representative.[:u256 0] = copied_32_bytes;
+
+    copied_32_bytes = state.[:u256 32];
+    message_representative.[:u256 32] = copied_32_bytes;
+
+    return message_representative;
+}
+
+// The message representative is always 64 bytes long, which means the first
+// full block that we absorb will contain 64 bytes of the message representative,
+// and SHAKE256_RATE - 64 = 136 - 64 = 72 bytes of the encoded commitment.
+// Subtracting these 72 bytes from the encoded commitment size and dividing
+// by SHAKE256_RATE gives us the number of full commitment blocks to absorb.
+param int FULL_COMMITMENT_BLOCKS_TO_ABSORB = (ENCODED_COMMITMENT_SIZE - 72) / SHAKE256_RATE;
+
+inline
+fn __derive_commitment_hash(
+    reg ptr u8[64] message_representative,
+    #spill_to_mmx reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment
+    ) -> stack u8[COMMITMENT_HASH_SIZE]
+{
+    stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
+    stack u64[25] state;
+    reg u64 state_offset;
+    reg u64 copied_8_bytes;
+    #spill_to_mmx reg u64 encoded_commitment_offset;
+
+    reg u128 lhs copied_16_bytes;
+    reg u256 copied_32_bytes;
+
+    state = __keccak_init_ref1(state);
+    state_offset = 0;
+
+    // Absorb message_representative (always 64 bytes)
+    copied_32_bytes = message_representative.[:u256 0];
+    state.[:u256 0] = copied_32_bytes;
+
+    copied_32_bytes = message_representative.[:u256 32];
+    state.[:u256 32] = copied_32_bytes;
+
+    // The ENCODED_COMMITMENT_SIZE for each parameter set is as follows:
+    //
+    // ML-DSA-44: 768
+    // ML-DSA-65: 768
+    // ML-DSA-87: 1024
+    //
+    // Now absorb the first 72 bytes of the commitment
+    //
+    copied_32_bytes = encoded_commitment.[:u256 0];
+    state.[:u256 64] = copied_32_bytes;
+
+    copied_32_bytes = encoded_commitment.[:u256 32];
+    state.[:u256 96] = copied_32_bytes;
+
+    copied_8_bytes = encoded_commitment.[:u64 64];
+    state.[:u64 128] = copied_8_bytes;
+
+    // We have SHAKE256_RATE bytes in the state, permute
+    () = #spill(encoded_commitment);
+    state = _keccakf1600_ref1(state);
+    () = #unspill(encoded_commitment);
+
+    // For each parameter set we have the following bytes left to absorb.
+    //
+    // ML-DSA-44: 768 - 72 = 696 = SHAKE256_RATE * 5 + 16
+    // ML-DSA-65: 768 - 72 = 696 = SHAKE256_RATE * 5 + 16
+    // ML-DSA-87: 1024 - 72 = 952 = SHAKE256_RATE * 7
+    //
+    // Now absorb all the full blocks in the encoded commitment (note that
+    // (for ML-DSA-87 this is all of the remaining commitment).
+    //
+    encoded_commitment_offset = 72;
+    while(encoded_commitment_offset < FULL_COMMITMENT_BLOCKS_TO_ABSORB * SHAKE256_RATE) {
+        () = #spill(encoded_commitment, encoded_commitment_offset);
+        state = absorb_full_shake256_block(state, encoded_commitment[encoded_commitment_offset : SHAKE256_RATE]);
+        () = #unspill(encoded_commitment, encoded_commitment_offset);
+        encoded_commitment_offset += SHAKE256_RATE;
+    }
+
+    // Finally, if the encoded_commitment_offset != ENCODED_COMMITMENT_SIZE,
+    // we should have 16 bytes left to absorb.
+    state_offset = 0;
+    while(encoded_commitment_offset < ENCODED_COMMITMENT_SIZE) {
+        copied_16_bytes = encoded_commitment.[:u128 encoded_commitment_offset];
+        encoded_commitment_offset += 16;
+
+        lhs = state.[:u128 state_offset];
+        lhs = #VPXOR_128(lhs, copied_16_bytes);
+
+        state.[:u128 state_offset] = lhs;
+        state_offset += 16;
+    }
+
+    // Absorb separator byte and finish
+    state[:u8 state_offset] ^= 0x1f;
+    state[:u8 SHAKE256_RATE - 1] ^= 0x80;
+
+    // Now squeeze
+    state = _keccakf1600_ref1(state);
+
+    // COMMITMENT_HASH_SIZE is always a multiple of 16.
+    state_offset = 0;
+    while(state_offset < COMMITMENT_HASH_SIZE) {
+        copied_16_bytes = state.[:u128 state_offset];
+        commitment_hash.[:u128 state_offset] = copied_16_bytes;
+        state_offset += 16;
+    }
+    return commitment_hash;
+}

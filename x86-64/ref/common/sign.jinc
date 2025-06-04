@@ -1,0 +1,183 @@
+fn derive_seed_for_mask(
+    reg ptr u8[32] k,
+    reg ptr u8[32] randomness,
+    reg ptr u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative,
+    #spill_to_mmx reg ptr u8[64] seed_for_mask
+) -> reg ptr u8[64] {
+    stack u64[25] state;
+
+    state = __keccak_init_ref1(state);
+
+    state[:u8 0:32] = #copy(k);
+    state[:u8 32:32] = #copy(randomness);
+    state[:u8 64:MESSAGE_REPRESENTATIVE_SIZE] = #copy(message_representative);
+    state[:u8 128] ^= 0x1f;
+    state[:u8 SHAKE256_RATE - 1] ^= 0x80;
+
+    () = #spill(seed_for_mask);
+    state = _keccakf1600_ref1(state);
+    () = #unspill(seed_for_mask);
+
+    seed_for_mask = #copy(state[:u8 0:64]);
+
+    return seed_for_mask;
+}
+
+#[sct="{ptr: public, val: transient} *
+       {ptr: public, val: secret} *
+       public * public *
+       {ptr: public, val: secret} ->
+       {ptr: public, val: transient}"]
+inline
+fn __sign_internal(
+    #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature,
+    #spill_to_mmx reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    reg u64 pointer_to_message,
+    reg u64 message_size,
+    #spill_to_mmx reg ptr u8[32] randomness
+) -> reg ptr u8[SIGNATURE_SIZE] {
+    // parts of signing_key
+    reg ptr u8[SEED_FOR_MATRIX_A_SIZE] seed_for_matrix_A;
+    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0;
+
+    stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
+    stack u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative;
+
+    reg u16 domain_separator_for_mask;
+    stack u8[64] seed_for_mask;
+
+    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint;
+
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w0 w1;
+    stack u8[ENCODED_COMMITMENT_SIZE] commitment_encoded;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w0_minus_cs2;
+
+    #public stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
+
+    stack u32[COEFFICIENTS_IN_POLYNOMIAL] verifier_challenge;
+
+    stack u8 exit_rejection_sampling_loop;
+
+    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w;
+    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask_as_ntt;
+    stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] cs1;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] cs2;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] ct0;
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w0_minus_cs2_plus_ct0;
+
+    reg u32 ones_in_hint;
+    reg u8 infinity_norm_check_result;
+
+    () = #spill(randomness, signature, signing_key);
+    message_representative = __derive_message_representative(
+        signing_key[64:VERIFICATION_KEY_HASH_SIZE],
+        pointer_to_message,
+        message_size);
+
+    () = #unspill(signing_key);
+    #declassify seed_for_matrix_A = signing_key[0:32];
+
+    _ = #init_msf();
+    matrix_A = sample::__matrix_A(seed_for_matrix_A);
+
+    () = #unspill(randomness);
+    () = #unspill(signing_key);
+    seed_for_mask = derive_seed_for_mask(signing_key[32:32], randomness, message_representative, seed_for_mask);
+
+    () = #unspill(signing_key);
+    s1 = s1::__decode(s1, signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE]);
+    s2 = s2::__decode(s2, signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY: S2_ENCODED_SIZE]);
+    t0 = t0::__decode(t0, signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]);
+
+    s1 = row_vector::ntt(s1);
+    s2 = column_vector::ntt(s2);
+    t0 = column_vector::ntt(t0);
+
+    domain_separator_for_mask = 0;
+
+    exit_rejection_sampling_loop = 0;
+
+    // WARNING WARNING WARNING
+    //
+    // The |#declassify|s in this loop body are only present to allow the
+    // constant-time checker to go over the whole code without erroring out and
+    // validate those parts whose constant-timedness can be established through
+    // type-checking alone.
+    //
+    // The security of this rejection sampling loop CANNOT be established through
+    // type-checking alone, and requires proving work in EasyCrypt.
+    while (exit_rejection_sampling_loop != 1) {
+        mask, domain_separator_for_mask = sample::__mask(seed_for_mask, domain_separator_for_mask);
+
+        mask_as_ntt = #copy(mask);
+        mask_as_ntt = row_vector::ntt(mask_as_ntt);
+        w = row_vector::__multiply_with_matrix_A(matrix_A, mask_as_ntt);
+        w = column_vector::reduce32(w);
+        w = column_vector::invert_ntt_montgomery(w);
+
+        w = column_vector::__conditionally_add_modulus(w);
+        #declassify w0, w1 = column_vector::__decompose(w);
+
+        commitment_encoded = commitment::__encode(w1);
+
+        () = #spill(domain_separator_for_mask);
+        commitment_hash = __derive_commitment_hash(message_representative, commitment_encoded);
+
+        verifier_challenge = sample::__challenge(verifier_challenge, commitment_hash);
+        () = #unspill(domain_separator_for_mask);
+
+        verifier_challenge = polynomial::ntt(verifier_challenge);
+
+        cs1 = row_vector::__multiply_by_polynomial(s1, verifier_challenge);
+        cs1 = row_vector::invert_ntt_montgomery(cs1);
+        signer_response = row_vector::__add(cs1, mask);
+        signer_response = row_vector::reduce32(signer_response);
+        infinity_norm_check_result = row_vector::__check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
+        #declassify infinity_norm_check_result = infinity_norm_check_result;
+
+        _ = #init_msf();
+
+        if(infinity_norm_check_result == 0) {
+            cs2 = column_vector::__multiply_by_polynomial(s2, verifier_challenge);
+            cs2 = column_vector::invert_ntt_montgomery(cs2);
+            w0_minus_cs2 = column_vector::__subtract(w0, cs2);
+            w0_minus_cs2 = column_vector::reduce32(w0_minus_cs2);
+            infinity_norm_check_result = column_vector::__check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
+            #declassify infinity_norm_check_result = infinity_norm_check_result;
+
+            _ = #init_msf();
+
+            if(infinity_norm_check_result == 0) {
+                ct0 = column_vector::__multiply_by_polynomial(t0, verifier_challenge);
+                ct0 = column_vector::invert_ntt_montgomery(ct0);
+                ct0 = column_vector::reduce32(ct0);
+                infinity_norm_check_result = column_vector::__check_infinity_norm(ct0, GAMMA2);
+                #declassify infinity_norm_check_result = infinity_norm_check_result;
+
+                _ = #init_msf();
+                if(infinity_norm_check_result == 0) {
+                    #declassify w0_minus_cs2_plus_ct0 = column_vector::__add(w0_minus_cs2, ct0);
+
+                    hint, ones_in_hint = column_vector::__make_hint(w0_minus_cs2_plus_ct0, w1);
+
+                    _ = #init_msf();
+                    if(ones_in_hint <= MAX_ONES_IN_HINT) {
+                        exit_rejection_sampling_loop = 1;
+                    }
+                }
+            }
+        }
+    }
+
+    () = #unspill(signature);
+
+    #declassify signer_response = signer_response;
+    #declassify hint = hint;
+    #declassify commitment_hash = commitment_hash;
+    signature = signature::__encode(signature, commitment_hash, signer_response, hint);
+    return signature;
+}

@@ -1,0 +1,142 @@
+inline
+fn __prepare_state_for_shake256(
+    reg ptr u8[32] randomness,
+    reg u8 number_of_rows,
+    reg u8 number_of_columns
+) -> stack u64[25] {
+    stack u64[25] state;
+
+    reg u8 byte;
+
+    reg u64 i;
+
+    state = __keccak_init_ref1(state);
+
+    i = 0;
+    while (i < 32) {
+        byte = randomness[i];
+        state[:u8 i] = byte;
+
+        i += 1;
+    }
+    state[:u8 32] = number_of_rows;
+    state[:u8 33] = number_of_columns;
+    state[:u8 34] ^= 0x1f;
+    state[:u8 SHAKE256_RATE - 1] ^= 0x80;
+
+    return state;
+}
+
+#[sct="{ptr: public, val: public} *
+       {ptr: public, val: secret} *
+       {ptr: public, val: secret} ->
+       {ptr: public, val: transient} * {ptr: public, val: secret}"]
+inline
+fn __keygen_internal(
+    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    #spill_to_mmx reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    #spill_to_mmx reg ptr u8[32] randomness
+) -> reg ptr u8[VERIFICATION_KEY_SIZE],
+     reg ptr u8[SIGNING_KEY_SIZE]
+{
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key_pointer_copy;
+
+    // PRF
+    stack u64[25] state;
+
+    // PRF outputs
+    #public stack u8[32] seed_for_matrix_A;
+    #secret stack u8[64] seed_for_error_vectors;
+    #secret stack u8[32] seed_for_signing;
+
+    // Matrices and vectors
+    stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
+    #secret stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
+    #secret stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
+
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t t0 t1;
+
+    stack u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
+
+    reg u64 i;
+
+    () = #spill(verification_key, signing_key);
+
+    state = __prepare_state_for_shake256(randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
+    state = _keccakf1600_ref1(state);
+
+    #declassify seed_for_matrix_A = state[:u8 0:SEED_FOR_MATRIX_A_SIZE];
+
+    seed_for_error_vectors = state[:u8 SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
+    seed_for_signing = state[:u8 SEED_FOR_MATRIX_A_SIZE + SEED_FOR_ERROR_VECTORS_SIZE:SEED_FOR_SIGNING_SIZE];
+
+    s1, s2 = sample::__error_vectors(seed_for_error_vectors);
+
+    // Serialize most of the signing key here; in particular serialize 
+    // s1 and s2 before applying the NTT to them.
+    () = #unspill(signing_key);
+
+    i = 0;
+    while (i < SEED_FOR_MATRIX_A_SIZE) {
+        signing_key[i] = seed_for_matrix_A[i];
+
+        i += 1;
+    }
+    i = 0;
+    while (i < SEED_FOR_SIGNING_SIZE) {
+        signing_key[SEED_FOR_MATRIX_A_SIZE + i] = seed_for_signing[i];
+
+        i += 1;
+    }
+
+    signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY : S1_ENCODED_SIZE] =
+        s1::__encode(signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE], s1);
+
+    signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY : S2_ENCODED_SIZE] =
+        s2::__encode(signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY : S2_ENCODED_SIZE], s2);
+
+    () = #spill(signing_key);
+    s1 = row_vector::ntt(s1);
+
+    matrix_A = sample::__matrix_A(seed_for_matrix_A);
+
+    t = row_vector::__multiply_with_matrix_A(matrix_A, s1);
+    t = column_vector::reduce32(t);
+    t = column_vector::invert_ntt_montgomery(t);
+
+    t = column_vector::__add(t, s2);
+
+    t = column_vector::__conditionally_add_modulus(t);
+    t1, t0 = column_vector::__power2round(t);
+
+    // Serialize the verification key.
+    () = #unspill(verification_key);
+
+    i = 0;
+    while (i < 32) {
+        verification_key[i] = seed_for_matrix_A[i];
+
+        i += 1;
+    }
+
+    #declassify verification_key[32: T1_ENCODED_SIZE]
+    = t1::__encode(verification_key[32: T1_ENCODED_SIZE], t1);
+
+    // ... and finish serializing the signing key.
+    verification_key_pointer_copy = verification_key;
+    verification_key_hash = __hash_verification_key(verification_key_pointer_copy, verification_key_hash);
+
+    // TODO: See if this copy can be removed.
+    () = #unspill(signing_key);
+    i = 0;
+    while (i < VERIFICATION_KEY_HASH_SIZE) {
+        signing_key[64 + i] = verification_key_hash[i];
+
+        i += 1;
+    }
+
+    signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]
+    = t0::__encode(signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE], t0);
+
+    return verification_key, signing_key;
+}

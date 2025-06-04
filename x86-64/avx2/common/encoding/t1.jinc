@@ -1,0 +1,172 @@
+namespace t1 {
+    u256[3] ENCODING_SHIFTS_TABLE = {
+        (8u32)[0, 22, 0, 22, 0, 22, 0, 22],
+        (8u32)[0, 0, 6, 4, 0, 0, 2, 0],
+        (8u32)[0, 12, 0, 12, 0, 12, 0, 12]
+    };
+    u128 SHUFFLE_TO_GROUP = (16u8)[
+        -1, -1, -1, -1, -1, -1, 12,
+        11, 10, 9, 8, 4, 3, 2, 1, 0
+    ];
+
+    fn coefficients_to_bytestream(reg u256 coefficients) -> reg u128 {
+        reg u256 _bytestream shifts;
+        reg u128 bytestream shifts_128;
+
+        // Combine the 2 adjacent coefficients
+        shifts = ENCODING_SHIFTS_TABLE[0]; // (8u32)[0, 22, 0, 22, 0, 22, 0, 22]
+        _bytestream = #VPSLLV_8u32(coefficients, shifts);
+        _bytestream = #VPSRL_4u64(_bytestream, 22);
+
+        // Combine the 4 adjacent coefficients
+        shifts = ENCODING_SHIFTS_TABLE[1]; // (8u32)[0, 0, 6, 4, 0, 0, 2, 0]
+        _bytestream = #VPERMD(shifts, _bytestream);
+
+        shifts = ENCODING_SHIFTS_TABLE[2]; // (8u32)[0, 12, 0, 12, 0, 12, 0, 12]
+        _bytestream = #VPSLLV_8u32(_bytestream, shifts);
+        _bytestream = #VPSRL_4u64(_bytestream, 12);
+
+        // We should now have 40 bits starting at position 0 in the lower
+        // 128-bit lane of |_bytestream| and 40 bits starting at position 0 in the
+        // upper 128-bit lane of |_bytestream|, so lets move the upper 40 bits
+        // into the lower lane to get 80 contiguous bits.
+        _bytestream = #VPERMQ(_bytestream, 0b00_00_10_00);
+        bytestream = #VEXTRACTI128(_bytestream, 0);
+
+        shifts_128 = SHUFFLE_TO_GROUP;
+        bytestream = #VPSHUFB_128(bytestream, shifts_128);
+
+        return bytestream;
+    }
+    fn encode_polynomial(
+        reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] t1_encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1
+    ) -> reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE]
+    {
+        reg u256 coefficients;
+        reg u128 bytestream;
+
+        reg u64 input_offset output_offset;
+        stack u8[16] final_encoded_output;
+
+        inline int i;
+
+        input_offset = 0;
+        output_offset = 0;
+
+        // The last 10 encoded bytes of output (resulting from the 32 input bytes)
+        // will need to be written out carefully.
+        while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
+            coefficients = t1.[:u256 input_offset];
+            input_offset += 32;
+
+            bytestream = coefficients_to_bytestream(coefficients);
+
+            t1_encoded.[:u128 output_offset] = bytestream;
+            output_offset += 10;
+        }
+        coefficients = t1.[:u256 input_offset];
+
+        bytestream = coefficients_to_bytestream(coefficients);
+        final_encoded_output.[:u128 0] = bytestream;
+
+        for i = 0 to 10 {
+            t1_encoded[output_offset + i] = final_encoded_output[i];
+        }
+
+        return t1_encoded;
+    }
+
+    inline
+    fn __encode(
+        reg ptr u8[T1_ENCODED_SIZE] encoded,
+        #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t1
+    ) -> reg ptr u8[T1_ENCODED_SIZE]
+    {
+        inline int j;
+
+        () = #spill(t1);
+
+        for j = 0 to ROWS_IN_MATRIX_A {
+            encoded[j * T1_POLYNOMIAL_ENCODED_SIZE : T1_POLYNOMIAL_ENCODED_SIZE] =
+                encode_polynomial(
+                    encoded[j * T1_POLYNOMIAL_ENCODED_SIZE : T1_POLYNOMIAL_ENCODED_SIZE],
+                    t1[COEFFICIENTS_IN_POLYNOMIAL * j : COEFFICIENTS_IN_POLYNOMIAL]
+                );
+
+            () = #unspill(t1);
+        }
+
+        return encoded;
+    }
+
+    u256[2] DECODING_TABLE = {
+        (32u8)[-1, -1, 9, 8, -1, -1, 8, 7, -1, -1, 7, 6, -1, -1, 6, 5, -1,
+               -1, 4, 3, -1, -1, 3, 2, -1, -1, 2, 1, -1, -1, 1, 0],
+        (8u32)[6, 4, 2, 0, 6, 4, 2, 0]
+    };
+    u256 mask = (8u32)[BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK,
+                  BITS_IN_UPPER_PART_OF_T_MASK];
+
+    fn decode_polynomial(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1,
+        reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] t1_encoded
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u64 output_offset input_offset;
+
+        reg u128 bytestream;
+
+        reg u256 coefficients;
+        reg u256 shifts;
+
+        coefficients = #set0_256();
+
+        input_offset = 0;
+        output_offset = 0;
+        while (input_offset < T1_POLYNOMIAL_ENCODED_SIZE - 10) {
+            // We process only 10 bytes at a time.
+            bytestream = t1_encoded.[:u128 input_offset];
+            input_offset += 10;
+
+            coefficients = #VINSERTI128(coefficients, bytestream, 0);
+            coefficients = #VINSERTI128(coefficients, bytestream, 1);
+
+            shifts = DECODING_TABLE[0];
+            coefficients = #VPSHUFB_256(coefficients, shifts);
+
+            shifts = DECODING_TABLE[1];
+            coefficients = #VPSRLV_8u32(coefficients, shifts);
+
+            coefficients = #VPAND_256(coefficients, mask);
+
+            t1.[:u256 output_offset] = coefficients;
+            output_offset += 32;
+        }
+
+        bytestream = t1_encoded.[:u128 T1_POLYNOMIAL_ENCODED_SIZE - 16];
+        bytestream = #VPSRLDQ_128(bytestream, 6);
+
+        coefficients = #VINSERTI128(coefficients, bytestream, 0);
+        coefficients = #VINSERTI128(coefficients, bytestream, 1);
+
+        shifts = DECODING_TABLE[0];
+        coefficients = #VPSHUFB_256(coefficients, shifts);
+
+        shifts = DECODING_TABLE[1];
+        coefficients = #VPSRLV_8u32(coefficients, shifts);
+
+        coefficients = #VPAND_256(coefficients, mask);
+
+        t1.[:u256 output_offset] = coefficients;
+
+        return t1;
+    }
+
+}

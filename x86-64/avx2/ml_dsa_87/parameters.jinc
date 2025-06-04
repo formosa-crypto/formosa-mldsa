@@ -1,0 +1,72 @@
+from Common require "constants.jinc"
+
+param int ROWS_IN_MATRIX_A = 8;
+param int COLUMNS_IN_MATRIX_A = 7;
+
+param int ETA = 2;
+// This is calculated as:
+// (BITS_PER_ERROR_COEFFICIENT * COEFFICIENTS_IN_POLYNOMIAL) / 8
+// For ML-DSA-87, BITS_PER_ERROR_COEFFICIENT is 3.
+param int ENCODED_ERROR_POLYNOMIAL_SIZE = 96;
+
+param int GAMMA1 = (1 << 19);
+param int BITS_TO_ENCODE_GAMMA1_COEFFICIENT = 20;
+
+param int GAMMA2 = (MODULUS - 1) / 32;
+
+param int MAX_ONES_IN_HINT = 75;
+
+// Commitment coefficients are in the interval: [0, ((FIELD_MODULUS − 1)/2γ2) − 1]
+// ((FIELD_MODULUS − 1)/2γ2) − 1 = 15, which means we need 4 bits to represent a
+// coefficient.
+param int BITS_PER_COMMITMENT_COEFFICIENT = 4;
+
+param int COMMITMENT_HASH_SIZE = 64;
+
+param int ONES_IN_VERIFIER_CHALLENGE = 60;
+
+// ----------------------------------------------------------------------
+// The constants below are all determined from the values specified above.
+// ----------------------------------------------------------------------
+param int ALPHA = 2 * GAMMA2;
+
+param int T0_ENCODED_SIZE = ROWS_IN_MATRIX_A * T0_POLYNOMIAL_ENCODED_SIZE;
+param int T1_ENCODED_SIZE = ROWS_IN_MATRIX_A * T1_POLYNOMIAL_ENCODED_SIZE;
+
+param int S1_ENCODED_SIZE = COLUMNS_IN_MATRIX_A * ENCODED_ERROR_POLYNOMIAL_SIZE;
+param int S2_ENCODED_SIZE = ROWS_IN_MATRIX_A * ENCODED_ERROR_POLYNOMIAL_SIZE;
+
+param int VERIFICATION_KEY_SIZE =
+    SEED_FOR_MATRIX_A_SIZE +
+    T1_ENCODED_SIZE;
+
+param int SIGNING_KEY_SIZE =
+    SEED_FOR_MATRIX_A_SIZE +
+    SEED_FOR_SIGNING_SIZE +
+    VERIFICATION_KEY_HASH_SIZE +
+    S1_ENCODED_SIZE +
+    S2_ENCODED_SIZE +
+    T0_ENCODED_SIZE;
+
+param int START_OF_S2_IN_ENCODED_SIGNING_KEY =
+    START_OF_S1_IN_ENCODED_SIGNING_KEY +
+    S1_ENCODED_SIZE;
+
+param int START_OF_T0_IN_ENCODED_SIGNING_KEY =
+    START_OF_S2_IN_ENCODED_SIGNING_KEY +
+    S2_ENCODED_SIZE;
+
+param int ENCODED_GAMMA1_POLYNOMIAL_SIZE =
+    (BITS_TO_ENCODE_GAMMA1_COEFFICIENT * COEFFICIENTS_IN_POLYNOMIAL) / 8;
+param int GAMMA1_ENCODED_SIZE = COLUMNS_IN_MATRIX_A * ENCODED_GAMMA1_POLYNOMIAL_SIZE;
+param int HINT_ENCODED_SIZE = MAX_ONES_IN_HINT + ROWS_IN_MATRIX_A;
+
+param int SIGNATURE_SIZE = COMMITMENT_HASH_SIZE +
+                           GAMMA1_ENCODED_SIZE +
+                           HINT_ENCODED_SIZE;
+
+param int ENCODED_COMMITMENT_POLYNOMIAL_SIZE =
+    (BITS_PER_COMMITMENT_COEFFICIENT * COEFFICIENTS_IN_POLYNOMIAL) / 8;
+param int ENCODED_COMMITMENT_SIZE = ENCODED_COMMITMENT_POLYNOMIAL_SIZE * ROWS_IN_MATRIX_A;
+
+param int BETA = ONES_IN_VERIFIER_CHALLENGE * ETA;

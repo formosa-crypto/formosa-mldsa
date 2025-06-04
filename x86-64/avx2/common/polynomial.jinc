@@ -1,0 +1,152 @@
+require "arithmetic/modular.jinc"
+
+namespace polynomial {
+    fn add(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] sum_pointer lhs_pointer rhs_pointer)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 lhs rhs sum;
+
+        reg u64 offset;
+
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            lhs = lhs_pointer.[:u256 offset];
+            rhs = rhs_pointer.[:u256 offset];
+
+            sum = #VPADD_8u32(lhs, rhs);
+            sum_pointer.[:u256 offset] = sum;
+
+            offset += 32;
+        }
+
+        return sum_pointer;
+    }
+
+    fn subtract(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] difference_pointer lhs_pointer rhs_pointer
+    )
+    -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 lhs rhs difference;
+
+        reg u64 offset;
+
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            lhs = lhs_pointer.[:u256 offset];
+            rhs = rhs_pointer.[:u256 offset];
+
+            difference = #VPSUB_8u32(lhs, rhs);
+            difference_pointer.[:u256 offset] = difference;
+
+            offset += 32;
+        }
+
+        return difference_pointer;
+    }
+
+    inline
+    fn __pointwise_add_to_total(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] total polynomial)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 lhs rhs sum;
+
+        reg u64 offset;
+
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            lhs = polynomial.[:u256 offset];
+            rhs = total.[:u256 offset];
+
+            sum = #VPADD_8u32(lhs, rhs);
+            total.[:u256 offset] = sum;
+
+            offset += 32;
+        }
+
+        return total;
+    }
+
+    inline
+    fn __zero(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial)
+        -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u256 zero_u256;
+        reg u64 offset;
+
+        ?{}, zero_u256 = #set0_256();
+
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            polynomial.[:u256 offset] = zero_u256;
+            offset += 32;
+        }
+
+        return polynomial;
+    }
+
+    inline
+    fn __check_infinity_norm(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        inline int threshold
+    ) -> reg u8
+    {
+        reg u256 coefficients;
+        reg u256 zero threshold_vector;
+        reg u256 exceeds exceeds_any;
+        reg u64 msb_mask;
+        reg u8 result;
+        reg bool zf;
+
+        reg u64 offset temp;
+
+        temp = threshold - 1;
+        threshold_vector = (256u)#VMOV(temp);
+        threshold_vector = #VPBROADCAST_8u32(threshold_vector);
+
+        ?{}, zero = #set0_256();
+        ?{}, exceeds_any = #set0_256();
+
+        result = 0;
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            coefficients = polynomial.[:u256 offset];
+
+            coefficients = #VPABS_8u32(coefficients);
+            exceeds = #VPCMPGT_8u32(coefficients, threshold_vector);
+
+            exceeds_any = #VPOR_256(exceeds_any, exceeds);
+
+            offset += 32;
+        }
+
+        // It is okay to leak which coefficient(s) violates the bound.
+        #declassify exceeds_any = exceeds_any;
+        msb_mask = #MOVEMASK_8u32(exceeds_any);
+
+        _, _, _, _, zf = #TEST_32(msb_mask, msb_mask);
+        result = #SETcc(!zf);
+
+        return result;
+    }
+
+    inline
+    fn __shift_coefficients_left(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
+        reg u256 coefficients;
+
+        reg u64 offset;
+
+        offset = 0;
+        while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            coefficients = polynomial.[:u256 offset];
+            coefficients = #VPSLL_8u32(coefficients, BITS_IN_LOWER_PART_OF_T);
+
+            polynomial.[:u256 offset] = coefficients;
+
+            offset += 32;
+        }
+
+        return polynomial;
+    }
+}

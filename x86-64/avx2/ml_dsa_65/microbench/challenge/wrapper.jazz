@@ -1,0 +1,18 @@
+param int VERIFICATION_KEY_SIZE = 1952;
+param int ENCODED_COMMITMENT_SIZE = 768;
+param int COMMITMENT_HASH_SIZE = 48;
+param int ONES_IN_VERIFIER_CHALLENGE = 49;
+
+require "../../../common/constants.jinc"
+require "../../../common/sample/challenge.jinc"
+require "../../../common/hashing.jinc"
+
+export fn wrapper(
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+    reg ptr u8[COMMITMENT_HASH_SIZE] seed
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+{
+    #[inline]
+    polynomial = sample::challenge(polynomial, seed);
+    return polynomial;
+}

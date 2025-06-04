@@ -1,0 +1,454 @@
+param int matKL = (K * L) * N;
+
+/**************************************************************/
+/************ Vectors of polynomials of length L **************/
+/**************************************************************/
+
+fn _polyvecl_uniform_eta(
+  reg ptr u32[polyvecl] v,
+  #secret reg ptr u8[CRHBYTES] seed,
+  reg u32 nonce
+) -> reg ptr u32[polyvecl]
+{
+  inline int i;
+  stack ptr u8[CRHBYTES] s_seed;
+  stack ptr u32[polyvecl] s_v;
+  stack u32 s_nonce;
+  reg ptr u32[N] p;
+
+  for i = 0 to L {
+    p = v[i * N : N];
+    s_v = v; s_nonce = nonce; s_seed = seed;
+    p = _poly_uniform_eta(p, seed, nonce);
+    s_v[i * N : N] = p; v = s_v;  nonce = s_nonce; seed = s_seed;
+    nonce += 1;
+
+  }
+  return v;
+}
+
+fn _polyvecl_uniform_gamma1(
+  reg ptr u32[polyvecl] v,
+  reg ptr u8[CRHBYTES] seed,
+  reg u32 nonce
+) -> reg ptr u32[polyvecl]
+{
+  inline int i;
+  stack ptr u8[CRHBYTES] s_seed;
+  stack ptr u32[polyvecl] s_v;
+  stack u32 s_nonce;
+  reg ptr u32[N] p;
+
+  reg u32 l;
+  l = L;
+  nonce = l * nonce;
+  nonce = __ubfx(nonce, 0, 16);
+  for i = 0 to L {
+    p = v[i * N : N];
+    s_v = v; s_nonce = nonce; s_seed = seed;
+    p = _poly_uniform_gamma1(p, seed, nonce);
+    s_v[i * N : N] = p; v = s_v;  nonce = s_nonce; seed = s_seed;
+    nonce += 1;
+    nonce = __ubfx(nonce, 0, 16);
+  }
+  return v;
+}
+
+/* Start here */
+
+fn _polyvecl_reduce(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl]
+{
+  inline int i;
+  reg ptr u32[N] pv;
+  for i = 0 to L {
+    pv = v[i * N : N];
+    v[i * N : N] = _poly_reduce(pv);
+  }
+  return v;
+}
+
+fn _polyvecl_add_inplace(
+  reg ptr u32[polyvecl] z,
+  reg ptr u32[polyvecl] y
+) -> reg ptr u32[polyvecl]
+{
+  inline int i;
+  reg ptr u32[N] pz;
+  reg ptr u32[N] py;
+  for i = 0 to L {
+    py = y[i * N : N];
+    pz = z[i * N : N];
+    z[i * N : N] = _poly_add_inplace(pz, py);
+  }
+  return z;
+}
+
+fn _polyvecl_add2_inplace(
+  reg ptr u32[polyvecl] w
+) -> reg ptr u32[polyvecl]
+{
+  inline int i;
+  reg ptr u32[N] pw;
+  for i = 0 to L {
+    pw = w[i * N : N];
+    w[i * N : N] = _poly_add2_inplace(pw);
+  }
+  return w;
+}
+
+fn _polyvecl_ntt(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl]
+{
+  inline int i;
+  reg ptr u32[N] pv;
+  for i = 0 to L {
+    pv = v[i * N : N];
+    v[i * N : N] = _poly_ntt(pv);
+  }
+  return v;
+}
+
+fn _polyvecl_invntt_tomont(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl]
+{
+  inline int i;
+  reg ptr u32[N] pv;
+  for i = 0 to L {
+    pv = v[i * N : N];
+    v[i * N : N] = _poly_invntt_tomont(pv);
+  }
+  return v;
+}
+
+fn _polyvecl_pointwise_poly_montgomery(
+  reg ptr u32[polyvecl] r,
+  reg ptr u32[N] a,
+  reg ptr u32[polyvecl] v
+) -> reg ptr u32[polyvecl]
+{
+  inline int i;
+  reg ptr u32[N] pr pv;
+  for i = 0 to L {
+    pr = r[i * N : N]; pv = v[i * N : N];
+    r[i * N: N] = _poly_pointwise_montgomery(pr, a, pv);
+  }
+  return r;
+}
+
+fn _polyvecl_pointwise_acc_montgomery(
+  reg ptr u32[N] w,
+  reg ptr u32[polyvecl] u,
+  reg ptr u32[polyvecl] v
+) -> reg ptr u32[N]
+{
+  inline int i;
+  stack u32[N] st;
+  reg ptr u32[N] t;
+  reg ptr u32[N] pu pv;
+  t = w;
+  pu = u[0 : N]; pv = v[0 : N];
+  t = _poly_pointwise_montgomery(t, pu, pv);
+  w = t;
+  t = st;
+  for i = 1 to L {
+    pu = u[i * N : N]; pv = v[i * N : N];
+    t = _poly_pointwise_montgomery(t, pu, pv);
+    w = _poly_add_inplace(w, t);
+  }
+  return w;
+}
+
+fn _polyvecl_chknorm(reg ptr u32[polyvecl] v, reg u32 bound) -> reg u32
+{
+  inline int i;
+  reg u32 b b_;
+  reg ptr u32[N] pv;
+  /* FIXME: due to sub array access we need to use a for loop,
+     a while loop will allow to exists early */
+  b = 0;
+  for i = 0 to L {
+    pv = v[i * N : N];
+    b_ = _poly_chknorm(pv, bound);
+    b |= b_;
+  }
+  return b;
+}
+
+/**************************************************************/
+/************ Vectors of polynomials of length K **************/
+/**************************************************************/
+
+fn _polyveck_uniform_eta(
+  reg ptr u32[polyveck] v,
+  reg ptr u8[CRHBYTES] seed,
+  reg u32 nonce
+) -> reg ptr u32[polyveck]
+{
+  inline int i;
+  stack ptr u8[CRHBYTES] s_seed;
+  stack ptr u32[polyveck] s_v;
+  stack u32 s_nonce;
+  reg ptr u32[N] p;
+
+  for i = 0 to K {
+    p = v[i * N : N];
+    s_v = v; s_nonce = nonce; s_seed = seed;
+    p = _poly_uniform_eta(p, seed, nonce);
+    s_v[i * N : N] = p; v = s_v;  nonce = s_nonce; seed = s_seed;
+    nonce += 1;
+
+  }
+  return v;
+}
+
+fn _polyveck_reduce(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pv;
+  for i = 0 to K {
+    pv = v[i * N : N];
+    v[i * N : N] = _poly_reduce(pv);
+  }
+  return v;
+}
+
+fn _polyveck_caddq(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pv;
+  for i = 0 to K {
+    pv = v[i * N : N];
+    v[i * N : N] = _poly_caddq(pv);
+  }
+  return v;
+}
+
+/***
+* FIXME: we can use smaller function code size by directly doing a while loop
+* instead of doing a for loop and a internal while loop
+* This can certainly be generalized in most functions of this file
+***/
+
+fn _polyveck_add_inplace(
+  reg ptr u32[polyveck] u,
+  reg ptr u32[polyveck] v
+) -> reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pu pv;
+  for i = 0 to K {
+    pu = u[i * N : N]; pv = v[i * N : N];
+    u[i * N : N] = _poly_add_inplace(pu, pv);
+  }
+  return u;
+}
+
+fn _polyveck_sub_inplace(
+  reg ptr u32[polyveck] u,
+  reg ptr u32[polyveck] v
+) -> reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pu pv;
+  for i = 0 to K {
+    pu = u[i * N : N]; pv = v[i * N : N];
+    u[i * N : N] = _poly_sub_inplace(pu, pv);
+  }
+  return u;
+}
+
+fn _polyveck_shiftl(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pv;
+  for i = 0 to K {
+    pv = v[i * N : N];
+    v[i * N : N] = _poly_shiftl(pv);
+  }
+  return v;
+}
+
+fn _polyveck_ntt(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pv;
+  stack ptr u32[polyveck] sv;
+  for i = 0 to K {
+    pv = v[i * N : N]; sv = v;
+    sv[i * N : N] = _poly_ntt(pv);
+    v = sv;
+  }
+  return v;
+}
+
+fn _polyveck_invntt_tomont(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pv;
+  stack ptr u32[polyveck] sv;
+  for i = 0 to K {
+    pv = v[i * N : N]; sv = v;
+    sv[i * N : N] = _poly_invntt_tomont(pv);
+    v = sv;
+  }
+  return v;
+}
+
+fn _polyveck_pointwise_poly_montgomery(
+  reg ptr u32[polyveck] r,
+  reg ptr u32[N] a,
+  reg ptr u32[polyveck] v
+) -> reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pr pv ;
+  for i = 0 to K {
+    pr = r[i * N : N]; pv = v[i * N : N];
+    r[i * N: N] = _poly_pointwise_montgomery(pr, a, pv);
+  }
+  return r;
+}
+
+fn _polyveck_pointwise_poly_montgomery_inplace(
+  reg ptr u32[polyveck] r,
+  reg ptr u32[N] a
+) -> reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pr;
+  for i = 0 to K {
+    pr = r[i * N : N];
+    r[i * N: N] = _poly_pointwise_montgomery_inplace(pr, a);
+  }
+  return r;
+}
+
+fn _polyveck_chknorm(reg ptr u32[polyveck] v, reg u32 bound) -> reg u32
+{
+  inline int i;
+  reg u32 b b_;
+  reg ptr u32[N] pv;
+  /* FIXME: due to sub array access we need to use a for loop,
+     a while loop will allow to exists early */
+  b = 0;
+  for i = 0 to K {
+    pv = v[i * N : N];
+    b_ = _poly_chknorm(pv, bound);
+    b |= b_;
+  }
+  return b;
+}
+
+fn _polyveck_power2round_inplace(
+  reg ptr u32[polyveck] v1,
+  reg ptr u32[polyveck] v0
+) -> reg ptr u32[polyveck], reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pv1 pv0;
+  for i = 0 to K {
+    pv1 = v1[i * N : N]; pv0 = v0[i * N : N];
+    v1[i * N : N], v0[i * N : N] = _poly_power2round_inplace(pv1, pv0);
+  }
+  return v1, v0;
+}
+
+//equivalent to _polyveck_decompose(v1, v0, v1)
+fn _polyveck_decompose_inplace(
+  reg ptr u32[polyveck] v1,
+  reg ptr u32[polyveck] v0
+) -> reg ptr u32[polyveck], reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pv1 pv0;
+  for i = 0 to K {
+    pv1 = v1[i * N : N]; pv0 = v0[i * N : N];
+    v1[i * N : N], v0[i * N : N] = _poly_decompose_inplace(pv1, pv0);
+  }
+  return v1, v0;
+}
+
+fn _polyveck_make_hint(
+  reg ptr u32[polyveck] h,
+  reg ptr u32[polyveck] v0,
+  reg ptr u32[polyveck] v1
+) -> reg u32, reg ptr u32[polyveck]
+{
+  inline int i;
+  reg u32 s tmp; s = 0;
+  reg ptr u32[N] ph pv0 pv1;
+  for i = 0 to K {
+    ph = h[i * N : N]; pv0 = v0[i * N : N]; pv1 = v1[i * N : N];
+    () = #spill(v0); // is this the right thing to spill?
+    tmp, h[i * N : N] = _poly_make_hint(ph, pv0, pv1);
+    () = #unspill(v0);
+    s += tmp;
+  }
+  return s, h;
+}
+
+fn _polyveck_use_hint_inplace(
+  reg ptr u32[polyveck] w,
+  reg ptr u32[polyveck] h
+) -> reg ptr u32[polyveck]
+{
+  inline int i;
+  reg ptr u32[N] pw ph;
+  for i = 0 to K {
+    pw = w[i * N : N]; ph = h[i * N : N];
+    w[i * N : N] = _poly_use_hint_inplace(pw, ph);
+  }
+  return w;
+}
+
+fn _polyveck_pack_w1(
+  reg ptr u8[K * POLYW1_PACKEDBYTES] r,
+  reg ptr u32[polyveck] w1
+) -> reg ptr u8[K * POLYW1_PACKEDBYTES]
+{
+  inline int i;
+  reg ptr u8[POLYW1_PACKEDBYTES] pr;
+  reg ptr u32[N] pw1;
+  for i = 0 to K {
+    pr = r[i * POLYW1_PACKEDBYTES : POLYW1_PACKEDBYTES]; pw1 = w1[i * N : N];
+    r[i * POLYW1_PACKEDBYTES : POLYW1_PACKEDBYTES] = _polyw1_pack(pr, pw1);
+  }
+  return r;
+}
+
+fn _polyvec_matrix_expand(
+  reg ptr u32[matKL] mat,
+  reg ptr u8[SEEDBYTES] rho
+) -> reg ptr u32[matKL] {
+  inline int i j;
+  reg ptr u32[N] pmat;
+  reg u32 nonce;
+
+  () = #spill(rho);
+  for i = 0 to K {
+    for j = 0 to L {
+      pmat = mat[i*polyvecl+j*N:N];
+      nonce = (i << 8) + j;
+      () = #spill(mat);
+      pmat = _poly_uniform(pmat, rho, nonce);
+      () = #unspill(mat, rho);
+      mat[i*polyvecl+j*N:N] = pmat;
+    }
+  }
+
+  return mat;
+}
+
+fn _polyvec_matrix_pointwise_montgomery(
+  reg ptr u32[polyveck] t,
+  reg ptr u32[matKL] mat,
+  reg ptr u32[polyvecl] v
+) -> reg ptr u32[polyveck] {
+  inline int i;
+  reg ptr u32[N] pt;
+  reg ptr u32[polyvecl] pmat;
+
+  for i = 0 to K {
+    pt = t[i*N:N]; pmat = mat[i*polyvecl:polyvecl];
+    t[i*N:N] = _polyvecl_pointwise_acc_montgomery(pt, pmat, v);
+  }
+  return t;
+}

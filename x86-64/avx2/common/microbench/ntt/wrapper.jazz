@@ -1,0 +1,13 @@
+require "../../constants.jinc"
+require "../../arithmetic/modular.jinc"
+require "../../arithmetic/zetas.jinc"
+require "../../arithmetic/ntt.jinc"
+
+export fn wrapper(
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+{
+    #[inline]
+    polynomial = polynomial::ntt(polynomial);
+    return polynomial;
+}

@@ -1,0 +1,52 @@
+namespace sample {
+    inline
+    fn __error_vectors(#secret stack u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime)
+        -> #secret stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
+           #secret stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
+
+        s1[COEFFICIENTS_IN_POLYNOMIAL * 0 : COEFFICIENTS_IN_POLYNOMIAL],
+        s1[COEFFICIENTS_IN_POLYNOMIAL * 1 : COEFFICIENTS_IN_POLYNOMIAL],
+        s1[COEFFICIENTS_IN_POLYNOMIAL * 2 : COEFFICIENTS_IN_POLYNOMIAL],
+        s1[COEFFICIENTS_IN_POLYNOMIAL * 3 : COEFFICIENTS_IN_POLYNOMIAL] =
+            error_4x::__sample_polynomials
+            (
+                rho_prime,
+                0
+            );
+
+        s1[COEFFICIENTS_IN_POLYNOMIAL * 4 : COEFFICIENTS_IN_POLYNOMIAL],
+        s1[COEFFICIENTS_IN_POLYNOMIAL * 5 : COEFFICIENTS_IN_POLYNOMIAL],
+        s1[COEFFICIENTS_IN_POLYNOMIAL * 6 : COEFFICIENTS_IN_POLYNOMIAL],
+        s2[COEFFICIENTS_IN_POLYNOMIAL * 0: COEFFICIENTS_IN_POLYNOMIAL] =
+            error_4x::__sample_polynomials
+            (
+                rho_prime,
+                4
+            );
+
+        s2[COEFFICIENTS_IN_POLYNOMIAL * 1 : COEFFICIENTS_IN_POLYNOMIAL],
+        s2[COEFFICIENTS_IN_POLYNOMIAL * 2 : COEFFICIENTS_IN_POLYNOMIAL],
+        s2[COEFFICIENTS_IN_POLYNOMIAL * 3 : COEFFICIENTS_IN_POLYNOMIAL],
+        s2[COEFFICIENTS_IN_POLYNOMIAL * 4: COEFFICIENTS_IN_POLYNOMIAL] =
+            error_4x::__sample_polynomials
+            (
+                rho_prime,
+                8
+            );
+
+        s2[COEFFICIENTS_IN_POLYNOMIAL * 5 : COEFFICIENTS_IN_POLYNOMIAL],
+        s2[COEFFICIENTS_IN_POLYNOMIAL * 6 : COEFFICIENTS_IN_POLYNOMIAL],
+        s2[COEFFICIENTS_IN_POLYNOMIAL * 7 : COEFFICIENTS_IN_POLYNOMIAL],
+        _ =
+            error_4x::__sample_polynomials
+            (
+                rho_prime,
+                12
+            );
+
+        return s1, s2;
+    }
+}

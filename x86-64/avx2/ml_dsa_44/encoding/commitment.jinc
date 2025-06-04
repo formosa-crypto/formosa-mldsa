@@ -1,0 +1,121 @@
+namespace commitment {
+    u256[4] ENCODING_CONSTANTS_TABLE = {
+        (32u8)[
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1,
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1,
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1,
+            (1 << 6), 1, (1 << 6), 1, (1 << 6), 1, (1 << 6), 1
+        ],
+        (16u16)[
+            (1 << 12), 1, (1 << 12), 1, (1 << 12), 1, (1 << 12), 1,
+            (1 << 12), 1, (1 << 12), 1, (1 << 12), 1, (1 << 12), 1
+        ],
+        (8u32)[7, 3, 6, 2, 5, 1, 4, 0],
+        (32u8)[
+            -1, -1, -1, -1, 14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0,
+            -1, -1, -1, -1, 14, 13, 12, 10, 9, 8, 6, 5, 4, 2, 1, 0
+        ]
+    };
+    fn coefficients_to_bytestream(reg u256 c0 c1 c2 c3) -> reg u128, reg u128 {
+        reg u256 shifts;
+        reg u128 bytestream_lower, bytestream_upper;
+
+        c0 = #VPACKUS_8u32(c0, c1);
+        c1 = #VPACKUS_8u32(c2, c3);
+
+        c0 = #VPACKUS_16u16(c0, c1);
+
+        shifts = ENCODING_CONSTANTS_TABLE[0];
+        c0 = #VPMADDUBSW_256(c0, shifts);
+
+        shifts = ENCODING_CONSTANTS_TABLE[1];
+        c0 = #VPMADDWD_256(c0, shifts);
+
+        shifts = ENCODING_CONSTANTS_TABLE[2];
+        c0 = #VPERMD(shifts, c0);
+
+        shifts = ENCODING_CONSTANTS_TABLE[3];
+        c0 = #VPSHUFB_256(c0, shifts);
+
+        bytestream_lower = (128u)c0;
+        bytestream_upper = #VEXTRACTI128(c0, 1);
+
+        return bytestream_lower, bytestream_upper;
+    }
+
+    inline
+    fn __encode_polynomial(
+        reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE] encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] raw
+    ) -> reg ptr u8[ENCODED_COMMITMENT_POLYNOMIAL_SIZE]
+    {
+        reg u256 c0 c1 c2 c3;
+        reg u128 bytestream_lower, bytestream_upper;
+
+        stack u8[16] final_encoded_bytes;
+
+        reg u64 input_offset output_offset;
+
+        input_offset = 0;
+        output_offset = 0;
+        while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 128) {
+            c0 = raw.[:u256 input_offset];
+            input_offset += 32;
+            c1 = raw.[:u256 input_offset];
+            input_offset += 32;
+            c2 = raw.[:u256 input_offset];
+            input_offset += 32;
+            c3 = raw.[:u256 input_offset];
+            input_offset += 32;
+
+            bytestream_lower, bytestream_upper = coefficients_to_bytestream(c0, c1, c2, c3);
+
+            encoded.[:u128 output_offset] = bytestream_lower;
+            output_offset += 12;
+
+            encoded.[:u128 output_offset] = bytestream_upper;
+            output_offset += 12;
+        }
+        c0 = raw.[:u256 input_offset];
+        input_offset += 32;
+        c1 = raw.[:u256 input_offset];
+        input_offset += 32;
+        c2 = raw.[:u256 input_offset];
+        input_offset += 32;
+        c3 = raw.[:u256 input_offset];
+        input_offset += 32;
+
+        bytestream_lower, bytestream_upper = coefficients_to_bytestream(c0, c1, c2, c3);
+        encoded.[:u128 output_offset] = bytestream_lower;
+        output_offset += 12;
+
+        final_encoded_bytes.[:u128 0] = bytestream_upper;
+        input_offset = 0;
+        while (input_offset < 12) {
+            encoded[output_offset] = final_encoded_bytes[input_offset];
+            output_offset += 1;
+            input_offset += 1;
+        }
+
+        return encoded;
+    }
+
+    inline
+    fn __encode(reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] commitment)
+        -> stack u8[ENCODED_COMMITMENT_SIZE]
+    {
+        stack u8[ENCODED_COMMITMENT_SIZE] encoded_commitment;
+
+        inline int i;
+
+        for i = 0 to ROWS_IN_MATRIX_A {
+            encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE] =
+            __encode_polynomial(
+                encoded_commitment[i * ENCODED_COMMITMENT_POLYNOMIAL_SIZE : ENCODED_COMMITMENT_POLYNOMIAL_SIZE],
+                commitment[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+            );
+        }
+
+        return encoded_commitment;
+    }
+}

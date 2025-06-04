@@ -1,0 +1,568 @@
+inline fn __high(reg u32[2] x) -> reg u32
+{
+    reg u32 h;
+    h = x[1];
+    return h;
+}
+
+inline fn __low(reg u32[2] x) -> reg u32
+{
+    reg u32 l;
+    l = x[0];
+    return l;
+}
+
+inline fn make_64(reg u32 h, reg u32 l) -> reg u32[2]
+{
+    reg u32[2] y;
+
+    y[0] = l;
+    y[1] = h;
+
+    return y;
+}
+
+inline fn shift_left(reg u32[2] x, inline int i) -> reg u32[2]
+{
+    reg u32 h l;
+    h = __high(x);
+    l = __low(x);
+
+    h <<= i;
+    h |= (l >> (32 - i));
+    l <<= i;
+
+    reg u32[2] y;
+    y = make_64(h, l);
+
+    return y;
+}
+
+inline fn shift_right(reg u32[2] x, inline int i) -> reg u32[2]
+{
+    reg u32 h l;
+    h = __high(x);
+    l = __low(x);
+
+    l >>= i;
+    l = __or_lsl_inplace(l, h, (32 - i));
+    h >>= i;
+
+    reg u32[2] y;
+    y = make_64(h, l);
+
+    return y;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_reduce
+*
+* Description: Inplace reduction of all coefficients of polynomial to
+*              representative in [-6283009,6283007].
+*
+* Arguments:   - poly *a: pointer to input/output polynomial
+**************************************************/
+fn _poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N]
+{
+  a = __map1__reduce32_8380417(a);
+  return a;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_caddq
+*
+* Description: For all coefficients of in/out polynomial add Q if
+*              coefficient is negative.
+*
+* Arguments:   - poly *a: pointer to input/output polynomial
+**************************************************/
+
+inline fn __poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
+{
+  a = __map1__caddq(a);
+  return a;
+}
+
+fn _poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
+{
+  a = __poly_caddq(a);
+  return a;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_add
+*
+* Description: Add polynomials. No modular reduction is performed.
+*
+* Arguments:   - poly *c: pointer to output polynomial
+*              - const poly *a: pointer to first summand
+*              - const poly *b: pointer to second summand
+**************************************************/
+
+inline fn __poly_add_body(reg u32 coeff_a, reg u32 coeff_b) -> reg u32
+{
+  coeff_a = coeff_a + coeff_b;
+  return coeff_a;
+}
+
+inline fn __poly_add_inplace(reg ptr u32[N] a b) -> reg ptr u32[N]
+{
+  reg u32 i coeff_a coeff_b;
+
+  i = 0;
+  while(i < N)
+  {
+    coeff_a = a[i];
+    coeff_b = b[i];
+    coeff_a = __poly_add_body(coeff_a, coeff_b);
+    a[i] = coeff_a;
+
+    i += 1;
+  }
+
+  return a;
+}
+
+fn _poly_add_inplace(reg ptr u32[N] a b) -> reg ptr u32[N] {
+  a = __poly_add_inplace(a, b);
+  return a;
+}
+
+fn _poly_add2_inplace(reg ptr u32[N] a) -> reg ptr u32[N]
+{
+  reg u32 i coeff_a;
+
+  i = 0;
+  while(i < N)
+  {
+    coeff_a = a[i];
+    coeff_a = __poly_add_body(coeff_a, coeff_a);
+    a[i] = coeff_a;
+
+    i += 1;
+  }
+
+  return a;
+}
+
+
+/**************************************************
+* Name:        JASMIN_MLDSA_poly_chknorm
+*
+* Description: Check infinity norm of polynomial against given bound.
+*              Assumes input coefficients were reduced by JASMIN_MLDSA_reduce32().
+*
+* Arguments:   - const poly *a: pointer to polynomial
+*              - int32_t B: norm bound
+*
+* Returns 0 if norm is strictly smaller than B <= (Q-1)/8 and 1 otherwise.
+**************************************************/
+
+inline fn __poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
+  reg u32 r;
+  reg u32 q;
+  r = 0;
+  q = iQ;
+  q -= 1;
+  q = q >> 3;
+
+  if (B >s q) {
+    r = 1;
+  }
+
+  reg u32 t;
+
+  reg u32 i; i = 0;
+  while {
+    #declassify t = a[i];
+    t = -t if t <s 0;
+
+    i += 1;
+
+    if (t >=s B) {
+      r = 1;
+      i = N;
+    }
+
+  } (i != N)
+
+  return r;
+}
+
+fn _poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
+  reg u32 r;
+  r = __poly_chknorm(a, B);
+  return r;
+}
+
+/**************************************************
+* Name:        JASMIN_MLDSA_challenge
+*
+* Description: Implementation of H. Samples polynomial with TAU nonzero
+*              coefficients in {-1,1} using the output stream of
+*              SHAKE256(seed).
+*
+* Arguments:   - poly *c: pointer to output polynomial
+*              - const uint8_t mu[]: byte array containing seed of length SEEDBYTES
+**************************************************/
+
+fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[COMMITMENT_HASH_SIZE] seed) -> reg ptr u32[N]
+{
+  stack u32[PQC_SHAKECTX_BYTES*2] _state;
+  reg ptr u32[PQC_SHAKECTX_BYTES*2] state;
+
+  stack ptr u32[N] cs;
+
+  cs = c;
+  state = _state;
+
+  // equivalent to shake256_inc_init_jazz(state);
+  // equivalent to shake256_inc_absorb_jazz(state, seed, SEEDBYTES) and shake256_inc_finalize_jazz(state)
+  state = __SHAKE256_init_ctilde_ref(state, seed);
+  c = cs;
+
+  reg u32[2] signs;
+  stack u32[2] s_signs;
+  stack u32 js;
+
+  reg u32 aux, pos, i;
+  signs[0] = state[:u32 0];
+  signs[1] = state[:u32 1];
+
+  pos = 8;
+
+  aux = 0;
+  i = 0;
+  while (i < N) {
+    c[i] = aux;
+    i += 1;
+  }
+
+  reg u32 j;
+  j = N - TAU;
+  reg u32 b;
+  while (j < N) {
+    while {
+      if (pos >= SHAKE256_RATE) {
+          // save j pbuf c, signs
+          js = j; cs = c; s_signs = #copy(signs);
+          state = _keccakf1600_ref(state);
+          j = js; c = cs;  signs = #copy(s_signs);
+          pos = 0;
+      }
+
+      b = (32u) state[:u8 pos];
+      pos += 1;
+    } (b > j)
+
+    aux = c[b];
+    c[j] = aux;
+
+    aux = signs[0] & 1;
+    aux <<= 1;
+    aux = __imm_sub_reg(1, aux);
+    c[b] = aux;
+
+    signs = shift_right(signs, 1);
+
+    j += 1;
+  }
+
+  return c;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_decompose
+*
+* Description: For all coefficients c of the input polynomial,
+*              compute high and low bits c0, c1 such c mod Q = c1*ALPHA + c0
+*              with -ALPHA/2 < c0 <= ALPHA/2 except c1 = (Q-1)/ALPHA where we
+*              set c1 = 0 and -ALPHA/2 <= c0 = c mod Q - Q < 0.
+*              Assumes coefficients to be standard representatives.
+*
+* Arguments:   - poly *a1: pointer to output polynomial with coefficients c1
+*              - poly *a0: pointer to output polynomial with coefficients c0
+*              - const poly *a: pointer to input polynomial
+**************************************************/
+// equivalent to _poly_decompose(a1, a0, a1)
+fn _poly_decompose_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[N], reg ptr u32[N] {
+  reg u32 i;
+  reg u32 q;
+
+  q = iQ;
+
+  i = 0;
+  while (i < N) {
+    reg u32 a0_, a1_, a_;
+    a_ = a1[i];
+    a0_, a1_ = __decompose_a0a1(a_, q);
+    a0[i] = a0_;
+    a1[i] = a1_;
+    i += 1;
+  }
+
+  return a1, a0;
+}
+
+
+inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
+  reg u32 c;
+  c = a[i];
+  c = __imm_sub_reg(ETA, c);
+  return c;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_use_hint
+*
+* Description: Use hint polynomial to correct the high bits of a polynomial.
+*
+* Arguments:   - poly *b: pointer to output polynomial with corrected high bits
+*              - const poly *a: pointer to input polynomial
+*              - const poly *h: pointer to input hint polynomial
+**************************************************/
+
+inline fn __poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] {
+  reg u32 i, b_, h_, q;
+
+  q = iQ;
+  i = 0;
+  while(i < N) {
+    b_ = b[i];
+    h_ = h[i];
+    b_ = __use_hint(b_, h_, q);
+    b[i] = b_;
+    i += 1;
+  }
+  return b;
+}
+
+fn _poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] {
+  b = __poly_use_hint_inplace(b, h);
+  return b;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_ntt
+*
+* Description: Inplace forward NTT. Coefficients can grow by
+*              8*Q in absolute value.
+*
+* Arguments:   - poly *a: pointer to input/output polynomial
+**************************************************/
+inline fn __poly_ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
+  // We use _ntt and not __ntt because these functions read global data
+  // and they need to be close to that data
+  a = _ntt(a);
+  return a;
+}
+
+fn _poly_ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
+  a = __poly_ntt(a);
+  return a;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_invntt_tomont
+*
+* Description: Inplace inverse NTT and multiplication by 2^{32}.
+*              Input coefficients need to be less than Q in absolute
+*              value and output coefficients are again bounded by Q.
+*
+* Arguments:   - poly *a: pointer to input/output polynomial
+**************************************************/
+inline fn __poly_invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
+  a = __invntt_tomont(a);
+  return a;
+}
+
+inline fn _poly_invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
+  a = _invntt_tomont(a);
+  return a;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_pointwise_montgomery
+*
+* Description: Pointwise multiplication of polynomials in NTT domain
+*              representation and multiplication of resulting polynomial
+*              by 2^{-32}.
+*
+* Arguments:   - poly *c: pointer to output polynomial
+*              - const poly *a: pointer to first input polynomial
+*              - const poly *b: pointer to second input polynomial
+**************************************************/
+inline fn __poly_pointwise_montgomery(reg ptr u32[N] c, reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
+  reg u32 i, a_, b_, c_;
+  i = 0;
+  while(i < N)
+  {
+    a_ = a[i]; b_ = b[i];
+    c_ = __mul_montgomery_reduce_8380417(a_, b_);
+    c[i] = c_;
+    i += 1;
+  }
+  return c;
+}
+
+inline fn __poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg ptr u32[N] {
+  reg u32 i, a_, c_;
+  i = 0;
+  while(i < N)
+  {
+    a_ = a[i];
+    c_ = c[i];
+    c_ = __mul_montgomery_reduce_8380417(a_, c_);
+    c[i] = c_;
+    i += 1;
+  }
+  return c;
+}
+
+fn _poly_pointwise_montgomery(reg ptr u32[N] c, reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
+  c = __poly_pointwise_montgomery(c, a, b);
+  return c;
+}
+
+fn _poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg ptr u32[N] {
+  c = __poly_pointwise_montgomery_inplace(c, a);
+  return c;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_make_hint
+*
+* Description: Compute hint polynomial. The coefficients of which indicate
+*              whether the low bits of the corresponding coefficient of
+*              the input polynomial overflow into the high bits.
+*
+* Arguments:   - poly *h: pointer to output hint polynomial
+*              - const poly *a0: pointer to low part of input polynomial
+*              - const poly *a1: pointer to high part of input polynomial
+*
+* Returns number of 1 bits.
+**************************************************/
+inline fn __poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> reg u32, reg ptr u32[N]{
+  reg u32 i, s, a0_, a1_, h_, gamma2;
+  gamma2 = iGAMMA2;
+  i = 0; s = 0;
+  while(i < N)
+  {
+    a0_ = a0[i];
+    a1_ = a1[i];
+    h_ = __make_hint(a0_, a1_, gamma2);
+    h[i] = h_;
+    s += h_;
+    i += 1;
+  }
+  return s, h;
+}
+
+fn _poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> reg u32, reg ptr u32[N] {
+  reg u32 s;
+  s, h = __poly_make_hint(h, a0, a1);
+  return s, h;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_power2round
+*
+* Description: For all coefficients c of the input polynomial,
+*              compute c0, c1 such that c mod Q = c1*2^D + c0
+*              with -2^{D-1} < c0 <= 2^{D-1}. Assumes coefficients to be
+*              standard representatives.
+*
+* Arguments:   - poly *a1: pointer to output polynomial with coefficients c1
+*              - poly *a0: pointer to output polynomial with coefficients c0
+*              - const poly *a: pointer to input polynomial
+**************************************************/
+
+fn _poly_power2round_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[N], reg ptr u32[N] {
+  reg u32 i, a_, a0_, a1_;
+
+  i = 0;
+  while(i < N)
+  {
+    a_ = a1[i];
+    a0_, a1_ = __power2round_a0a1(a_);
+    a0[i] = a0_; a1[i] = a1_;
+    i += 1;
+  }
+  return (a1, a0);
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_shiftl
+*
+* Description: Multiply polynomial by 2^D without modular reduction. Assumes
+*              input coefficients to be less than 2^{31-D} in absolute value.
+*
+* Arguments:   - poly *a: pointer to input/output polynomial
+**************************************************/
+inline fn __poly_shiftl(reg ptr u32[N] a) -> reg ptr u32[N] {
+  reg u32 i, a_;
+
+  i = 0;
+  while(i < N)
+  {
+    a_ = a[i];
+    a_ <<= D;
+    a[i] = a_;
+    i += 1;
+  }
+  return a;
+}
+
+fn _poly_shiftl(reg ptr u32[N] a) -> reg ptr u32[N] {
+  a = __poly_shiftl(a);
+  return a;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_poly_sub
+*
+* Description: Subtract polynomials. No modular reduction is
+*              performed.
+*
+* Arguments:   - poly *c: pointer to output polynomial
+*              - const poly *a: pointer to first input polynomial
+*              - const poly *b: pointer to second input polynomial to be
+*                               subtraced from first input polynomial
+**************************************************/
+
+inline fn __poly_sub_inplace(reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
+  reg u32 i, a_, b_, c_;
+
+  i = 0;
+  while(i < N) {
+    a_ = a[i];
+    b_ = b[i];
+    c_ = a_ - b_;
+    a[i] = c_;
+    i += 1;
+  }
+  return a;
+}
+
+fn _poly_sub_inplace(reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
+  a = __poly_sub_inplace(a, b);
+  return a;
+}
+
+inline fn __rej_sample(
+  reg ptr u32[N] a,
+  reg u32 ctr,
+  reg u32 t,
+  reg u32 q
+) -> reg ptr u32[N], reg u32
+{
+  inline bool b;
+  b = __cmp_b(t, q);
+
+  if (b) {
+    a[ctr] = t;
+    ctr = ctr + 1;
+  }
+
+  return a, ctr;
+}

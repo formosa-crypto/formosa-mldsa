@@ -1,0 +1,15 @@
+param int ROWS_IN_MATRIX_A = 6;
+param int COLUMNS_IN_MATRIX_A = 5;
+
+require "../../../common/constants.jinc"
+require "../../../common/hashing_4x.jinc"
+require "../../../common/sample/matrix_A/matrix_A.jinc"
+require "../../sample/matrix_A.jinc"
+
+export fn wrapper(
+    reg ptr u8[32] seed
+)
+{
+    stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
+    matrix_A = sample::matrix_A(seed);
+}

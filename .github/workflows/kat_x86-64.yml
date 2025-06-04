@@ -1,0 +1,30 @@
+name: "Known answer tests (x86-64)"
+on:
+  pull_request:
+  push:
+
+jobs:
+  x86-64-kat-tests:
+    if: github.ref == 'refs/heads/amd64'
+    name: kat-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        parameter_set: ["44", "65", "87"]
+        implementation_type: ["ref", "avx2"]
+    steps:
+    - uses: actions/checkout@master
+    - name: Get nix
+      uses: cachix/install-nix-action@v25
+      with:
+        nix_path: nixpkgs=channel:nixos-unstable
+    - name: Install the Jasmin compiler
+      run: |
+        git clone --branch main --depth 1 https://gitlab.com/jasmin-lang/jasmin-compiler.git
+        cd jasmin-compiler/compiler
+        nix-shell --run 'make'
+    - name: Install pytest and pycryptodome
+      run: python3 -m pip install pytest pycryptodome
+    - name: Run known-answer tests
+      run: make JASMINC='jasmin-compiler/compiler/jasminc' ARCHITECTURE='x86-64' PARAMETER_SET=${{ matrix.parameter_set }} IMPLEMENTATION_TYPE=${{ matrix.implementation_type }} test

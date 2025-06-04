@@ -1,0 +1,69 @@
+namespace error_polynomial {
+    fn encode(
+        reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE]
+    {
+        reg u32 low_nibble high_nibble;
+        reg u32 coefficient;
+
+        reg u64 i out_offset;
+
+        i = 0;
+        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
+            coefficient = polynomial[i];
+            low_nibble = ETA;
+            low_nibble -= coefficient;
+
+            coefficient = polynomial[i + 1];
+            high_nibble = ETA;
+            high_nibble -= coefficient;
+
+            high_nibble <<= 4;
+            high_nibble |= low_nibble;
+
+            out_offset = i;
+            out_offset >>= 1;
+            encoded[out_offset] = high_nibble;
+
+            i += 2;
+        }
+
+        return encoded;
+    }
+
+    fn decode(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] decoded,
+        reg ptr u8[ENCODED_ERROR_POLYNOMIAL_SIZE] encoded
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        reg u32 nibble;
+
+        reg u64 i;
+
+        i = 0;
+        while (i < COEFFICIENTS_IN_POLYNOMIAL / 2) {
+            // low_nibble = encoded[i] & 0x0F;
+            // decoded[2*i + 0] = ETA - low_nibble;
+            nibble = (32u)encoded[i];
+            nibble &= 0x0F;
+
+            nibble = -nibble;
+            nibble += ETA;
+            decoded[2 * i] = nibble;
+
+            // high_nibble = encoded[i] >> 4;
+            // decoded[2*i+1] = ETA - high_nibble;
+            nibble = (32u)encoded[i];
+            nibble >>= 4;
+
+            nibble = -nibble;
+            nibble += ETA;
+            decoded[2*i + 1] = nibble;
+
+            i += 1;
+        }
+
+        return decoded;
+    }
+}
