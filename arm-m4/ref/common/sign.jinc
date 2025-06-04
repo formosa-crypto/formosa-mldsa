@@ -1,279 +1,279 @@
 /***
-* No precondition
-***/
+ * No precondition
+ ***/
 fn _shake256_inc_absorb_mem_naive
-  (reg ptr u32[25*2] pstate,
-   reg u32 pos,
-   reg u32 m,
-   reg u32 mlen) -> reg ptr u32[25*2], reg u32
+(reg ptr u32[25*2] pstate,
+ reg u32 pos,
+ reg u32 m,
+ reg u32 mlen) -> reg ptr u32[25*2], reg u32
 {
-  reg u32 t s;
+    reg u32 t s;
 
-  // While input is not consumed :
-  // Fill-in sponge part of the shake buffer byte by byte while xoring
-  // If sponge is filled : keccak the buffer
-  while (mlen != 0) {
+    // While input is not consumed :
+    // Fill-in sponge part of the shake buffer byte by byte while xoring
+    // If sponge is filled : keccak the buffer
+    while (mlen != 0) {
 
-    t = (32u)[:u8 m];
-    s = (32u)pstate[:u8 pos];
-    s ^= t;
-    pstate[:u8 pos] = s;
-    pos += 1; m += 1; mlen -= 1;
+        t = (32u)[:u8 m];
+        s = (32u)pstate[:u8 pos];
+        s ^= t;
+        pstate[:u8 pos] = s;
+        pos += 1; m += 1; mlen -= 1;
 
-    if (pos == SHAKE256_RATE) {
-      () = #spill(m, mlen);
-      pstate = _keccakf1600_ref(pstate);
-      () = #unspill(m, mlen);
-      pos = 0;
+        if (pos == SHAKE256_RATE) {
+            () = #spill(m, mlen);
+            pstate = _keccakf1600_ref(pstate);
+            () = #unspill(m, mlen);
+            pos = 0;
+        }
+
     }
 
-  }
-
-  return pstate, pos;
+    return pstate, pos;
 }
 
 /***
-* No precondition
-***/
+ * No precondition
+ ***/
 inline fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive
-  (reg ptr u32[25*2] pstate,
-   reg u32 pos,
-   reg ptr u8[K * POLYW1_PACKEDBYTES] m
-  ) -> reg ptr u32[25*2], reg u32
+(reg ptr u32[25*2] pstate,
+ reg u32 pos,
+ reg ptr u8[K * POLYW1_PACKEDBYTES] m
+ ) -> reg ptr u32[25*2], reg u32
 {
- reg u32 t s;
- reg u32 ctr;
- ctr = 0;
+    reg u32 t s;
+    reg u32 ctr;
+    ctr = 0;
 
-  // While input is not consumed :
-  // Fill-in sponge part of the shake buffer byte by byte by xoring
-  // If sponge is filled : keccak the buffer
-  while (ctr != K * POLYW1_PACKEDBYTES) {
+    // While input is not consumed :
+    // Fill-in sponge part of the shake buffer byte by byte by xoring
+    // If sponge is filled : keccak the buffer
+    while (ctr != K * POLYW1_PACKEDBYTES) {
 
-    t = (32u)m[ctr];
-    s = (32u)pstate[:u8 pos];
-    s ^= t;
-    pstate[:u8 pos] = s;
-    pos += 1; ctr += 1;
-    if (pos == SHAKE256_RATE) {
-      () = #spill(ctr, pos, m);
-      pstate = _keccakf1600_ref(pstate);
-      () = #unspill(ctr, pos, m);
-      pos = 0;
+        t = (32u)m[ctr];
+        s = (32u)pstate[:u8 pos];
+        s ^= t;
+        pstate[:u8 pos] = s;
+        pos += 1; ctr += 1;
+        if (pos == SHAKE256_RATE) {
+            () = #spill(ctr, pos, m);
+            pstate = _keccakf1600_ref(pstate);
+            () = #unspill(ctr, pos, m);
+            pos = 0;
+        }
     }
-  }
 
-  return pstate, pos;
+    return pstate, pos;
 }
 /***
-* Precondition CRHBYTES should have been filled in pstate
-* CRHBYTES + K * POLYW1_PACKEDBYTES is dividable by 4 and 136
-***/
+ * Precondition CRHBYTES should have been filled in pstate
+ * CRHBYTES + K * POLYW1_PACKEDBYTES is dividable by 4 and 136
+ ***/
 fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES
-  (reg ptr u32[25*2] pstate,
-   reg ptr u8[K * POLYW1_PACKEDBYTES] m
-  ) -> reg ptr u32[25*2], reg u32
+(reg ptr u32[25*2] pstate,
+ reg ptr u8[K * POLYW1_PACKEDBYTES] m
+ ) -> reg ptr u32[25*2], reg u32
 {
-  reg u32 t s i pos;
-  i = 0;
-  pos = CRHBYTES;
-  while (pos < SHAKE256_RATE) {
-    s = m.[:u32 i];
-    pstate.[pos] = s;
-    pos += 4; i += 4;
-  }
-
-  while {
-    () = #spill(m, i);
-    pstate = _keccakf1600_ref(pstate);
-    () = #unspill(m, i);
-    pos = 0;
-  }
-  (i < K * POLYW1_PACKEDBYTES)
-  {
+    reg u32 t s i pos;
+    i = 0;
+    pos = CRHBYTES;
     while (pos < SHAKE256_RATE) {
-      t = m.[:u32 i];
-      s = pstate.[pos];
-      s ^= t;
-      pstate.[pos] = s;
-      pos += 4; i += 4;
+        s = m.[:u32 i];
+        pstate.[pos] = s;
+        pos += 4; i += 4;
     }
-  }
 
-  return pstate, pos;
+    while {
+        () = #spill(m, i);
+        pstate = _keccakf1600_ref(pstate);
+        () = #unspill(m, i);
+        pos = 0;
+    }
+    (i < K * POLYW1_PACKEDBYTES)
+    {
+        while (pos < SHAKE256_RATE) {
+            t = m.[:u32 i];
+            s = pstate.[pos];
+            s ^= t;
+            pstate.[pos] = s;
+            pos += 4; i += 4;
+        }
+    }
+
+    return pstate, pos;
 }
 
 /** FIXME : This is __add_block_end, but with "i" a reg **/
 fn _shake256_inc_finalize(
-   reg ptr u32[25*2] state,
-   reg u32 i
-) -> reg ptr u32[25*2]
+        reg ptr u32[25*2] state,
+        reg u32 i
+        ) -> reg ptr u32[25*2]
 {
-  reg u32 t0 t1;
+    reg u32 t0 t1;
 
-  t0 = (32u) state[:u8 i];
-  t0 ^= TRAIL_BYTE;
-  state[:u8 i] = (8u) t0;
+    t0 = (32u) state[:u8 i];
+    t0 ^= TRAIL_BYTE;
+    state[:u8 i] = (8u) t0;
 
-  t0 = (32u) state[:u8 SHAKE256_RATE - 1];
-  t1 = 0x80;
-  t0 ^= t1;
-  state[:u8 SHAKE256_RATE - 1] = (8u) t0;
+    t0 = (32u) state[:u8 SHAKE256_RATE - 1];
+    t1 = 0x80;
+    t0 ^= t1;
+    state[:u8 SHAKE256_RATE - 1] = (8u) t0;
 
-  return state;
+    return state;
 }
 
 /*************************************************
-* Name:        crypto_sign_signature_ctx_seed
-*
-* Description: Computes signature.
-*
-* Arguments:   - uint8_t *sig:   pointer to output signature (of length PQCLEAN_MLDSA_CLEAN_CRYPTO_BYTES)
-*              - size_t *siglen: pointer to output length of signature
-*              - uint8_t *m:     pointer to message to be signed
-*              - size_t mlen:    length of message
-*              - uint8_t *ctx:   pointer to context string
-*              - size_t ctxlen:  length of context string
-*              - uint8_t *sk:    pointer to bit-packed secret key
-*              - uint8_t *rand:  pointer to randomness (of length RNDBYTES)
-*
-* Returns 0 (success) or -1 (context string too long)
-**************************************************/
+ * Name:        crypto_sign_signature_ctx_seed
+ *
+ * Description: Computes signature.
+ *
+ * Arguments:   - uint8_t *sig:   pointer to output signature (of length PQCLEAN_MLDSA_CLEAN_CRYPTO_BYTES)
+ *              - size_t *siglen: pointer to output length of signature
+ *              - uint8_t *m:     pointer to message to be signed
+ *              - size_t mlen:    length of message
+ *              - uint8_t *ctx:   pointer to context string
+ *              - size_t ctxlen:  length of context string
+ *              - uint8_t *sk:    pointer to bit-packed secret key
+ *              - uint8_t *rand:  pointer to randomness (of length RNDBYTES)
+ *
+ * Returns 0 (success) or -1 (context string too long)
+ **************************************************/
 fn _crypto_sign_signature_ctx_seed(
-   #public reg ptr u8[SIGNATURE_SIZE] sig,
-   reg ptr u32[3] ctx_m_rand,
-   reg ptr u32[2] ctxlen_mlen,
-   #secret reg ptr u8[SIGNING_KEY_SIZE] sk
-)
-   -> #public reg ptr u8[SIGNATURE_SIZE], reg u32
+#public reg ptr u8[SIGNATURE_SIZE] sig,
+        reg ptr u32[3] ctx_m_rand,
+        reg ptr u32[2] ctxlen_mlen,
+#secret reg ptr u8[SIGNING_KEY_SIZE] sk
+        )
+    -> #public reg ptr u8[SIGNATURE_SIZE], reg u32
 {
-  sig = sig;
-  ctx_m_rand = ctx_m_rand;
-  ctxlen_mlen = ctxlen_mlen;
-  sk = sk;
+    sig = sig;
+    ctx_m_rand = ctx_m_rand;
+    ctxlen_mlen = ctxlen_mlen;
+    sk = sk;
 
-  reg u32 status;
-  stack u8[SEEDBYTES] s_rho;
-  stack u8[TRBYTES] s_tr;
-  stack u8[CRHBYTES] s_rhoprime;
-  stack u32[polyveck] s_t0, s_s2;
-  stack u32[polyvecl] s_s1;
-  stack u8[SEEDBYTES + RNDBYTES + CRHBYTES] s_key_rnd_mu;
-  stack u32[25*2] state;
+    reg u32 status;
+    stack u8[SEEDBYTES] s_rho;
+    stack u8[TRBYTES] s_tr;
+    stack u8[CRHBYTES] s_rhoprime;
+    stack u32[polyveck] s_t0, s_s2;
+    stack u32[polyvecl] s_s1;
+    stack u8[SEEDBYTES + RNDBYTES + CRHBYTES] s_key_rnd_mu;
+    stack u32[25*2] state;
 
-  reg ptr u8[SEEDBYTES] rho, key;
-  reg ptr u8[TRBYTES] tr;
-  reg ptr u32[polyveck] t0, s2;
-  reg ptr u32[polyvecl] s1;
-  reg ptr u8[RNDBYTES] rnd;
-  reg ptr u8[CRHBYTES] mu rhoprime;
-  reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] key_rnd_mu;
-  reg ptr u8[2] mu2;
-  reg ptr u32[25*2] pstate;
+    reg ptr u8[SEEDBYTES] rho, key;
+    reg ptr u8[TRBYTES] tr;
+    reg ptr u32[polyveck] t0, s2;
+    reg ptr u32[polyvecl] s1;
+    reg ptr u8[RNDBYTES] rnd;
+    reg ptr u8[CRHBYTES] mu rhoprime;
+    reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] key_rnd_mu;
+    reg ptr u8[2] mu2;
+    reg ptr u32[25*2] pstate;
 
-  reg u32 pos m mlen ctx ctxlen t;
+    reg u32 pos m mlen ctx ctxlen t;
 
-  inline int i;
+    inline int i;
 
-  status = -1;
+    status = -1;
 
-  ctxlen = ctxlen_mlen[0];
+    ctxlen = ctxlen_mlen[0];
 
-  if (ctxlen <= 255) {
-      rho = s_rho;
-      tr = s_tr;
-      key = s_key_rnd_mu[0:SEEDBYTES];
-      t0 = s_t0;
-      s1 = s_s1;
-      s2 = s_s2;
+    if (ctxlen <= 255) {
+        rho = s_rho;
+        tr = s_tr;
+        key = s_key_rnd_mu[0:SEEDBYTES];
+        t0 = s_t0;
+        s1 = s_s1;
+        s2 = s_s2;
 
-      () = #spill(sig, status, ctxlen);
-      (rho, tr, key, t0, s1, s2) = _unpack_sk(rho, tr, key, t0, s1, s2, sk);
-      s_rho = rho;
-      s_tr = tr;
-      s_t0 = t0;
-      s_s1 = s1;
-      s_s2 = s2;
-      s_key_rnd_mu[0:SEEDBYTES] = key;
+        () = #spill(sig, status, ctxlen);
+        (rho, tr, key, t0, s1, s2) = _unpack_sk(rho, tr, key, t0, s1, s2, sk);
+        s_rho = rho;
+        s_tr = tr;
+        s_t0 = t0;
+        s_s1 = s1;
+        s_s2 = s2;
+        s_key_rnd_mu[0:SEEDBYTES] = key;
 
-      mu2 = s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2];
-      t = 0;
-      mu2[0] = (8u)t;
-      t = ctxlen_mlen[0];
-      mu2[1] = (8u)t;
-      s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2] = mu2;
+        mu2 = s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2];
+        t = 0;
+        mu2[0] = (8u)t;
+        t = ctxlen_mlen[0];
+        mu2[1] = (8u)t;
+        s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2] = mu2;
 
-      pstate = state;
-      // TRBYTES (64) + 2 < SHAKE256_RATE (136)
-      pstate = __add_crh_ref(pstate, tr); // TRBYTES = CRHBYTES
-      pstate = __add_mu_ref(pstate, TRBYTES, mu2); // 2
-      pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
-      pos = TRBYTES + 2;
-      ctx = ctx_m_rand[0];
-      () = #spill(ctx_m_rand, ctxlen_mlen);
-      () = #unspill(ctxlen);
-      pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
-      () = #unspill(ctx_m_rand, ctxlen_mlen);
-      mlen = ctxlen_mlen[1];
-      m = ctx_m_rand[1];
-      () = #spill(ctx_m_rand);
-      pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
-      pstate = _shake256_inc_finalize(pstate, pos);
-      pstate = _keccakf1600_ref(pstate);
-      () = #unspill(ctx_m_rand);
+        pstate = state;
+        // TRBYTES (64) + 2 < SHAKE256_RATE (136)
+        pstate = __add_crh_ref(pstate, tr); // TRBYTES = CRHBYTES
+        pstate = __add_mu_ref(pstate, TRBYTES, mu2); // 2
+        pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
+        pos = TRBYTES + 2;
+        ctx = ctx_m_rand[0];
+        () = #spill(ctx_m_rand, ctxlen_mlen);
+        () = #unspill(ctxlen);
+        pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+        () = #unspill(ctx_m_rand, ctxlen_mlen);
+        mlen = ctxlen_mlen[1];
+        m = ctx_m_rand[1];
+        () = #spill(ctx_m_rand);
+        pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
+        pstate = _shake256_inc_finalize(pstate, pos);
+        pstate = _keccakf1600_ref(pstate);
+        () = #unspill(ctx_m_rand);
 
-      // FIXME define a function for this
-      mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
-      for i = 0 to CRHBYTES/4 {
-        t = pstate[i];
-        mu[:u32 i] = t;
-      }
-      s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES] = mu;
+        // FIXME define a function for this
+        mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
+        for i = 0 to CRHBYTES/4 {
+            t = pstate[i];
+            mu[:u32 i] = t;
+        }
+        s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES] = mu;
 
-      rnd = s_key_rnd_mu[SEEDBYTES : RNDBYTES];
-      reg u32 rand = ctx_m_rand[2];
-      for i = 0 to RNDBYTES/4 {
-        t = [:u32 rand + 4*i];
-        rnd[:u32 i] = t;
-      }
-      s_key_rnd_mu[SEEDBYTES : RNDBYTES] = rnd;
+        rnd = s_key_rnd_mu[SEEDBYTES : RNDBYTES];
+        reg u32 rand = ctx_m_rand[2];
+        for i = 0 to RNDBYTES/4 {
+            t = [:u32 rand + 4*i];
+            rnd[:u32 i] = t;
+        }
+        s_key_rnd_mu[SEEDBYTES : RNDBYTES] = rnd;
 
-      key_rnd_mu = s_key_rnd_mu;
-      pstate = __add_seedrndcrh_ref(pstate, key_rnd_mu);
-      pstate = __add_zero_after_add(pstate, SEEDBYTES + RNDBYTES + CRHBYTES);
-      pstate = __add_block_end(pstate, SEEDBYTES + RNDBYTES + CRHBYTES, SHAKE256_RATE);
-      pstate = _keccakf1600_ref(pstate);
-      state = pstate;
-      rhoprime = s_rhoprime;
-      for i = 0 to CRHBYTES/4 {
-        t = pstate[i];
-        rhoprime[:u32 i] = t;
-      }
-      s_rhoprime = rhoprime;
+        key_rnd_mu = s_key_rnd_mu;
+        pstate = __add_seedrndcrh_ref(pstate, key_rnd_mu);
+        pstate = __add_zero_after_add(pstate, SEEDBYTES + RNDBYTES + CRHBYTES);
+        pstate = __add_block_end(pstate, SEEDBYTES + RNDBYTES + CRHBYTES, SHAKE256_RATE);
+        pstate = _keccakf1600_ref(pstate);
+        state = pstate;
+        rhoprime = s_rhoprime;
+        for i = 0 to CRHBYTES/4 {
+            t = pstate[i];
+            rhoprime[:u32 i] = t;
+        }
+        s_rhoprime = rhoprime;
 
-      stack u32[matKL] s_mat;
-      stack u32[polyvecl] s_y, s_signer_response;
-      stack u32[polyveck] s_h;
-      reg ptr u32[matKL] mat;
-      reg ptr u32[polyveck] h;
-      stack u32[polyveck] s_w1 s_w0;
-      stack u32[N] s_cp;
-      reg ptr u32[polyveck] w1 w0;
-      reg ptr u32[N] cp;
-      mat = s_mat;
+        stack u32[matKL] s_mat;
+        stack u32[polyvecl] s_y, s_signer_response;
+        stack u32[polyveck] s_h;
+        reg ptr u32[matKL] mat;
+        reg ptr u32[polyveck] h;
+        stack u32[polyveck] s_w1 s_w0;
+        stack u32[N] s_cp;
+        reg ptr u32[polyveck] w1 w0;
+        reg ptr u32[N] cp;
+        mat = s_mat;
 
-      #declassify rho = s_rho;
-      mat = _polyvec_matrix_expand(mat, rho); s_mat = mat;
+#declassify rho = s_rho;
+        mat = _polyvec_matrix_expand(mat, rho); s_mat = mat;
 
-      s1 = s_s1; s1 = _polyvecl_ntt(s1); s_s1 = s1;
-      s2 = s_s2; s2 = _polyveck_ntt(s2); s_s2 = s2;
-      t0 = s_t0; t0 = _polyveck_ntt(t0); s_t0 = t0;
+        s1 = s_s1; s1 = _polyvecl_ntt(s1); s_s1 = s1;
+        s2 = s_s2; s2 = _polyveck_ntt(s2); s_s2 = s2;
+        t0 = s_t0; t0 = _polyveck_ntt(t0); s_t0 = t0;
 
-      reg u32 continue nonce r0;
-      stack u32 s_nonce;
-      r0 = 0;
-      s_nonce = r0;
-      while {
+        reg u32 continue nonce r0;
+        stack u32 s_nonce;
+        r0 = 0;
+        s_nonce = r0;
+        while {
             /* Sample intermediate vector y */
             rhoprime = s_rhoprime;
             nonce = s_nonce;
@@ -324,7 +324,7 @@ fn _crypto_sign_signature_ctx_seed(
             () = #spill(sig);
             cp = s_cp;
 
-            #declassify sigctilde = sigctilde;
+#declassify sigctilde = sigctilde;
             cp = _poly_challenge(cp, sigctilde);
             cp = _poly_ntt(cp);
             /* Compute z, reject if it reveals secret */
@@ -375,9 +375,9 @@ fn _crypto_sign_signature_ctx_seed(
                         } else {
                             () = #unspill(sig);
 
-                            #declassify h = h;
-                            #declassify s_signer_response = s_signer_response;
-                            #declassify sig = sig;
+#declassify h = h;
+#declassify s_signer_response = s_signer_response;
+#declassify sig = sig;
                             sig = _pack_sig_nocopy(sig, s_signer_response, h);
                             () = #spill(sig);
                             continue = 0;
@@ -385,11 +385,11 @@ fn _crypto_sign_signature_ctx_seed(
                     }
                 }
             }
-      } (continue == 1)
-      status = 0;
-      () = #unspill(sig);
-  }
+        } (continue == 1)
+        status = 0;
+        () = #unspill(sig);
+    }
 
-  #declassify sig = sig;
-  return sig, status;
+#declassify sig = sig;
+    return sig, status;
 }

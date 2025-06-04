@@ -124,9 +124,6 @@ fn _unpack_sig(reg ptr u8[COMMITMENT_HASH_SIZE] c,
     reg ptr u32[polyveck],
     reg u32
 {
-    // fixme this should be in the export function not here
-    sig = sig; c = c; signer_response = signer_response; hints_decoded = hints_decoded;
-
     reg u32 ill_formed_hint;
     inline int i;
     inline int current_position;

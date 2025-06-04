@@ -1,71 +1,3 @@
-// TODO: factorize, this is almost a copy of the previous function
-fn _shake256_PUBLICKEYBYTES_TRBYTES(reg ptr u8[TRBYTES] outp,
-                                     reg ptr u8[VERIFICATION_KEY_SIZE] inp) -> reg ptr u8[TRBYTES]
-{
-  stack u32[25*2] state;
-  reg ptr u32[25*2] pstate;
-  reg u32 i j t s;
-
-  pstate = state;
-  pstate = __keccak_init_ref(pstate);
-  () = #spill(outp);
-  reg u32 last;
-
-  i = 0;
-  while {
-    last = (VERIFICATION_KEY_SIZE >> 2) - (SHAKE256_RATE >> 2);
-  }
-  (i < last)
-  {
-    j = 0;
-    while (j < SHAKE256_RATE >> 2) {
-      t = inp[:u32 i];
-      s = pstate[j];
-      t ^= s;
-      pstate[j] = t;
-      i += 1;
-      j += 1;
-    }
-    () = #spill(i, inp);
-    pstate = _keccakf1600_ref(pstate);
-    () = #unspill(i, inp);
-  }
-
-  j = 0;
-  while(i < VERIFICATION_KEY_SIZE >> 2) {
-    t = inp[:u32 i];
-    s = pstate[j];
-    t ^= s;
-    pstate[j] = t;
-    i += 1;
-    j += 1;
-  }
-
-  /***
-  *  FIXME : replace it by __add_block_end but warning
-  ***/
-  s = (32u)pstate[:u8 (j * 4)];
-  s ^= TRAIL_BYTE;
-  pstate[:u8 (j * 4)] = s;
-  s = (32u) pstate[:u8 (SHAKE256_RATE - 1)];
-  s ^= 128;
-  pstate[:u8 (SHAKE256_RATE - 1)] = s;
-
-  pstate = _keccakf1600_ref(pstate);
-
-  () = #unspill(outp);
-  // FIXME this copy is not necessary if we return pstate, in that case it should be taken as argument
-  i = 0;
-  while (i < TRBYTES / 4) {
-    t = pstate[i];
-    outp[:u32 i] = t;
-    i += 1;
-  }
-
-  return outp;
-}
-
-
 inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -> reg ptr u32[polyvecl] {
     reg u32 i, t;
 
@@ -152,7 +84,7 @@ fn _crypto_sign_keypair_seed(
 
     /* Compute H(rho, t1) and write secret key */
     () = #spill(pk);
-    tr = _shake256_PUBLICKEYBYTES_TRBYTES(tr, pk);
+    tr = _hash_verification_key(tr, pk);
 
     reg ptr u8[SEEDBYTES] key;
     rho = state[:u8 0:SEEDBYTES];

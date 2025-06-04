@@ -1,22 +1,22 @@
 /*************************************************
-* Description: Verifies signature.
-*
-* Arguments:   - uint8_t *m: pointer to input signature
-*              - size_t siglen: length of signature
-*              - const uint8_t *m: pointer to message
-*              - size_t mlen: length of message
-*              - const uint8_t *ctx: pointer to context string
-*              - size_t ctxlen: length of context string
-*              - const uint8_t *pk: pointer to bit-packed public key
-*
-* Returns 0 if signature could be verified correctly and -1 otherwise
-**************************************************/
+ * Description: Verifies signature.
+ *
+ * Arguments:   - uint8_t *m: pointer to input signature
+ *              - size_t siglen: length of signature
+ *              - const uint8_t *m: pointer to message
+ *              - size_t mlen: length of message
+ *              - const uint8_t *ctx: pointer to context string
+ *              - size_t ctxlen: length of context string
+ *              - const uint8_t *pk: pointer to bit-packed public key
+ *
+ * Returns 0 if signature could be verified correctly and -1 otherwise
+ **************************************************/
 fn _crypto_sign_verify_ctx(
-    reg ptr u8[SIGNATURE_SIZE] sig,
-    reg ptr u32[2] ctx_m,
-    reg ptr u32[2] ctxlen_mlen,
-    reg ptr u8[VERIFICATION_KEY_SIZE] pk
-) -> reg u32 {
+        reg ptr u8[SIGNATURE_SIZE] sig,
+        reg ptr u32[2] ctx_m,
+        reg ptr u32[2] ctxlen_mlen,
+        reg ptr u8[VERIFICATION_KEY_SIZE] pk
+        ) -> reg u32 {
     reg u32 status;
 
     stack u8[SEEDBYTES] rho;
@@ -53,7 +53,7 @@ fn _crypto_sign_verify_ctx(
             status = _polyvecl_chknorm(z, bound);
 
             if (status == 0) {
-                mu = _shake256_PUBLICKEYBYTES_TRBYTES(mu, pk);
+                mu = _hash_verification_key(mu, pk);
 
                 pstate = state;
 
@@ -128,7 +128,7 @@ fn _crypto_sign_verify_ctx(
                 for i = 0 to COMMITMENT_HASH_SIZE {
                     if (status == 0) {
                         ci = (32u)c[i];
-                        #declassify c2i = (32u)c2[i];
+#declassify c2i = (32u)c2[i];
                         if (ci != c2i) {
                             status = i + 1;
                         }
