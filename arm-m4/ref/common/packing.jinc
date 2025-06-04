@@ -353,7 +353,7 @@ fn _pack_pk(
 *              - const polyvecl *s1: pointer to vector s1
 *              - const polyveck *s2: pointer to vector s2
 **************************************************/
-fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr u8[TRBYTES] tr, reg ptr u8[SEEDBYTES] key, reg ptr u32[polyveck] t0, reg ptr u32[polyvecl] s1, reg ptr u32[polyveck] s2) -> reg ptr u8[SIGNING_KEY_SIZE] {
+fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr u8[VERIFICATION_KEY_HASH_SIZE] tr, reg ptr u8[SEEDBYTES] key, reg ptr u32[polyveck] t0, reg ptr u32[polyvecl] s1, reg ptr u32[polyveck] s2) -> reg ptr u8[SIGNING_KEY_SIZE] {
     sk = sk; rho = rho; tr = tr; key = key; t0 = t0; s1 = s1; s2 = s2;
 
     inline int i;
@@ -361,7 +361,7 @@ fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr 
     current_position = 0;
 
     reg ptr u8[SEEDBYTES] tsk;
-    reg ptr u8[TRBYTES] ttr;
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] ttr;
 
     tsk = sk[current_position : SEEDBYTES];
     tsk = #copy(rho);
@@ -373,10 +373,10 @@ fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr 
     sk[current_position : SEEDBYTES] = tsk;
     current_position += SEEDBYTES;
 
-    ttr = sk[current_position : TRBYTES];
+    ttr = sk[current_position : VERIFICATION_KEY_HASH_SIZE];
     ttr = #copy(tr);
-    sk[current_position : TRBYTES] = ttr;
-    current_position += TRBYTES;
+    sk[current_position : VERIFICATION_KEY_HASH_SIZE] = ttr;
+    current_position += VERIFICATION_KEY_HASH_SIZE;
 
     reg ptr u8[POLYETA_PACKEDBYTES] nsk;
 
@@ -462,14 +462,14 @@ fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[VE
 **************************************************/
 fn _unpack_sk
   (reg ptr u8[SEEDBYTES] rho,
-   reg ptr u8[TRBYTES] tr,
+   reg ptr u8[VERIFICATION_KEY_HASH_SIZE] tr,
    reg ptr u8[SEEDBYTES] key,
    reg ptr u32[polyveck] t0,
    reg ptr u32[polyvecl] s1,
    reg ptr u32[polyveck] s2,
    #secret reg ptr u8[SIGNING_KEY_SIZE] sk)
      // rho, tr, key, t0, s1, s2
-  -> reg ptr u8[SEEDBYTES], reg ptr u8[TRBYTES], reg ptr u8[SEEDBYTES],
+  -> reg ptr u8[SEEDBYTES], reg ptr u8[VERIFICATION_KEY_HASH_SIZE], reg ptr u8[SEEDBYTES],
      reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck]
 {
     sk = sk; rho = rho; tr = tr; key = key; t0 = t0; s1 = s1; s2 = s2;
@@ -479,7 +479,7 @@ fn _unpack_sk
     current_position = 0;
 
     reg ptr u8[SEEDBYTES] tsk;
-    reg ptr u8[TRBYTES] ttr;
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] ttr;
 
     tsk = sk[current_position : SEEDBYTES];
     rho = #copy(tsk);
@@ -489,9 +489,9 @@ fn _unpack_sk
     key = #copy(tsk);
     current_position += SEEDBYTES;
 
-    ttr = sk[current_position : TRBYTES];
+    ttr = sk[current_position : VERIFICATION_KEY_HASH_SIZE];
     tr = #copy(ttr);
-    current_position += TRBYTES;
+    current_position += VERIFICATION_KEY_HASH_SIZE;
 
     reg ptr u8[POLYETA_PACKEDBYTES] nsk;
 

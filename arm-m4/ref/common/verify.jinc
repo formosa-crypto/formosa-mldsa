@@ -57,8 +57,8 @@ fn _crypto_sign_verify_ctx(
 
                 pstate = state;
 
-                // TRBYTES (64) + 2 < SHAKE256_RATE (136)
-                pstate = __add_crh_ref(pstate, mu); // TRBYTES = CRHBYTES
+                // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
+                pstate = __add_crh_ref(pstate, mu); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
 
                 () = #unspill(ctxlen_mlen, ctx_m);
                 mu2 = mu[0 : 2];
@@ -69,10 +69,10 @@ fn _crypto_sign_verify_ctx(
                 mu[0 : 2] = mu2;
 
                 () = #spill(ctxlen_mlen, t, ctx_m);
-                pstate = __add_mu_ref(pstate, TRBYTES, mu2);
+                pstate = __add_mu_ref(pstate, VERIFICATION_KEY_HASH_SIZE, mu2);
                 () = #spill(mu2);
-                pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
-                pos = TRBYTES + 2;
+                pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
+                pos = VERIFICATION_KEY_HASH_SIZE + 2;
                 ctx = ctx_m[0];
                 () = #spill(ctx_m, ctxlen_mlen);
                 () = #unspill(ctxlen);

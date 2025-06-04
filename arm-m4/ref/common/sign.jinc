@@ -154,7 +154,7 @@ fn _crypto_sign_signature_ctx_seed(
 
     reg u32 status;
     stack u8[SEEDBYTES] s_rho;
-    stack u8[TRBYTES] s_tr;
+    stack u8[VERIFICATION_KEY_HASH_SIZE] s_tr;
     stack u8[CRHBYTES] s_rhoprime;
     stack u32[polyveck] s_t0, s_s2;
     stack u32[polyvecl] s_s1;
@@ -162,7 +162,7 @@ fn _crypto_sign_signature_ctx_seed(
     stack u32[25*2] state;
 
     reg ptr u8[SEEDBYTES] rho, key;
-    reg ptr u8[TRBYTES] tr;
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] tr;
     reg ptr u32[polyveck] t0, s2;
     reg ptr u32[polyvecl] s1;
     reg ptr u8[RNDBYTES] rnd;
@@ -204,11 +204,11 @@ fn _crypto_sign_signature_ctx_seed(
         s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2] = mu2;
 
         pstate = state;
-        // TRBYTES (64) + 2 < SHAKE256_RATE (136)
-        pstate = __add_crh_ref(pstate, tr); // TRBYTES = CRHBYTES
-        pstate = __add_mu_ref(pstate, TRBYTES, mu2); // 2
-        pstate = __add_zero_after_add_naive(pstate, TRBYTES + 2);
-        pos = TRBYTES + 2;
+        // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
+        pstate = __add_crh_ref(pstate, tr); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
+        pstate = __add_mu_ref(pstate, VERIFICATION_KEY_HASH_SIZE, mu2); // 2
+        pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
+        pos = VERIFICATION_KEY_HASH_SIZE + 2;
         ctx = ctx_m_rand[0];
         () = #spill(ctx_m_rand, ctxlen_mlen);
         () = #unspill(ctxlen);

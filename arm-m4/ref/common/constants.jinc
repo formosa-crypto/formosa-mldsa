@@ -5,7 +5,7 @@ param int LOG_2_N = 8;
 
 param int SEEDBYTES = 32;
 param int CRHBYTES = 64;
-param int TRBYTES = 64;
+param int VERIFICATION_KEY_HASH_SIZE = 64;
 param int RNDBYTES = 32;
 param int D = 13;
 

@@ -29,7 +29,7 @@ fn _crypto_sign_keypair_seed(
     reg ptr u8[SIGNING_KEY_SIZE] sk,
     #secret reg ptr u8[SEEDBYTES] seedbuf
 ) -> reg ptr u8[VERIFICATION_KEY_SIZE], reg ptr u8[SIGNING_KEY_SIZE] {
-    stack u8[TRBYTES] tr;
+    stack u8[VERIFICATION_KEY_HASH_SIZE] tr;
     stack u32[matKL] mat;
     stack u32[polyvecl] s1, s1hat;
     stack u32[polyveck] s2, t1, t0;
