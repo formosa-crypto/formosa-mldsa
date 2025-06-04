@@ -68,8 +68,8 @@ class ML_DSA_X86_64(ML_DSA):
         return char_array.from_buffer_copy(ba)
 
     def generate_keypair(self, randomness):
-        verification_key = ctypes.create_string_buffer(self.verification_key_size)
-        signing_key = ctypes.create_string_buffer(self.signing_key_size)
+        verification_key = ctypes.create_string_buffer(b'255', self.verification_key_size)
+        signing_key = ctypes.create_string_buffer(b'255', self.signing_key_size)
 
         self.keygen_internal(
             verification_key, signing_key, self.bytearray_to_ctype(randomness)
@@ -78,7 +78,7 @@ class ML_DSA_X86_64(ML_DSA):
         return (verification_key.raw, signing_key.raw)
 
     def sign(self, signing_key, context, message, randomness):
-        signature = ctypes.create_string_buffer(self.signature_size)
+        signature = ctypes.create_string_buffer(b'255', self.signature_size)
 
         # TODO: Handle this in the Jasmin code.
         message = bytearray([0, len(context)]) + context + message

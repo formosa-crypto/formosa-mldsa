@@ -262,7 +262,7 @@ fn _crypto_sign_signature_ctx_seed(
         reg ptr u32[N] cp;
         mat = s_mat;
 
-#declassify rho = s_rho;
+        #declassify rho = s_rho;
         mat = _polyvec_matrix_expand(mat, rho); s_mat = mat;
 
         s1 = s_s1; s1 = _polyvecl_ntt(s1); s_s1 = s1;
@@ -309,23 +309,23 @@ fn _crypto_sign_signature_ctx_seed(
             pstate = _keccakf1600_ref(pstate);
 
             // FIXME define a function for that
-            reg ptr u8[COMMITMENT_HASH_SIZE] sigctilde;
+            reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash;
             () = #unspill(sig);
-            sigctilde = sig[0:COMMITMENT_HASH_SIZE];
+            commitment_hash = sig[0:COMMITMENT_HASH_SIZE];
             for i = 0 to COMMITMENT_HASH_SIZE/4 {
                 t = pstate[i];
-                sigctilde[:u32 i] = t;
+                commitment_hash[:u32 i] = t;
             }
             state = pstate;
-            sig[0:COMMITMENT_HASH_SIZE] = sigctilde;
+            sig[0:COMMITMENT_HASH_SIZE] = commitment_hash;
 
             reg ptr u8[SEEDBYTES] sigseed;
             sigseed = sig[0:SEEDBYTES];
             () = #spill(sig);
             cp = s_cp;
 
-#declassify sigctilde = sigctilde;
-            cp = _poly_challenge(cp, sigctilde);
+            #declassify commitment_hash = commitment_hash;
+            cp = _poly_challenge(cp, commitment_hash);
             cp = _poly_ntt(cp);
             /* Compute z, reject if it reveals secret */
             s1 = s_s1;
@@ -375,9 +375,10 @@ fn _crypto_sign_signature_ctx_seed(
                         } else {
                             () = #unspill(sig);
 
-#declassify h = h;
-#declassify s_signer_response = s_signer_response;
-#declassify sig = sig;
+                            #declassify h = h;
+                            #declassify s_signer_response = s_signer_response;
+                            #declassify sig = sig;
+
                             sig = _pack_sig_nocopy(sig, s_signer_response, h);
                             () = #spill(sig);
                             continue = 0;
@@ -390,6 +391,6 @@ fn _crypto_sign_signature_ctx_seed(
         () = #unspill(sig);
     }
 
-#declassify sig = sig;
+    #declassify sig = sig;
     return sig, status;
 }

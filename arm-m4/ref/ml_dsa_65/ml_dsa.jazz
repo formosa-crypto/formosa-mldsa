@@ -28,6 +28,8 @@ export fn ml_dsa_65_keygen(
 #secret reg ptr u8[SIGNING_KEY_SIZE] {
     verification_key, signing_key = _crypto_sign_keypair_seed(verification_key, signing_key, seed);
 
+    #declassify verification_key = verification_key;
+
     return verification_key, signing_key;
 }
 

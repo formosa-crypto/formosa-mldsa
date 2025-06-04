@@ -357,26 +357,26 @@ fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr 
     sk = sk; rho = rho; tr = tr; key = key; t0 = t0; s1 = s1; s2 = s2;
 
     inline int i;
-    inline int start_pos;
-    start_pos = 0;
+    inline int current_position;
+    current_position = 0;
 
     reg ptr u8[SEEDBYTES] tsk;
     reg ptr u8[TRBYTES] ttr;
 
-    tsk = sk[start_pos : SEEDBYTES];
+    tsk = sk[current_position : SEEDBYTES];
     tsk = #copy(rho);
-    sk[start_pos:SEEDBYTES] = tsk;
-    start_pos += SEEDBYTES;
+    sk[current_position:SEEDBYTES] = tsk;
+    current_position += SEEDBYTES;
 
-    tsk = sk[start_pos :  SEEDBYTES];
+    tsk = sk[current_position :  SEEDBYTES];
     tsk = #copy(key);
-    sk[start_pos : SEEDBYTES] = tsk;
-    start_pos += SEEDBYTES;
+    sk[current_position : SEEDBYTES] = tsk;
+    current_position += SEEDBYTES;
 
-    ttr = sk[start_pos : TRBYTES];
+    ttr = sk[current_position : TRBYTES];
     ttr = #copy(tr);
-    sk[start_pos : TRBYTES] = ttr;
-    start_pos += TRBYTES;
+    sk[current_position : TRBYTES] = ttr;
+    current_position += TRBYTES;
 
     reg ptr u8[POLYETA_PACKEDBYTES] nsk;
 
@@ -386,10 +386,10 @@ fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr 
     for i = 0 to L {
         ns1 = s1[i * N: N];
         () = #spill(s1);
-        nsk = sk[start_pos : POLYETA_PACKEDBYTES];
-        sk[start_pos : POLYETA_PACKEDBYTES] = _polyeta_pack(nsk, ns1);
+        nsk = sk[current_position : POLYETA_PACKEDBYTES];
+        sk[current_position : POLYETA_PACKEDBYTES] = _polyeta_pack(nsk, ns1);
         () = #unspill(s1);
-        start_pos += POLYETA_PACKEDBYTES;
+        current_position += POLYETA_PACKEDBYTES;
     }
 
     () = #unspill(s2);
@@ -397,10 +397,10 @@ fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr 
     for i = 0 to K {
         ns2 = s2[i * N: N];
         () = #spill(s2);
-        nsk = sk[start_pos : POLYETA_PACKEDBYTES];
-        sk[start_pos : POLYETA_PACKEDBYTES] = _polyeta_pack(nsk, ns2);
+        nsk = sk[current_position : POLYETA_PACKEDBYTES];
+        sk[current_position : POLYETA_PACKEDBYTES] = _polyeta_pack(nsk, ns2);
         () = #unspill(s2);
-        start_pos += POLYETA_PACKEDBYTES;
+        current_position += POLYETA_PACKEDBYTES;
     }
     () = #unspill(t0);
 
@@ -408,72 +408,14 @@ fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr 
     reg ptr u8[POLYT0_PACKEDBYTES] nnsk;
     for i = 0 to K {
         nt0 = t0[i * N: N];
-        nnsk = sk[start_pos : POLYT0_PACKEDBYTES];
+        nnsk = sk[current_position : POLYT0_PACKEDBYTES];
         () = #spill(t0);
-        sk[start_pos : POLYT0_PACKEDBYTES] = _polyt0_pack(nnsk, nt0);
+        sk[current_position : POLYT0_PACKEDBYTES] = _polyt0_pack(nnsk, nt0);
         () = #unspill(t0);
-        start_pos += POLYT0_PACKEDBYTES;
+        current_position += POLYT0_PACKEDBYTES;
     }
 
     return sk;
-}
-
-fn _pack_sig_nocopy(
-    reg ptr u8[SIGNATURE_SIZE] sig,
-    reg ptr u32[polyvecl] z,
-    reg ptr u32[polyveck] h
-) -> reg ptr u8[SIGNATURE_SIZE] {
-    sig = sig; z = z; h = h;
-
-    inline int i;
-
-    inline int start_pos;
-    start_pos = 0;
-
-    start_pos += COMMITMENT_HASH_SIZE;
-
-    reg ptr u32[N] nz;
-    reg ptr u8[POLYZ_PACKEDBYTES] nsig;
-    for i = 0 to L {
-        nz = z[i * N: N];
-        nsig = sig[start_pos : POLYZ_PACKEDBYTES];
-        sig[start_pos : POLYZ_PACKEDBYTES] = _polyz_pack(nsig, nz);
-        start_pos += POLYZ_PACKEDBYTES;
-    }
-
-    reg u32 zero = 0;
-    reg ptr u8[MAX_ONES_IN_HINT + K] pointer_to_hint = sig[start_pos : MAX_ONES_IN_HINT + K];
-    reg u32 j = 0;
-    while (j < (MAX_ONES_IN_HINT + K)/4) {
-        pointer_to_hint.[:u32 j] = zero;
-        j += 4;
-    }
-    while (j < (MAX_ONES_IN_HINT + K)/4 + ((MAX_ONES_IN_HINT + K)%4)) {
-        pointer_to_hint[j] = zero;
-        j += 1;
-    }
-
-    reg u32 hj;
-    reg u32 k;
-    k = 0;
-
-    reg ptr u32[N] nh;
-    for i = 0 to K {
-       nh = h[i * N: N];
-       j = 0;
-       while (j < N) {
-         hj = nh[j];
-         if hj != 0 {
-           pointer_to_hint[k] = j;
-           k += 1;
-         }
-         j += 1;
-       }
-       pointer_to_hint[i + MAX_ONES_IN_HINT] = k;
-    }
-    sig[start_pos : MAX_ONES_IN_HINT + K] = pointer_to_hint;
-
-    return sig;
 }
 
 /*************************************************
@@ -533,23 +475,23 @@ fn _unpack_sk
     sk = sk; rho = rho; tr = tr; key = key; t0 = t0; s1 = s1; s2 = s2;
 
     inline int i;
-    inline int start_pos;
-    start_pos = 0;
+    inline int current_position;
+    current_position = 0;
 
     reg ptr u8[SEEDBYTES] tsk;
     reg ptr u8[TRBYTES] ttr;
 
-    tsk = sk[start_pos : SEEDBYTES];
+    tsk = sk[current_position : SEEDBYTES];
     rho = #copy(tsk);
-    start_pos += SEEDBYTES;
+    current_position += SEEDBYTES;
 
-    tsk = sk[start_pos :  SEEDBYTES];
+    tsk = sk[current_position :  SEEDBYTES];
     key = #copy(tsk);
-    start_pos += SEEDBYTES;
+    current_position += SEEDBYTES;
 
-    ttr = sk[start_pos : TRBYTES];
+    ttr = sk[current_position : TRBYTES];
     tr = #copy(ttr);
-    start_pos += TRBYTES;
+    current_position += TRBYTES;
 
     reg ptr u8[POLYETA_PACKEDBYTES] nsk;
 
@@ -561,20 +503,20 @@ fn _unpack_sk
     reg ptr u32[N] ns1;
     for i = 0 to L {
         ns1 = s1[i * N: N];
-        nsk = sk[start_pos : POLYETA_PACKEDBYTES];
+        nsk = sk[current_position : POLYETA_PACKEDBYTES];
         s1[i * N: N] = _polyeta_unpack(ns1, nsk);
-        start_pos += POLYETA_PACKEDBYTES;
+        current_position += POLYETA_PACKEDBYTES;
     }
 
     () = #unspill(s2);
     reg ptr u32[N] ns2;
     for i = 0 to K {
         ns2 = s2[i * N: N];
-        nsk = sk[start_pos : POLYETA_PACKEDBYTES];
+        nsk = sk[current_position : POLYETA_PACKEDBYTES];
         () = #spill(sk);
         s2[i * N: N] = _polyeta_unpack(ns2, nsk);
         () = #unspill(sk);
-        start_pos += POLYETA_PACKEDBYTES;
+        current_position += POLYETA_PACKEDBYTES;
     }
     () = #unspill(t0);
     () = #spill(s1, s2);
@@ -583,9 +525,9 @@ fn _unpack_sk
     reg ptr u8[POLYT0_PACKEDBYTES] nnsk;
     for i = 0 to K {
         nt0 = t0[i * N: N];
-        nnsk = sk[start_pos : POLYT0_PACKEDBYTES];
+        nnsk = sk[current_position : POLYT0_PACKEDBYTES];
         t0[i * N: N] = _polyt0_unpack(nt0, nnsk);
-        start_pos += POLYT0_PACKEDBYTES;
+        current_position += POLYT0_PACKEDBYTES;
     }
     () = #unspill(rho);
     () = #unspill(tr);
