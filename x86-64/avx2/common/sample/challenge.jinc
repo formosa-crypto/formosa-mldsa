@@ -18,7 +18,7 @@ fn __absorb_to_generate_challenges(
     linear_state[:u8 COMMITMENT_HASH_SIZE] = 0x1f;
     linear_state[:u8 SHAKE256_RATE - 1] = 0x80;
 
-    state = __stavx2_pack(linear_state);
+    state = _stavx2_pack(linear_state);
 
     return state;
 }

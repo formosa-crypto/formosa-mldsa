@@ -23,4 +23,4 @@ jobs:
         cd jasmin-compiler/compiler
         nix-shell --run 'make'
     - name: Check whether the code is speculative constant-time.
-      run: make JASMINCT='jasmin-compiler/compiler/jasmin-ct' ARCHITECTURE='x86-64' PARAMETER_SET=${{ matrix.parameter_set }} check-sct
+      run: make JASMINCT='jasmin-compiler/compiler/jasmin-ct' ARCHITECTURE='x86-64' PARAMETER_SET=${{ matrix.parameter_set }} IMPLEMENTATION_TYPE='ref' check-sct

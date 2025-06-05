@@ -30,6 +30,8 @@ from Common require "encoding/signature.jinc"
 from Common require "encoding/s1.jinc"
 from Common require "encoding/s2.jinc"
 
+require "hashing.jinc"
+
 from Common require "sample/error_vector_shuffles.jinc"
 require "sample/error_vectors/4x.jinc"
 require "sample/error_vectors.jinc"

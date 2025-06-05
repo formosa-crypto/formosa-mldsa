@@ -152,7 +152,7 @@ fn _keccakf1600_avx2(reg u256[7] state) -> reg u256[7]
 }
 
 // converts a (plain) keccak state (st25) into the avx2 representation
-inline fn __stavx2_pack
+fn _stavx2_pack
 ( reg const ptr u64[25] st
 ) -> reg u256[7] {
   // 3*r256 (evitáveis...)

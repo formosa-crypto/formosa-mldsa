@@ -19,7 +19,7 @@ fn __prepare_state_for_shake256(
     linear_state[:u8 34] ^= 0x1f;
     linear_state[:u8 SHAKE256_RATE - 1] ^= 0x80;
 
-    state = __stavx2_pack(linear_state);
+    state = _stavx2_pack(linear_state);
 
     return state;
 }

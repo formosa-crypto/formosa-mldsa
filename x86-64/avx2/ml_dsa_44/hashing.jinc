@@ -1,0 +1,80 @@
+// N.B.: While this is only used in hash_verification_key(), making it an inline int
+// wouldn't work; it's used in a while loop condition, which causes issues for
+// the RSB-checker.
+param int FULL_BLOCKS_IN_VERIFICATION_KEY = VERIFICATION_KEY_SIZE / SHAKE256_RATE;
+fn hash_verification_key(
+    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash,
+    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key
+) -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE]
+{
+    reg u256[7] state;
+    #spill_to_mmx reg u64 verification_key_offset;
+
+    reg u64 t64;
+    reg u256 r0, r1, r2, r3, r4, r5, r6;
+    reg u128 t128_0, t128_1;
+
+    // Absorb ...
+
+    state = __state_init_avx2();
+
+    // N.B.: VERIFICATION_KEY_SIZE for:
+    //
+    // ML-DSA-44: 1312 = SHAKE256_RATE * 9 + 88
+    //
+    verification_key_offset = 0;
+    while(verification_key_offset < FULL_BLOCKS_IN_VERIFICATION_KEY * SHAKE256_RATE) {
+        state = shake256_absorb_full_block(state, verification_key[verification_key_offset : SHAKE256_RATE]);
+        verification_key_offset += SHAKE256_RATE;
+    }
+
+    // Now absorb the last partial block.
+    reg ptr u8[88] block = verification_key[verification_key_offset:88];
+
+    t64 = block.[:u64 0];
+    t128_0 = (128u) t64;
+    r0 = #VPBROADCAST_4u64(t128_0);
+    state[0] ^= r0;
+
+    r1 = block.[:u256 8];
+    state[1] ^= r1;
+
+    t64 = block.[:u64 40];
+    t128_1 = (128u) t64;
+
+    r3 = block.[:u256 48];
+
+    t64 = block.[:u64 80];
+    t128_0 = (128u) t64;
+
+    r4 = #set0_256();
+
+    t64 = 0;
+    t128_1 = #VPINSR_2u64(t128_1, t64, 1);
+
+    r5 = #set0_256();
+
+    t64 = 0;
+    t128_0 = #VPINSR_2u64(t128_0, t64, 1);
+    r2 = (2u128)[t128_1, t128_0];
+    state[2] ^= r2;
+
+    r6 = #set0_256();
+
+    state = __addstate_r3456_avx2(state, r3, r4, r5, r6);
+
+    // Finally, add the trail bit.
+    t64 = 0x1f;
+    r2 = (256u)#VMOV_64(t64);
+    state[4] ^= r2;
+
+    state = __addratebit_avx2(state, SHAKE256_RATE);
+
+    // ... then squeeze.
+    state = _keccakf1600_avx2(state);
+
+    // VERIFICATION_KEY_HASH_SIZE is always 64.
+    verification_key_hash = stream_64_bytes(verification_key_hash, state);
+
+    return verification_key_hash;
+}
