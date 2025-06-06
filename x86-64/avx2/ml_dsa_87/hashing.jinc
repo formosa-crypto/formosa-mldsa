@@ -48,3 +48,84 @@ fn hash_verification_key(
 
     return verification_key_hash;
 }
+
+// The message representative is always 64 bytes long, which means the first
+// full block that we absorb will contain 64 bytes of the message representative,
+// and SHAKE256_RATE - 64 = 136 - 64 = 72 bytes of the encoded commitment.
+// Subtracting these 72 bytes from the encoded commitment size and dividing
+// by SHAKE256_RATE gives us the number of full commitment blocks to absorb.
+param int FULL_COMMITMENT_BLOCKS_TO_ABSORB = (ENCODED_COMMITMENT_SIZE - 72) / SHAKE256_RATE;
+
+inline
+fn __derive_commitment_hash(
+    reg ptr u8[64] message_representative,
+    #spill_to_mmx reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment
+) -> stack u8[COMMITMENT_HASH_SIZE]
+{
+    stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
+
+    reg u256[7] state;
+    stack u8[SHAKE256_RATE] initial_block;
+
+    reg u64 copied_8_bytes;
+    #spill_to_mmx reg u64 encoded_commitment_offset;
+
+    reg u256 copied_32_bytes;
+
+    reg u64 t64;
+    reg u128 t128;
+    reg u256 r0;
+
+    // Absorb message_representative (always 64 bytes)
+    copied_32_bytes = message_representative.[:u256 0];
+    initial_block.[:u256 0] = copied_32_bytes;
+
+    copied_32_bytes = message_representative.[:u256 32];
+    initial_block.[:u256 32] = copied_32_bytes;
+
+    // The ENCODED_COMMITMENT_SIZE for ML-DSA-87 is 1024. Now absorb the first
+    // 72 bytes of the commitment
+    copied_32_bytes = encoded_commitment.[:u256 0];
+    initial_block.[:u256 64] = copied_32_bytes;
+
+    copied_32_bytes = encoded_commitment.[:u256 32];
+    initial_block.[:u256 96] = copied_32_bytes;
+
+    copied_8_bytes = encoded_commitment.[:u64 64];
+    initial_block.[:u64 128] = copied_8_bytes;
+
+    // We have SHAKE256_RATE bytes in the state, permute
+    state = __state_init_avx2();
+
+    state = shake256_absorb_full_block(state, initial_block);
+
+    // We have the following bytes left to absorb:
+    //
+    // 1024 - 72 = 952 = SHAKE256_RATE * 7
+    //
+    // Now absorb all the full blocks in the encoded commitment (note that
+    // for ML-DSA-87 this is all of the remaining commitment).
+    //
+    encoded_commitment_offset = 72;
+    while(encoded_commitment_offset < FULL_COMMITMENT_BLOCKS_TO_ABSORB * SHAKE256_RATE) {
+        state = shake256_absorb_full_block(state, encoded_commitment[encoded_commitment_offset : SHAKE256_RATE]);
+        encoded_commitment_offset += SHAKE256_RATE;
+    }
+
+    t64 = 0x1f;
+    t128 = (128u)t64;
+    r0 = #VPBROADCAST_4u64(t128);
+    state[0] ^= r0;
+
+    state = __addratebit_avx2(state, SHAKE256_RATE);
+
+    // Now squeeze
+    state = _keccakf1600_avx2(state);
+
+    // COMMITMENT_HASH_SIZE is 64.
+    // TODO: Not inlining this causes a bunch of register-allocation conflicts.
+    #[inline]
+    commitment_hash = stream_64_bytes(commitment_hash, state);
+
+    return commitment_hash;
+}

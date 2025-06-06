@@ -50,7 +50,7 @@ fn stream_64_bytes(reg ptr u8[64] array, reg u256[7] state) -> reg ptr u8[64] {
 
     // state[0] = [0, 0, 0, 0]
     t128 = (128u)state[0];
-    array.[:u64 0] = #VMOVLPD(t128);
+    array.[:u64 0] = t128;
     // [ 1, 2, 3, 4 ]
     array.[:u256 8] = state[1];
 
@@ -62,7 +62,7 @@ fn stream_64_bytes(reg ptr u8[64] array, reg u256[7] state) -> reg ptr u8[64] {
 
     // We first need to get 8 bytes from state[2][2]
     t128 = #VEXTRACTI128(state[2], 1);
-    array.[:u64 40] = #VMOVLPD(t128);
+    array.[:u64 40] = t128;
 
     // We need 16 more bytes from t256
     t128 = (128u)t256;
@@ -144,124 +144,4 @@ fn __derive_message_representative(
     message_representative.[:u256 32] = copied_32_bytes;
 
     return message_representative;
-}
-
-// The message representative is always 64 bytes long, which means the first
-// full block that we absorb will contain 64 bytes of the message representative,
-// and SHAKE256_RATE - 64 = 136 - 64 = 72 bytes of the encoded commitment.
-// Subtracting these 72 bytes from the encoded commitment size and dividing
-// by SHAKE256_RATE gives us the number of full commitment blocks to absorb.
-param int FULL_COMMITMENT_BLOCKS_TO_ABSORB = (ENCODED_COMMITMENT_SIZE - 72) / SHAKE256_RATE;
-
-inline
-fn __derive_commitment_hash(
-    reg ptr u8[64] message_representative,
-    #spill_to_mmx reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment
-) -> stack u8[COMMITMENT_HASH_SIZE]
-{
-    stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
-
-    stack u64[25] _state;
-    reg u256[7] state;
-    stack u8[SHAKE256_RATE] initial_block;
-
-    reg u64 state_offset;
-    reg u64 copied_8_bytes;
-    #spill_to_mmx reg u64 encoded_commitment_offset;
-
-    reg u128 copied_16_bytes;
-    reg u256 copied_32_bytes;
-
-    reg u64 t64;
-    reg u128 t128;
-    reg u256 r0;
-
-    // Absorb message_representative (always 64 bytes)
-    copied_32_bytes = message_representative.[:u256 0];
-    initial_block.[:u256 0] = copied_32_bytes;
-
-    copied_32_bytes = message_representative.[:u256 32];
-    initial_block.[:u256 32] = copied_32_bytes;
-
-    // The ENCODED_COMMITMENT_SIZE for each parameter set is as follows:
-    //
-    // ML-DSA-44: 768
-    // ML-DSA-65: 768
-    // ML-DSA-87: 1024
-    //
-    // Now absorb the first 72 bytes of the commitment
-    //
-    copied_32_bytes = encoded_commitment.[:u256 0];
-    initial_block.[:u256 64] = copied_32_bytes;
-
-    copied_32_bytes = encoded_commitment.[:u256 32];
-    initial_block.[:u256 96] = copied_32_bytes;
-
-    copied_8_bytes = encoded_commitment.[:u64 64];
-    initial_block.[:u64 128] = copied_8_bytes;
-
-    // We have SHAKE256_RATE bytes in the state, permute
-    state = __state_init_avx2();
-
-    state = shake256_absorb_full_block(state, initial_block);
-
-    // For each parameter set we have the following bytes left to absorb.
-    //
-    // ML-DSA-44: 768 - 72 = 696 = SHAKE256_RATE * 5 + 16
-    // ML-DSA-65: 768 - 72 = 696 = SHAKE256_RATE * 5 + 16
-    // ML-DSA-87: 1024 - 72 = 952 = SHAKE256_RATE * 7
-    //
-    // Now absorb all the full blocks in the encoded commitment (note that
-    // (for ML-DSA-87 this is all of the remaining commitment).
-    //
-    encoded_commitment_offset = 72;
-    while(encoded_commitment_offset < FULL_COMMITMENT_BLOCKS_TO_ABSORB * SHAKE256_RATE) {
-        state = shake256_absorb_full_block(state, encoded_commitment[encoded_commitment_offset : SHAKE256_RATE]);
-        encoded_commitment_offset += SHAKE256_RATE;
-    }
-
-    // Finally, if the encoded_commitment_offset != ENCODED_COMMITMENT_SIZE,
-    // we should have 16 bytes left to absorb.
-    if (encoded_commitment_offset < ENCODED_COMMITMENT_SIZE) {
-        reg ptr u8[16] block = encoded_commitment[encoded_commitment_offset:16];
-
-        t64 = block.[:u64 0];
-        t128 = (128u)t64;
-        r0 = #VPBROADCAST_4u64(t128);
-        state[0] ^= r0;
-
-        t64 = block.[:u64 8];
-
-        t128 = #set0_128();
-        t128 = #VMOV(t64);
-
-        t64 = 0x1f;
-        t128 = #VPINSR_2u64(t128, t64, 1);
-
-        r0 = #set0_256();
-        r0 = #VINSERTI128(r0, t128, 0);
-
-        state[1] ^= r0;
-    } else {
-        t64 = 0x1f;
-        t128 = (128u)t64;
-        r0 = #VPBROADCAST_4u64(t128);
-        state[0] ^= r0;
-    }
-
-    state = __addratebit_avx2(state, SHAKE256_RATE);
-
-    // Now squeeze
-    state = _keccakf1600_avx2(state);
-
-    _state = __stavx2_unpack(_state, state);
-
-    // COMMITMENT_HASH_SIZE is always a multiple of 16.
-    state_offset = 0;
-    while(state_offset < COMMITMENT_HASH_SIZE) {
-        copied_16_bytes = _state.[:u128 state_offset];
-        commitment_hash.[:u128 state_offset] = copied_16_bytes;
-        state_offset += 16;
-    }
-    return commitment_hash;
 }
