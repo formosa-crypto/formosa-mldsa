@@ -368,7 +368,7 @@ fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr 
     sk[current_position:SEEDBYTES] = tsk;
     current_position += SEEDBYTES;
 
-    tsk = sk[current_position :  SEEDBYTES];
+    tsk = sk[current_position : SEEDBYTES];
     tsk = #copy(key);
     sk[current_position : SEEDBYTES] = tsk;
     current_position += SEEDBYTES;
@@ -428,7 +428,7 @@ fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr 
 *              - uint8_t pk[]: byte array containing bit-packed pk
 **************************************************/
 fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[VERIFICATION_KEY_SIZE] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
-    pk = pk; rho = rho; t1 = t1;
+    pk = pk; t1 = t1;
 
     inline int i;
 
@@ -472,7 +472,7 @@ fn _unpack_sk
   -> reg ptr u8[SEEDBYTES], reg ptr u8[VERIFICATION_KEY_HASH_SIZE], reg ptr u8[SEEDBYTES],
      reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck]
 {
-    sk = sk; rho = rho; tr = tr; key = key; t0 = t0; s1 = s1; s2 = s2;
+    sk = sk; t0 = t0; s1 = s1; s2 = s2;
 
     inline int i;
     inline int current_position;

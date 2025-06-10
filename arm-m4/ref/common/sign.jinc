@@ -112,7 +112,7 @@ fn _shake256_inc_finalize(
     reg u32 t0 t1;
 
     t0 = (32u) state[:u8 i];
-    t0 ^= TRAIL_BYTE;
+    t0 ^= SHAKE_TRAIL_BYTE;
     state[:u8 i] = (8u) t0;
 
     t0 = (32u) state[:u8 SHAKE256_RATE - 1];
@@ -154,7 +154,6 @@ fn _crypto_sign_signature_ctx_seed(
 
     reg u32 status;
     stack u8[SEEDBYTES] s_rho;
-    stack u8[VERIFICATION_KEY_HASH_SIZE] s_tr;
     stack u8[CRHBYTES] s_rhoprime;
     stack u32[polyveck] s_t0, s_s2;
     stack u32[polyvecl] s_s1;
@@ -162,7 +161,9 @@ fn _crypto_sign_signature_ctx_seed(
     stack u32[25*2] state;
 
     reg ptr u8[SEEDBYTES] rho, key;
-    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] tr;
+
+    stack u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
+
     reg ptr u32[polyveck] t0, s2;
     reg ptr u32[polyvecl] s1;
     reg ptr u8[RNDBYTES] rnd;
@@ -181,16 +182,14 @@ fn _crypto_sign_signature_ctx_seed(
 
     if (ctxlen <= 255) {
         rho = s_rho;
-        tr = s_tr;
         key = s_key_rnd_mu[0:SEEDBYTES];
         t0 = s_t0;
         s1 = s_s1;
         s2 = s_s2;
 
         () = #spill(sig, status, ctxlen);
-        (rho, tr, key, t0, s1, s2) = _unpack_sk(rho, tr, key, t0, s1, s2, sk);
+        (rho, verification_key_hash, key, t0, s1, s2) = _unpack_sk(rho, verification_key_hash, key, t0, s1, s2, sk);
         s_rho = rho;
-        s_tr = tr;
         s_t0 = t0;
         s_s1 = s1;
         s_s2 = s2;
@@ -205,7 +204,7 @@ fn _crypto_sign_signature_ctx_seed(
 
         pstate = state;
         // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
-        pstate = __add_crh_ref(pstate, tr); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
+        pstate = __add_crh_ref(pstate, verification_key_hash); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
         pstate = __add_mu_ref(pstate, VERIFICATION_KEY_HASH_SIZE, mu2); // 2
         pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
         pos = VERIFICATION_KEY_HASH_SIZE + 2;
@@ -319,8 +318,6 @@ fn _crypto_sign_signature_ctx_seed(
             state = pstate;
             sig[0:COMMITMENT_HASH_SIZE] = commitment_hash;
 
-            reg ptr u8[SEEDBYTES] sigseed;
-            sigseed = sig[0:SEEDBYTES];
             () = #spill(sig);
             cp = s_cp;
 

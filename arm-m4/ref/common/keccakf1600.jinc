@@ -1,5 +1,19 @@
 param int KECCAK_ROUNDS=24;
 
+inline fn __keccak_init_ref(reg ptr u32[25*2] state) -> reg ptr u32[25*2]
+{
+  reg u32 i t;
+
+  i = 0;
+  t = 0;
+  while(i < 25*2)
+  { state[i] = t;
+    i += 1;
+  }
+
+  return state;
+}
+
 u32[24*2] KECCAK1600_RC =
 {
   0x00000001, 0x00000000,

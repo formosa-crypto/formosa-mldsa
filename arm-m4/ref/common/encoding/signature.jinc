@@ -76,7 +76,6 @@ fn __decode_hint(
     previous_true_hints_seen = 0;
 
     encoded_offset = 0;
-    done = 0;
     while {
         out_of_bounds = encoded_offset >= K;
         done = ill_formed_hint;
