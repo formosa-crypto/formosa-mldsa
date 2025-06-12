@@ -103,27 +103,7 @@ fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES
     return pstate, pos;
 }
 
-/** FIXME : This is __add_block_end, but with "i" a reg **/
-fn _shake256_inc_finalize(
-        reg ptr u32[25*2] state,
-        reg u32 i
-        ) -> reg ptr u32[25*2]
-{
-    reg u32 t0 t1;
-
-    t0 = (32u) state[:u8 i];
-    t0 ^= SHAKE_TRAIL_BYTE;
-    state[:u8 i] = (8u) t0;
-
-    t0 = (32u) state[:u8 SHAKE256_RATE - 1];
-    t1 = 0x80;
-    t0 ^= t1;
-    state[:u8 SHAKE256_RATE - 1] = (8u) t0;
-
-    return state;
-}
-
-/*************************************************
+/************************************************
  * Name:        crypto_sign_signature_ctx_seed
  *
  * Description: Computes signature.
@@ -205,7 +185,7 @@ fn _crypto_sign_signature_ctx_seed(
         pstate = state;
         // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
         pstate = __add_crh_ref(pstate, verification_key_hash); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
-        pstate = __add_mu_ref(pstate, VERIFICATION_KEY_HASH_SIZE, mu2); // 2
+        pstate = __add_message_prefix(pstate, VERIFICATION_KEY_HASH_SIZE, mu2); // 2
         pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
         pos = VERIFICATION_KEY_HASH_SIZE + 2;
         ctx = ctx_m_rand[0];
@@ -217,7 +197,7 @@ fn _crypto_sign_signature_ctx_seed(
         m = ctx_m_rand[1];
         () = #spill(ctx_m_rand);
         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
-        pstate = _shake256_inc_finalize(pstate, pos);
+        pstate = _shake256_add_block_end(pstate, pos);
         pstate = _keccakf1600_ref(pstate);
         () = #unspill(ctx_m_rand);
 
@@ -304,7 +284,7 @@ fn _crypto_sign_signature_ctx_seed(
             pstate = __add_crh_ref(pstate, mu);
             pstate = __add_zero_after_add(pstate, CRHBYTES);
             pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, sig1);
-            pstate = _shake256_inc_finalize(pstate, pos);
+            pstate = _shake256_add_block_end(pstate, pos);
             pstate = _keccakf1600_ref(pstate);
 
             // FIXME define a function for that
