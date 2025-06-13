@@ -163,15 +163,19 @@ namespace error_4x {
                 buf3[0:SHAKE256_RATE]
             );
 
+            filled = filled0;
             polynomial0, filled = rejection_sample_one_block(polynomial0, filled, buf0[0:SHAKE256_RATE]);
             filled0 = filled;
 
+            filled = filled1;
             polynomial1, filled = rejection_sample_one_block(polynomial1, filled, buf1[0:SHAKE256_RATE]);
             filled1 = filled;
 
+            filled = filled2;
             polynomial2, filled = rejection_sample_one_block(polynomial2, filled, buf2[0:SHAKE256_RATE]);
             filled2 = filled;
 
+            filled = filled3;
             polynomial3, filled = rejection_sample_one_block(polynomial3, filled, buf3[0:SHAKE256_RATE]);
             filled3 = filled;
 
