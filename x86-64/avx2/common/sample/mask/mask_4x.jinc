@@ -96,7 +96,7 @@ fn __sample_mask_polynomial_4x(
     stack u32[COEFFICIENTS_IN_POLYNOMIAL] mask0 mask1 mask2 mask3;
 
     xof_state = absorb_for_shake256_4x(xof_state, rho_prime, starting_domain_separator);
-    xof_state, mask_encoded0, mask_encoded1, mask_encoded2, mask_encoded3 =
+    _, mask_encoded0, mask_encoded1, mask_encoded2, mask_encoded3 =
         shake256_squeeze_multiple_blocks_4x(
             xof_state,
             mask_encoded0,

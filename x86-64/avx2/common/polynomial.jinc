@@ -93,7 +93,7 @@ namespace polynomial {
     ) -> reg u8
     {
         reg u256 coefficients;
-        reg u256 zero threshold_vector;
+        reg u256 threshold_vector;
         reg u256 exceeds exceeds_any;
         reg u64 msb_mask;
         reg u8 result;
@@ -105,10 +105,8 @@ namespace polynomial {
         threshold_vector = (256u)#VMOV(temp);
         threshold_vector = #VPBROADCAST_8u32(threshold_vector);
 
-        ?{}, zero = #set0_256();
-        ?{}, exceeds_any = #set0_256();
+        exceeds_any = #set0_256();
 
-        result = 0;
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
             coefficients = polynomial.[:u256 offset];

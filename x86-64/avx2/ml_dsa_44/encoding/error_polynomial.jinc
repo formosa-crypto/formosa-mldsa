@@ -141,7 +141,6 @@ namespace error_polynomial {
 
         c7 = polynomial.[:u256 input_offset];
         c7 = #VPSUB_8u32(eta, c7);
-        input_offset += 32;
 
         c0 = #VPACKUS_8u32(c0, c1);
         c1 = #VPACKUS_8u32(c2, c3);

@@ -4,37 +4,33 @@ fn derive_seed_for_mask(
     reg ptr u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative,
     #spill_to_mmx reg ptr u8[64] seed_for_mask
 ) -> reg ptr u8[64] {
-    stack u64[25] state;
+    stack u8[SHAKE256_RATE] block;
 
+    reg u256[7] state;
     reg u256 copied_32_bytes;
 
-    state = __keccak_init_ref1(state);
-
     copied_32_bytes = k.[:u256 0];
-    state.[:u256 0] = copied_32_bytes;
+    block.[:u256 0] = copied_32_bytes;
 
     copied_32_bytes = randomness.[:u256 0];
-    state.[:u256 32] = copied_32_bytes;
+    block.[:u256 32] = copied_32_bytes;
 
     // MESSAGE_REPRESENTATIVE_SIZE is always 64.
     copied_32_bytes = message_representative.[:u256 0];
-    state.[:u256 64] = copied_32_bytes;
+    block.[:u256 64] = copied_32_bytes;
 
     copied_32_bytes = message_representative.[:u256 32];
-    state.[:u256 96] = copied_32_bytes;
+    block.[:u256 96] = copied_32_bytes;
 
-    state[:u8 128] ^= 0x1f;
-    state[:u8 SHAKE256_RATE - 1] ^= 0x80;
+    block.[:u64 128] = 0;
 
-    () = #spill(seed_for_mask);
-    state = _keccakf1600_ref1(state);
-    () = #unspill(seed_for_mask);
+    block.[128] = 0x1f;
+    block.[SHAKE256_RATE - 1] = 0x80;
 
-    copied_32_bytes = state.[:u256 0];
-    seed_for_mask.[:u256 0] = copied_32_bytes;
+    state = __state_init_avx2();
+    state = shake256_absorb_full_block(state, block);
 
-    copied_32_bytes = state.[:u256 32];
-    seed_for_mask.[:u256 32] = copied_32_bytes;
+    seed_for_mask = stream_64_bytes(seed_for_mask, state);
 
     return seed_for_mask;
 }

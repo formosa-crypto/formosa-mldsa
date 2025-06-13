@@ -57,7 +57,6 @@ namespace signature {
 
                 hint_coefficient = hint[hint_offset];
 
-                condition = hint_coefficient != 0;
                 if (hint_coefficient != 0) {
                     signature[START_OF_HINT + hints_written] = (8u)j;
                     hints_written += 1;

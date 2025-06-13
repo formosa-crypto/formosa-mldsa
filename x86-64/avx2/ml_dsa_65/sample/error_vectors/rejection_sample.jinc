@@ -135,7 +135,7 @@ fn rejection_sample_multiple_blocks(
                 if (bytes_filled < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
                     // Finally, the last 8
                     coefficient_block = #VPSRLDQ_128(coefficient_block, 8);
-                    error, bytes_filled, good_overall = __write_out_8_coefficients(error, bytes_filled, good_overall, coefficient_block);
+                    error, bytes_filled, _ = __write_out_8_coefficients(error, bytes_filled, good_overall, coefficient_block);
                     xof_offset += 4;
                 }
             }

@@ -169,7 +169,6 @@ namespace t0 {
         coefficients = bytestream_to_coefficients(bytestream);
 
         t0.[:u256 output_offset] = coefficients;
-        output_offset += 32;
 
         return t0;
     }

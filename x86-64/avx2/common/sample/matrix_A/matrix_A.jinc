@@ -117,7 +117,7 @@ namespace matrix_A {
         reg u64 filled;
 
         reg u8 flg0 flg1 done;
-        reg bool cf zf;
+        reg bool cf;
 
         // Rejection sampling for the first time.
         xof_state = shake128_absorb_34_4x(xof_state, rho, domain_separators);
@@ -135,18 +135,18 @@ namespace matrix_A {
         polynomial3, filled = rejection_sample_multiple_blocks(polynomial3, buf3);
         filled3 = filled;
 
-        _, cf, _, _, zf = #CMP_64(filled0, COEFFICIENTS_IN_POLYNOMIAL);
+        _, cf, _, _, _ = #CMP_64(filled0, COEFFICIENTS_IN_POLYNOMIAL);
         flg0 = #SETcc(cf);
 
-        _, cf, _, _, zf = #CMP_64(filled1, COEFFICIENTS_IN_POLYNOMIAL);
+        _, cf, _, _, _ = #CMP_64(filled1, COEFFICIENTS_IN_POLYNOMIAL);
         flg1 = #SETcc(cf);
 
         _, _, _, _, _, done = #OR_8(flg0, flg1);
 
-        _, cf, _, _, zf = #CMP_64(filled2, COEFFICIENTS_IN_POLYNOMIAL);
+        _, cf, _, _, _ = #CMP_64(filled2, COEFFICIENTS_IN_POLYNOMIAL);
         flg0 = #SETcc(cf);
 
-        _, cf, _, _, zf = #CMP_64(filled3, COEFFICIENTS_IN_POLYNOMIAL);
+        _, cf, _, _, _ = #CMP_64(filled3, COEFFICIENTS_IN_POLYNOMIAL);
         flg1 = #SETcc(cf);
 
         _, _, _, _, _, flg0 = #OR_8(flg0, flg1);
@@ -182,18 +182,18 @@ namespace matrix_A {
             polynomial3, filled = rejection_sample_one_block(polynomial3, filled, buf3[0:SHAKE128_RATE]);
             filled3 = filled;
 
-            _, cf, _, _, zf = #CMP_64(filled0, COEFFICIENTS_IN_POLYNOMIAL);
+            _, cf, _, _, _ = #CMP_64(filled0, COEFFICIENTS_IN_POLYNOMIAL);
             flg0 = #SETcc(cf);
 
-            _, cf, _, _, zf = #CMP_64(filled1, COEFFICIENTS_IN_POLYNOMIAL);
+            _, cf, _, _, _ = #CMP_64(filled1, COEFFICIENTS_IN_POLYNOMIAL);
             flg1 = #SETcc(cf);
 
             _, _, _, _, _, done = #OR_8(flg0, flg1);
 
-            _, cf, _, _, zf = #CMP_64(filled2, COEFFICIENTS_IN_POLYNOMIAL);
+            _, cf, _, _, _ = #CMP_64(filled2, COEFFICIENTS_IN_POLYNOMIAL);
             flg0 = #SETcc(cf);
 
-            _, cf, _, _, zf = #CMP_64(filled3, COEFFICIENTS_IN_POLYNOMIAL);
+            _, cf, _, _, _ = #CMP_64(filled3, COEFFICIENTS_IN_POLYNOMIAL);
             flg1 = #SETcc(cf);
 
             _, _, _, _, _, flg0 = #OR_8(flg0, flg1);

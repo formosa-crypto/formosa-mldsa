@@ -87,7 +87,7 @@ fn __verify_internal(
     #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature_encoded
 ) -> reg u64 {
     // 0 indicates success, -1 indicates failure.
-    reg u64 result = -1;
+    reg u64 result;
 
     stack u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
     stack u8[COMMITMENT_HASH_SIZE] expected_commitment_hash;

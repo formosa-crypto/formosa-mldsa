@@ -10,7 +10,6 @@ namespace polynomial {
         reg u256 gamma2 minus_gamma2;
         reg u256 low_out_of_bounds;
         reg u256 low_equals_minus_gamma2_and_high_is_nonzero;
-        reg u256 zeros;
 
         reg u64 offset temp;
         reg u64 num_hints weight;
@@ -22,8 +21,6 @@ namespace polynomial {
         temp = -GAMMA2;
         minus_gamma2 = (256u)#VMOV_64(temp);
         minus_gamma2 = #VPBROADCAST_8u32(minus_gamma2);
-
-        ?{}, zeros = #set0_256();
 
         weight = 0;
         offset = 0;

@@ -75,7 +75,7 @@ inline
 fn __shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u64[25], reg u64 {
     if (offset >= SHAKE256_RATE) {
         state = _keccakf1600_ref1(state);
-        ?{}, offset = #set0_64();
+        offset = 0;
     }
     return state, offset;
 }
@@ -116,7 +116,7 @@ fn __derive_message_representative(
             state = _keccakf1600_ref1(state);
             () = #unspill(message, message_offset, message_size);
 
-            ?{}, state_offset = #set0_64();
+            state_offset = 0;
         }
 
         byte = [:u8 message + message_offset];
@@ -131,7 +131,7 @@ fn __derive_message_representative(
     state[:u8 state_offset] ^= 0x1f;
 
     // Finish
-    state, state_offset = __shake256_consider_permute(state, state_offset);
+    state, _ = __shake256_consider_permute(state, state_offset);
     state[:u8 SHAKE256_RATE-1] ^= 0x80;
 
     state = _keccakf1600_ref1(state);

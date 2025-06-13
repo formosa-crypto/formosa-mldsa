@@ -69,7 +69,6 @@ namespace polynomial {
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] commitment hint_polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u256 zeros;
         reg u256 hints;
         reg u256 coefficients;
         reg u256 high low;
@@ -80,8 +79,6 @@ namespace polynomial {
         reg u64 offset;
 
         mask = CONSTANTS_TABLE[0]; // 15
-
-        ?{}, zeros = #set0_256();
 
         lows, highs = decompose(lows, highs, commitment);
 

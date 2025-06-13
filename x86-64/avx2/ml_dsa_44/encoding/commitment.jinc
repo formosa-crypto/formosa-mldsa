@@ -83,7 +83,6 @@ namespace commitment {
         c2 = raw.[:u256 input_offset];
         input_offset += 32;
         c3 = raw.[:u256 input_offset];
-        input_offset += 32;
 
         bytestream_lower, bytestream_upper = coefficients_to_bytestream(c0, c1, c2, c3);
         encoded.[:u128 output_offset] = bytestream_lower;

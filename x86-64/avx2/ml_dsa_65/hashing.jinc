@@ -138,7 +138,6 @@ fn __derive_commitment_hash(
 
     t64 = block.[:u64 8];
 
-    t128 = #set0_128();
     t128 = #VMOV(t64);
 
     t64 = 0x1f;

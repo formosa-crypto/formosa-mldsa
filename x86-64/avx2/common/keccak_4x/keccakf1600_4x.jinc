@@ -1287,7 +1287,7 @@ fn _KeccakF1600_StatePermute4x(
     A_4x, E_4x, Ca, Ce, Ci, Co, Cu = __theta_rho_pi_chi_iota_prepare_theta_even(A_4x, E_4x, 20, Ca, Ce, Ci, Co, Cu);
     E_4x, A_4x, Ca, Ce, Ci, Co, Cu = __theta_rho_pi_chi_iota_prepare_theta_odd(E_4x, A_4x, 21, Ca, Ce, Ci, Co, Cu);
     A_4x, E_4x, Ca, Ce, Ci, Co, Cu = __theta_rho_pi_chi_iota_prepare_theta_even(A_4x, E_4x, 22, Ca, Ce, Ci, Co, Cu);
-    E_4x, A_4x = __theta_rho_pi_chi_iota(E_4x, A_4x, 23, Ca, Ce, Ci, Co, Cu);
+    _, A_4x = __theta_rho_pi_chi_iota(E_4x, A_4x, 23, Ca, Ce, Ci, Co, Cu);
 
 
     return A_4x, ms;
