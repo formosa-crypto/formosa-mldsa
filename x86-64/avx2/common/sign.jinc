@@ -28,9 +28,9 @@ fn derive_seed_for_mask(
     block.[SHAKE256_RATE - 1] = 0x80;
 
     state = __state_init_avx2();
-    state = shake256_absorb_full_block(state, block);
+    state = shake256_absorb_block(state, block);
 
-    seed_for_mask = stream_64_bytes(seed_for_mask, state);
+    seed_for_mask = squeeze_64_bytes(seed_for_mask, state);
 
     return seed_for_mask;
 }

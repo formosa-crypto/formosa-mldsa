@@ -24,7 +24,7 @@ fn hash_verification_key(
     //
     verification_key_offset = 0;
     while(verification_key_offset < FULL_BLOCKS_IN_VERIFICATION_KEY * SHAKE256_RATE) {
-        state = shake256_absorb_full_block(state, verification_key[verification_key_offset : SHAKE256_RATE]);
+        state = shake256_absorb_block(state, verification_key[verification_key_offset : SHAKE256_RATE]);
         verification_key_offset += SHAKE256_RATE;
     }
 
@@ -74,7 +74,7 @@ fn hash_verification_key(
     state = _keccakf1600_avx2(state);
 
     // VERIFICATION_KEY_HASH_SIZE is always 64.
-    verification_key_hash = stream_64_bytes(verification_key_hash, state);
+    verification_key_hash = squeeze_64_bytes(verification_key_hash, state);
 
     return verification_key_hash;
 }
@@ -127,7 +127,7 @@ fn __derive_commitment_hash(
     // We have SHAKE256_RATE bytes in the state, permute
     state = __state_init_avx2();
 
-    state = shake256_absorb_full_block(state, initial_block);
+    state = shake256_absorb_block(state, initial_block);
 
     // For each parameter set we have the following bytes left to absorb.
     //
@@ -140,7 +140,7 @@ fn __derive_commitment_hash(
     //
     encoded_commitment_offset = 72;
     while(encoded_commitment_offset < FULL_COMMITMENT_BLOCKS_TO_ABSORB * SHAKE256_RATE) {
-        state = shake256_absorb_full_block(state, encoded_commitment[encoded_commitment_offset : SHAKE256_RATE]);
+        state = shake256_absorb_block(state, encoded_commitment[encoded_commitment_offset : SHAKE256_RATE]);
         encoded_commitment_offset += SHAKE256_RATE;
     }
 

@@ -107,6 +107,7 @@ fn __keygen_internal(
     prf_output = shake256_squeeze_128_bytes(prf_output, state);
 
     #declassify seed_for_matrix_A = prf_output[:u8 0:SEED_FOR_MATRIX_A_SIZE];
+    matrix_A = sample::__matrix_A(seed_for_matrix_A);
 
     seed_for_error_vectors = prf_output[:u8 SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
     seed_for_signing = prf_output[:u8 SEED_FOR_MATRIX_A_SIZE + SEED_FOR_ERROR_VECTORS_SIZE:SEED_FOR_SIGNING_SIZE];
@@ -134,8 +135,6 @@ fn __keygen_internal(
 
     () = #spill(signing_key);
     s1 = row_vector::ntt(s1);
-
-    matrix_A = sample::__matrix_A(seed_for_matrix_A);
 
     t = row_vector::__multiply_with_matrix_A(matrix_A, s1);
     t = column_vector::reduce32(t);
