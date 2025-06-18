@@ -1,34 +1,39 @@
 inline
-fn __prepare_state_for_shake256(
+fn __initialize_xof(
     reg ptr u8[32] randomness,
     reg u8 number_of_rows,
     reg u8 number_of_columns
 ) -> reg u256[7] {
-    stack u64[25] linear_state;
     reg u256[7] state;
-
     reg u256 copied_32_bytes;
+    reg u256 zero_256 = #set0_256();
 
-    linear_state = __keccak_init_ref1(linear_state);
+    stack u8[SHAKE256_RATE] initial_block;
 
     copied_32_bytes = randomness.[:u256 0];
-    linear_state.[:u256 0] = copied_32_bytes;
+    initial_block.[:u256 0] = copied_32_bytes;
 
-    linear_state[:u8 32] = number_of_rows;
-    linear_state[:u8 33] = number_of_columns;
-    linear_state[:u8 34] ^= 0x1f;
-    linear_state[:u8 SHAKE256_RATE - 1] ^= 0x80;
+    initial_block.[:u8 32] = number_of_rows;
+    initial_block.[:u8 33] = number_of_columns;
+    initial_block.[:u8 34] = 0x1f;
 
-    state = _stavx2_pack(linear_state);
+    initial_block.[:u256 35] = zero_256;
+    initial_block.[:u256 67] = zero_256;
+    initial_block.[:u256 99] = zero_256;
+
+    initial_block.[:u32 131] = 0;
+
+    initial_block.[:u8 SHAKE256_RATE - 1] = 0x80;
+
+    state = __state_init_avx2();
+    state = shake256_absorb_block(state, initial_block);
 
     return state;
 }
 
-fn shake256_squeeze_128_bytes(reg ptr u8[128] array, reg u256[7] state) -> reg ptr u8[128] {
+fn squeeze_128_bytes(reg ptr u8[128] array, reg u256[7] state) -> reg ptr u8[128] {
     reg u256 t256_0 t256_1 t256_3 t256_4;
     reg u128 t128_0, t128_1;
-
-    state = _keccakf1600_avx2(state);
 
     // [ 0, 0 ]
     t128_0 = (128u) state[0];
@@ -103,8 +108,8 @@ fn __keygen_internal(
 
     () = #spill(verification_key, signing_key);
 
-    state = __prepare_state_for_shake256(randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
-    prf_output = shake256_squeeze_128_bytes(prf_output, state);
+    state = __initialize_xof(randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
+    prf_output = squeeze_128_bytes(prf_output, state);
 
     #declassify seed_for_matrix_A = prf_output[:u8 0:SEED_FOR_MATRIX_A_SIZE];
     matrix_A = sample::__matrix_A(seed_for_matrix_A);

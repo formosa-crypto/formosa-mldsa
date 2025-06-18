@@ -1,29 +1,92 @@
-inline
-fn __absorb_to_generate_challenges(
-    reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash
-) -> reg u256[7] {
-    stack u64[25] linear_state;
-    reg u256[7] state;
+fn squeeze_shake256_block(
+    reg ptr u8[SHAKE256_RATE] block,
+    reg u256[7] state
+) -> reg ptr u8[SHAKE256_RATE] {
+    reg u256 t256_0 t256_1 t256_2 t256_3 t256_4;
+    reg u128 t128_0, t128_1;
 
-    reg u8 byte;
+    // [ 0, 0 ]
+    t128_0 = (128u) state[0];
+    block.[:u64 0] = t128_0;
+    // [ 1, 2, 3, 4 ]
+    block.[:u256 8] = state[1];
 
-    inline int i;
+    // [ 16, 7, 8, 19 ]
+    t256_0 = #VPBLEND_8u32(state[3], state[4], (8u1)[1,1,1,1,0,0,0,0]);
+    // [ 11, 22, 23, 14 ]
+    t256_1 = #VPBLEND_8u32(state[4], state[3], (8u1)[1,1,1,1,0,0,0,0]);
+    // [ 21, 17, 18, 24 ]
+    t256_2 = #VPBLEND_8u32(state[5], state[6], (8u1)[1,1,1,1,0,0,0,0]);
+    // [ 6, 12, 13, 9 ]
+    t256_3 = #VPBLEND_8u32(state[6], state[5], (8u1)[1,1,1,1,0,0,0,0]);
 
-    linear_state = __keccak_init_ref1(linear_state);
+    // [ 5, 15 ]
+    //  state[2] = TTT[0];
+    t128_1 = #VEXTRACTI128(state[2], 1);
+    block.[:u64 40] = t128_1;
 
-    for i = 0 to COMMITMENT_HASH_SIZE {
-        byte = commitment_hash[i];
-        linear_state[:u8 i] = byte;
-    }
-    linear_state[:u8 COMMITMENT_HASH_SIZE] = 0x1f;
-    linear_state[:u8 SHAKE256_RATE - 1] = 0x80;
+    // [ 6, 7, 8, 9 ]
+    t256_4 = #VPBLEND_8u32(t256_0, t256_3, (8u1)[1,1,0,0,0,0,1,1]);
+    block.[:u256 48] = t256_4;
 
-    state = _stavx2_pack(linear_state);
+    // [ 10, 20 ]
+    t128_0 = (128u) state[2];
+    block.[:u64 80] = t128_0;
 
-    return state;
+    // [ 11, 12, 13, 14 ]
+    t256_4 = #VPBLEND_8u32(t256_3, t256_1, (8u1)[1,1,0,0,0,0,1,1]);
+    block.[:u256 88] = t256_4;
+
+    // [ 15 ]
+    block.[:u64 120] = #VPEXTR_64(t128_1, 1);
+
+    // [ 16, 17, 18, 19 ]
+    t256_4 = #VPBLEND_8u32(t256_2, t256_0, (8u1)[1,1,0,0,0,0,1,1]);
+    t128_0 = (128u)t256_4;
+
+    block.[:u64 128] = t128_0;
+
+    return block;
 }
 
 namespace sample {
+    inline
+    fn __initialize_xof(
+        reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash
+    ) -> reg u256[7] {
+        reg u256[7] state;
+        reg u256 zero_256 = #set0_256();
+
+        reg u128 copied_16_bytes;
+        reg u64 i;
+
+        stack u8[SHAKE256_RATE] initial_block;
+
+        // COMMITMENT_HASH_SIZE could be one of 32, 48, 64,
+        // so just initialize the block to 0 beforehand to keep things simple.
+        i = 0;
+        while (i < 128) {
+            initial_block.[:u256 i] = zero_256;
+            i += 32;
+        }
+        initial_block.[:u64 128] = 0;
+
+        i = 0;
+        while (i < COMMITMENT_HASH_SIZE) {
+            copied_16_bytes = commitment_hash.[:u128 i];
+            initial_block.[:u128 i] = copied_16_bytes;
+
+            i += 16;
+        }
+        initial_block.[:u8 COMMITMENT_HASH_SIZE] = 0x1f;
+        initial_block.[:u8 SHAKE256_RATE - 1] = 0x80;
+
+        state = __state_init_avx2();
+        state = shake256_absorb_block(state, initial_block);
+
+        return state;
+    }
+
     inline
     fn __challenge(
         #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output_challenge,
@@ -31,25 +94,24 @@ namespace sample {
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256[7] state;
-        stack u64[25] xof_output;
+        stack u8[136] xof_block;
+        reg u256 zeros_256 = #set0_256();
 
         reg u64 i;
         reg u64 sample_at;
         reg u64 signs xof_offset;
         reg u32 coefficient shift;
 
-        state = __absorb_to_generate_challenges(seed);
-        state = _keccakf1600_avx2(state);
+        state = __initialize_xof(seed);
+        xof_block = squeeze_shake256_block(xof_block, state);
 
-        xof_output = __stavx2_unpack(xof_output, state);
-
-        signs = xof_output.[:u64 0];
+        signs = xof_block.[:u64 0];
         xof_offset = 8;
 
         i = 0;
-        while(i < COEFFICIENTS_IN_POLYNOMIAL) {
-            output_challenge[i] = 0;
-            i += 1;
+        while(i < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+            output_challenge.[:u256 i] = zeros_256;
+            i += 32;
         }
 
         i = COEFFICIENTS_IN_POLYNOMIAL - ONES_IN_VERIFIER_CHALLENGE;
@@ -57,10 +119,10 @@ namespace sample {
             while {
                 if(xof_offset >= SHAKE256_RATE) {
                     state = _keccakf1600_avx2(state);
-                    xof_output = __stavx2_unpack(xof_output, state);
+                    xof_block = squeeze_shake256_block(xof_block, state);
                     xof_offset = 0;
                 }
-                #declassify sample_at = (64u) xof_output[:u8 xof_offset];
+                #declassify sample_at = (64u) xof_block[xof_offset];
 
                 xof_offset += 1;
             } (sample_at > i)
