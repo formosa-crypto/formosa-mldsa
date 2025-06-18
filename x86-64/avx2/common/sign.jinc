@@ -122,17 +122,17 @@ fn __sign_internal(
     inline int i;
 
     () = #spill(signature, randomness, signing_key);
+    #declassify seed_for_matrix_A = signing_key[0:32];
+    matrix_A = sample::__matrix_A(seed_for_matrix_A);
+
+    () = #unspill(signing_key);
     message_representative = __derive_message_representative(
         signing_key[64:VERIFICATION_KEY_HASH_SIZE],
         pointer_to_message,
         message_size);
 
-    () = #unspill(signing_key);
-    #declassify seed_for_matrix_A = signing_key[0:32];
-
-    matrix_A = sample::__matrix_A(seed_for_matrix_A);
-
     () = #unspill(randomness);
+    () = #unspill(signing_key);
     seed_for_mask = derive_seed_for_mask(signing_key[32:32], randomness, message_representative, seed_for_mask);
 
     () = #unspill(signing_key);
