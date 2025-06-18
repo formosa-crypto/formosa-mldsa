@@ -38,7 +38,7 @@ fn hash_verification_key(
     r0 = (256u)#VMOV_64(t64);
     state[1] ^= r0;
 
-    state = __addratebit_avx2(state, SHAKE256_RATE);
+    state = shake256_add_rate_bit(state);
 
     // ... then squeeze.
     state = _keccakf1600_avx2(state);
@@ -117,7 +117,7 @@ fn __derive_commitment_hash(
     r0 = #VPBROADCAST_4u64(t128);
     state[0] ^= r0;
 
-    state = __addratebit_avx2(state, SHAKE256_RATE);
+    state = shake256_add_rate_bit(state);
 
     // Now squeeze
     state = _keccakf1600_avx2(state);

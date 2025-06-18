@@ -1,3 +1,21 @@
+fn shake256_add_rate_bit(reg u256[7] st) -> reg u256[7]
+{
+    reg u256 t256;
+    reg u128 t128;
+
+    reg u64 t64;
+
+    t64 = 1;
+    t64 <<= (8*SHAKE256_RATE - 1) % 64;
+
+    t128 = (128u)t64;
+    t256 = #set0_256();
+    t256 = #VINSERTI128(t256, t128, 0);
+
+    st[3] ^= t256;
+    return st;
+}
+
 fn shake256_absorb_block(
     reg u256[7] state,
     reg ptr u8[SHAKE256_RATE] block

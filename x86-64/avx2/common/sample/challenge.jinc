@@ -1,54 +1,3 @@
-fn squeeze_shake256_block(
-    reg ptr u8[SHAKE256_RATE] block,
-    reg u256[7] state
-) -> reg ptr u8[SHAKE256_RATE] {
-    reg u256 t256_0 t256_1 t256_2 t256_3 t256_4;
-    reg u128 t128_0, t128_1;
-
-    // [ 0, 0 ]
-    t128_0 = (128u) state[0];
-    block.[:u64 0] = t128_0;
-    // [ 1, 2, 3, 4 ]
-    block.[:u256 8] = state[1];
-
-    // [ 16, 7, 8, 19 ]
-    t256_0 = #VPBLEND_8u32(state[3], state[4], (8u1)[1,1,1,1,0,0,0,0]);
-    // [ 11, 22, 23, 14 ]
-    t256_1 = #VPBLEND_8u32(state[4], state[3], (8u1)[1,1,1,1,0,0,0,0]);
-    // [ 21, 17, 18, 24 ]
-    t256_2 = #VPBLEND_8u32(state[5], state[6], (8u1)[1,1,1,1,0,0,0,0]);
-    // [ 6, 12, 13, 9 ]
-    t256_3 = #VPBLEND_8u32(state[6], state[5], (8u1)[1,1,1,1,0,0,0,0]);
-
-    // [ 5, 15 ]
-    //  state[2] = TTT[0];
-    t128_1 = #VEXTRACTI128(state[2], 1);
-    block.[:u64 40] = t128_1;
-
-    // [ 6, 7, 8, 9 ]
-    t256_4 = #VPBLEND_8u32(t256_0, t256_3, (8u1)[1,1,0,0,0,0,1,1]);
-    block.[:u256 48] = t256_4;
-
-    // [ 10, 20 ]
-    t128_0 = (128u) state[2];
-    block.[:u64 80] = t128_0;
-
-    // [ 11, 12, 13, 14 ]
-    t256_4 = #VPBLEND_8u32(t256_3, t256_1, (8u1)[1,1,0,0,0,0,1,1]);
-    block.[:u256 88] = t256_4;
-
-    // [ 15 ]
-    block.[:u64 120] = #VPEXTR_64(t128_1, 1);
-
-    // [ 16, 17, 18, 19 ]
-    t256_4 = #VPBLEND_8u32(t256_2, t256_0, (8u1)[1,1,0,0,0,0,1,1]);
-    t128_0 = (128u)t256_4;
-
-    block.[:u64 128] = t128_0;
-
-    return block;
-}
-
 namespace sample {
     inline
     fn __initialize_xof(
@@ -103,7 +52,7 @@ namespace sample {
         reg u32 coefficient shift;
 
         state = __initialize_xof(seed);
-        xof_block = squeeze_shake256_block(xof_block, state);
+        xof_block = shake256_squeeze_block(xof_block, state);
 
         signs = xof_block.[:u64 0];
         xof_offset = 8;
@@ -119,7 +68,7 @@ namespace sample {
             while {
                 if(xof_offset >= SHAKE256_RATE) {
                     state = _keccakf1600_avx2(state);
-                    xof_block = squeeze_shake256_block(xof_block, state);
+                    xof_block = shake256_squeeze_block(xof_block, state);
                     xof_offset = 0;
                 }
                 #declassify sample_at = (64u) xof_block[xof_offset];
