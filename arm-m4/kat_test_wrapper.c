@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
     int num_bytes = read(0, randomness, 32);
     assert(num_bytes == 32);
 
-    ml_dsa_65_keygen(verification_key, signing_key, randomness);
+    KEYGEN(verification_key, signing_key, randomness);
 
     num_bytes = write(1, verification_key, VERIFICATION_KEY_SIZE);
     assert(num_bytes == VERIFICATION_KEY_SIZE);
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     num_bytes = read(0, signing_key, SIGNING_KEY_SIZE);
     assert(num_bytes == SIGNING_KEY_SIZE);
 
-    int result = ml_dsa_65_sign(signature, ctx_m_rand, ctxlen_mlen, signing_key);
+    int result = SIGN(signature, ctx_m_rand, ctxlen_mlen, signing_key);
     assert(result == 0);
 
     num_bytes = write(1, signature, SIGNATURE_SIZE);
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     num_bytes = read(0, verification_key, VERIFICATION_KEY_SIZE);
     assert(num_bytes == VERIFICATION_KEY_SIZE);
 
-    int8_t result = ml_dsa_65_verify(signature, ctx_m, ctxlen_mlen, verification_key);
+    int8_t result = VERIFY(signature, ctx_m, ctxlen_mlen, verification_key);
 
     num_bytes = write(1, &result, 1);
     assert(num_bytes == 1);

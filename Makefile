@@ -1,5 +1,5 @@
 ARCHITECTURE ?= arm-m4
-PARAMETER_SET ?= 65
+PARAMETER_SET ?= 44
 IMPLEMENTATION_TYPE ?= ref
 
 COMMON = $(ARCHITECTURE)/$(IMPLEMENTATION_TYPE)/common
@@ -28,8 +28,12 @@ $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 
 # For ARM-M4: Generate a cross-compiled executable to be called by python.
 CROSS_COMPILER ?= arm-none-linux-gnueabihf-gcc
-$(OUTPUT_FILE_NAME).o: arm-m4/wrapper.c $(OUTPUT_FILE_NAME).s
-	$(CROSS_COMPILER) -Wall -I$(IMPLEMENTATION) $^ -o $@ -no-pie
+$(OUTPUT_FILE_NAME).o: arm-m4/kat_test_wrapper.c $(OUTPUT_FILE_NAME).s
+	$(CROSS_COMPILER) \
+		-DKEYGEN=ml_dsa_$(PARAMETER_SET)_keygen \
+		-DSIGN=ml_dsa_$(PARAMETER_SET)_sign \
+		-DVERIFY=ml_dsa_$(PARAMETER_SET)_verify \
+	-Wall -I$(IMPLEMENTATION) $^ -o $@ -no-pie
 
 TESTING_WRAPPER :=
 ifeq ($(ARCHITECTURE), x86-64)

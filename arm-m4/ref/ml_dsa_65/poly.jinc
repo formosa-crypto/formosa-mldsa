@@ -8,7 +8,7 @@
  *              - const poly *a: pointer to input polynomial
  **************************************************/
 
-inline fn __polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
+fn _polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
 reg ptr u8[POLYETA_PACKEDBYTES] {
 
     reg u32 i, j;
@@ -35,12 +35,6 @@ reg ptr u8[POLYETA_PACKEDBYTES] {
     }
     return r;
 
-}
-
-fn _polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
-reg ptr u8[POLYETA_PACKEDBYTES] {
-    r = __polyeta_pack(r, a);
-    return r;
 }
 
 /*************************************************
@@ -85,7 +79,7 @@ inline fn _polyeta_unpack(
  *              - const poly *a: pointer to input polynomial
  **************************************************/
 
-inline fn __polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYW1_PACKEDBYTES] {
+fn _polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYW1_PACKEDBYTES] {
     reg u32 i, j, aux;
     reg u32[2] t;
     inline int k;
@@ -98,12 +92,6 @@ inline fn __polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> r
     return r;
 }
 
-fn _polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYW1_PACKEDBYTES] {
-    r = __polyw1_pack(r, a);
-    return r;
-}
-
-
 /*************************************************
  * Name:        JASMIN_MLDSA_polyz_pack
  *
@@ -114,7 +102,7 @@ fn _polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u
  *                            POLYZ_PACKEDBYTES bytes
  *              - const poly *a: pointer to input polynomial
  **************************************************/
-inline fn __polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYZ_PACKEDBYTES] {
+fn _polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYZ_PACKEDBYTES] {
     reg u32 i, j, aux, gamma1;
     reg u32[2] t;
     inline int k;
@@ -154,11 +142,6 @@ inline fn __polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg
     return r;
 }
 
-fn _polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYZ_PACKEDBYTES] {
-    r = __polyz_pack(r, a);
-    return r;
-}
-
 /*************************************************
  * Name:        JASMIN_MLDSA_polyz_unpack
  *
@@ -169,7 +152,7 @@ fn _polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[
  *              - const uint8_t *a: byte array with bit-packed polynomial
  **************************************************/
 
-inline fn __polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> reg ptr u32[N] {
+fn _polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> reg ptr u32[N] {
     reg u32 i, j, gamma1, aux;
     reg u32[5] t;
     inline int k;
@@ -203,11 +186,6 @@ inline fn __polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> r
         /* r->coeffs[2 * i + 0] = GAMMA1 - r->coeffs[2 * i + 0]; */
         /* r->coeffs[2 * i + 1] = GAMMA1 - r->coeffs[2 * i + 1]; */
     }
-    return r;
-}
-
-fn _polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> reg ptr u32[N] {
-    r = __polyz_unpack(r, a);
     return r;
 }
 

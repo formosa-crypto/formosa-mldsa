@@ -92,7 +92,7 @@ fn _crypto_sign_keypair_seed(
 
     () = #unspill(sk);
     sk = _pack_sk(sk, rho, verification_key_hash, key, t0, s1, s2);
-    () = #unspill(pk);
 
+    () = #unspill(pk);
     return pk, sk;
 }
