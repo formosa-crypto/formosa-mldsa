@@ -15,8 +15,8 @@ def expected_final_hash(ml_dsa):
         return "e7a492c025f68d76d3e7d7a093e367126aa9b1d461bf876385a095f2bec1e431"
 
 
-def test_accumulated_kats(ml_dsa, expected_final_hash):
-    if ml_dsa.architecture == "arm-m4":
+def test_accumulated_kats(architecture, ml_dsa, expected_final_hash):
+    if architecture == "arm-m4":
         pytest.skip("Skipping on ARM for now since message sizes get too large.")
 
     rng = SHAKE128.new()

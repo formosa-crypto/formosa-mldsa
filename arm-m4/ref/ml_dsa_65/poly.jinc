@@ -278,6 +278,7 @@ inline fn rej_eta(
         reg u32 t
         ) -> reg ptr u32[N], reg u32
 {
+    #declassify t = t;
     if (t < 9) {
         a[ctr] = __imm_sub_reg(4, t);
         ctr += 1;
@@ -295,7 +296,7 @@ fn _poly_uniform_eta(
     reg ptr u32[25*2] state;
     stack ptr u32[N] sa;
     sa = a; state = state_;
-#declassify state = _stream256_init(state, seed, nonce);
+    state = _stream256_init(state, seed, nonce);
     a = sa;
 
     reg u32 ctr, ctr8, pos, n205, t;

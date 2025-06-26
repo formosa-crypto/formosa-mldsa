@@ -17,9 +17,6 @@ jobs:
         exclude:
         - architecture: arm-m4
           implementation_type: avx2
-        # TODO: Remove the following 2 exemptions.
-        - architecture: arm-m4
-          parameter_set: 44
         - architecture: arm-m4
           parameter_set: 87
     steps:

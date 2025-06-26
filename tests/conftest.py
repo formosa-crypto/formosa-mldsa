@@ -27,7 +27,7 @@ def pytest_addoption(parser):
     )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def ml_dsa(request):
     architecture = request.config.getoption("--architecture")
 
@@ -41,3 +41,7 @@ def ml_dsa(request):
             request.config.getoption("--parameter-set"),
             request.config.getoption("--implementation-type"),
         )
+
+@pytest.fixture(scope="session")
+def architecture(request):
+    return request.config.getoption("--architecture")
