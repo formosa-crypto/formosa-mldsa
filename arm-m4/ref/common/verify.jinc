@@ -16,7 +16,7 @@ fn _crypto_sign_verify_ctx(
         reg ptr u32[2] ctx_m,
         reg ptr u32[2] ctxlen_mlen,
         reg ptr u8[VERIFICATION_KEY_SIZE] pk
-        ) -> reg u32 {
+) -> reg u32 {
     reg u32 status;
 
     stack u8[SEEDBYTES] rho;

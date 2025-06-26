@@ -29,7 +29,6 @@ class ML_DSA_X86_64(ML_DSA):
         ml_dsa = ctypes.PyDLL(Path(__file__).parent.parent / ml_dsa_so_name)
 
         self.parameter_set = parameter_set
-        self.architecture = "x86-64"
 
         # While we could get this parameters from the source code, they
         # change so infrequently that we might as well just hardcode them
@@ -68,8 +67,10 @@ class ML_DSA_X86_64(ML_DSA):
         return char_array.from_buffer_copy(ba)
 
     def generate_keypair(self, randomness):
-        verification_key = ctypes.create_string_buffer(b'255', self.verification_key_size)
-        signing_key = ctypes.create_string_buffer(b'255', self.signing_key_size)
+        verification_key = ctypes.create_string_buffer(
+            b"255", self.verification_key_size
+        )
+        signing_key = ctypes.create_string_buffer(b"255", self.signing_key_size)
 
         self.keygen_internal(
             verification_key, signing_key, self.bytearray_to_ctype(randomness)
@@ -78,7 +79,7 @@ class ML_DSA_X86_64(ML_DSA):
         return (verification_key.raw, signing_key.raw)
 
     def sign(self, signing_key, context, message, randomness):
-        signature = ctypes.create_string_buffer(b'255', self.signature_size)
+        signature = ctypes.create_string_buffer(b"255", self.signature_size)
 
         # TODO: Handle this in the Jasmin code.
         message = bytearray([0, len(context)]) + context + message
@@ -103,29 +104,22 @@ class ML_DSA_X86_64(ML_DSA):
         )
 
 
-def shell(command, expect=0, cwd=None):
-    completed = subprocess.run(command, cwd=cwd, capture_output=True)
-
-    if completed.returncode != expect:
-        print(completed.stderr.decode("utf-8"))
-        raise Exception("Error {}. Expected {}.".format(completed.returncode, expect))
-
-    return completed.stdout.decode("utf-8")
-
-
 class ML_DSA_ARM_M4(ML_DSA):
     def __init__(self, parameter_set, implementation_type):
         self.parameter_set = parameter_set
         self.wrapper_name = "./ml_dsa_{}_{}_arm-m4.o".format(
             parameter_set, implementation_type
         )
-        self.architecture = "arm-m4"
 
-        # TODO: For now, we only have an implementation of ML-DSA-65 on arm-m4,
-        # should be easy to extend this class to cover the other 2 parameter-sets.
-        self.verification_key_size = 1952
-        self.signing_key_size = 4032
-        self.signature_size = 3309
+        # TODO: ML-DSA-87
+        if parameter_set == "44":
+            self.verification_key_size = 1312
+            self.signing_key_size = 2560
+            self.signature_size = 2420
+        elif parameter_set == "65":
+            self.verification_key_size = 1952
+            self.signing_key_size = 4032
+            self.signature_size = 3309
 
     def generate_keypair(self, randomness):
         output = subprocess.check_output(

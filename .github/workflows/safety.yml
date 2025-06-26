@@ -17,8 +17,6 @@ jobs:
           - architecture: "arm-m4"
             implementation_type: "avx2"
           - architecture: "arm-m4"
-            parameter_set: "44"
-          - architecture: "arm-m4"
             parameter_set: "87"
     steps:
     - uses: actions/checkout@v4
