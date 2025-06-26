@@ -112,15 +112,6 @@ inline fn __rsub_lsl(reg u32 in_1, inline int in_2, inline int nb_bits) -> reg u
 
 /**
  Operates the subtraction of the @nb_bits logical left shift on @in_2 with @in_1.
- Writes the result in @in_2.
-**/
-inline fn __rsb_lsl_inplace(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
-  in_2 = #RSB(in_1, in_2 << nb_bits);
-  return in_2;
-}
-
-/**
- Operates the subtraction of the @nb_bits logical left shift on @in_2 with @in_1.
  Writes the result in @out.
 **/
 inline fn __rsb_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {

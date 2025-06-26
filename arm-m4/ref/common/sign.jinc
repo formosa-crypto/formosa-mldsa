@@ -128,9 +128,6 @@ fn _crypto_sign_signature_ctx_seed(
     -> #public reg ptr u8[SIGNATURE_SIZE], reg u32
 {
     sig = sig;
-    ctx_m_rand = ctx_m_rand;
-    ctxlen_mlen = ctxlen_mlen;
-    sk = sk;
 
     reg u32 status;
     stack u8[SEEDBYTES] s_rho;
@@ -167,7 +164,7 @@ fn _crypto_sign_signature_ctx_seed(
         s1 = s_s1;
         s2 = s_s2;
 
-        () = #spill(sig, status, ctxlen);
+        () = #spill(sig, status, ctxlen, ctxlen_mlen);
         (rho, verification_key_hash, key, t0, s1, s2) = _unpack_sk(rho, verification_key_hash, key, t0, s1, s2, sk);
         s_rho = rho;
         s_t0 = t0;
@@ -178,6 +175,8 @@ fn _crypto_sign_signature_ctx_seed(
         mu2 = s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2];
         t = 0;
         mu2[0] = (8u)t;
+
+        () = #unspill(ctxlen_mlen);
         t = ctxlen_mlen[0];
         mu2[1] = (8u)t;
         s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2] = mu2;

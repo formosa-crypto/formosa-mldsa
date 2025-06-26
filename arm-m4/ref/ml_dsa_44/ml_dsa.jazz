@@ -1,5 +1,4 @@
 from Common require "wrappers.jinc"
-require "wrappers.jinc"
 from Common require "keccakf1600.jinc"
 
 from Common require "constants.jinc"

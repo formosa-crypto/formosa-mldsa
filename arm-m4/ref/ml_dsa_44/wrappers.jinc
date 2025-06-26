@@ -1,4 +1,0 @@
-inline fn __imm_sub_reg_inplace(inline int imm, reg u32 in) -> reg u32 {
-    in = imm - in;
-    return in;
-}

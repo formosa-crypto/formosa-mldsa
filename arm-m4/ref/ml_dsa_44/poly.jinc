@@ -86,13 +86,13 @@ fn _polyeta_unpack(reg ptr u32[N] r, reg ptr u8[POLYETA_PACKEDBYTES] a) -> reg p
         /* r->coeffs[8 * i + 0] =  (a[3 * i + 0] >> 0) & 7;
            r->coeffs[8 * i + 0] = ETA - r->coeffs[8 * i + 0]; */
         aux = __ubfx(t[0], 0, 3);
-        aux = __imm_sub_reg_inplace(ETA, aux);
+        aux = __imm_sub_reg(ETA, aux);
         r[i] = aux; i += 1;
 
         /* r->coeffs[8 * i + 1] =  (a[3 * i + 0] >> 3) & 7;
            r->coeffs[8 * i + 1] = ETA - r->coeffs[8 * i + 1]; */
         aux = __ubfx(t[0], 3, 3);
-        aux = __imm_sub_reg_inplace(ETA, aux);
+        aux = __imm_sub_reg(ETA, aux);
         r[i] = aux; i += 1;
 
         /* r->coeffs[8 * i + 2] = ((a[3 * i + 0] >> 6) | (a[3 * i + 1] << 2)) & 7;
@@ -100,19 +100,19 @@ fn _polyeta_unpack(reg ptr u32[N] r, reg ptr u8[POLYETA_PACKEDBYTES] a) -> reg p
         aux = t[0] >> 6;
         aux = __or_lsl(aux, t[1], 2);
         aux &= 7;
-        aux = __imm_sub_reg_inplace(ETA, aux);
+        aux = __imm_sub_reg(ETA, aux);
         r[i] = aux; i += 1;
 
         /* r->coeffs[8 * i + 3] =  (a[3 * i + 1] >> 1) & 7;
            r->coeffs[8 * i + 3] = eta - r->coeffs[8 * i + 3]; */
         aux = __ubfx(t[1], 1, 3);
-        aux = __imm_sub_reg_inplace(ETA, aux);
+        aux = __imm_sub_reg(ETA, aux);
         r[i] = aux; i += 1;
 
         /* r->coeffs[8 * i + 4] =  (a[3 * i + 1] >> 4) & 7;
            r->coeffs[8 * i + 4] = eta - r->coeffs[8 * i + 4]; */
         aux = __ubfx(t[1], 4, 3);
-        aux = __imm_sub_reg_inplace(ETA, aux);
+        aux = __imm_sub_reg(ETA, aux);
         r[i] = aux; i += 1;
 
         /* r->coeffs[8 * i + 5] = ((a[3 * i + 1] >> 7) | (a[3 * i + 2] << 1)) & 7;
@@ -120,19 +120,19 @@ fn _polyeta_unpack(reg ptr u32[N] r, reg ptr u8[POLYETA_PACKEDBYTES] a) -> reg p
         aux = t[1] >> 7;
         aux = __or_lsl(aux, t[2], 1);
         aux &= 7;
-        aux = __imm_sub_reg_inplace(ETA, aux);
+        aux = __imm_sub_reg(ETA, aux);
         r[i] = aux; i += 1;
 
         /* r->coeffs[8 * i + 6] =  (a[3 * i + 2] >> 2) & 7;
            r->coeffs[8 * i + 6] = eta - r->coeffs[8 * i + 6]; */
         aux = __ubfx(t[2], 2, 3);
-        aux = __imm_sub_reg_inplace(ETA, aux);
+        aux = __imm_sub_reg(ETA, aux);
         r[i] = aux; i += 1;
 
         /* r->coeffs[8 * i + 7] =  (a[3 * i + 2] >> 5) & 7;
            r->coeffs[8 * i + 7] = eta - r->coeffs[8 * i + 7]; */
         aux = __ubfx(t[2], 5, 3);
-        aux = __imm_sub_reg_inplace(ETA, aux);
+        aux = __imm_sub_reg(ETA, aux);
         r[i] = aux; i += 1;
     }
 
@@ -418,7 +418,7 @@ inline fn rej_eta(
         aux = aux >> 10;
         aux = __plus_lsl_inplace(aux, aux, 2);
         aux = t - aux;
-        aux = __imm_sub_reg_inplace(2, aux);
+        aux = 2 - aux;
         a[ctr] = aux;
         ctr += 1;
     }
