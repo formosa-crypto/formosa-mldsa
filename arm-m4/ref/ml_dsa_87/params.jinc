@@ -1,14 +1,14 @@
-param int K = 6;
-param int L = 5;
-param int ETA = 4;
-param int TAU = 49;
-param int BETA = 196;
-param int MAX_ONES_IN_HINT = 55;
-param int COMMITMENT_HASH_SIZE = 48;
+param int K = 8;
+param int L = 7;
+param int ETA = 2;
+param int TAU = 60;
+param int BETA = 120;
+param int MAX_ONES_IN_HINT = 75;
+param int COMMITMENT_HASH_SIZE = 64;
 
 param int POLYZ_PACKEDBYTES = 640; // N/2 * 5
 param int POLYW1_PACKEDBYTES = 128; // N/2
-param int POLYETA_PACKEDBYTES = 128;
+param int POLYETA_PACKEDBYTES = 96; // N/8 * 3
 
 param int POLYT1_PACKEDBYTES  = 320; // N/4 * 5
 param int POLYT0_PACKEDBYTES = 416; // N/8 * 13

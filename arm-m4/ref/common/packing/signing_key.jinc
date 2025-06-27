@@ -1,19 +1,25 @@
 /*************************************************
-* Name:        JASMIN_MLDSA_pack_sk
-*
-* Description: Bit-pack secret key sk = (rho, verification_key_hash, key, t0, s1, s2).
-*
-* Arguments:   - uint8_t sk[]: output byte array
-*              - const uint8_t rho[]: byte array containing rho
-*              - const uint8_t verification_key_hash[]: byte array containing verification_key_hash
-*              - const uint8_t key[]: byte array containing key
-*              - const polyveck *t0: pointer to vector t0
-*              - const polyvecl *s1: pointer to vector s1
-*              - const polyveck *s2: pointer to vector s2
-**************************************************/
-fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash, reg ptr u8[SEEDBYTES] key, reg ptr u32[polyveck] t0, reg ptr u32[polyvecl] s1, reg ptr u32[polyveck] s2) -> reg ptr u8[SIGNING_KEY_SIZE] {
-    sk = sk; rho = rho; verification_key_hash = verification_key_hash; key = key; t0 = t0; s1 = s1; s2 = s2;
-
+ * Name:        JASMIN_MLDSA_pack_sk
+ *
+ * Description: Bit-pack secret key sk = (rho, verification_key_hash, key, t0, s1, s2).
+ *
+ * Arguments:   - uint8_t sk[]: output byte array
+ *              - const uint8_t rho[]: byte array containing rho
+ *              - const uint8_t verification_key_hash[]: byte array containing verification_key_hash
+ *              - const uint8_t key[]: byte array containing key
+ *              - const polyveck *t0: pointer to vector t0
+ *              - const polyvecl *s1: pointer to vector s1
+ *              - const polyveck *s2: pointer to vector s2
+ **************************************************/
+inline fn __pack_signing_key(
+    reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    reg ptr u8[SEEDBYTES] rho,
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash,
+    reg ptr u8[SEEDBYTES] key,
+    reg ptr u32[polyveck] t0,
+    reg ptr u32[polyvecl] s1,
+    reg ptr u32[polyveck] s2
+) -> reg ptr u8[SIGNING_KEY_SIZE] {
     inline int i;
     inline int current_position;
     current_position = 0;
@@ -21,31 +27,30 @@ fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr 
     reg ptr u8[SEEDBYTES] tsk;
     reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash_ptr;
 
-    tsk = sk[current_position : SEEDBYTES];
+    tsk = signing_key[current_position : SEEDBYTES];
     tsk = #copy(rho);
-    sk[current_position:SEEDBYTES] = tsk;
+    signing_key[current_position:SEEDBYTES] = tsk;
     current_position += SEEDBYTES;
 
-    tsk = sk[current_position : SEEDBYTES];
+    tsk = signing_key[current_position : SEEDBYTES];
     tsk = #copy(key);
-    sk[current_position : SEEDBYTES] = tsk;
+    signing_key[current_position : SEEDBYTES] = tsk;
     current_position += SEEDBYTES;
 
-    verification_key_hash_ptr = sk[current_position : VERIFICATION_KEY_HASH_SIZE];
+    verification_key_hash_ptr = signing_key[current_position : VERIFICATION_KEY_HASH_SIZE];
     verification_key_hash_ptr = #copy(verification_key_hash);
-    sk[current_position : VERIFICATION_KEY_HASH_SIZE] = verification_key_hash_ptr;
+    signing_key[current_position : VERIFICATION_KEY_HASH_SIZE] = verification_key_hash_ptr;
     current_position += VERIFICATION_KEY_HASH_SIZE;
 
-    reg ptr u8[POLYETA_PACKEDBYTES] nsk;
-
-    () = #spill(t0);
-    () = #spill(s2);
+    () = #spill(t0, s2);
     reg ptr u32[N] ns1;
     for i = 0 to L {
         ns1 = s1[i * N: N];
         () = #spill(s1);
-        nsk = sk[current_position : POLYETA_PACKEDBYTES];
-        sk[current_position : POLYETA_PACKEDBYTES] = _polyeta_pack(nsk, ns1);
+        signing_key[current_position : POLYETA_PACKEDBYTES] = _polyeta_pack(
+            signing_key[current_position : POLYETA_PACKEDBYTES],
+            ns1
+        );
         () = #unspill(s1);
         current_position += POLYETA_PACKEDBYTES;
     }
@@ -55,51 +60,54 @@ fn _pack_sk(reg ptr u8[SIGNING_KEY_SIZE] sk, reg ptr u8[SEEDBYTES] rho, reg ptr 
     for i = 0 to K {
         ns2 = s2[i * N: N];
         () = #spill(s2);
-        nsk = sk[current_position : POLYETA_PACKEDBYTES];
-        sk[current_position : POLYETA_PACKEDBYTES] = _polyeta_pack(nsk, ns2);
+        signing_key[current_position : POLYETA_PACKEDBYTES] = _polyeta_pack(
+            signing_key[current_position : POLYETA_PACKEDBYTES],
+            ns2
+        );
         () = #unspill(s2);
         current_position += POLYETA_PACKEDBYTES;
     }
     () = #unspill(t0);
 
     reg ptr u32[N] nt0;
-    reg ptr u8[POLYT0_PACKEDBYTES] nnsk;
     for i = 0 to K {
         nt0 = t0[i * N: N];
-        nnsk = sk[current_position : POLYT0_PACKEDBYTES];
         () = #spill(t0);
-        sk[current_position : POLYT0_PACKEDBYTES] = _polyt0_pack(nnsk, nt0);
+        signing_key[current_position : POLYT0_PACKEDBYTES] = _polyt0_pack(
+            signing_key[current_position : POLYT0_PACKEDBYTES],
+            nt0
+        );
         () = #unspill(t0);
         current_position += POLYT0_PACKEDBYTES;
     }
 
-    return sk;
+    return signing_key;
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA_unpack_sk
-*
-* Description: Unpack secret key sk = (rho, tr, key, t0, s1, s2).
-*
-* Arguments:   - const uint8_t rho[]: output byte array for rho
-*              - const uint8_t tr[]: output byte array for tr
-*              - const uint8_t key[]: output byte array for key
-*              - const polyveck *t0: pointer to output vector t0
-*              - const polyvecl *s1: pointer to output vector s1
-*              - const polyveck *s2: pointer to output vector s2
-*              - uint8_t sk[]: byte array containing bit-packed sk
-**************************************************/
+ * Name:        JASMIN_MLDSA_unpack_sk
+ *
+ * Description: Unpack secret key sk = (rho, tr, key, t0, s1, s2).
+ *
+ * Arguments:   - const uint8_t rho[]: output byte array for rho
+ *              - const uint8_t tr[]: output byte array for tr
+ *              - const uint8_t key[]: output byte array for key
+ *              - const polyveck *t0: pointer to output vector t0
+ *              - const polyvecl *s1: pointer to output vector s1
+ *              - const polyveck *s2: pointer to output vector s2
+ *              - uint8_t sk[]: byte array containing bit-packed sk
+ **************************************************/
 fn _unpack_sk
-  (reg ptr u8[SEEDBYTES] rho,
-   reg ptr u8[VERIFICATION_KEY_HASH_SIZE] tr,
-   reg ptr u8[SEEDBYTES] key,
-   reg ptr u32[polyveck] t0,
-   reg ptr u32[polyvecl] s1,
-   reg ptr u32[polyveck] s2,
-   #secret reg ptr u8[SIGNING_KEY_SIZE] sk)
-     // rho, tr, key, t0, s1, s2
-  -> reg ptr u8[SEEDBYTES], reg ptr u8[VERIFICATION_KEY_HASH_SIZE], reg ptr u8[SEEDBYTES],
-     reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck]
+(reg ptr u8[SEEDBYTES] rho,
+ reg ptr u8[VERIFICATION_KEY_HASH_SIZE] tr,
+ reg ptr u8[SEEDBYTES] key,
+ reg ptr u32[polyveck] t0,
+ reg ptr u32[polyvecl] s1,
+ reg ptr u32[polyveck] s2,
+#secret reg ptr u8[SIGNING_KEY_SIZE] sk)
+ // rho, tr, key, t0, s1, s2
+ -> reg ptr u8[SEEDBYTES], reg ptr u8[VERIFICATION_KEY_HASH_SIZE], reg ptr u8[SEEDBYTES],
+ reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck]
 {
     sk = sk; t0 = t0; s1 = s1; s2 = s2;
 

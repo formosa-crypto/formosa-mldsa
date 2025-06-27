@@ -111,7 +111,6 @@ class ML_DSA_ARM_M4(ML_DSA):
             parameter_set, implementation_type
         )
 
-        # TODO: ML-DSA-87
         if parameter_set == "44":
             self.verification_key_size = 1312
             self.signing_key_size = 2560
@@ -120,6 +119,10 @@ class ML_DSA_ARM_M4(ML_DSA):
             self.verification_key_size = 1952
             self.signing_key_size = 4032
             self.signature_size = 3309
+        else:  # parameter_set = 87
+            self.verification_key_size = 2592
+            self.signing_key_size = 4896
+            self.signature_size = 4627
 
     def generate_keypair(self, randomness):
         output = subprocess.check_output(
