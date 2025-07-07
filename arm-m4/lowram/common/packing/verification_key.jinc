@@ -1,0 +1,62 @@
+/*************************************************
+* Name:        JASMIN_MLDSA_pack_pk
+*
+* Description: Bit-pack public key pk = (rho, t1).
+*
+* Arguments:   - uint8_t pk[]: output byte array
+*              - const uint8_t rho[]: byte array containing rho
+*              - const polyveck *t1: pointer to vector t1
+**************************************************/
+fn _pack_pk(
+    reg ptr u8[VERIFICATION_KEY_SIZE] pk,
+    reg ptr u8[SEEDBYTES] rho,
+    reg ptr u32[polyveck] t1
+) -> reg ptr u8[VERIFICATION_KEY_SIZE] {
+    pk = pk; rho = rho; t1 = t1;
+
+    inline int i;
+
+    reg ptr u8[SEEDBYTES] tpk;
+    tpk = pk[0:SEEDBYTES];
+    tpk = #copy(rho);
+    pk[0:SEEDBYTES] = tpk;
+
+    reg ptr u8[POLYT1_PACKEDBYTES] npk;
+    reg ptr u32[N] nt1;
+    for i = 0 to K {
+        nt1 = t1[i * N: N];
+        npk = pk[SEEDBYTES + i * POLYT1_PACKEDBYTES : POLYT1_PACKEDBYTES];
+        pk[SEEDBYTES + i * POLYT1_PACKEDBYTES : POLYT1_PACKEDBYTES] = _polyt1_pack(npk, nt1);
+    }
+
+    return pk;
+}
+
+/*************************************************
+* Name:        JASMIN_MLDSA_unpack_pk
+*
+* Description: Unpack public key pk = (rho, t1).
+*
+* Arguments:   - const uint8_t rho[]: output byte array for rho
+*              - const polyveck *t1: pointer to output vector t1
+*              - uint8_t pk[]: byte array containing bit-packed pk
+**************************************************/
+fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[VERIFICATION_KEY_SIZE] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
+    pk = pk; t1 = t1;
+
+    inline int i;
+
+    reg ptr u8[SEEDBYTES] tpk;
+    tpk = pk[0 : SEEDBYTES];
+    rho = #copy(tpk);
+
+    reg ptr u8[POLYT1_PACKEDBYTES] npk;
+    reg ptr u32[N] nt1;
+    for i = 0 to K {
+        nt1 = t1[i * N: N];
+        npk = pk[SEEDBYTES + i * POLYT1_PACKEDBYTES : POLYT1_PACKEDBYTES];
+        t1[i * N : N] = _polyt1_unpack(nt1, npk);
+    }
+
+    return rho, t1;
+}

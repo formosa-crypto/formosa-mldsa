@@ -1,0 +1,151 @@
+/*************************************************
+*
+* Description: Provide wrappers around functions that have
+*              architecture specific implementations
+*
+* Version : ARM-V7m
+*
+**************************************************/
+
+/* ********************************************************************** */
+/* Helper functions to facilitate architecture modularity                 */
+
+inline fn __store_imm(inline int imm) -> reg u32 {
+  reg u32 out;
+  out = imm;
+  return out;
+}
+
+inline fn __cmp_b(reg u32 in_1, reg u32 in_2) -> inline bool {
+  inline bool b;
+  ?{"<u" = b} = #CMP(in_1, in_2);
+  return b;
+}
+
+inline fn __cmp_eq_lt(reg u32 in_1, reg u32 in_2) -> inline bool, inline bool {
+  inline bool lt;
+  inline bool eq;
+  ?{"==" = eq, "<s" = lt} = #CMP(in_1, in_2);
+  return eq, lt;
+}
+
+inline fn __cmp_gt_le_zero(reg u32 in) -> inline bool, inline bool {
+  inline bool gt;
+  inline bool le;
+  ?{">s" = gt, "<=s" = le} = #CMP(in, 0);
+  return gt, le;
+}
+
+inline fn __ubfx(reg u32 in, inline int pos, inline int width) -> reg u32 {
+  in = #UBFX(in, pos, width);
+  return in;
+}
+
+/**
+ Operates the or operation of the @nb_bits logical left shift on @in_2 with @in_1.
+ Writes the result in @in_1.
+ Introduces a temporary register.
+**/
+inline fn __or_lsl_inplace(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  in_1 |= (in_2 << nb_bits);
+  return in_1;
+}
+
+/**
+ Operates the or of the @nb_bits logical left shift on @in_2 with @in_1.
+ Writes the result in @out.
+**/
+inline fn __or_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
+  out = in_1 | (in_2 << nb_bits);
+  return out;
+}
+
+/**
+ Operates the and of the @nb_bits arithmetic right shift on @in_2 with @in_1.
+**/
+inline fn __and_asr(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
+  out = in_1 & (in_2 >>s nb_bits);
+  return out;
+}
+
+/**
+ Operates the addition of the @nb_bits logical left shift on @in_2 with @in_1.
+ Writes the result in @in_1.
+ Introduces a temporary register.
+**/
+inline fn __plus_lsl_inplace(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  in_1 += (in_2 << nb_bits);
+  return in_1;
+}
+
+
+/**
+ Operates the addition of the @nb_bits logical left shift on @in_2 with @in_1.
+**/
+inline fn __plus_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
+  out = in_1 +  (in_2 << nb_bits);
+  return out;
+}
+
+/**
+ Operates the subtraction of @in_1 with the @nb_bits logical left shift on @in_2.
+ Writes the result in @out.
+**/
+inline fn __sub_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
+  out = in_1 - (in_2 << nb_bits);
+  return out;
+}
+
+/**
+ Operates the subtraction of the @nb_bits logical left shift on @in_2 with @in_1.
+ Writes the result in @out.
+**/
+inline fn __rsub_lsl(reg u32 in_1, inline int in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
+  out = (in_2 << nb_bits) - in_1;
+  return out;
+}
+
+/**
+ Operates the subtraction of the @nb_bits logical left shift on @in_2 with @in_1.
+ Writes the result in @out.
+**/
+inline fn __rsb_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
+  reg u32 out;
+  out = in_2 << nb_bits;
+  out -= in_1;
+  return out;
+}
+
+inline fn __add_large_imm(reg u32 in, inline int imm) -> reg u32 {
+  reg u32 out;
+  out = in + imm;
+  return out;
+}
+
+inline fn __imm_sub_reg(inline int imm, reg u32 in) -> reg u32 {
+    reg u32 out;
+
+    // If we set out = imm - in instead, it will compile to the RSB instruction
+    // which is definitely not constant time on aarch64, and it may not be
+    // constant-time on arm-m4.
+    out = imm;
+    out -= in;
+    return out;
+}
+
+inline fn __set_if_true(reg u32 in, inline bool b) -> reg u32 {
+  reg u32 out = 0;
+  out = in if b;
+  return out;
+}
+
+inline fn __set_if_true_plus_imm(reg u32 in, inline int i, inline bool b) -> reg u32 {
+  reg u32 out = 0;
+  out = in + i if b;
+  return out;
+}

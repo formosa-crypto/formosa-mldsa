@@ -100,14 +100,16 @@ fn _poly_ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
 }
 
 /*************************************************
-* Name:        JASMIN_MLDSA_poly_invntt_tomont
-*
-* Description: Inplace inverse NTT and multiplication by 2^{32}.
-*              Input coefficients need to be less than Q in absolute
-*              value and output coefficients are again bounded by Q.
-*
-* Arguments:   - poly *a: pointer to input/output polynomial
-**************************************************/
+ * Name:        JASMIN_MLDSA_invntt_tomont
+ *
+ * Description: Inverse NTT and multiplication by Montgomery factor 2^32.
+ *              In-place. No modular reductions after additions or
+ *              subtractions; input coefficients need to be smaller than
+ *              Q in absolute value. Output coefficient are smaller than Q in
+ *              absolute value.
+ *
+ * Arguments:   - uint32_t p[N]: input/output coefficient array
+ **************************************************/
 fn _poly_invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
 
     reg u32 len start j k;

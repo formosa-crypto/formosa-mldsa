@@ -1,0 +1,372 @@
+/*************************************************
+ * Name:        JASMIN_MLDSA_polyeta_pack
+ *
+ * Description: Bit-pack polynomial with coefficients in [-ETA,ETA].
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with at least
+ *                            POLYETA_PACKEDBYTES bytes
+ *              - const poly *a: pointer to input polynomial
+ **************************************************/
+
+fn _polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
+reg ptr u8[POLYETA_PACKEDBYTES] {
+
+    reg u32 i, j;
+    reg u32[8] t;
+    /*
+       for (i = 0; i < N / 2; ++i) {
+       t[0] = (uint8_t) (ETA - a->coeffs[2 * i + 0]);
+       t[1] = (uint8_t) (ETA - a->coeffs[2 * i + 1]);
+       r[i] = t[0] | (t[1] << 4);
+       }
+     */
+
+    i = 0; j = 0;
+    while(i < N) {
+        inline int k;
+        for k = 0 to 2 {
+            t[k] = __eta_minus_coeff(a, i);
+            i += 1;
+        }
+        reg u32 aux;
+        aux = __or_lsl(t[0], t[1], 4);
+        r[j] = aux;
+        j += 1;
+    }
+    return r;
+
+}
+
+/*************************************************
+ * Name:        JASMIN_MLDSA_polyeta_unpack
+ *
+ * Description: Unpack polynomial with coefficients in [-ETA,ETA].
+ *
+ * Arguments:   - poly *r: pointer to output polynomial
+ *              - const uint8_t *a: byte array with bit-packed polynomial
+ **************************************************/
+
+inline fn _polyeta_unpack(
+        reg ptr u32[N] r,
+        reg ptr u8[POLYETA_PACKEDBYTES] a
+        ) -> reg ptr u32[N] {
+    reg u32 i, j;
+    reg u32 t0 t1;
+    reg u32 aux;
+    i = 0; j = 0;
+
+    while(i < N) {
+        aux = (32u) a[j];
+        t0 =  aux & 0x0F;
+        r[i] =  __imm_sub_reg(ETA, t0);
+        i += 1;
+        t1 =  aux >> 4;
+        r[i] =  __imm_sub_reg(ETA, t1);
+        i += 1;
+        j +=1 ;
+    }
+    return r;
+}
+
+/*************************************************
+ * Name:        JASMIN_MLDSA_polyw1_pack
+ *
+ * Description: Bit-pack polynomial w1 with coefficients in [0,15] or [0,43].
+ *              Input coefficients are assumed to be standard representatives.
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with at least
+ *                            POLYW1_PACKEDBYTES bytes
+ *              - const poly *a: pointer to input polynomial
+ **************************************************/
+
+fn _polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYW1_PACKEDBYTES] {
+    reg u32 i, j, aux;
+    reg u32[2] t;
+    inline int k;
+    i = 0; j = 0;
+    while (i < N) {
+        for k = 0 to 2 { t[k] = a[i]; i += 1; }
+        aux = __or_lsl(t[0], t[1], 4);
+        r[j] = aux; j += 1;
+    }
+    return r;
+}
+
+/*************************************************
+ * Name:        JASMIN_MLDSA_polyz_pack
+ *
+ * Description: Bit-pack polynomial with coefficients
+ *              in [-(GAMMA1 - 1), GAMMA1].
+ *
+ * Arguments:   - uint8_t *r: pointer to output byte array with at least
+ *                            POLYZ_PACKEDBYTES bytes
+ *              - const poly *a: pointer to input polynomial
+ **************************************************/
+fn _polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYZ_PACKEDBYTES] {
+    reg u32 i, j, aux, gamma1;
+    reg u32[2] t;
+    inline int k;
+
+    gamma1 = iGAMMA1;
+
+    i = 0; j = 0;
+    while (i < N) {
+        for k = 0 to 2 {
+            t[k] = a[i]; t[k] = gamma1 - t[k];
+            i += 1;
+        }
+
+        /* r[5 * i + 0]  = (uint8_t) t[0]; */
+        r[j] = t[0]; j += 1;
+
+        /* r[5 * i + 1]  = (uint8_t) (t[0] >> 8); */
+        aux = t[0] >> 8;
+        r[j] = aux; j += 1;
+
+        /* r[5 * i + 2]  = (uint8_t) (t[0] >> 16); */
+        /* r[5 * i + 2] |= (uint8_t) (t[1] << 4); */
+
+        aux = t[0] >> 16;
+        aux = __or_lsl_inplace(aux, t[1], 4);
+        r[j] = aux; j += 1;
+
+        /* r[5 * i + 3]  = (uint8_t) (t[1] >> 4); */
+        aux = t[1] >> 4;
+        r[j] = aux; j += 1;
+
+        /* r[5 * i + 4]  = (uint8_t) (t[1] >> 12); */
+        aux = t[1] >> 12;
+        r[j] = aux; j += 1;
+
+    }
+    return r;
+}
+
+/*************************************************
+ * Name:        JASMIN_MLDSA_polyz_unpack
+ *
+ * Description: Unpack polynomial z with coefficients
+ *              in [-(GAMMA1 - 1), GAMMA1].
+ *
+ * Arguments:   - poly *r: pointer to output polynomial
+ *              - const uint8_t *a: byte array with bit-packed polynomial
+ **************************************************/
+
+fn _polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> reg ptr u32[N] {
+    reg u32 i, j, gamma1, aux;
+    reg u32[5] t;
+    inline int k;
+
+    gamma1 = iGAMMA1;
+    i = 0; j = 0;
+    while(i < N) {
+        for k = 0 to 5 { t[k] = (32u) a[j]; j += 1; }
+
+        /* r->coeffs[2 * i + 0]  = a[5 * i + 0];
+           r->coeffs[2 * i + 0] |= (uint32_t)a[5 * i + 1] << 8;
+           r->coeffs[2 * i + 0] |= (uint32_t)a[5 * i + 2] << 16;
+           r->coeffs[2 * i + 0] &= 0xFFFFF; */
+        aux = __or_lsl(t[0], t[1], 8);
+        aux = __or_lsl_inplace(aux, t[2], 16);
+        aux = __ubfx(aux, 0, 20);
+        aux = gamma1 - aux;
+        r[i] = aux; i += 1;
+
+        /* r->coeffs[2 * i + 1]  = a[5 * i + 2] >> 4; */
+        /* r->coeffs[2 * i + 1] |= (uint32_t)a[5 * i + 3] << 4; */
+        /* r->coeffs[2 * i + 1] |= (uint32_t)a[5 * i + 4] << 12; */
+        /* r->coeffs[2 * i + 0] &= 0xFFFFF; */  // this look like a lucky bug
+        aux = t[2] >> 4;
+        aux = __or_lsl_inplace(aux, t[3], 4);
+        aux = __or_lsl_inplace(aux, t[4], 12);
+        aux = gamma1 - aux;
+        r[i] = aux; i += 1;
+
+        // Moved up
+        /* r->coeffs[2 * i + 0] = GAMMA1 - r->coeffs[2 * i + 0]; */
+        /* r->coeffs[2 * i + 1] = GAMMA1 - r->coeffs[2 * i + 1]; */
+    }
+    return r;
+}
+
+inline fn __extr_rej_sample(
+        reg ptr u32[N] a,
+        reg u32 ctr,
+        reg u32 t,
+        reg u32 q
+        ) -> reg ptr u32[N], reg u32
+{
+    t = __ubfx(t, 0, 23);
+    a, ctr = __rej_sample(a, ctr, t, q);
+    return a, ctr;
+}
+
+fn _poly_uniform(reg ptr u32[N] a,
+        reg ptr u8[SEEDBYTES] seed,
+        reg u32 nonce
+        ) -> reg ptr u32[N]
+{
+    stack u32[25*2] state_;
+    reg ptr u32[25*2] state;
+    stack ptr u32[N] sa;
+    sa = a; state = state_;
+    state = _stream128_init(state, seed, nonce);
+    a = sa;
+
+    reg u32 ctr, ctr4, pos, q, t;
+    reg u32[3] buf;
+
+    ctr = 0; pos = 0; q = iQ;
+
+    while { ctr4 = ctr + 4; } (ctr4 < N) {
+        state, a, pos, ctr, q, buf = _stream128_refill_buffer(state, a, pos, ctr, q);
+
+        a, ctr = __extr_rej_sample(a, ctr, buf[0], q);  // 3 bytes in buf[0]
+
+        t = buf[0] >>u 24;
+        t = __or_lsl_inplace(t, buf[1], 8);
+        a, ctr = __extr_rej_sample(a, ctr, t, q);
+
+        t = buf[1] >>u 16;
+        t = __or_lsl_inplace(t, buf[2], 16);  // 2 byte in buf[1] U 1 bytes in buf[2]
+        a, ctr = __extr_rej_sample(a, ctr, t, q);
+
+        t = __ubfx(buf[2], 8, 23);
+        a, ctr = __rej_sample(a, ctr, t, q);
+    }
+
+    while (ctr < N) {
+        state, a, pos, ctr, q, buf = _stream128_refill_buffer(state, a, pos, ctr, q);
+
+        a, ctr = __extr_rej_sample(a, ctr, buf[0], q);  // 3 bytes in buf[0]
+
+        if (ctr < N) {
+            t = buf[0] >>u 24;
+            t = __or_lsl_inplace(t, buf[1], 8); // 1 byte in buf[0] U 2 bytes in buf[1]
+            a, ctr = __extr_rej_sample(a, ctr, t, q);
+        }
+
+        if (ctr < N) {
+            t = buf[1] >>u 16;
+            t = __or_lsl_inplace(t, buf[2], 16); // 2 byte in buf[1] U 1 bytes in buf[2]
+            a, ctr = __extr_rej_sample(a, ctr, t, q);
+        }
+
+        if (ctr < N) {
+            t = __ubfx(buf[2], 8, 23);
+            a, ctr = __rej_sample(a, ctr, t, q);
+        }
+    }
+    return a;
+}
+
+/*************************************************
+ * Name:        JASMIN_MLDSA_poly_uniform_eta
+ *
+ * Description: Sample polynomial with uniformly random coefficients
+ *              in [-ETA,ETA] by performing rejection sampling on the
+ *              output stream from SHAKE256(seed|nonce) or AES256CTR(seed,nonce).
+ *
+ * Arguments:   - poly *a: pointer to output polynomial
+ *              - const uint8_t seed[]: byte array with seed of length CRHBYTES
+ *              - uint16_t nonce: 2-byte nonce
+ **************************************************/
+
+inline fn rej_eta(
+        reg ptr u32[N] a,
+        reg u32 ctr,
+        reg u32 t
+        ) -> reg ptr u32[N], reg u32
+{
+    #declassify t = t;
+    if (t < 9) {
+        a[ctr] = __imm_sub_reg(4, t);
+        ctr += 1;
+    }
+    return a, ctr;
+}
+
+fn _poly_uniform_eta(
+        reg ptr u32[N] a,
+#secret reg ptr u8[CRHBYTES] seed,
+        reg u32 nonce
+        ) -> reg ptr u32[N]
+{
+    stack u32[25*2] state_;
+    reg ptr u32[25*2] state;
+    stack ptr u32[N] sa;
+    sa = a; state = state_;
+    state = _stream256_init(state, seed, nonce);
+    a = sa;
+
+    reg u32 ctr, ctr8, pos, n205, t;
+    reg u32 buf;
+
+    ctr = 0; pos = 0; n205 = 205;
+
+    while { ctr8 = ctr + 8; } (ctr8 < N) {
+
+        state, a, pos, ctr, n205, buf = _stream256_refill_buffer(state, a, pos, ctr, n205);
+        inline int i;
+        for i = 0 to 8 {
+            t = __ubfx(buf, 4*i, 4);
+            a, ctr = rej_eta(a, ctr, t);
+        }
+    }
+
+    while (ctr < N) {
+        state, a, pos, ctr, n205, buf = _stream256_refill_buffer(state, a, pos, ctr, n205);
+        inline int i;
+        for i = 0 to 8 {
+            if ((i == 0) || (ctr < N)) {
+                t = __ubfx(buf, 4*i, 4);
+                a, ctr = rej_eta(a, ctr, t);
+            }
+        }
+    }
+    return a;
+}
+
+param int POLYZ_LAST = POLYZ_PACKEDBYTES / SHAKE256_RATE * SHAKE256_RATE;
+param int POLYZ_LAST_SZ = POLYZ_PACKEDBYTES % SHAKE256_RATE;
+
+
+fn _poly_uniform_gamma1(
+        reg ptr u32[N] a,
+        reg ptr u8[CRHBYTES] seed,
+        reg u32 nonce
+        ) -> reg ptr u32[N]
+{
+    stack u8[POLYZ_PACKEDBYTES] buf_;
+    reg ptr u8[POLYZ_PACKEDBYTES] buf;
+    reg ptr u8[SHAKE256_RATE] bufb;
+    stack u32[25*2] state_;
+    reg ptr u32[25*2] state;
+    stack ptr u32[N] sa;
+    sa = a; state = state_;
+    state = _stream256_init(state, seed, nonce);
+
+    inline int k;
+    for k = 0 to POLYZ_PACKEDBYTES / SHAKE256_RATE {
+        bufb = buf_[SHAKE256_RATE * k : SHAKE256_RATE];
+        bufb = _stream256_full_squeeze(bufb, state);
+        buf_[SHAKE256_RATE * k : SHAKE256_RATE] = bufb;
+        state = _keccakf1600_ref(state);
+    }
+
+    reg ptr u8[POLYZ_LAST_SZ] bufc;
+    bufc = buf_[ POLYZ_LAST : POLYZ_LAST_SZ];
+
+    reg u32 i, t;
+    i = 0;
+    while (i < POLYZ_LAST_SZ / 4) {
+        t = state[i];
+        bufc[:u32 i] = t;
+        i += 1;
+    }
+    buf_[  POLYZ_LAST : POLYZ_LAST_SZ] = bufc;
+
+    buf = buf_; a = sa;
+    a = _polyz_unpack(a, buf);
+    return a;
+}

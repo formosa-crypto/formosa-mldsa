@@ -1,0 +1,16 @@
+param int iQ = 8380417;
+
+param int SHAKE_TRAIL_BYTE = 0x1f;
+
+param int N = 256;
+param int LOG_2_N = 8;
+
+param int SEEDBYTES = 32;
+param int CRHBYTES = 64;
+param int VERIFICATION_KEY_HASH_SIZE = 64;
+param int RNDBYTES = 32;
+param int D = 13;
+
+param int PQC_SHAKECTX_BYTES = 25;
+param int SHAKE256_RATE = 136;
+param int SHAKE128_RATE = 168;

@@ -76,7 +76,6 @@ fn _poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N]
  *
  * Arguments:   - poly *a: pointer to input/output polynomial
  **************************************************/
-
 fn _poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
 {
     a = __map1__caddq(a);
@@ -209,7 +208,6 @@ fn _poly_decompose_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[
     return a1, a0;
 }
 
-
 inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
     reg u32 c;
     c = a[i];
@@ -226,6 +224,7 @@ inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
  *              - const poly *a: pointer to input polynomial
  *              - const poly *h: pointer to input hint polynomial
  **************************************************/
+
 fn _poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] {
     reg u32 i, b_, h_, q;
 
@@ -320,7 +319,6 @@ fn _poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> re
  *              - poly *a0: pointer to output polynomial with coefficients c0
  *              - const poly *a: pointer to input polynomial
  **************************************************/
-
 fn _poly_power2round_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[N], reg ptr u32[N] {
     reg u32 i, a_, a0_, a1_;
 
@@ -382,7 +380,7 @@ fn _poly_sub_inplace(reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
     return a;
 }
 
-/**************************************************
+/*************************************************
  * Name:        JASMIN_MLDSA_challenge
  *
  * Description: Implementation of H. Samples polynomial with TAU nonzero
@@ -398,19 +396,16 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[COMMITMENT_HASH_SIZE] seed) -> r
     stack u32[PQC_SHAKECTX_BYTES*2] _state;
     reg ptr u32[PQC_SHAKECTX_BYTES*2] state;
 
-    stack ptr u32[N] cs;
-
-    cs = c;
+    () = #spill(c);
     state = _state;
 
     // equivalent to shake256_inc_init_jazz(state);
     // equivalent to shake256_inc_absorb_jazz(state, seed, SEEDBYTES) and shake256_inc_finalize_jazz(state)
     state = __SHAKE256_init_ctilde_ref(state, seed);
-    c = cs;
+    () = #unspill(c);
 
     reg u32[2] signs;
     stack u32[2] s_signs;
-    stack u32 js;
 
     reg u32 aux, pos, i;
     signs[0] = state[:u32 0];
@@ -431,10 +426,12 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[COMMITMENT_HASH_SIZE] seed) -> r
     while (j < N) {
         while {
             if (pos >= SHAKE256_RATE) {
-                // save j pbuf c, signs
-                js = j; cs = c; s_signs = #copy(signs);
+                () = #spill(j, c);
+                s_signs = #copy(signs);
                 state = _keccakf1600_ref(state);
-                j = js; c = cs;  signs = #copy(s_signs);
+
+                () = #unspill(j, c);
+                signs = #copy(s_signs);
                 pos = 0;
             }
 

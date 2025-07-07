@@ -22,8 +22,8 @@ def pytest_addoption(parser):
         "--implementation-type",
         action="store",
         default="ref",
-        help="Implementation type: ref or avx2",
-        choices=("ref", "avx2"),
+        help="Implementation type: ref, lowram (on arm-m4 only), and avx2",
+        choices=("ref", "lowram", "avx2"),
     )
 
 
