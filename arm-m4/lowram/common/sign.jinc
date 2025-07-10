@@ -32,77 +32,6 @@ fn _shake256_inc_absorb_mem_naive
     return pstate, pos;
 }
 
-/***
- * No precondition
- ***/
-inline fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive
-(reg ptr u32[25*2] pstate,
- reg u32 pos,
- reg ptr u8[K * POLYW1_PACKEDBYTES] m
- ) -> reg ptr u32[25*2], reg u32
-{
-    reg u32 t s;
-    reg u32 ctr;
-    ctr = 0;
-
-    // While input is not consumed :
-    // Fill-in sponge part of the shake buffer byte by byte by xoring
-    // If sponge is filled : keccak the buffer
-    while (ctr != K * POLYW1_PACKEDBYTES) {
-
-        t = (32u)m[ctr];
-        s = (32u)pstate[:u8 pos];
-        s ^= t;
-        pstate[:u8 pos] = s;
-        pos += 1; ctr += 1;
-        if (pos == SHAKE256_RATE) {
-            () = #spill(ctr, pos, m);
-            pstate = _keccakf1600_ref(pstate);
-            () = #unspill(ctr, pos, m);
-            pos = 0;
-        }
-    }
-
-    return pstate, pos;
-}
-/***
- * Precondition CRHBYTES should have been filled in pstate
- * CRHBYTES + K * POLYW1_PACKEDBYTES is dividable by 4 and 136
- ***/
-fn _shake256_inc_absorb_KPOLYW1_PACKEDBYTES
-(reg ptr u32[25*2] pstate,
- reg ptr u8[K * POLYW1_PACKEDBYTES] m
- ) -> reg ptr u32[25*2], reg u32
-{
-    reg u32 t s i pos;
-    i = 0;
-    pos = CRHBYTES;
-    while (pos < SHAKE256_RATE) {
-        s = m.[:u32 i];
-        pstate.[pos] = s;
-        pos += 4; i += 4;
-    }
-
-    while {
-        () = #spill(m, i);
-        pstate = _keccakf1600_ref(pstate);
-        () = #unspill(m, i);
-        pos = 0;
-    }
-    (i < K * POLYW1_PACKEDBYTES)
-    {
-        while (pos < SHAKE256_RATE) {
-            t = m.[:u32 i];
-            s = pstate.[pos];
-            s ^= t;
-            pstate.[pos] = s;
-            pos += 4; i += 4;
-        }
-    }
-
-    return pstate, pos;
-}
-
 /************************************************
  * Name:        crypto_sign_signature_ctx_seed
  *
@@ -282,7 +211,7 @@ fn _crypto_sign_signature_ctx_seed(
             pstate = state; mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
             pstate = __add_crh_ref(pstate, mu);
             pstate = __add_zero_after_add(pstate, CRHBYTES);
-            pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, sig1);
+            pstate, pos = __derive_commitment_hash(pstate, CRHBYTES, sig1);
             pstate = _shake256_add_block_end(pstate, pos);
             pstate = _keccakf1600_ref(pstate);
 

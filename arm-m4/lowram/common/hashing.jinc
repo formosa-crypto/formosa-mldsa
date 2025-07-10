@@ -1,6 +1,7 @@
-inline fn __add_seed_ref(reg ptr u32[25*2] state,
-        reg ptr u8[SEEDBYTES] in) 
-    -> reg ptr u32[25*2]
+inline fn __add_seed_ref(
+    reg ptr u32[25*2] state,
+    reg ptr u8[SEEDBYTES] in
+) -> reg ptr u32[25*2]
 {
     reg u32 i t0 inlen4;
 
@@ -16,10 +17,11 @@ inline fn __add_seed_ref(reg ptr u32[25*2] state,
     return state;
 }
 
-inline fn __add_crh_ref(
+inline fn __add_crh_ref
+(
     reg ptr u32[25*2] state,
-    reg ptr u8[CRHBYTES] in)
--> reg ptr u32[25*2]
+    reg ptr u8[CRHBYTES] in
+) -> reg ptr u32[25*2]
 {
     reg u32 i t0 inlen4;
 
@@ -35,9 +37,10 @@ inline fn __add_crh_ref(
     return state;
 }
 
-inline fn __add_ctilde_ref(reg ptr u32[25*2] state,
-        reg ptr u8[COMMITMENT_HASH_SIZE] in)
-    -> reg ptr u32[25*2]
+inline fn __add_ctilde_ref(
+    reg ptr u32[25*2] state,
+    reg ptr u8[COMMITMENT_HASH_SIZE] in
+) -> reg ptr u32[25*2]
 {
     reg u32 i t0 inlen4;
 
@@ -53,9 +56,11 @@ inline fn __add_ctilde_ref(reg ptr u32[25*2] state,
     return state;
 }
 
-inline fn __add_seedrndcrh_ref(reg ptr u32[25*2] state,
-        reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] in) 
-    -> reg ptr u32[25*2] 
+inline fn __add_seedrndcrh_ref
+(
+    reg ptr u32[25*2] state,
+    reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] in
+) -> reg ptr u32[25*2]
 {
     reg u32 i t0 inlen4;
 
@@ -350,4 +355,36 @@ fn _hash_verification_key(
     }
 
     return verification_key_hash;
+}
+
+inline fn __derive_commitment_hash
+(
+    reg ptr u32[25*2] pstate,
+    reg u32 pos,
+    reg ptr u8[K * POLYW1_PACKEDBYTES] m
+) -> reg ptr u32[25*2], reg u32
+{
+    reg u32 t s;
+    reg u32 ctr;
+    ctr = 0;
+
+    // While input is not consumed :
+    // Fill-in sponge part of the shake buffer byte by byte by xoring
+    // If sponge is filled : keccak the buffer
+    while (ctr != K * POLYW1_PACKEDBYTES) {
+
+        t = (32u)m[ctr];
+        s = (32u)pstate[:u8 pos];
+        s ^= t;
+        pstate[:u8 pos] = s;
+        pos += 1; ctr += 1;
+        if (pos == SHAKE256_RATE) {
+            () = #spill(ctr, pos, m);
+            pstate = _keccakf1600_ref(pstate);
+            () = #unspill(ctr, pos, m);
+            pos = 0;
+        }
+    }
+
+    return pstate, pos;
 }

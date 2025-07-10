@@ -351,3 +351,38 @@ fn _hash_verification_key(
 
     return verification_key_hash;
 }
+
+/***
+ * No precondition
+ ***/
+inline fn __derive_commitment_hash
+(
+    reg ptr u32[25*2] pstate,
+    reg u32 pos,
+    reg ptr u8[K * POLYW1_PACKEDBYTES] m
+) -> reg ptr u32[25*2], reg u32
+{
+    reg u32 t s;
+    reg u32 ctr;
+    ctr = 0;
+
+    // While input is not consumed :
+    // Fill-in sponge part of the shake buffer byte by byte by xoring
+    // If sponge is filled : keccak the buffer
+    while (ctr != K * POLYW1_PACKEDBYTES) {
+
+        t = (32u)m[ctr];
+        s = (32u)pstate[:u8 pos];
+        s ^= t;
+        pstate[:u8 pos] = s;
+        pos += 1; ctr += 1;
+        if (pos == SHAKE256_RATE) {
+            () = #spill(ctr, pos, m);
+            pstate = _keccakf1600_ref(pstate);
+            () = #unspill(ctr, pos, m);
+            pos = 0;
+        }
+    }
+
+    return pstate, pos;
+}

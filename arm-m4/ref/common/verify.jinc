@@ -114,7 +114,7 @@ fn _crypto_sign_verify_ctx(
                 pstate = state;
                 pstate = __add_crh_ref(pstate, crh_byte_hash);
                 pstate = __add_zero_after_add(pstate, CRHBYTES);
-                pstate, pos = _shake256_inc_absorb_KPOLYW1_PACKEDBYTES_naive(pstate, CRHBYTES, buf);
+                pstate, pos = __derive_commitment_hash(pstate, CRHBYTES, buf);
                 pstate = _shake256_add_block_end(pstate, pos);
                 pstate = _keccakf1600_ref(pstate);
 
