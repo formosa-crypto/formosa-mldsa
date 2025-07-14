@@ -12,22 +12,21 @@
  * Returns 0 if signature could be verified correctly and -1 otherwise
  **************************************************/
 fn _crypto_sign_verify_ctx(
-        reg ptr u8[SIGNATURE_SIZE] sig,
+        reg ptr u8[SIGNATURE_SIZE] signature,
         reg ptr u32[2] ctx_m,
         reg ptr u32[2] ctxlen_mlen,
         reg ptr u8[VERIFICATION_KEY_SIZE] verification_key
 ) -> reg u32 {
     reg u32 status;
 
-    stack u8[SEEDBYTES] rho;
+    reg ptr u8[SEEDBYTES] seed_for_matrix_A;
     stack u8[CRHBYTES] crh_byte_hash;
-    stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
+    reg ptr u8[COMMITMENT_HASH_SIZE] observed_commitment_hash;
 
     stack u32[polyvecl] signer_response;
-    reg ptr u32[polyvecl] signer_response_ptr;
+    reg ptr u32[polyvecl] signer_response_pointer;
 
-    stack u32[polyveck] t1;
-    reg ptr u32[polyveck] t1_ptr;
+    stack u32[N] t1_element;
 
     stack u32[polyveck] hint;
     reg ptr u32[polyveck] hint_ptr;
@@ -43,15 +42,16 @@ fn _crypto_sign_verify_ctx(
 
     inline int i column_number row_number;
 
+    reg u32 observed expected;
+
     ctxlen = ctxlen_mlen[0];
 
     if (ctxlen <= 255) {
-        () = #spill(ctxlen_mlen, ctx_m, ctxlen);
-        rho, t1 = _unpack_pk(rho, t1, verification_key);
+        () = #spill(ctxlen_mlen, ctx_m, ctxlen, verification_key);
 
-        () = #spill(verification_key);
-        commitment_hash, signer_response, hint, status = _unpack_sig(commitment_hash, signer_response, hint, sig);
-        () = #spill(sig);
+        signer_response, hint, status = _unpack_sig(signer_response, hint, signature);
+        observed_commitment_hash = signature[0 : COMMITMENT_HASH_SIZE];
+        () = #spill(observed_commitment_hash, signature);
 
         if (status == 0) {
             reg u32 bound;
@@ -107,12 +107,10 @@ fn _crypto_sign_verify_ctx(
                 }
                 () = #spill(pstate);
 
-                challenge = _poly_challenge(challenge, commitment_hash);
+                () = #unspill(observed_commitment_hash);
+                challenge = _poly_challenge(challenge, observed_commitment_hash);
                 challenge = _poly_ntt(challenge);
                 signer_response = _polyvecl_ntt(signer_response);
-
-                t1 = _polyveck_shiftl(t1);
-                t1 = _polyveck_ntt(t1);
 
                 () = #unspill(pstate);
                 pstate = __add_crh_ref(pstate, crh_byte_hash);
@@ -120,20 +118,30 @@ fn _crypto_sign_verify_ctx(
                 pos = CRHBYTES;
                 () = #spill(pstate, pos);
 
+                () = #unspill(verification_key);
+                seed_for_matrix_A = verification_key[0 : SEEDBYTES];
+                () = #spill(seed_for_matrix_A);
+
                 for row_number = 0 to K {
                     // Multiply Az first and store it in w1_element
-                    matrix_element = __polyvec_matrix_expand_one_element(matrix_element, rho, row_number, 0);
+                    () = #unspill(seed_for_matrix_A);
+                    matrix_element = __polyvec_matrix_expand_one_element(matrix_element, seed_for_matrix_A, row_number, 0);
                     w1_element = _poly_pointwise_montgomery(w1_element, matrix_element, signer_response[0 : N]);
 
                     for column_number = 1 to L {
-                        matrix_element = __polyvec_matrix_expand_one_element(matrix_element, rho, row_number, column_number);
-                        signer_response_ptr = signer_response;
-                        product = _poly_pointwise_montgomery(product, matrix_element, signer_response_ptr[column_number * N : N]);
+                        () = #unspill(seed_for_matrix_A);
+                        matrix_element = __polyvec_matrix_expand_one_element(matrix_element, seed_for_matrix_A, row_number, column_number);
+                        signer_response_pointer = signer_response;
+                        product = _poly_pointwise_montgomery(product, matrix_element, signer_response_pointer[column_number * N : N]);
                         w1_element = _poly_add_inplace(w1_element, product);
                     }
 
-                    t1_ptr = t1;
-                    product = _poly_pointwise_montgomery(product, t1_ptr[row_number * N : N], challenge);
+                    () = #unspill(verification_key);
+                    t1_element = _polyt1_unpack(t1_element, verification_key[SEEDBYTES + (row_number * POLYT1_PACKEDBYTES) : POLYT1_PACKEDBYTES]);
+                    t1_element = _poly_shiftl(t1_element);
+                    t1_element = _poly_ntt(t1_element);
+
+                    product = _poly_pointwise_montgomery(product, t1_element, challenge);
 
                     w1_element = _poly_sub_inplace(w1_element, product);
                     w1_element = _poly_reduce(w1_element);
@@ -152,13 +160,13 @@ fn _crypto_sign_verify_ctx(
                 pstate = _shake256_add_block_end(pstate, pos);
                 pstate = _keccakf1600_ref(pstate);
 
-                reg u32 ci c2i;
                 status = 0;
+                () = #unspill(observed_commitment_hash);
                 for i = 0 to COMMITMENT_HASH_SIZE {
                     if (status == 0) {
-                        ci = (32u)commitment_hash[i];
-                        #declassify c2i = (32u)pstate[:u8 i];
-                        if (ci != c2i) {
+                        observed = (32u)observed_commitment_hash[i];
+                        #declassify expected = (32u)pstate[:u8 i];
+                        if (observed != expected) {
                             status = i + 1;
                         }
                     }

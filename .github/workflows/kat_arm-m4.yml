@@ -12,7 +12,12 @@ jobs:
       fail-fast: true
       matrix:
         parameter_set: ["44", "65", "87"]
-        implementation_type: ["ref"]
+        implementation_type: ["ref", "lowram"]
+        exclude:
+          - implementation_type: "lowram"
+            parameter_set: "44"
+          - implementation_type: "lowram"
+            parameter_set: "87"
     steps:
     - uses: actions/checkout@master
     - name: Get nix

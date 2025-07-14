@@ -41,22 +41,23 @@ fn _pack_pk(
 *              - const polyveck *t1: pointer to output vector t1
 *              - uint8_t pk[]: byte array containing bit-packed pk
 **************************************************/
-fn _unpack_pk(reg ptr u8[SEEDBYTES] rho, reg ptr u32[polyveck] t1, reg ptr u8[VERIFICATION_KEY_SIZE] pk) -> reg ptr u8[SEEDBYTES], reg ptr u32[polyveck] {
+fn _unpack_pk(
+    reg ptr u32[polyveck] t1,
+    reg ptr u8[VERIFICATION_KEY_SIZE] pk
+) -> reg ptr u32[polyveck]
+{
     pk = pk; t1 = t1;
-
-    inline int i;
-
-    reg ptr u8[SEEDBYTES] tpk;
-    tpk = pk[0 : SEEDBYTES];
-    rho = #copy(tpk);
 
     reg ptr u8[POLYT1_PACKEDBYTES] npk;
     reg ptr u32[N] nt1;
+
+    inline int i;
+
     for i = 0 to K {
         nt1 = t1[i * N: N];
         npk = pk[SEEDBYTES + i * POLYT1_PACKEDBYTES : POLYT1_PACKEDBYTES];
         t1[i * N : N] = _polyt1_unpack(nt1, npk);
     }
 
-    return rho, t1;
+    return t1;
 }

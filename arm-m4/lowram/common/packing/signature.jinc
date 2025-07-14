@@ -57,9 +57,9 @@ fn _pack_sig_nocopy(
 
 inline
 fn __decode_hint(
-        reg ptr u32[polyveck] hint_decoded,
-        reg ptr u8[HINT_ENCODED_SIZE] hint_encoded
-        ) -> reg ptr u32[polyveck], reg u32
+    reg ptr u32[polyveck] hint_decoded,
+    reg ptr u8[HINT_ENCODED_SIZE] hint_encoded
+) -> reg ptr u32[polyveck], reg u32
 {
     reg u32 j;
     reg u32 done;
@@ -171,32 +171,30 @@ fn __decode_hint(
  *
  * Returns 1 in case of malformed signature; otherwise 0.
  **************************************************/
-fn _unpack_sig(reg ptr u8[COMMITMENT_HASH_SIZE] c,
-        reg ptr u32[polyvecl] signer_response,
-        reg ptr u32[polyveck] hints_decoded,
-        reg ptr u8[SIGNATURE_SIZE] sig) ->
-        reg ptr u8[COMMITMENT_HASH_SIZE],
-        reg ptr u32[polyvecl],
-        reg ptr u32[polyveck],
-        reg u32
+fn _unpack_sig(
+    reg ptr u32[polyvecl] signer_response,
+    reg ptr u32[polyveck] hints_decoded,
+    reg ptr u8[SIGNATURE_SIZE] sig
+) -> reg ptr u32[polyvecl],
+     reg ptr u32[polyveck],
+     reg u32
 {
     reg u32 ill_formed_hint;
     inline int i;
     inline int current_position;
 
-    c = #copy(sig[0 : COMMITMENT_HASH_SIZE]);
     current_position = COMMITMENT_HASH_SIZE;
 
-    () = #spill(c, hints_decoded);
+    () = #spill(hints_decoded);
 
     for i = 0 to L {
         signer_response[i * N: N] = _polyz_unpack(signer_response[i * N : N], sig[current_position : POLYZ_PACKEDBYTES]);
         current_position += POLYZ_PACKEDBYTES;
     }
 
-    () = #unspill(c, hints_decoded);
+    () = #unspill(hints_decoded);
 
     hints_decoded, ill_formed_hint = __decode_hint(hints_decoded, sig[current_position : HINT_ENCODED_SIZE]);
 
-    return c, signer_response, hints_decoded, ill_formed_hint;
+    return signer_response, hints_decoded, ill_formed_hint;
 }
