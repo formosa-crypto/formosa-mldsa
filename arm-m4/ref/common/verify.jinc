@@ -89,7 +89,6 @@ fn _crypto_sign_verify_ctx(
                     t = pstate[i];
                     crh_byte_hash[:u32 i] = t;
                 }
-                state = pstate;
                 () = #spill(pstate);
 
                 cp = _poly_challenge(cp, commitment_hash);
@@ -111,7 +110,7 @@ fn _crypto_sign_verify_ctx(
                 w1 = _polyveck_use_hint_inplace(w1, h);
                 buf = _polyveck_pack_w1(buf, w1);
 
-                pstate = state;
+                () = #unspill(pstate);
                 pstate = __add_crh_ref(pstate, crh_byte_hash);
                 pstate = __add_zero_after_add(pstate, CRHBYTES);
                 pstate, pos = __derive_commitment_hash(pstate, CRHBYTES, buf);

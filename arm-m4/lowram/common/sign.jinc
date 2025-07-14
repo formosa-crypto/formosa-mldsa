@@ -21,9 +21,9 @@ fn _shake256_inc_absorb_mem_naive
         pos += 1; m += 1; mlen -= 1;
 
         if (pos == SHAKE256_RATE) {
-            () = #spill(m, mlen);
+            () = #spill(m, mlen, pos);
             pstate = _keccakf1600_ref(pstate);
-            () = #unspill(m, mlen);
+            () = #unspill(m, mlen, pos);
             pos = 0;
         }
 
@@ -87,6 +87,8 @@ fn _crypto_sign_signature_ctx_seed(
     ctxlen = ctxlen_mlen[0];
 
     if (ctxlen <= 255) {
+        () = #spill(ctx_m_rand);
+
         rho = s_rho;
         key = s_key_rnd_mu[0:SEEDBYTES];
         t0 = s_t0;
@@ -107,6 +109,8 @@ fn _crypto_sign_signature_ctx_seed(
 
         () = #unspill(ctxlen_mlen);
         t = ctxlen_mlen[0];
+        () = #spill(ctxlen_mlen);
+
         mu2[1] = (8u)t;
         s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2] = mu2;
 
@@ -116,18 +120,24 @@ fn _crypto_sign_signature_ctx_seed(
         pstate = __add_message_prefix(pstate, VERIFICATION_KEY_HASH_SIZE, mu2); // 2
         pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
         pos = VERIFICATION_KEY_HASH_SIZE + 2;
+
+        () = #unspill(ctx_m_rand);
         ctx = ctx_m_rand[0];
-        () = #spill(ctx_m_rand, ctxlen_mlen);
+        () = #spill(ctx_m_rand);
+
         () = #unspill(ctxlen);
         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
-        () = #unspill(ctx_m_rand, ctxlen_mlen);
+
+        () = #unspill(ctxlen_mlen);
         mlen = ctxlen_mlen[1];
+
+        () = #unspill(ctx_m_rand);
         m = ctx_m_rand[1];
         () = #spill(ctx_m_rand);
+
         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
         pstate = _shake256_add_block_end(pstate, pos);
         pstate = _keccakf1600_ref(pstate);
-        () = #unspill(ctx_m_rand);
 
         // FIXME define a function for this
         mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
@@ -138,6 +148,7 @@ fn _crypto_sign_signature_ctx_seed(
         s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES] = mu;
 
         rnd = s_key_rnd_mu[SEEDBYTES : RNDBYTES];
+        () = #unspill(ctx_m_rand);
         reg u32 rand = ctx_m_rand[2];
         for i = 0 to RNDBYTES/4 {
             t = [:u32 rand + 4*i];
@@ -160,13 +171,17 @@ fn _crypto_sign_signature_ctx_seed(
 
         stack u32[matKL] s_mat;
         stack u32[polyvecl] s_y, s_signer_response;
+
         stack u32[polyveck] s_h;
-        reg ptr u32[matKL] mat;
         reg ptr u32[polyveck] h;
+
+        reg ptr u32[matKL] mat;
         stack u32[polyveck] s_w1 s_w0;
-        stack u32[N] s_cp;
         reg ptr u32[polyveck] w1 w0;
+
         reg ptr u32[N] cp;
+        stack u32[N] s_cp;
+
         mat = s_mat;
 
         #declassify rho = s_rho;
@@ -263,7 +278,8 @@ fn _crypto_sign_signature_ctx_seed(
                     h = _polyveck_pointwise_poly_montgomery(h, cp, t0);
                     h = _polyveck_invntt_tomont(h);
                     h = h; // Needed for regalloc
-                    h = _polyveck_reduce(h); s_h = h;
+                    h = _polyveck_reduce(h);
+                    s_h = h;
 
                     bound = iGAMMA2;
                     chknorm = _polyveck_chknorm(h, bound);
@@ -274,13 +290,17 @@ fn _crypto_sign_signature_ctx_seed(
                         w0 = _polyveck_add_inplace(w0, h);
                         s_w0 = w0; w1 = s_w1;
                         reg u32 n;
-                        n, h = _polyveck_make_hint(h, w0, w1); s_h = h;
+
+                        h = s_h;
+                        n, h = _polyveck_make_hint(h, w0, w1);
+                        s_h = h;
+
                         if (n > MAX_ONES_IN_HINT) {
                             continue = 1;
                         } else {
                             () = #unspill(sig);
 
-                            #declassify h = h;
+                            #declassify h = s_h;
                             #declassify s_signer_response = s_signer_response;
                             #declassify sig = sig;
 

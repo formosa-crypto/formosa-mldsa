@@ -25,8 +25,8 @@ inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -
 * Returns 0 (success)
 **************************************************/
 fn _crypto_sign_keypair_seed(
-    #public reg ptr u8[VERIFICATION_KEY_SIZE] pk,
-    reg ptr u8[SIGNING_KEY_SIZE] sk,
+    #public reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg ptr u8[SIGNING_KEY_SIZE] signing_key,
     #secret reg ptr u8[SEEDBYTES] seedbuf
 ) -> reg ptr u8[VERIFICATION_KEY_SIZE], reg ptr u8[SIGNING_KEY_SIZE] {
     stack u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
@@ -41,7 +41,7 @@ fn _crypto_sign_keypair_seed(
     reg ptr u32[PQC_SHAKECTX_BYTES*2] pstate;
     pstate = state;
 
-    () = #spill(pk, sk);
+    () = #spill(verification_key, signing_key);
     pstate = __SHAKE256_init_seed_ref(pstate, seedbuf);
     state = pstate;
     /***/
@@ -78,21 +78,21 @@ fn _crypto_sign_keypair_seed(
     t1 = _polyveck_caddq(t1);
     t1, t0 = _polyveck_power2round_inplace(t1, t0);
 
-    () = #unspill(pk);
+    () = #unspill(verification_key);
     rho = state[:u8 0:SEEDBYTES];
-    pk = _pack_pk(pk, rho, t1);
+    verification_key = _pack_pk(verification_key, rho, t1);
 
     /* Compute H(rho, t1) and write secret key */
-    () = #spill(pk);
-    verification_key_hash = _hash_verification_key(verification_key_hash, pk);
+    () = #spill(verification_key);
+    verification_key_hash = _hash_verification_key(verification_key_hash, verification_key);
 
     reg ptr u8[SEEDBYTES] key;
     rho = state[:u8 0:SEEDBYTES];
     key = state[:u8 SEEDBYTES + CRHBYTES : SEEDBYTES];
 
-    () = #unspill(sk);
-    sk = __pack_signing_key(sk, rho, verification_key_hash, key, t0, s1, s2);
+    () = #unspill(signing_key);
+    signing_key = __pack_signing_key(signing_key, rho, verification_key_hash, key, t0, s1, s2);
 
-    () = #unspill(pk);
-    return pk, sk;
+    () = #unspill(verification_key);
+    return verification_key, signing_key;
 }

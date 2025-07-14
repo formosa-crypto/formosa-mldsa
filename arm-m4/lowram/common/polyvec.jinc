@@ -73,9 +73,9 @@ fn _polyvecl_reduce(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl]
 }
 
 fn _polyvecl_add_inplace(
-        reg ptr u32[polyvecl] z,
-        reg ptr u32[polyvecl] y
-        ) -> reg ptr u32[polyvecl]
+    reg ptr u32[polyvecl] z,
+    reg ptr u32[polyvecl] y
+) -> reg ptr u32[polyvecl]
 {
     inline int i;
     reg ptr u32[N] pz;
@@ -420,7 +420,7 @@ fn _polyveck_pack_w1(
 fn _polyvec_matrix_expand(
         reg ptr u32[matKL] mat,
         reg ptr u8[SEEDBYTES] rho
-        ) -> reg ptr u32[matKL] {
+) -> reg ptr u32[matKL] {
     inline int i j;
     reg ptr u32[N] pmat;
     reg u32 nonce;
@@ -438,6 +438,19 @@ fn _polyvec_matrix_expand(
     }
 
     return mat;
+}
+
+inline fn __polyvec_matrix_expand_one_element(
+    reg ptr u32[N] matrix_element,
+    reg ptr u8[SEEDBYTES] rho,
+    inline int row_number,
+    inline int column_number
+) -> reg ptr u32[N]
+{
+    reg u32 nonce = __or_lsl(column_number, row_number, 8);
+    matrix_element = _poly_uniform(matrix_element, rho, nonce);
+
+    return matrix_element;
 }
 
 fn _polyvec_matrix_pointwise_montgomery(

@@ -8,8 +8,10 @@
  *              - const poly *a: pointer to input polynomial
  **************************************************/
 
-fn _polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
-reg ptr u8[POLYETA_PACKEDBYTES] {
+fn _polyeta_pack(
+    reg ptr u8[POLYETA_PACKEDBYTES] r,
+    reg ptr u32[N] a
+) -> reg ptr u8[POLYETA_PACKEDBYTES] {
 
     reg u32 i, j;
     reg u32[8] t;
@@ -201,10 +203,11 @@ inline fn __extr_rej_sample(
     return a, ctr;
 }
 
-fn _poly_uniform(reg ptr u32[N] a,
-        reg ptr u8[SEEDBYTES] seed,
-        reg u32 nonce
-        ) -> reg ptr u32[N]
+fn _poly_uniform(
+    reg ptr u32[N] a,
+    reg ptr u8[SEEDBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[N]
 {
     stack u32[25*2] state_;
     reg ptr u32[25*2] state;
@@ -332,10 +335,10 @@ param int POLYZ_LAST_SZ = POLYZ_PACKEDBYTES % SHAKE256_RATE;
 
 
 fn _poly_uniform_gamma1(
-        reg ptr u32[N] a,
-        reg ptr u8[CRHBYTES] seed,
-        reg u32 nonce
-        ) -> reg ptr u32[N]
+    reg ptr u32[N] a,
+    reg ptr u8[CRHBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[N]
 {
     stack u8[POLYZ_PACKEDBYTES] buf_;
     reg ptr u8[POLYZ_PACKEDBYTES] buf;

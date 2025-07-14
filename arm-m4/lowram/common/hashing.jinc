@@ -342,7 +342,6 @@ fn _hash_verification_key(
     }
 
     pstate = __add_block_end(pstate, j * 4, SHAKE256_RATE);
-
     pstate = _keccakf1600_ref(pstate);
 
     () = #unspill(verification_key_hash);
@@ -383,6 +382,39 @@ inline fn __derive_commitment_hash
             pstate = _keccakf1600_ref(pstate);
             () = #unspill(ctr, pos, m);
             pos = 0;
+        }
+    }
+
+    return pstate, pos;
+}
+
+fn _shake256_absorb_w1_element
+(
+    reg ptr u32[25*2] pstate,
+    reg u32 pos,
+    reg ptr u8[POLYW1_PACKEDBYTES] w1_element
+) -> reg ptr u32[25*2], reg u32
+{
+    reg u32 t s;
+    reg u32 ctr;
+    ctr = 0;
+
+    // While input is not consumed :
+    // Fill-in sponge part of the shake buffer byte by byte by xoring
+    // If sponge is filled : keccak the buffer
+    while (ctr != POLYW1_PACKEDBYTES) {
+        t = (32u)w1_element[ctr];
+        s = (32u)pstate[:u8 pos];
+        s ^= t;
+        pstate[:u8 pos] = s;
+        pos += 1;
+        ctr += 1;
+
+        if (pos == SHAKE256_RATE) {
+            pos = 0;
+            () = #spill(ctr, pos, w1_element);
+            pstate = _keccakf1600_ref(pstate);
+            () = #unspill(ctr, pos, w1_element);
         }
     }
 

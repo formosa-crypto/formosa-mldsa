@@ -15,7 +15,7 @@ fn _crypto_sign_verify_ctx(
         reg ptr u8[SIGNATURE_SIZE] sig,
         reg ptr u32[2] ctx_m,
         reg ptr u32[2] ctxlen_mlen,
-        reg ptr u8[VERIFICATION_KEY_SIZE] pk
+        reg ptr u8[VERIFICATION_KEY_SIZE] verification_key
 ) -> reg u32 {
     reg u32 status;
 
@@ -23,98 +23,132 @@ fn _crypto_sign_verify_ctx(
     stack u8[CRHBYTES] crh_byte_hash;
     stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
 
-    stack u32[polyvecl] z;
-    stack u32[polyveck] h, w1, t1;
-    stack u32[matKL] mat;
+    stack u32[polyvecl] signer_response;
+    reg ptr u32[polyvecl] signer_response_ptr;
+
+    stack u32[polyveck] t1;
+    reg ptr u32[polyveck] t1_ptr;
+
+    stack u32[polyveck] hint;
+    reg ptr u32[polyveck] hint_ptr;
+
+    stack u32[N] matrix_element w1_element product;
     stack u32[25*2] state;
-    stack u32[N] cp;
-    stack u8[K * POLYW1_PACKEDBYTES] buf;
+    stack u32[N] challenge;
+    stack u8[POLYW1_PACKEDBYTES] w1_element_packed;
 
     reg u32 ctxlen m mlen ctx t pos;
     reg ptr u32[25*2] pstate;
     reg ptr u8[2] message_prefix;
 
-    inline int i;
+    inline int i column_number row_number;
 
     ctxlen = ctxlen_mlen[0];
 
     if (ctxlen <= 255) {
         () = #spill(ctxlen_mlen, ctx_m, ctxlen);
-        rho, t1 = _unpack_pk(rho, t1, pk);
+        rho, t1 = _unpack_pk(rho, t1, verification_key);
 
-        () = #spill(pk);
-        commitment_hash, z, h, status = _unpack_sig(commitment_hash, z, h, sig);
-        () = #unspill(pk);
+        () = #spill(verification_key);
+        commitment_hash, signer_response, hint, status = _unpack_sig(commitment_hash, signer_response, hint, sig);
         () = #spill(sig);
 
         if (status == 0) {
             reg u32 bound;
             bound = iGAMMA1 - BETA;
-            status = _polyvecl_chknorm(z, bound);
+            status = _polyvecl_chknorm(signer_response, bound);
 
             if (status == 0) {
-                crh_byte_hash = _hash_verification_key(crh_byte_hash, pk);
+                () = #unspill(verification_key);
+                crh_byte_hash = _hash_verification_key(crh_byte_hash, verification_key);
 
                 pstate = state;
 
                 // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
                 pstate = __add_crh_ref(pstate, crh_byte_hash); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
 
-                () = #unspill(ctxlen_mlen, ctx_m);
                 message_prefix = crh_byte_hash[0 : 2];
                 t = 0;
                 message_prefix[0] = (8u)t;
+
+                () = #unspill(ctxlen_mlen);
                 t = ctxlen_mlen[0];
+                () = #spill(ctxlen_mlen);
+
                 message_prefix[1] = (8u)t;
+                () = #spill(t);
+
                 crh_byte_hash[0 : 2] = message_prefix;
 
-                () = #spill(ctxlen_mlen, t, ctx_m);
                 pstate = __add_message_prefix(pstate, VERIFICATION_KEY_HASH_SIZE, message_prefix);
                 () = #spill(message_prefix);
                 pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
                 pos = VERIFICATION_KEY_HASH_SIZE + 2;
+
+                () = #unspill(ctx_m);
                 ctx = ctx_m[0];
-                () = #spill(ctx_m, ctxlen_mlen);
+                () = #spill(ctx_m);
+
                 () = #unspill(ctxlen);
                 pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
-                () = #unspill(ctx_m, ctxlen_mlen);
+
+                () = #unspill(ctxlen_mlen);
                 mlen = ctxlen_mlen[1];
+
+                () = #unspill(ctx_m);
                 m = ctx_m[1];
                 pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
                 pstate = _shake256_add_block_end(pstate, pos);
                 pstate = _keccakf1600_ref(pstate);
 
-                // FIXME define a function for that
                 for i = 0 to CRHBYTES/4 {
                     t = pstate[i];
                     crh_byte_hash[:u32 i] = t;
                 }
-                state = pstate;
                 () = #spill(pstate);
 
-                cp = _poly_challenge(cp, commitment_hash);
-                mat = _polyvec_matrix_expand(mat, rho);
+                challenge = _poly_challenge(challenge, commitment_hash);
+                challenge = _poly_ntt(challenge);
+                signer_response = _polyvecl_ntt(signer_response);
 
-                z = _polyvecl_ntt(z);
-                w1 = _polyvec_matrix_pointwise_montgomery(w1, mat, z);
-
-                cp = _poly_ntt(cp);
                 t1 = _polyveck_shiftl(t1);
                 t1 = _polyveck_ntt(t1);
-                t1 = _polyveck_pointwise_poly_montgomery_inplace(t1, cp);
 
-                w1 = _polyveck_sub_inplace(w1, t1);
-                w1 = _polyveck_reduce(w1);
-                w1 = _polyveck_invntt_tomont(w1);
-
-                w1 = _polyveck_caddq(w1);
-                w1 = _polyveck_use_hint_inplace(w1, h);
-                buf = _polyveck_pack_w1(buf, w1);
-
-                pstate = state;
+                () = #unspill(pstate);
                 pstate = __add_crh_ref(pstate, crh_byte_hash);
                 pstate = __add_zero_after_add(pstate, CRHBYTES);
-                pstate, pos = __derive_commitment_hash(pstate, CRHBYTES, buf);
+                pos = CRHBYTES;
+                () = #spill(pstate, pos);
+
+                for row_number = 0 to K {
+                    // Multiply Az first and store it in w1_element
+                    matrix_element = __polyvec_matrix_expand_one_element(matrix_element, rho, row_number, 0);
+                    w1_element = _poly_pointwise_montgomery(w1_element, matrix_element, signer_response[0 : N]);
+
+                    for column_number = 1 to L {
+                        matrix_element = __polyvec_matrix_expand_one_element(matrix_element, rho, row_number, column_number);
+                        signer_response_ptr = signer_response;
+                        product = _poly_pointwise_montgomery(product, matrix_element, signer_response_ptr[column_number * N : N]);
+                        w1_element = _poly_add_inplace(w1_element, product);
+                    }
+
+                    t1_ptr = t1;
+                    product = _poly_pointwise_montgomery(product, t1_ptr[row_number * N : N], challenge);
+
+                    w1_element = _poly_sub_inplace(w1_element, product);
+                    w1_element = _poly_reduce(w1_element);
+                    w1_element = _poly_invntt_tomont(w1_element);
+                    w1_element = _poly_caddq(w1_element);
+
+                    hint_ptr = hint;
+                    w1_element = _poly_use_hint_inplace(w1_element, hint_ptr[row_number * N : N]);
+                    w1_element_packed = _polyw1_pack(w1_element_packed, w1_element);
+
+                    () = #unspill(pstate, pos);
+                    pstate, pos = _shake256_absorb_w1_element(pstate, pos, w1_element_packed);
+                    () = #spill(pstate, pos);
+                }
+                () = #unspill(pstate, pos);
                 pstate = _shake256_add_block_end(pstate, pos);
                 pstate = _keccakf1600_ref(pstate);
 

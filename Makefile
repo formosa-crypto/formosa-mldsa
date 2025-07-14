@@ -58,6 +58,14 @@ nist-drbg-kat-test: $(TESTING_WRAPPER)
 		--implementation-type=$(IMPLEMENTATION_TYPE) \
 		tests/test_nist_drbg_kats.py
 
+.PHONY: wycheproof-test
+wycheproof-test: $(TESTING_WRAPPER)
+	python3 -m pytest \
+		--parameter-set=$(PARAMETER_SET) \
+		--architecture=$(ARCHITECTURE) \
+		--implementation-type=$(IMPLEMENTATION_TYPE) \
+		tests/test_wycheproof.py
+
 .PHONY: run-interpreter
 run-interpreter: $(IMPLEMENTATION)/example.jazz $(IMPLEMENTATION)/ml_dsa.jazz
 	env JASMINPATH="Common=$(COMMON)" $(JASMINC) -arch=$(ARCHITECTURE) $< | grep 'true'
