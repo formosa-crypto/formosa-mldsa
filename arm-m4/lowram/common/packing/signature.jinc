@@ -54,12 +54,26 @@ fn _pack_sig_nocopy(
     return sig;
 }
 
+fn _unpack_signer_response(
+    reg ptr u32[polyvecl] signer_response,
+    reg ptr u8[SIGNATURE_SIZE] sig
+) -> reg ptr u32[polyvecl]
+{
+    inline int i;
 
-inline
-fn __decode_hint(
-    reg ptr u32[polyveck] hint_decoded,
+    for i = 0 to L {
+        signer_response[i * N: N] = _polyz_unpack(signer_response[i * N : N], sig[COMMITMENT_HASH_SIZE + (i * POLYZ_PACKEDBYTES) : POLYZ_PACKEDBYTES]);
+    }
+
+    return signer_response;
+}
+
+fn _unpack_one_hint(
+    reg ptr u32[N] hint_decoded,
+    reg u32 HINT_VECTOR_INDEX,
     reg ptr u8[HINT_ENCODED_SIZE] hint_encoded
-) -> reg ptr u32[polyveck], reg u32
+) -> reg ptr u32[N],
+     reg u32
 {
     reg u32 j;
     reg u32 done;
@@ -67,7 +81,7 @@ fn __decode_hint(
     reg u32 index;
     reg u32 hint hint_at_j hint_at_j_minus_one;
     reg u32 previous_true_hints_seen current_true_hints_seen;
-    reg u32 decoded_offset encoded_offset ill_formed_hint;
+    reg u32 offset hint_vector_index ill_formed_hint;
 
     reg u32 one = 1;
     reg u32 zero = 0;
@@ -75,25 +89,23 @@ fn __decode_hint(
     ill_formed_hint = 0;
     previous_true_hints_seen = 0;
 
-    encoded_offset = 0;
+    hint_vector_index = 0;
+
     while {
-        out_of_bounds = encoded_offset >= K;
+        out_of_bounds = hint_vector_index >= K;
         done = ill_formed_hint;
         done = 1 if (out_of_bounds);
     } (done == 0) {
-        decoded_offset = encoded_offset;
-        decoded_offset <<= LOG_2_N;
         j = 0;
-
         while (j < N) {
-            index = decoded_offset;
-            index += j;
-            hint_decoded[index] = zero;
+            if (hint_vector_index == HINT_VECTOR_INDEX) {
+                hint_decoded[j] = zero;
+            }
             j += 1;
         }
 
         index = MAX_ONES_IN_HINT;
-        index += encoded_offset;
+        index += hint_vector_index;
         current_true_hints_seen = (32u)hint_encoded[index];
 
         if (current_true_hints_seen < previous_true_hints_seen) {
@@ -124,9 +136,10 @@ fn __decode_hint(
 
                     if (ill_formed_hint == 0) {
                         // h->vec[i].coeffs[sig[j]] = 1;
-                        index = decoded_offset;
-                        index += hint_at_j;
-                        hint_decoded[index] = one;
+                        if (hint_vector_index == HINT_VECTOR_INDEX) {
+                            index = hint_at_j;
+                            hint_decoded[index] = one;
+                        }
 
                         j += 1;
 
@@ -137,64 +150,23 @@ fn __decode_hint(
 
         if (ill_formed_hint == 0) {
             previous_true_hints_seen = current_true_hints_seen;
-            encoded_offset += 1;
+            hint_vector_index += 1;
         }
     }
 
-    encoded_offset = previous_true_hints_seen;
+    offset = previous_true_hints_seen;
     while {
-        out_of_bounds = encoded_offset >= MAX_ONES_IN_HINT;
+        out_of_bounds = offset >= MAX_ONES_IN_HINT;
         done = ill_formed_hint;
         done = 1 if (out_of_bounds);
     } (done == 0) {
-        hint = (32u)hint_encoded[encoded_offset];
+        hint = (32u)hint_encoded[offset];
 
         if(hint != 0) {
             ill_formed_hint = 1;
         }
-        encoded_offset += 1;
+        offset += 1;
     }
 
     return hint_decoded, ill_formed_hint;
-}
-
-/*************************************************
- * Name:        JASMIN_MLDSA_unpack_sig
- *
- * Description: Unpack signature sig = (c, z, h).
- *
- * Arguments:   - uint8_t *c: pointer to output JASMIN_MLDSA_challenge hash
- *              - polyvecl *z: pointer to output vector z
- *              - polyveck *h: pointer to output hint vector h
- *              - const uint8_t sig[]: byte array containing
- *                bit-packed signature
- *
- * Returns 1 in case of malformed signature; otherwise 0.
- **************************************************/
-fn _unpack_sig(
-    reg ptr u32[polyvecl] signer_response,
-    reg ptr u32[polyveck] hints_decoded,
-    reg ptr u8[SIGNATURE_SIZE] sig
-) -> reg ptr u32[polyvecl],
-     reg ptr u32[polyveck],
-     reg u32
-{
-    reg u32 ill_formed_hint;
-    inline int i;
-    inline int current_position;
-
-    current_position = COMMITMENT_HASH_SIZE;
-
-    () = #spill(hints_decoded);
-
-    for i = 0 to L {
-        signer_response[i * N: N] = _polyz_unpack(signer_response[i * N : N], sig[current_position : POLYZ_PACKEDBYTES]);
-        current_position += POLYZ_PACKEDBYTES;
-    }
-
-    () = #unspill(hints_decoded);
-
-    hints_decoded, ill_formed_hint = __decode_hint(hints_decoded, sig[current_position : HINT_ENCODED_SIZE]);
-
-    return signer_response, hints_decoded, ill_formed_hint;
 }

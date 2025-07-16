@@ -22,14 +22,14 @@ fn _crypto_sign_verify_ctx(
     reg ptr u8[SEEDBYTES] seed_for_matrix_A;
     stack u8[CRHBYTES] crh_byte_hash;
     reg ptr u8[COMMITMENT_HASH_SIZE] observed_commitment_hash;
+    reg ptr u8[HINT_ENCODED_SIZE] hint_encoded;
 
     stack u32[polyvecl] signer_response;
     reg ptr u32[polyvecl] signer_response_pointer;
 
     stack u32[N] t1_element;
 
-    stack u32[polyveck] hint;
-    reg ptr u32[polyveck] hint_ptr;
+    stack u32[N] hint;
 
     stack u32[N] matrix_element w1_element product;
     stack u32[25*2] state;
@@ -42,87 +42,91 @@ fn _crypto_sign_verify_ctx(
 
     inline int i column_number row_number;
 
-    reg u32 observed expected;
+    reg u32 observed expected j;
 
     ctxlen = ctxlen_mlen[0];
 
     if (ctxlen <= 255) {
         () = #spill(ctxlen_mlen, ctx_m, ctxlen, verification_key);
 
-        signer_response, hint, status = _unpack_sig(signer_response, hint, signature);
         observed_commitment_hash = signature[0 : COMMITMENT_HASH_SIZE];
-        () = #spill(observed_commitment_hash, signature);
+        signer_response = _unpack_signer_response(signer_response, signature);
+        hint_encoded = signature[COMMITMENT_HASH_SIZE + (L * POLYZ_PACKEDBYTES) : HINT_ENCODED_SIZE];
+
+        () = #spill(observed_commitment_hash, hint_encoded);
+
+        j = iGAMMA1 - BETA;
+        status = _polyvecl_chknorm(signer_response, j);
 
         if (status == 0) {
-            reg u32 bound;
-            bound = iGAMMA1 - BETA;
-            status = _polyvecl_chknorm(signer_response, bound);
+            () = #spill(status);
 
-            if (status == 0) {
-                () = #unspill(verification_key);
-                crh_byte_hash = _hash_verification_key(crh_byte_hash, verification_key);
+            () = #unspill(verification_key);
+            crh_byte_hash = _hash_verification_key(crh_byte_hash, verification_key);
 
-                pstate = state;
+            pstate = state;
 
-                // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
-                pstate = __add_crh_ref(pstate, crh_byte_hash); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
+            // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
+            pstate = __add_crh_ref(pstate, crh_byte_hash); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
 
-                message_prefix = crh_byte_hash[0 : 2];
-                t = 0;
-                message_prefix[0] = (8u)t;
+            message_prefix = crh_byte_hash[0 : 2];
+            t = 0;
+            message_prefix[0] = (8u)t;
 
-                () = #unspill(ctxlen_mlen);
-                t = ctxlen_mlen[0];
-                () = #spill(ctxlen_mlen);
+            () = #unspill(ctxlen_mlen);
+            t = ctxlen_mlen[0];
+            () = #spill(ctxlen_mlen);
 
-                message_prefix[1] = (8u)t;
-                () = #spill(t);
+            message_prefix[1] = (8u)t;
+            () = #spill(t);
 
-                crh_byte_hash[0 : 2] = message_prefix;
+            crh_byte_hash[0 : 2] = message_prefix;
 
-                pstate = __add_message_prefix(pstate, VERIFICATION_KEY_HASH_SIZE, message_prefix);
-                () = #spill(message_prefix);
-                pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
-                pos = VERIFICATION_KEY_HASH_SIZE + 2;
+            pstate = __add_message_prefix(pstate, VERIFICATION_KEY_HASH_SIZE, message_prefix);
+            () = #spill(message_prefix);
+            pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
+            pos = VERIFICATION_KEY_HASH_SIZE + 2;
 
-                () = #unspill(ctx_m);
-                ctx = ctx_m[0];
-                () = #spill(ctx_m);
+            () = #unspill(ctx_m);
+            ctx = ctx_m[0];
+            () = #spill(ctx_m);
 
-                () = #unspill(ctxlen);
-                pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+            () = #unspill(ctxlen);
+            pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
 
-                () = #unspill(ctxlen_mlen);
-                mlen = ctxlen_mlen[1];
+            () = #unspill(ctxlen_mlen);
+            mlen = ctxlen_mlen[1];
 
-                () = #unspill(ctx_m);
-                m = ctx_m[1];
-                pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
-                pstate = _shake256_add_block_end(pstate, pos);
-                pstate = _keccakf1600_ref(pstate);
+            () = #unspill(ctx_m);
+            m = ctx_m[1];
+            pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
+            pstate = _shake256_add_block_end(pstate, pos);
+            pstate = _keccakf1600_ref(pstate);
 
-                for i = 0 to CRHBYTES/4 {
-                    t = pstate[i];
-                    crh_byte_hash[:u32 i] = t;
-                }
-                () = #spill(pstate);
+            for i = 0 to CRHBYTES/4 {
+                t = pstate[i];
+                crh_byte_hash[:u32 i] = t;
+            }
+            () = #spill(pstate);
 
-                () = #unspill(observed_commitment_hash);
-                challenge = _poly_challenge(challenge, observed_commitment_hash);
-                challenge = _poly_ntt(challenge);
-                signer_response = _polyvecl_ntt(signer_response);
+            () = #unspill(observed_commitment_hash);
+            challenge = _poly_challenge(challenge, observed_commitment_hash);
+            challenge = _poly_ntt(challenge);
+            signer_response = _polyvecl_ntt(signer_response);
 
-                () = #unspill(pstate);
-                pstate = __add_crh_ref(pstate, crh_byte_hash);
-                pstate = __add_zero_after_add(pstate, CRHBYTES);
-                pos = CRHBYTES;
-                () = #spill(pstate, pos);
+            () = #unspill(pstate);
+            pstate = __add_crh_ref(pstate, crh_byte_hash);
+            pstate = __add_zero_after_add(pstate, CRHBYTES);
+            pos = CRHBYTES;
+            () = #spill(pstate, pos);
 
-                () = #unspill(verification_key);
-                seed_for_matrix_A = verification_key[0 : SEEDBYTES];
-                () = #spill(seed_for_matrix_A);
+            () = #unspill(verification_key);
+            seed_for_matrix_A = verification_key[0 : SEEDBYTES];
+            () = #spill(seed_for_matrix_A);
 
-                for row_number = 0 to K {
+            for row_number = 0 to K {
+                () = #unspill(status);
+                if (status == 0) {
                     // Multiply Az first and store it in w1_element
                     () = #unspill(seed_for_matrix_A);
                     matrix_element = __polyvec_matrix_expand_one_element(matrix_element, seed_for_matrix_A, row_number, 0);
@@ -148,28 +152,36 @@ fn _crypto_sign_verify_ctx(
                     w1_element = _poly_invntt_tomont(w1_element);
                     w1_element = _poly_caddq(w1_element);
 
-                    hint_ptr = hint;
-                    w1_element = _poly_use_hint_inplace(w1_element, hint_ptr[row_number * N : N]);
+                    () = #unspill(hint_encoded);
+                    j = row_number;
+                    hint, status = _unpack_one_hint(hint, j, hint_encoded);
+                    () = #spill(status);
+
+                    w1_element = _poly_use_hint_inplace(w1_element, hint);
                     w1_element_packed = _polyw1_pack(w1_element_packed, w1_element);
 
                     () = #unspill(pstate, pos);
                     pstate, pos = _shake256_absorb_w1_element(pstate, pos, w1_element_packed);
                     () = #spill(pstate, pos);
                 }
-                () = #unspill(pstate, pos);
+            }
+
+            () = #unspill(pstate, pos, status);
+            if (status == 0) {
                 pstate = _shake256_add_block_end(pstate, pos);
                 pstate = _keccakf1600_ref(pstate);
 
-                status = 0;
                 () = #unspill(observed_commitment_hash);
-                for i = 0 to COMMITMENT_HASH_SIZE {
-                    if (status == 0) {
-                        observed = (32u)observed_commitment_hash[i];
-                        #declassify expected = (32u)pstate[:u8 i];
-                        if (observed != expected) {
-                            status = i + 1;
-                        }
-                    }
+                j = 0;
+                status = 0;
+                while (j < COMMITMENT_HASH_SIZE) {
+                    observed = observed_commitment_hash.[:u32 j];
+                    #declassify expected = pstate.[:u32 j];
+
+                    observed ^= expected;
+                    status |= observed;
+
+                    j += 4;
                 }
             }
         }
