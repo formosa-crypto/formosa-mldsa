@@ -127,7 +127,7 @@ fn rejection_sample_multiple_blocks(
         coefficients = __bytestream_to_coefficients(bytestream);
 
         comparisons = #VPSUB_32u8(coefficients, bound);
-        good_overall = #MOVEMASK_32u8(comparisons);
+        good_overall = (64u)#MOVEMASK_32u8(comparisons);
 
         coefficients = #VPSUB_32u8(eta, coefficients);
 

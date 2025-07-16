@@ -95,7 +95,7 @@ namespace polynomial {
         reg u256 coefficients;
         reg u256 threshold_vector;
         reg u256 exceeds exceeds_any;
-        reg u64 msb_mask;
+        reg u32 msb_mask;
         reg u8 result;
         reg bool zf;
 

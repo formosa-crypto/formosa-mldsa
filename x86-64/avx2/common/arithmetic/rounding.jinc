@@ -44,7 +44,7 @@ namespace polynomial {
 
             // TODO: We could also handle serializing the hint here.
             #declassify hint_block = hint_block;
-            num_hints = #MOVEMASK_8u32(hint_block);
+            num_hints = (64u)#MOVEMASK_8u32(hint_block);
             _, _, _, _, _, num_hints = #POPCNT_64(num_hints);
 
             hint_block = #VPSRL_8u32(hint_block, 31);
