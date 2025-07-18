@@ -25,3 +25,5 @@ param int SIGNATURE_SIZE = (COMMITMENT_HASH_SIZE + L*POLYZ_PACKEDBYTES + HINT_EN
 
 param int polyvecl = N * L;
 param int polyveck = N * K;
+
+param int PACKED_SIGNER_RESPONSE_SIZE = L * POLYZ_PACKEDBYTES;

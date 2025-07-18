@@ -1,37 +1,3 @@
-/***
- * No precondition
- ***/
-fn _shake256_inc_absorb_mem_naive
-(reg ptr u32[25*2] pstate,
- reg u32 pos,
- reg u32 m,
- reg u32 mlen) -> reg ptr u32[25*2], reg u32
-{
-    reg u32 t s;
-
-    // While input is not consumed :
-    // Fill-in sponge part of the shake buffer byte by byte while xoring
-    // If sponge is filled : keccak the buffer
-    while (mlen != 0) {
-
-        t = (32u)[:u8 m];
-        s = (32u)pstate[:u8 pos];
-        s ^= t;
-        pstate[:u8 pos] = s;
-        pos += 1; m += 1; mlen -= 1;
-
-        if (pos == SHAKE256_RATE) {
-            () = #spill(m, mlen, pos);
-            pstate = _keccakf1600_ref(pstate);
-            () = #unspill(m, mlen, pos);
-            pos = 0;
-        }
-
-    }
-
-    return pstate, pos;
-}
-
 /************************************************
  * Name:        crypto_sign_signature_ctx_seed
  *
@@ -116,7 +82,7 @@ fn _crypto_sign_signature_ctx_seed(
 
         pstate = state;
         // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
-        pstate = __add_crh_ref(pstate, verification_key_hash); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
+        pstate = __add_crh(pstate, verification_key_hash); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
         pstate = __add_message_prefix(pstate, VERIFICATION_KEY_HASH_SIZE, mu2); // 2
         pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
         pos = VERIFICATION_KEY_HASH_SIZE + 2;
@@ -224,7 +190,7 @@ fn _crypto_sign_signature_ctx_seed(
             () = #spill(sig);
             // SHAKE256
             pstate = state; mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
-            pstate = __add_crh_ref(pstate, mu);
+            pstate = __add_crh(pstate, mu);
             pstate = __add_zero_after_add(pstate, CRHBYTES);
             pstate, pos = __derive_commitment_hash(pstate, CRHBYTES, sig1);
             pstate = _shake256_add_block_end(pstate, pos);

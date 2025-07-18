@@ -3,12 +3,10 @@ inline fn __add_seed_ref(
     reg ptr u8[SEEDBYTES] in
 ) -> reg ptr u32[25*2]
 {
-    reg u32 i t0 inlen4;
-
-    inlen4 = SEEDBYTES >> 2;
+    reg u32 i t0;
 
     i = 0;
-    while ( i < inlen4 )
+    while ( i < SEEDBYTES / 4 )
     {
         t0 = in[:u32 i];
         state[i] = t0;
@@ -17,18 +15,15 @@ inline fn __add_seed_ref(
     return state;
 }
 
-inline fn __add_crh_ref
-(
+inline fn __add_crh(
     reg ptr u32[25*2] state,
     reg ptr u8[CRHBYTES] in
 ) -> reg ptr u32[25*2]
 {
-    reg u32 i t0 inlen4;
-
-    inlen4 = CRHBYTES >> 2;
+    reg u32 i t0;
 
     i = 0;
-    while ( i < inlen4 )
+    while (i < CRHBYTES / 4)
     {
         t0 = in[:u32 i];
         state[i] = t0;
@@ -214,10 +209,10 @@ inline fn __SHAKE256_init_ctilde_ref(
 }
 
 fn _stream128_init(
-        reg ptr u32[25*2] state,
-        reg ptr u8[SEEDBYTES] seed,
-        reg u32 nonce
-        ) -> reg ptr u32[25*2]
+    reg ptr u32[25*2] state,
+    reg ptr u8[SEEDBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[25*2]
 {
     state = __add_seed_ref(state, seed);
     state = __add_nonce_ref(state, SEEDBYTES >> 1, nonce);
@@ -254,7 +249,7 @@ fn _stream256_init(
         reg u32 nonce
         ) -> reg ptr u32[25*2]
 {
-    state = __add_crh_ref(state, seed);
+    state = __add_crh(state, seed);
     state = __add_nonce_ref(state, CRHBYTES >> 1, nonce);
     state = __add_zero_after_add(state, CRHBYTES + 2);
     state = __add_block_end(state, CRHBYTES + 2, SHAKE256_RATE);
@@ -420,3 +415,40 @@ fn _shake256_absorb_w1_element
 
     return pstate, pos;
 }
+
+/***
+ * No precondition
+ ***/
+fn _shake256_inc_absorb_mem_naive(
+    reg ptr u32[25*2] pstate,
+    reg u32 pos,
+    reg u32 m,
+    reg u32 mlen
+) -> reg ptr u32[25*2], reg u32
+{
+    reg u32 t s;
+
+    // While input is not consumed :
+    // Fill-in sponge part of the shake buffer byte by byte while xoring
+    // If sponge is filled : keccak the buffer
+    while (mlen != 0) {
+        t = (32u)[:u8 m];
+        s = (32u)pstate[:u8 pos];
+        s ^= t;
+        pstate[:u8 pos] = s;
+        pos += 1;
+        m += 1;
+        mlen -= 1;
+
+        if (pos == SHAKE256_RATE) {
+            () = #spill(m, mlen, pos);
+            pstate = _keccakf1600_ref(pstate);
+            () = #unspill(m, mlen, pos);
+            pos = 0;
+        }
+
+    }
+
+    return pstate, pos;
+}
+
