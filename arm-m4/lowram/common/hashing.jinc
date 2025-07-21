@@ -32,25 +32,6 @@ inline fn __add_crh(
     return state;
 }
 
-inline fn __add_ctilde_ref(
-    reg ptr u32[25*2] state,
-    reg ptr u8[COMMITMENT_HASH_SIZE] in
-) -> reg ptr u32[25*2]
-{
-    reg u32 i t0 inlen4;
-
-    inlen4 = COMMITMENT_HASH_SIZE >> 2;
-
-    i = 0;
-    while ( i < inlen4 )
-    {
-        t0 = in[:u32 i];
-        state[i] = t0;
-        i += 1;
-    }
-    return state;
-}
-
 inline fn __add_seedrndcrh_ref
 (
     reg ptr u32[25*2] state,
@@ -157,7 +138,10 @@ fn _shake256_add_block_end(
 }
 
 
-inline fn __add_zero_after_add(reg ptr u32[25*2] state, inline int nbbytes) -> reg ptr u32[25*2]
+inline fn __add_zero_after_add(
+    reg ptr u32[25*2] state,
+    inline int nbbytes
+) -> reg ptr u32[25*2]
 {
     reg u32 i, zero;
     zero = 0;
@@ -196,12 +180,29 @@ inline fn __SHAKE256_init_seed_ref(
     return state;
 }
 
-inline fn __SHAKE256_init_ctilde_ref(
-        reg ptr u32[25*2] state,
-        reg ptr u8[COMMITMENT_HASH_SIZE] seed
-        ) -> reg ptr u32[25*2]
+inline fn __add_commitment_hash(
+    reg ptr u32[25*2] state,
+    reg ptr u8[COMMITMENT_HASH_SIZE] in
+) -> reg ptr u32[25*2]
 {
-    state = __add_ctilde_ref(state, seed);
+    reg u32 i t0;
+
+    i = 0;
+    while (i < COMMITMENT_HASH_SIZE / 4)
+    {
+        t0 = in[:u32 i];
+        state[i] = t0;
+        i += 1;
+    }
+    return state;
+}
+
+inline fn __shake256_init_with_commitment_hash(
+    reg ptr u32[25*2] state,
+    reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash
+) -> reg ptr u32[25*2]
+{
+    state = __add_commitment_hash(state, commitment_hash);
     state = __add_zero_after_add(state, COMMITMENT_HASH_SIZE);
     state = __add_block_end(state, COMMITMENT_HASH_SIZE, SHAKE256_RATE);
     state = _keccakf1600_ref(state);

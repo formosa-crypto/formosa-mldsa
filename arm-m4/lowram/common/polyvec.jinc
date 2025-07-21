@@ -388,20 +388,6 @@ fn _polyveck_make_hint(
     return s, h;
 }
 
-fn _polyveck_use_hint_inplace(
-        reg ptr u32[polyveck] w,
-        reg ptr u32[polyveck] h
-        ) -> reg ptr u32[polyveck]
-{
-    inline int i;
-    reg ptr u32[N] pw ph;
-    for i = 0 to K {
-        pw = w[i * N : N]; ph = h[i * N : N];
-        w[i * N : N] = _poly_use_hint_inplace(pw, ph);
-    }
-    return w;
-}
-
 fn _polyveck_pack_w1(
         reg ptr u8[K * POLYW1_PACKEDBYTES] r,
         reg ptr u32[polyveck] w1

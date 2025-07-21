@@ -226,19 +226,54 @@ inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
  *              - const poly *h: pointer to input hint polynomial
  **************************************************/
 
-fn _poly_use_hint_inplace(reg ptr u32[N] b, reg ptr u32[N] h) -> reg ptr u32[N] {
-    reg u32 i, b_, h_, q;
+fn _poly_use_hint(
+    reg ptr u32[N] polynomial,
+    reg ptr u8[MAX_ONES_IN_HINT] hints,
+    reg u32 number_of_hints
+) -> reg ptr u32[N] {
+    reg u32 i coefficient hint indicator;
+    reg u32 hint_index;
+    reg u32 in_list;
 
-    q = iQ;
+    reg u32 done;
+    reg bool out_of_bounds;
+
+    // TODO: Remove the passing of q here.
+    reg u32 q = iQ;
+
     i = 0;
-    while(i < N) {
-        b_ = b[i];
-        h_ = h[i];
-        b_ = __use_hint(b_, h_, q);
-        b[i] = b_;
+    while (i < N) {
+        in_list = 0;
+
+        hint_index = 0;
+
+        while {
+            out_of_bounds = hint_index >= number_of_hints;
+            done = in_list;
+            done = 1 if (out_of_bounds);
+        } (done == 0) {
+            indicator = (32u)hints[hint_index];
+            if (i == indicator) {
+                in_list = 1;
+            }
+
+            hint_index += 1;
+        }
+
+        if (in_list == 1) {
+            hint = 1;
+        } else {
+            hint = 0;
+        }
+
+        coefficient = polynomial[i];
+        coefficient = __use_hint(coefficient, hint, q);
+
+        polynomial[i] = coefficient;
         i += 1;
     }
-    return b;
+
+    return polynomial;
 }
 
 /*************************************************
@@ -391,19 +426,16 @@ fn _poly_sub_inplace(reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
  * Arguments:   - poly *c: pointer to output polynomial
  *              - const uint8_t mu[]: byte array containing seed of length SEEDBYTES
  **************************************************/
-
-fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[COMMITMENT_HASH_SIZE] seed) -> reg ptr u32[N]
+fn _poly_challenge(
+    reg ptr u32[25 * 2] state,
+    reg ptr u32[N] challenge,
+    reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash
+) -> reg ptr u32[25 * 2],
+     reg ptr u32[N]
 {
-    stack u32[PQC_SHAKECTX_BYTES*2] _state;
-    reg ptr u32[PQC_SHAKECTX_BYTES*2] state;
-
-    () = #spill(c);
-    state = _state;
-
-    // equivalent to shake256_inc_init_jazz(state);
-    // equivalent to shake256_inc_absorb_jazz(state, seed, SEEDBYTES) and shake256_inc_finalize_jazz(state)
-    state = __SHAKE256_init_ctilde_ref(state, seed);
-    () = #unspill(c);
+    () = #spill(challenge);
+    state = __shake256_init_with_commitment_hash(state, commitment_hash);
+    () = #unspill(challenge);
 
     reg u32[2] signs;
     stack u32[2] s_signs;
@@ -417,7 +449,7 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[COMMITMENT_HASH_SIZE] seed) -> r
     aux = 0;
     i = 0;
     while (i < N) {
-        c[i] = aux;
+        challenge[i] = aux;
         i += 1;
     }
 
@@ -428,11 +460,11 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[COMMITMENT_HASH_SIZE] seed) -> r
         while {
             if (pos >= SHAKE256_RATE) {
                 pos = 0;
-                () = #spill(j, c, pos);
+                () = #spill(j, challenge, pos);
                 s_signs = #copy(signs);
                 state = _keccakf1600_ref(state);
 
-                () = #unspill(j, c, pos);
+                () = #unspill(j, challenge, pos);
                 signs = #copy(s_signs);
             }
 
@@ -440,20 +472,20 @@ fn _poly_challenge(reg ptr u32[N] c, reg ptr u8[COMMITMENT_HASH_SIZE] seed) -> r
             pos += 1;
         } (b > j)
 
-        aux = c[b];
-        c[j] = aux;
+        aux = challenge[b];
+        challenge[j] = aux;
 
         aux = signs[0] & 1;
         aux <<= 1;
         aux = __imm_sub_reg(1, aux);
-        c[b] = aux;
+        challenge[b] = aux;
 
         signs = shift_right(signs, 1);
 
         j += 1;
     }
 
-    return c;
+    return state, challenge;
 }
 
 inline fn __rej_sample(

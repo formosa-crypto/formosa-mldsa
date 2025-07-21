@@ -145,8 +145,8 @@ fn _crypto_sign_signature_ctx_seed(
         stack u32[polyveck] s_w1 s_w0;
         reg ptr u32[polyveck] w1 w0;
 
-        reg ptr u32[N] cp;
-        stack u32[N] s_cp;
+        reg ptr u32[N] challenge;
+        stack u32[N] s_challenge;
 
         mat = s_mat;
 
@@ -208,14 +208,14 @@ fn _crypto_sign_signature_ctx_seed(
             sig[0:COMMITMENT_HASH_SIZE] = commitment_hash;
 
             () = #spill(sig);
-            cp = s_cp;
+            challenge = s_challenge;
 
             #declassify commitment_hash = commitment_hash;
-            cp = _poly_challenge(cp, commitment_hash);
-            cp = _poly_ntt(cp);
+            state, challenge = _poly_challenge(state, challenge, commitment_hash);
+            challenge = _poly_ntt(challenge);
             /* Compute z, reject if it reveals secret */
             s1 = s_s1;
-            s_signer_response = _polyvecl_pointwise_poly_montgomery(s_signer_response, cp, s1); s_cp = cp;
+            s_signer_response = _polyvecl_pointwise_poly_montgomery(s_signer_response, challenge, s1); s_challenge = challenge;
             s_signer_response = _polyvecl_invntt_tomont(s_signer_response);
             s_signer_response = _polyvecl_add_inplace(s_signer_response, s_y);
             s_signer_response = _polyvecl_reduce(s_signer_response);
@@ -228,7 +228,7 @@ fn _crypto_sign_signature_ctx_seed(
                 continue = 1;
             } else {
                 s2 = s_s2; h = s_h;
-                h = _polyveck_pointwise_poly_montgomery(h, cp, s2);
+                h = _polyveck_pointwise_poly_montgomery(h, challenge, s2);
                 h = _polyveck_invntt_tomont(h); s_h = h;
                 w0 = s_w0;
                 w0 = _polyveck_sub_inplace(w0, h);
@@ -239,9 +239,9 @@ fn _crypto_sign_signature_ctx_seed(
                 if (chknorm != 0) {
                     continue = 1;
                 } else {
-                    cp = s_cp; t0 = s_t0;
+                    challenge = s_challenge; t0 = s_t0;
                     h = h;  // Needed for regalloc
-                    h = _polyveck_pointwise_poly_montgomery(h, cp, t0);
+                    h = _polyveck_pointwise_poly_montgomery(h, challenge, t0);
                     h = _polyveck_invntt_tomont(h);
                     h = h; // Needed for regalloc
                     h = _polyveck_reduce(h);

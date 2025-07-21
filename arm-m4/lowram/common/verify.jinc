@@ -21,13 +21,9 @@ fn _crypto_sign_verify_ctx(
 
     stack u8[CRHBYTES] crh_byte_hash;
 
-    stack u32[N] signer_response_element;
-    stack u32[N] hint;
+    stack u8[MAX_ONES_IN_HINT] hint;
 
-    reg ptr u8[SEEDBYTES] seed_for_matrix_A;
-    stack u32[N] t1_element;
-
-    stack u32[N] matrix_element w1_element product;
+    stack u32[N] matrix_element w1_element polynomial;
     stack u32[25*2] state;
     stack u32[N] challenge;
     stack u8[POLYW1_PACKEDBYTES] w1_element_packed;
@@ -38,7 +34,7 @@ fn _crypto_sign_verify_ctx(
 
     inline int i column_number row_number;
 
-    reg u32 observed expected j;
+    reg u32 observed expected j number_of_hints;
 
     ctxlen = ctxlen_mlen[0];
 
@@ -91,21 +87,15 @@ fn _crypto_sign_verify_ctx(
             t = pstate[i];
             crh_byte_hash[:u32 i] = t;
         }
-        () = #spill(pstate);
 
         () = #unspill(signature);
-        challenge = _poly_challenge(challenge, signature[0 :COMMITMENT_HASH_SIZE]);
+        pstate, challenge = _poly_challenge(pstate, challenge, signature[0 : COMMITMENT_HASH_SIZE]);
         challenge = _poly_ntt(challenge);
 
-        () = #unspill(pstate);
         pstate = __add_crh(pstate, crh_byte_hash);
         pstate = __add_zero_after_add(pstate, CRHBYTES);
         pos = CRHBYTES;
         () = #spill(pstate, pos);
-
-        () = #unspill(verification_key);
-        seed_for_matrix_A = verification_key[0 : SEEDBYTES];
-        () = #spill(seed_for_matrix_A);
 
         status = 0;
         () = #spill(status);
@@ -114,36 +104,39 @@ fn _crypto_sign_verify_ctx(
             () = #unspill(status);
             if (status == 0) {
                 () = #unspill(signature);
-                signer_response_element = _polyz_unpack(signer_response_element, signature[COMMITMENT_HASH_SIZE : POLYZ_PACKEDBYTES]);
+
+                // Here |polynomial| is an element of the signer response 'z'
+                polynomial = _polyz_unpack(polynomial, signature[COMMITMENT_HASH_SIZE : POLYZ_PACKEDBYTES]);
 
                 j = iGAMMA1 - BETA;
-                status = _poly_chknorm(signer_response_element, j);
+                status = _poly_chknorm(polynomial, j);
 
                 () = #spill(status);
                 if (status == 0) {
                     () = #unspill(verification_key);
                     matrix_element = __polyvec_matrix_expand_one_element(matrix_element, verification_key[0 : SEEDBYTES], row_number, 0);
 
-                    signer_response_element = _poly_ntt(signer_response_element);
-                    w1_element = _poly_pointwise_montgomery(w1_element, matrix_element, signer_response_element);
+                    polynomial = _poly_ntt(polynomial);
+                    w1_element = _poly_pointwise_montgomery(w1_element, matrix_element, polynomial);
 
                     for column_number = 1 to L {
                         () = #unspill(status);
                         if (status == 0) {
-                            () = #unspill(seed_for_matrix_A);
-                            matrix_element = __polyvec_matrix_expand_one_element(matrix_element, seed_for_matrix_A, row_number, column_number);
+                            () = #unspill(verification_key);
+                            matrix_element = __polyvec_matrix_expand_one_element(matrix_element, verification_key[0 : SEEDBYTES], row_number, column_number);
 
+                            // Here |polynomial| is an element of the signer response 'z'
                             () = #unspill(signature);
-                            signer_response_element = _polyz_unpack(signer_response_element, signature[COMMITMENT_HASH_SIZE + (column_number * POLYZ_PACKEDBYTES) : POLYZ_PACKEDBYTES]);
+                            polynomial = _polyz_unpack(polynomial, signature[COMMITMENT_HASH_SIZE + (column_number * POLYZ_PACKEDBYTES) : POLYZ_PACKEDBYTES]);
                             j = iGAMMA1 - BETA;
 
-                            status = _poly_chknorm(signer_response_element, j);
+                            status = _poly_chknorm(polynomial, j);
 
                             () = #spill(status);
                             if (status == 0) {
-                                signer_response_element = _poly_ntt(signer_response_element);
-                                product = _poly_pointwise_montgomery(product, matrix_element, signer_response_element);
-                                w1_element = _poly_add_inplace(w1_element, product);
+                                polynomial = _poly_ntt(polynomial);
+                                polynomial = _poly_pointwise_montgomery_inplace(polynomial, matrix_element);
+                                w1_element = _poly_add_inplace(w1_element, polynomial);
                             }
                         }
                     }
@@ -151,24 +144,26 @@ fn _crypto_sign_verify_ctx(
                     () = #unspill(status);
                     if (status == 0) {
                         () = #unspill(verification_key);
-                        t1_element = _polyt1_unpack(t1_element, verification_key[SEEDBYTES + (row_number * POLYT1_PACKEDBYTES) : POLYT1_PACKEDBYTES]);
-                        t1_element = _poly_shiftl(t1_element);
-                        t1_element = _poly_ntt(t1_element);
 
-                        product = _poly_pointwise_montgomery(product, t1_element, challenge);
+                        // Here |polynomial| is an element of t1
+                        polynomial = _polyt1_unpack(polynomial, verification_key[SEEDBYTES + (row_number * POLYT1_PACKEDBYTES) : POLYT1_PACKEDBYTES]);
+                        polynomial = _poly_shiftl(polynomial);
+                        polynomial = _poly_ntt(polynomial);
 
-                        w1_element = _poly_sub_inplace(w1_element, product);
+                        polynomial = _poly_pointwise_montgomery_inplace(polynomial, challenge);
+
+                        w1_element = _poly_sub_inplace(w1_element, polynomial);
                         w1_element = _poly_reduce(w1_element);
                         w1_element = _poly_invntt_tomont(w1_element);
                         w1_element = _poly_caddq(w1_element);
 
                         () = #unspill(signature);
                         j = row_number;
-                        hint, status = _unpack_one_hint(hint, j, signature[COMMITMENT_HASH_SIZE + PACKED_SIGNER_RESPONSE_SIZE : HINT_ENCODED_SIZE]);
+                        hint, number_of_hints, status = _unpack_hint_at_index(hint, j, signature[COMMITMENT_HASH_SIZE + PACKED_SIGNER_RESPONSE_SIZE : HINT_ENCODED_SIZE]);
 
                         () = #spill(status);
                         if (status == 0) {
-                            w1_element = _poly_use_hint_inplace(w1_element, hint);
+                            w1_element = _poly_use_hint(w1_element, hint, number_of_hints);
                             w1_element_packed = _polyw1_pack(w1_element_packed, w1_element);
 
                             () = #unspill(pstate, pos);
