@@ -11,7 +11,7 @@
  *
  * Returns 0 if signature could be verified correctly and -1 otherwise
  **************************************************/
-fn _crypto_sign_verify_ctx(
+fn _verify_internal(
         reg ptr u8[SIGNATURE_SIZE] signature,
         reg ptr u32[2] ctx_m,
         reg ptr u32[2] ctxlen_mlen,
@@ -30,7 +30,6 @@ fn _crypto_sign_verify_ctx(
 
     reg u32 ctxlen m mlen ctx t pos;
     reg ptr u32[25*2] pstate;
-    reg ptr u8[2] message_prefix;
 
     inline int i column_number row_number;
 
@@ -41,30 +40,14 @@ fn _crypto_sign_verify_ctx(
     if (ctxlen <= 255) {
         () = #spill(ctxlen_mlen, ctx_m, ctxlen, verification_key, signature);
 
-        () = #unspill(verification_key);
-        crh_byte_hash = _hash_verification_key(crh_byte_hash, verification_key);
-
         pstate = state;
 
-        // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
-        pstate = __add_crh(pstate, crh_byte_hash); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
-
-        message_prefix = crh_byte_hash[0 : 2];
-        t = 0;
-        message_prefix[0] = (8u)t;
+        () = #unspill(verification_key);
+        pstate = _hash_verification_key(pstate, verification_key);
 
         () = #unspill(ctxlen_mlen);
-        t = ctxlen_mlen[0];
-        () = #spill(ctxlen_mlen);
-
-        message_prefix[1] = (8u)t;
-        () = #spill(t);
-
-        crh_byte_hash[0 : 2] = message_prefix;
-
-        pstate = __add_message_prefix(pstate, VERIFICATION_KEY_HASH_SIZE, message_prefix);
-        () = #spill(message_prefix);
-        pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
+        pstate = __add_message_prefix(pstate, ctxlen_mlen[0], VERIFICATION_KEY_HASH_SIZE);
+        pstate = __add_zero_after_add(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
         pos = VERIFICATION_KEY_HASH_SIZE + 2;
 
         () = #unspill(ctx_m);

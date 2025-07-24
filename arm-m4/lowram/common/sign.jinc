@@ -83,7 +83,11 @@ fn _crypto_sign_signature_ctx_seed(
         pstate = state;
         // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
         pstate = __add_crh(pstate, verification_key_hash); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
-        pstate = __add_message_prefix(pstate, VERIFICATION_KEY_HASH_SIZE, mu2); // 2
+
+        () = #unspill(ctxlen_mlen);
+        t = ctxlen_mlen[0];
+        () = #spill(ctxlen_mlen);
+        pstate = __add_message_prefix(pstate, t, VERIFICATION_KEY_HASH_SIZE);
         pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
         pos = VERIFICATION_KEY_HASH_SIZE + 2;
 

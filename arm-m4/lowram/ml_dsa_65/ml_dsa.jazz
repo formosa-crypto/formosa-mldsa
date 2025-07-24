@@ -58,7 +58,7 @@ export fn ml_dsa_65_verify(
 ) -> #public reg u32 {
     reg u32 status;
 
-    status = _crypto_sign_verify_ctx(sig, ctx_m, ctxlen_mlen, verification_key);
+    status = _verify_internal(sig, ctx_m, ctxlen_mlen, verification_key);
     status = status;
 
     return status;

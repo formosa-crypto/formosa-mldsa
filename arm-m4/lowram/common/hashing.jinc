@@ -52,22 +52,17 @@ inline fn __add_seedrndcrh_ref
     return state;
 }
 
-inline fn __add_message_prefix(reg ptr u32[25*2] state,
-        reg u32 pos,
-        reg ptr u8[2] in)
-    -> reg ptr u32[25*2]
+inline fn __add_message_prefix(
+    reg ptr u32[25*2] state,
+    reg u32 context_size,
+    inline int STATE_OFFSET
+) -> reg ptr u32[25*2]
 {
-    reg u32 t0 i j;
-    j = 0;
+    reg u32 temp;
 
-    i = pos;
-    t0 = (32u)in[j];
-    state[:u8 i] = (8u)t0;
-
-    i += 1;
-    j = 1;
-    t0 = (32u)in[j];
-    state[:u8 i] = (8u)t0;
+    temp = 0;
+    state[:u8 STATE_OFFSET] = (8u)temp;
+    state[:u8 STATE_OFFSET + 1] = (8u)context_size;
 
     return state;
 }
@@ -294,62 +289,54 @@ fn _stream256_full_squeeze (
 }
 
 fn _hash_verification_key(
-    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash,
-    reg ptr u8[VERIFICATION_KEY_SIZE] inp
-) -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE]
+    reg ptr u32[25 * 2] state,
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key
+) -> reg ptr u32[25 * 2]
 {
-    stack u32[25*2] state;
-    reg ptr u32[25*2] pstate;
-    reg u32 i j t s;
-
-    pstate = state;
-    pstate = __keccak_init_ref(pstate);
-    () = #spill(verification_key_hash);
+    reg u32 vk_offset state_offset;
+    reg u32 vk_word state_word;
     reg u32 last;
 
-    i = 0;
+    state = __keccak_init_ref(state);
+
+    vk_offset = 0;
     while {
         last = (VERIFICATION_KEY_SIZE >> 2) - (SHAKE256_RATE >> 2);
     }
-    (i < last)
+    (vk_offset < last)
     {
-        j = 0;
-        while (j < SHAKE256_RATE >> 2) {
-            t = inp[:u32 i];
-            s = pstate[j];
-            t ^= s;
-            pstate[j] = t;
-            i += 1;
-            j += 1;
+        state_offset = 0;
+        while (state_offset < SHAKE256_RATE >> 2) {
+            vk_word = verification_key[:u32 vk_offset];
+            vk_offset += 1;
+
+            state_word = state[state_offset];
+            state_word ^= vk_word;
+
+            state[state_offset] = state_word;
+            state_offset += 1;
         }
-        () = #spill(i, inp);
-        pstate = _keccakf1600_ref(pstate);
-        () = #unspill(i, inp);
+        () = #spill(vk_offset, verification_key);
+        state = _keccakf1600_ref(state);
+        () = #unspill(vk_offset, verification_key);
     }
 
-    j = 0;
-    while(i < VERIFICATION_KEY_SIZE >> 2) {
-        t = inp[:u32 i];
-        s = pstate[j];
-        t ^= s;
-        pstate[j] = t;
-        i += 1;
-        j += 1;
+    state_offset = 0;
+    while(vk_offset < VERIFICATION_KEY_SIZE >> 2) {
+        vk_word = verification_key[:u32 vk_offset];
+        vk_offset += 1;
+
+        state_word = state[state_offset];
+        state_word ^= vk_word;
+
+        state[state_offset] = state_word;
+        state_offset += 1;
     }
 
-    pstate = __add_block_end(pstate, j * 4, SHAKE256_RATE);
-    pstate = _keccakf1600_ref(pstate);
+    state = __add_block_end(state, state_offset * 4, SHAKE256_RATE);
+    state = _keccakf1600_ref(state);
 
-    () = #unspill(verification_key_hash);
-    // FIXME this copy is not necessary if we return pstate, in that case it should be taken as argument
-    i = 0;
-    while (i < VERIFICATION_KEY_HASH_SIZE / 4) {
-        t = pstate[i];
-        verification_key_hash[:u32 i] = t;
-        i += 1;
-    }
-
-    return verification_key_hash;
+    return state;
 }
 
 inline fn __derive_commitment_hash

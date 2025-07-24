@@ -34,6 +34,15 @@ fn _crypto_sign_keypair_seed(
     stack u32[polyvecl] s1, s1hat;
     stack u32[polyveck] s2, t1, t0;
 
+    stack u8[SEEDBYTES] seed_for_signing;
+    reg ptr u8[CRHBYTES] rhoprime;
+    stack u8[SEEDBYTES] rho;
+
+    reg u32 nonce;
+    reg u32 vk_word;
+
+    inline int i;
+
     /****
     * Implements shake256(seedbuf, 2 * SEEDBYTES + CRHBYTES, seedbuf, SEEDBYTES);
     ****/
@@ -46,16 +55,13 @@ fn _crypto_sign_keypair_seed(
     state = pstate;
     /***/
 
-    reg ptr u8[SEEDBYTES] rho;
-    #declassify rho = state[:u8 0:SEEDBYTES];
+    #declassify rho = #copy(state[:u8 0:SEEDBYTES]);
+    seed_for_signing = #copy(state[:u8 SEEDBYTES + CRHBYTES : SEEDBYTES]);
 
     /* Expand matrix */
     mat = _polyvec_matrix_expand(mat, rho);
 
-    reg ptr u8[CRHBYTES] rhoprime;
     rhoprime = state[:u8 SEEDBYTES:CRHBYTES];
-
-    reg u32 nonce;
     nonce = 0;
     /* Sample short vectors s1 and s2 */
     s1 = _polyvecl_uniform_eta(s1, rhoprime, nonce);
@@ -79,19 +85,18 @@ fn _crypto_sign_keypair_seed(
     t1, t0 = _polyveck_power2round_inplace(t1, t0);
 
     () = #unspill(verification_key);
-    rho = state[:u8 0:SEEDBYTES];
     verification_key = _pack_pk(verification_key, rho, t1);
 
-    /* Compute H(rho, t1) and write secret key */
     () = #spill(verification_key);
-    verification_key_hash = _hash_verification_key(verification_key_hash, verification_key);
+    state = _hash_verification_key(state, verification_key);
 
-    reg ptr u8[SEEDBYTES] key;
-    rho = state[:u8 0:SEEDBYTES];
-    key = state[:u8 SEEDBYTES + CRHBYTES : SEEDBYTES];
+    for i = 0 to CRHBYTES / 4 {
+        vk_word = state[i];
+        verification_key_hash[:u32 i] = vk_word;
+    }
 
     () = #unspill(signing_key);
-    signing_key = __pack_signing_key(signing_key, rho, verification_key_hash, key, t0, s1, s2);
+    signing_key = __pack_signing_key(signing_key, rho, verification_key_hash, seed_for_signing, t0, s1, s2);
 
     () = #unspill(verification_key);
     return verification_key, signing_key;
