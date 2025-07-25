@@ -91,3 +91,74 @@ fn _polyt1_unpack(reg ptr u32[N] r, reg ptr u8[POLYT1_PACKEDBYTES] a) -> reg ptr
   return r;
 }
 
+fn _t1_unpack_coefficient_at_index(
+    reg ptr u8[POLYT1_PACKEDBYTES] packed,
+    reg u32 index
+) -> reg u32 {
+    reg u32 coeff temp;
+    reg u32 offset;
+    reg u32 start_byte;
+
+    // 4 coefficients are packed in 5 bytes
+    start_byte = (index >> 2);
+    temp = 5;
+    start_byte *= temp;
+
+    offset = index & 0x3;
+
+    if (offset == 0)
+    {
+        coeff = (32u)packed[start_byte];
+        start_byte += 1;
+
+        temp = (32u)packed[start_byte];
+        temp <<= 8;
+
+        coeff |= temp;
+    }
+    else if (offset == 1)
+    {
+        start_byte += offset;
+        coeff = (32u)packed[start_byte];
+        coeff >>= 2;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 6;
+
+        coeff |= temp;
+    }
+    else if (offset == 2)
+    {
+        start_byte += offset;
+        coeff = (32u)packed[start_byte];
+
+        coeff >>= 4;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 4;
+
+        coeff |= temp;
+    }
+    else
+    {
+        start_byte += offset;
+        coeff = (32u)packed[start_byte];
+
+        coeff >>= 6;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 2;
+
+        coeff |= temp;
+    }
+
+    // TODO: Why can't we just do coeff &= 0x3FF?
+    temp = 0x3FF;
+    coeff &= temp;
+    coeff <<= D;
+
+    return coeff;
+}

@@ -27,3 +27,9 @@ param int polyvecl = N * L;
 param int polyveck = N * K;
 
 param int PACKED_SIGNER_RESPONSE_SIZE = L * POLYZ_PACKEDBYTES;
+
+// We set aside TAU bytes to store the TAU index positions where the challenge
+// contains a non-zero value.
+// We set aside 8 more bytes to store the signs of these non-zero values (a set
+// bit indicates -1 and an unset bit indicates 1).
+param int COMPRESSED_CHALLENGE_SIZE = TAU + 8;

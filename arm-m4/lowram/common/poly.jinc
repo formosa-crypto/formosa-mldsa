@@ -12,7 +12,7 @@ inline fn __low(reg u32[2] x) -> reg u32
     return l;
 }
 
-inline fn make_64(reg u32 h, reg u32 l) -> reg u32[2]
+inline fn __make_64(reg u32 h, reg u32 l) -> reg u32[2]
 {
     reg u32[2] y;
 
@@ -33,12 +33,12 @@ inline fn shift_left(reg u32[2] x, inline int i) -> reg u32[2]
     l <<= i;
 
     reg u32[2] y;
-    y = make_64(h, l);
+    y = __make_64(h, l);
 
     return y;
 }
 
-inline fn shift_right(reg u32[2] x, inline int i) -> reg u32[2]
+inline fn __shift_right(reg u32[2] x, inline int i) -> reg u32[2]
 {
     reg u32 h l;
     h = __high(x);
@@ -49,9 +49,27 @@ inline fn shift_right(reg u32[2] x, inline int i) -> reg u32[2]
     h >>= i;
 
     reg u32[2] y;
-    y = make_64(h, l);
+    y = __make_64(h, l);
 
     return y;
+}
+
+inline fn __rej_sample(
+        reg ptr u32[N] a,
+        reg u32 ctr,
+        reg u32 t,
+        reg u32 q
+) -> reg ptr u32[N], reg u32
+{
+    inline bool b;
+    b = __cmp_b(t, q);
+
+    if (b) {
+        a[ctr] = t;
+        ctr = ctr + 1;
+    }
+
+    return a, ctr;
 }
 
 /*************************************************
@@ -460,6 +478,8 @@ fn _poly_challenge(
         while {
             if (pos >= SHAKE256_RATE) {
                 pos = 0;
+
+                // TODO: See if some spilling can be reduced here.
                 () = #spill(j, challenge, pos);
                 s_signs = #copy(signs);
                 state = _keccakf1600_ref(state);
@@ -480,7 +500,7 @@ fn _poly_challenge(
         aux = __imm_sub_reg(1, aux);
         challenge[b] = aux;
 
-        signs = shift_right(signs, 1);
+        signs = __shift_right(signs, 1);
 
         j += 1;
     }
@@ -488,20 +508,121 @@ fn _poly_challenge(
     return state, challenge;
 }
 
-inline fn __rej_sample(
-        reg ptr u32[N] a,
-        reg u32 ctr,
-        reg u32 t,
-        reg u32 q
-        ) -> reg ptr u32[N], reg u32
-{
-    inline bool b;
-    b = __cmp_b(t, q);
+inline fn __t1_by_challenge_helper(
+    reg ptr u32[N] product,
+    reg u32 sign,
+    reg u32 index,
+    reg ptr u8[POLYT1_PACKEDBYTES] t1_element_packed
+) -> reg ptr u32[N] {
+    reg u32 j offset;
+    reg u32 lhs rhs;
 
-    if (b) {
-        a[ctr] = t;
-        ctr = ctr + 1;
+    if (sign == 0) {
+        j = 0;
+        while {
+            offset = index + j;
+        } (offset < N) {
+            lhs = product[offset];
+            rhs = _t1_unpack_coefficient_at_index(t1_element_packed, j);
+
+            lhs += rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
+
+        j = N;
+        j -= index;
+        while (j < N) {
+            offset = -N;
+            offset += index;
+            offset += j;
+
+            lhs = product[offset];
+            rhs = _t1_unpack_coefficient_at_index(t1_element_packed, j);
+
+            lhs -= rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
+    } else {
+        j = 0;
+        while {
+            offset = index + j;
+        } (offset < N) {
+            lhs = product[offset];
+            rhs = _t1_unpack_coefficient_at_index(t1_element_packed, j);
+
+            lhs -= rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
+
+        j = N;
+        j -= index;
+        while (j < N) {
+            offset = -N;
+            offset += index;
+            offset += j;
+
+            lhs = product[offset];
+            rhs = _t1_unpack_coefficient_at_index(t1_element_packed, j);
+
+            lhs += rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
     }
 
-    return a, ctr;
+    return product;
+}
+
+fn _poly_schoolbook_multiply_t1_by_challenge(
+    reg ptr u32[N] product,
+    reg ptr u8[POLYT1_PACKEDBYTES] t1_element_packed,
+    reg ptr u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge
+) -> reg ptr u32[N]
+{
+    reg u32 sign signs index;
+
+    reg u32 i zero;
+
+    i = 0;
+    zero = 0;
+    while (i < N) {
+        product[i] = zero;
+        i += 1;
+    }
+
+    signs = compressed_challenge.[:u32 COMPRESSED_CHALLENGE_SIZE - 8];
+    i = 0;
+    while (i < 32) {
+        index = (32u)compressed_challenge[i];
+        i += 1;
+
+        sign = signs & 1;
+        signs >>= 1;
+
+        product = __t1_by_challenge_helper(product, sign, index, t1_element_packed);
+    }
+
+    signs = compressed_challenge.[:u32 COMPRESSED_CHALLENGE_SIZE - 4];
+    while (i < TAU) {
+        index = (32u)compressed_challenge[i];
+        i += 1;
+
+        sign = signs & 1;
+        signs >>= 1;
+
+        product = __t1_by_challenge_helper(product, sign, index, t1_element_packed);
+    }
+
+    return product;
 }

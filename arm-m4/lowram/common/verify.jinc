@@ -25,8 +25,9 @@ fn _verify_internal(
 
     stack u32[N] matrix_element w1_element polynomial;
     stack u32[25*2] state;
-    stack u32[N] challenge;
     stack u8[POLYW1_PACKEDBYTES] w1_element_packed;
+
+    stack u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge;
 
     reg u32 ctxlen m mlen ctx t pos;
     reg ptr u32[25*2] pstate;
@@ -72,8 +73,9 @@ fn _verify_internal(
         }
 
         () = #unspill(signature);
-        pstate, challenge = _poly_challenge(pstate, challenge, signature[0 : COMMITMENT_HASH_SIZE]);
-        challenge = _poly_ntt(challenge);
+        pstate, polynomial = _poly_challenge(pstate, polynomial, signature[0 : COMMITMENT_HASH_SIZE]);
+
+        compressed_challenge = _poly_compress_challenge(compressed_challenge, polynomial);
 
         pstate = __add_crh(pstate, crh_byte_hash);
         pstate = __add_zero_after_add(pstate, CRHBYTES);
@@ -129,15 +131,11 @@ fn _verify_internal(
                         () = #unspill(verification_key);
 
                         // Here |polynomial| is an element of t1
-                        polynomial = _polyt1_unpack(polynomial, verification_key[SEEDBYTES + (row_number * POLYT1_PACKEDBYTES) : POLYT1_PACKEDBYTES]);
-                        polynomial = _poly_shiftl(polynomial);
-                        polynomial = _poly_ntt(polynomial);
+                        polynomial = _poly_schoolbook_multiply_t1_by_challenge(polynomial, verification_key[SEEDBYTES + (row_number * POLYT1_PACKEDBYTES) : POLYT1_PACKEDBYTES], compressed_challenge);
 
-                        polynomial = _poly_pointwise_montgomery_inplace(polynomial, challenge);
-
+                        w1_element = _poly_invntt_tomont(w1_element);
                         w1_element = _poly_sub_inplace(w1_element, polynomial);
                         w1_element = _poly_reduce(w1_element);
-                        w1_element = _poly_invntt_tomont(w1_element);
                         w1_element = _poly_caddq(w1_element);
 
                         () = #unspill(signature);

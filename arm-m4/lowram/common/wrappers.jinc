@@ -61,6 +61,11 @@ inline fn __or_lsl(reg u32 in_1, reg u32 in_2, inline int nb_bits) -> reg u32 {
   return out;
 }
 
+inline fn __or_lsr_inplace(reg u32 lhs, reg u32 rhs, inline int nb_bits) -> reg u32 {
+  lhs = lhs | (rhs >> nb_bits);
+  return lhs;
+}
+
 /**
  Operates the and of the @nb_bits arithmetic right shift on @in_2 with @in_1.
 **/
