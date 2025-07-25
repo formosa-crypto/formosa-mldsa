@@ -24,31 +24,36 @@ fn _verify_internal(
     stack u8[MAX_ONES_IN_HINT] hint;
 
     stack u32[N] matrix_element w1_element polynomial;
-    stack u32[25*2] state;
     stack u8[POLYW1_PACKEDBYTES] w1_element_packed;
 
     stack u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge;
 
     reg u32 ctxlen m mlen ctx t pos;
-    reg ptr u32[25*2] pstate;
+
+    stack u32[25*2] state_256;
+    stack u32[25*2] state_128;
+    reg ptr u32[25*2] ptr_to_xof_state;
 
     inline int i column_number row_number;
 
-    reg u32 observed expected j number_of_hints;
+    reg u32 nonce;
+    reg u32 number_of_hints;
+    reg u32 observed expected;
+    reg u32 j;
 
     ctxlen = ctxlen_mlen[0];
 
     if (ctxlen <= 255) {
         () = #spill(ctxlen_mlen, ctx_m, ctxlen, verification_key, signature);
 
-        pstate = state;
+        ptr_to_xof_state = state_256;
 
         () = #unspill(verification_key);
-        pstate = _hash_verification_key(pstate, verification_key);
+        ptr_to_xof_state = _hash_verification_key(ptr_to_xof_state, verification_key);
 
         () = #unspill(ctxlen_mlen);
-        pstate = __add_message_prefix(pstate, ctxlen_mlen[0], VERIFICATION_KEY_HASH_SIZE);
-        pstate = __add_zero_after_add(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
+        ptr_to_xof_state = __add_message_prefix(ptr_to_xof_state, ctxlen_mlen[0], VERIFICATION_KEY_HASH_SIZE);
+        ptr_to_xof_state = __add_zero_after_add(ptr_to_xof_state, VERIFICATION_KEY_HASH_SIZE + 2);
         pos = VERIFICATION_KEY_HASH_SIZE + 2;
 
         () = #unspill(ctx_m);
@@ -56,31 +61,33 @@ fn _verify_internal(
         () = #spill(ctx_m);
 
         () = #unspill(ctxlen);
-        pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
+        ptr_to_xof_state, pos = _shake256_inc_absorb_mem_naive(ptr_to_xof_state, pos, ctx, ctxlen);
 
         () = #unspill(ctxlen_mlen);
         mlen = ctxlen_mlen[1];
 
         () = #unspill(ctx_m);
         m = ctx_m[1];
-        pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
-        pstate = _shake256_add_block_end(pstate, pos);
-        pstate = _keccakf1600_ref(pstate);
+        ptr_to_xof_state, pos = _shake256_inc_absorb_mem_naive(ptr_to_xof_state, pos, m, mlen);
+        ptr_to_xof_state = _shake256_add_block_end(ptr_to_xof_state, pos);
+        ptr_to_xof_state = _keccakf1600_ref(ptr_to_xof_state);
 
         for i = 0 to CRHBYTES/4 {
-            t = pstate[i];
+            t = ptr_to_xof_state[i];
             crh_byte_hash[:u32 i] = t;
         }
 
         () = #unspill(signature);
-        pstate, polynomial = _poly_challenge(pstate, polynomial, signature[0 : COMMITMENT_HASH_SIZE]);
+        ptr_to_xof_state, polynomial = _poly_challenge(ptr_to_xof_state, polynomial, signature[0 : COMMITMENT_HASH_SIZE]);
 
         compressed_challenge = _poly_compress_challenge(compressed_challenge, polynomial);
 
-        pstate = __add_crh(pstate, crh_byte_hash);
-        pstate = __add_zero_after_add(pstate, CRHBYTES);
+        ptr_to_xof_state = __add_crh(ptr_to_xof_state, crh_byte_hash);
+        ptr_to_xof_state = __add_zero_after_add(ptr_to_xof_state, CRHBYTES);
         pos = CRHBYTES;
-        () = #spill(pstate, pos);
+        () = #spill(pos);
+
+        state_256 = ptr_to_xof_state;
 
         status = 0;
         () = #spill(status);
@@ -99,16 +106,25 @@ fn _verify_internal(
                 () = #spill(status);
                 if (status == 0) {
                     () = #unspill(verification_key);
-                    matrix_element = __polyvec_matrix_expand_one_element(matrix_element, verification_key[0 : SEEDBYTES], row_number, 0);
+                    ptr_to_xof_state = state_128;
+
+                    nonce = __or_lsl(0, row_number, 8);
+                    ptr_to_xof_state = _init_xof_for_element_of_A(ptr_to_xof_state, verification_key[0 : SEEDBYTES], nonce);
+                    matrix_element, ptr_to_xof_state = _poly_uniform_(matrix_element, ptr_to_xof_state);
+                    state_128 = ptr_to_xof_state;
 
                     polynomial = _poly_ntt(polynomial);
+
                     w1_element = _poly_pointwise_montgomery(w1_element, matrix_element, polynomial);
 
                     for column_number = 1 to L {
                         () = #unspill(status);
                         if (status == 0) {
                             () = #unspill(verification_key);
-                            matrix_element = __polyvec_matrix_expand_one_element(matrix_element, verification_key[0 : SEEDBYTES], row_number, column_number);
+                            nonce = __or_lsl(column_number, row_number, 8);
+                            ptr_to_xof_state = _init_xof_for_element_of_A(ptr_to_xof_state, verification_key[0 : SEEDBYTES], nonce);
+                            matrix_element, ptr_to_xof_state = _poly_uniform_(matrix_element, ptr_to_xof_state);
+                            state_128 = ptr_to_xof_state;
 
                             // Here |polynomial| is an element of the signer response 'z'
                             () = #unspill(signature);
@@ -147,26 +163,29 @@ fn _verify_internal(
                             w1_element = _poly_use_hint(w1_element, hint, number_of_hints);
                             w1_element_packed = _polyw1_pack(w1_element_packed, w1_element);
 
-                            () = #unspill(pstate, pos);
-                            pstate, pos = _shake256_absorb_w1_element(pstate, pos, w1_element_packed);
-                            () = #spill(pstate, pos);
+                            () = #unspill(pos);
+                            ptr_to_xof_state = state_256;
+                            ptr_to_xof_state, pos = _shake256_absorb_w1_element(ptr_to_xof_state, pos, w1_element_packed);
+                            state_256 = ptr_to_xof_state;
+                            () = #spill(pos);
                         }
                     }
                 }
             }
         }
 
-        () = #unspill(pstate, pos, status);
+        () = #unspill(pos, status);
         if (status == 0) {
-            pstate = _shake256_add_block_end(pstate, pos);
-            pstate = _keccakf1600_ref(pstate);
+            ptr_to_xof_state = state_256;
+            ptr_to_xof_state = _shake256_add_block_end(ptr_to_xof_state, pos);
+            ptr_to_xof_state = _keccakf1600_ref(ptr_to_xof_state);
 
             () = #unspill(signature);
             j = 0;
             status = 0;
             while (j < COMMITMENT_HASH_SIZE) {
                 observed = signature.[:u32 j];
-                #declassify expected = pstate.[:u32 j];
+                #declassify expected = ptr_to_xof_state.[:u32 j];
 
                 observed ^= expected;
                 status |= observed;

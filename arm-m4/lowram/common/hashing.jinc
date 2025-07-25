@@ -204,7 +204,7 @@ inline fn __shake256_init_with_commitment_hash(
     return state;
 }
 
-fn _stream128_init(
+fn _init_xof_for_element_of_A(
     reg ptr u32[25*2] state,
     reg ptr u8[SEEDBYTES] seed,
     reg u32 nonce

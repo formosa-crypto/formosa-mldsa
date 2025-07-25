@@ -213,7 +213,7 @@ fn _poly_uniform(
     reg ptr u32[25*2] state;
     stack ptr u32[N] sa;
     sa = a; state = state_;
-    state = _stream128_init(state, seed, nonce);
+    state = _init_xof_for_element_of_A(state, seed, nonce);
     a = sa;
 
     reg u32 ctr, ctr4, pos, q, t;
@@ -261,6 +261,60 @@ fn _poly_uniform(
         }
     }
     return a;
+}
+
+fn _poly_uniform_(
+    reg ptr u32[N] sampled,
+    reg ptr u32[25 * 2] state
+) -> reg ptr u32[N],
+     reg ptr u32[25 * 2]
+{
+    reg u32 ctr, ctr4, pos, q, t;
+    reg u32[3] buf;
+
+    ctr = 0; pos = 0; q = iQ;
+
+    while { ctr4 = ctr + 4; } (ctr4 < N) {
+        state, sampled, pos, ctr, q, buf = _stream128_refill_buffer(state, sampled, pos, ctr, q);
+
+        sampled, ctr = __extr_rej_sample(sampled, ctr, buf[0], q);  // 3 bytes in buf[0]
+
+        t = buf[0] >>u 24;
+        t = __or_lsl_inplace(t, buf[1], 8);
+        sampled, ctr = __extr_rej_sample(sampled, ctr, t, q);
+
+        t = buf[1] >>u 16;
+        t = __or_lsl_inplace(t, buf[2], 16);  // 2 byte in buf[1] U 1 bytes in buf[2]
+        sampled, ctr = __extr_rej_sample(sampled, ctr, t, q);
+
+        t = __ubfx(buf[2], 8, 23);
+        sampled, ctr = __rej_sample(sampled, ctr, t, q);
+    }
+
+    while (ctr < N) {
+        state, sampled, pos, ctr, q, buf = _stream128_refill_buffer(state, sampled, pos, ctr, q);
+
+        sampled, ctr = __extr_rej_sample(sampled, ctr, buf[0], q);  // 3 bytes in buf[0]
+
+        if (ctr < N) {
+            t = buf[0] >>u 24;
+            t = __or_lsl_inplace(t, buf[1], 8); // 1 byte in buf[0] U 2 bytes in buf[1]
+            sampled, ctr = __extr_rej_sample(sampled, ctr, t, q);
+        }
+
+        if (ctr < N) {
+            t = buf[1] >>u 16;
+            t = __or_lsl_inplace(t, buf[2], 16); // 2 byte in buf[1] U 1 bytes in buf[2]
+            sampled, ctr = __extr_rej_sample(sampled, ctr, t, q);
+        }
+
+        if (ctr < N) {
+            t = __ubfx(buf[2], 8, 23);
+            sampled, ctr = __rej_sample(sampled, ctr, t, q);
+        }
+    }
+
+    return sampled, state;
 }
 
 /*************************************************
