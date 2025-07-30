@@ -6,9 +6,7 @@ fn _pack_sig_nocopy(
     inline int i;
 
     inline int current_position;
-    current_position = 0;
-
-    current_position += COMMITMENT_HASH_SIZE;
+    current_position = COMMITMENT_HASH_SIZE;
 
     reg ptr u32[N] nz;
     reg ptr u8[POLYZ_PACKEDBYTES] nsig;

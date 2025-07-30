@@ -1,3 +1,17 @@
+inline fn __zero_compressed_w1_element(
+    reg ptr u8[COMPRESSED_W1_SIZE] compressed_w1_element
+) -> reg ptr u8[COMPRESSED_W1_SIZE]
+{
+    reg u32 zero = 0;
+    reg u32 i = 0;
+    while (i < COMPRESSED_W1_SIZE) {
+        compressed_w1_element.[:u32 i] = zero;
+        i += 4;
+    }
+
+    return compressed_w1_element;
+}
+
 /*************************************************
  * Description: Verifies signature.
  *
@@ -23,10 +37,11 @@ fn _verify_internal(
 
     stack u8[MAX_ONES_IN_HINT] hint;
 
-    stack u32[N] matrix_element w1_element polynomial;
+    stack u32[N] polynomial;
     stack u8[POLYW1_PACKEDBYTES] w1_element_packed;
 
     stack u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge;
+    stack u8[COMPRESSED_W1_SIZE] compressed_w1_element;
 
     reg u32 ctxlen m mlen ctx t pos;
 
@@ -105,27 +120,20 @@ fn _verify_internal(
 
                 () = #spill(status);
                 if (status == 0) {
-                    () = #unspill(verification_key);
-                    ptr_to_xof_state = state_128;
-
-                    nonce = __or_lsl(0, row_number, 8);
-                    ptr_to_xof_state = _init_xof_for_element_of_A(ptr_to_xof_state, verification_key[0 : SEEDBYTES], nonce);
-                    matrix_element, ptr_to_xof_state = _poly_uniform_(matrix_element, ptr_to_xof_state);
-                    state_128 = ptr_to_xof_state;
-
                     polynomial = _poly_ntt(polynomial);
+                    compressed_w1_element = __zero_compressed_w1_element(compressed_w1_element);
 
-                    w1_element = _poly_pointwise_montgomery(w1_element, matrix_element, polynomial);
+                    ptr_to_xof_state = state_128;
+                    nonce = __or_lsl(0, row_number, 8);
+
+                    () = #unspill(verification_key);
+                    compressed_w1_element, ptr_to_xof_state = _poly_compute_Az_plus_w1(compressed_w1_element, ptr_to_xof_state, verification_key[0 : SEEDBYTES], nonce, polynomial);
+
+                    state_128 = ptr_to_xof_state;
 
                     for column_number = 1 to L {
                         () = #unspill(status);
                         if (status == 0) {
-                            () = #unspill(verification_key);
-                            nonce = __or_lsl(column_number, row_number, 8);
-                            ptr_to_xof_state = _init_xof_for_element_of_A(ptr_to_xof_state, verification_key[0 : SEEDBYTES], nonce);
-                            matrix_element, ptr_to_xof_state = _poly_uniform_(matrix_element, ptr_to_xof_state);
-                            state_128 = ptr_to_xof_state;
-
                             // Here |polynomial| is an element of the signer response 'z'
                             () = #unspill(signature);
                             polynomial = _polyz_unpack(polynomial, signature[COMMITMENT_HASH_SIZE + (column_number * POLYZ_PACKEDBYTES) : POLYZ_PACKEDBYTES]);
@@ -136,8 +144,14 @@ fn _verify_internal(
                             () = #spill(status);
                             if (status == 0) {
                                 polynomial = _poly_ntt(polynomial);
-                                polynomial = _poly_pointwise_montgomery_inplace(polynomial, matrix_element);
-                                w1_element = _poly_add_inplace(w1_element, polynomial);
+
+                                ptr_to_xof_state = state_128;
+                                nonce = __or_lsl(column_number, row_number, 8);
+
+                                () = #unspill(verification_key);
+                                compressed_w1_element, ptr_to_xof_state = _poly_compute_Az_plus_w1(compressed_w1_element, ptr_to_xof_state, verification_key[0 : SEEDBYTES], nonce, polynomial);
+
+                                state_128 = ptr_to_xof_state;
                             }
                         }
                     }
@@ -146,13 +160,19 @@ fn _verify_internal(
                     if (status == 0) {
                         () = #unspill(verification_key);
 
+                        // Here |polynomial| is an element of w1
+                        polynomial = _poly_decompress_w1_element(polynomial, compressed_w1_element);
+                        polynomial = _poly_invntt_tomont(polynomial);
+                        polynomial = _poly_reduce(polynomial);
+                        polynomial = _poly_caddq(polynomial);
+                        compressed_w1_element = _poly_compress_w1_element(compressed_w1_element, polynomial);
+
                         // Here |polynomial| is an element of t1
                         polynomial = _poly_schoolbook_multiply_t1_by_challenge(polynomial, verification_key[SEEDBYTES + (row_number * POLYT1_PACKEDBYTES) : POLYT1_PACKEDBYTES], compressed_challenge);
 
-                        w1_element = _poly_invntt_tomont(w1_element);
-                        w1_element = _poly_sub_inplace(w1_element, polynomial);
-                        w1_element = _poly_reduce(w1_element);
-                        w1_element = _poly_caddq(w1_element);
+                        polynomial = _poly_subtract_from_compressed_w1_element(polynomial, compressed_w1_element);
+                        polynomial = _poly_reduce(polynomial);
+                        polynomial = _poly_caddq(polynomial);
 
                         () = #unspill(signature);
                         j = row_number;
@@ -160,8 +180,8 @@ fn _verify_internal(
 
                         () = #spill(status);
                         if (status == 0) {
-                            w1_element = _poly_use_hint(w1_element, hint, number_of_hints);
-                            w1_element_packed = _polyw1_pack(w1_element_packed, w1_element);
+                            polynomial = _poly_use_hint(polynomial, hint, number_of_hints);
+                            w1_element_packed = _polyw1_pack(w1_element_packed, polynomial);
 
                             () = #unspill(pos);
                             ptr_to_xof_state = state_256;

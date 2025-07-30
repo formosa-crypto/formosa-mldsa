@@ -70,16 +70,10 @@ fn _caddq(reg u32 a) -> reg u32
 *
 * Returns r.
 **************************************************/
-inline fn __freeze(reg u32 a) -> reg u32
+fn _freeze(reg u32 a) -> reg u32
 {
   a = __reduce32_8380417(a);
   a = __caddq(a);
-  return a;
-}
-
-fn _freeze(reg u32 a) -> reg u32
-{
-  a = __freeze(a);
   return a;
 }
 

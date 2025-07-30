@@ -218,13 +218,31 @@ fn _init_xof_for_element_of_A(
     return state;
 }
 
+fn _prepare_xof_for_element_of_A(
+    reg ptr u32[25*2] state,
+    reg ptr u8[SEEDBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[25*2]
+{
+    state = __add_seed_ref(state, seed);
+    state = __add_nonce_ref(state, SEEDBYTES >> 1, nonce);
+    state = __add_zero_after_add(state, SEEDBYTES + 2);
+    state = __add_block_end(state, SEEDBYTES + 2, SHAKE128_RATE);
+    return state;
+}
+
 fn _stream128_refill_buffer(
-        reg ptr u32[25*2] state,
-        reg ptr u32[N] a,
-        reg u32 pos,
-        reg u32 ctr,
-        reg u32 q
-        ) -> reg ptr u32[25*2], reg ptr u32[N], reg u32, reg u32, reg u32, reg u32[3] 
+    reg ptr u32[25*2] state,
+    reg ptr u32[N] a,
+    reg u32 pos,
+    reg u32 ctr,
+    reg u32 q
+) -> reg ptr u32[25*2],
+     reg ptr u32[N],
+     reg u32,
+     reg u32,
+     reg u32,
+     reg u32[3]
 {
     if (pos == SHAKE128_RATE >> 2) {
         stack u32 sctr;

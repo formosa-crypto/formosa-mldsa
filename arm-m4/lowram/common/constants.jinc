@@ -14,3 +14,5 @@ param int D = 13;
 param int PQC_SHAKECTX_BYTES = 25;
 param int SHAKE256_RATE = 136;
 param int SHAKE128_RATE = 168;
+
+param int COMPRESSED_W1_SIZE = 3 * N;

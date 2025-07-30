@@ -626,3 +626,163 @@ fn _poly_schoolbook_multiply_t1_by_challenge(
 
     return product;
 }
+
+fn _poly_add_to_compressed_w1_at_index(
+    reg ptr u8[COMPRESSED_W1_SIZE] compressed_w1_element,
+    reg u32 coeff,
+    reg u32 index
+) -> reg ptr u8[COMPRESSED_W1_SIZE]
+{
+    reg u32 w1_coeff;
+    reg u32 offset = 0;
+
+    offset = 3;
+    offset *= index;
+
+    w1_coeff = __coefficient_from_3_bytes(compressed_w1_element[offset : 3]);
+    w1_coeff += coeff;
+    w1_coeff = _freeze(w1_coeff);
+
+    compressed_w1_element[offset] = (8u)w1_coeff;
+    w1_coeff >>= 8;
+    offset += 1;
+
+    compressed_w1_element[offset] = (8u)w1_coeff;
+    w1_coeff >>= 8;
+    offset += 1;
+
+    compressed_w1_element[offset] = (8u)w1_coeff;
+
+    return compressed_w1_element;
+}
+
+fn _poly_compute_Az_plus_w1(
+    reg ptr u8[COMPRESSED_W1_SIZE] compressed_w1_element,
+    reg ptr u32[25 * 2] xof_state, // for A
+    reg ptr u8[SEEDBYTES] rho,
+    reg u32 nonce,
+    reg ptr u32[N] signer_response_element
+) -> reg ptr u8[COMPRESSED_W1_SIZE],
+     reg ptr u32[25 * 2]
+{
+    reg u32 sampled;
+    reg u32 xof_offset;
+    reg u32 coeff mask;
+
+    inline bool b;
+
+    () = #spill(signer_response_element, compressed_w1_element);
+
+    xof_state = _prepare_xof_for_element_of_A(xof_state, rho, nonce);
+
+    sampled = 0;
+    while (sampled < N) {
+        () = #spill(sampled);
+        xof_state = _keccakf1600_ref(xof_state);
+        () = #unspill(sampled);
+        xof_offset = 0;
+        while (xof_offset < SHAKE128_RATE) {
+            if (sampled < N) {
+                coeff = __coefficient_from_3_bytes(xof_state.[:u8 xof_offset : 3]);
+                mask = 0x7F_FF_FF;
+                coeff &= mask;
+                xof_offset += 3;
+
+                b = __cmp_b(coeff, iQ);
+                if (b) {
+                    () = #unspill(signer_response_element);
+                    coeff = __mul_montgomery_reduce_8380417(coeff, signer_response_element[sampled]);
+
+                    () = #unspill(compressed_w1_element);
+                    compressed_w1_element = _poly_add_to_compressed_w1_at_index(compressed_w1_element, coeff, sampled);
+                    () = #spill(compressed_w1_element);
+
+                    sampled += 1;
+                }
+            } else {
+                // We're done, break out of this loop.
+                xof_offset = SHAKE128_RATE;
+            }
+        }
+    }
+
+    return compressed_w1_element, xof_state;
+}
+
+fn _poly_decompress_w1_element(
+    reg ptr u32[N] w1_element,
+    reg ptr u8[COMPRESSED_W1_SIZE] compressed_w1_element
+) -> reg ptr u32[N]
+{
+    reg u32 coeff;
+    reg u32 i;
+    reg u32 offset;
+
+    i = 0;
+    while (i < N) {
+        offset = 3;
+        offset *= i;
+        coeff = __coefficient_from_3_bytes(compressed_w1_element[offset : 3]);
+
+        w1_element[i] = coeff;
+        i += 1;
+    }
+
+    return w1_element;
+}
+
+fn _poly_compress_w1_element(
+    reg ptr u8[COMPRESSED_W1_SIZE] compressed_w1_element,
+    reg ptr u32[N] w1_element
+) -> reg ptr u8[COMPRESSED_W1_SIZE]
+{
+    reg u32 coeff;
+    reg u32 i;
+    reg u32 offset;
+
+    i = 0;
+    while (i < N) {
+        offset = 3;
+        offset *= i;
+
+        coeff = w1_element[i];
+        i += 1;
+
+        compressed_w1_element[offset] = (8u)coeff;
+        offset += 1;
+        coeff >>= 8;
+
+        compressed_w1_element[offset] = (8u)coeff;
+        offset += 1;
+        coeff >>= 8;
+
+        compressed_w1_element[offset] = (8u)coeff;
+    }
+
+    return compressed_w1_element;
+}
+
+fn _poly_subtract_from_compressed_w1_element(
+    reg ptr u32[N] polynomial,
+    reg ptr u8[COMPRESSED_W1_SIZE] compressed_w1_element
+) -> reg ptr u32[N]
+{
+    reg u32 coeff w1_coeff;
+    reg u32 i;
+    reg u32 offset;
+
+    i = 0;
+    while (i < N) {
+        offset = 3;
+        offset *= i;
+        w1_coeff = __coefficient_from_3_bytes(compressed_w1_element[offset : 3]);
+
+        coeff = polynomial[i];
+        w1_coeff -= coeff;
+
+        polynomial[i] = w1_coeff;
+        i += 1;
+    }
+
+    return polynomial;
+}
