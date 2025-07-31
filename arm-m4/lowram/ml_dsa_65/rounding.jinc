@@ -33,10 +33,10 @@ inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32
 *
 * Returns a1.
 **************************************************/
-// precondition q = Q
-inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
+inline fn __decompose_a0a1(reg u32 a) -> reg u32, reg u32
 {
   reg u32 a0 a1 aux;
+  reg u32 q = iQ;
 
   /* a1  = (a + 127) >> 7; */
   a1 =  a + 127;
@@ -144,12 +144,11 @@ int32_t JASMIN_MLDSA_use_hint(int32_t a, unsigned int hint) {
 }
 */
 
-// Precondition q = Q
-inline fn __use_hint(reg u32 a, reg u32 hint, reg u32 q) -> reg u32 {
+inline fn __use_hint(reg u32 a, reg u32 hint) -> reg u32 {
   reg u32 a0 a1;
   inline bool gt le;
 
-  a0, a1 = __decompose_a0a1(a, q);
+  a0, a1 = __decompose_a0a1(a);
 
   if (hint != 0) {
    gt, le = __cmp_gt_le_zero(a0);

@@ -8,7 +8,7 @@
 *
 * Returns r.
 **************************************************/
-inline fn __reduce32_8380417(reg u32 a) -> reg u32
+inline fn __reduce32(reg u32 a) -> reg u32
 {
   reg u32 t t_x511 t_x523265 t_x4286586879 res;
 
@@ -28,7 +28,7 @@ inline fn __reduce32_8380417(reg u32 a) -> reg u32
 fn _reduce32_8380417(reg u32 a) -> reg u32
 {
   reg u32 res;
-  res = __reduce32_8380417(a);
+  res = __reduce32(a);
   return res;
 }
 
@@ -72,7 +72,7 @@ fn _caddq(reg u32 a) -> reg u32
 **************************************************/
 fn _freeze(reg u32 a) -> reg u32
 {
-  a = __reduce32_8380417(a);
+  a = __reduce32(a);
   a = __caddq(a);
   return a;
 }

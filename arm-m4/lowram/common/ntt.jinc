@@ -42,7 +42,7 @@ u32[N] ZETAS = {
  *
  * Arguments:   - uint32_t p[N]: input/output coefficient array
  **************************************************/
-inline fn __mul_montgomery_reduce_8380417(reg u32 x, reg u32 y) -> reg u32 {
+inline fn __mul_montgomery_reduce(reg u32 x, reg u32 y) -> reg u32 {
     reg u32 aux_hi aux_lo t;
 
     aux_lo, aux_hi = #SMULL(x, y);
@@ -77,7 +77,7 @@ fn _poly_ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
             while {
                 /* t = JASMIN_MLDSA_montgomery_reduce((int64_t)zeta * a[j + len]); */
                 aj_len = a[j_len];
-                t = __mul_montgomery_reduce_8380417(zeta, aj_len);
+                t = __mul_montgomery_reduce(zeta, aj_len);
                 /* a[j + len] = a[j] - t; */
                 aj = a[j];
                 aj_len = aj - t;
@@ -142,7 +142,7 @@ fn _poly_invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
                 /* a[j + len] = t - a[j + len]; */
                 aj_len = t - aj_len;
                 /* a[j + len] = JASMIN_MLDSA_montgomery_reduce((int64_t)zeta * a[j + len]); */
-                aj_len = __mul_montgomery_reduce_8380417(zeta, aj_len);
+                aj_len = __mul_montgomery_reduce(zeta, aj_len);
                 a[j_len] = aj_len;
                 j += 1;
                 j_len += 1;
@@ -160,7 +160,7 @@ fn _poly_invntt_tomont(reg ptr u32[N] a) -> reg ptr u32[N] {
     while {
         /*   a[j] = JASMIN_MLDSA_montgomery_reduce((int64_t)f * a[j]); */
         aj = a[j];
-        aj = __mul_montgomery_reduce_8380417(f, aj);
+        aj = __mul_montgomery_reduce(f, aj);
         a[j] = aj;
 
         j+=1;

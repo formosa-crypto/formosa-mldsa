@@ -224,11 +224,11 @@ fn _crypto_sign_signature_ctx_seed(
             s_signer_response = _polyvecl_add_inplace(s_signer_response, s_y);
             s_signer_response = _polyvecl_reduce(s_signer_response);
 
-            reg u32 chknorm bound;
+            reg u32 check_norm bound;
             bound = iGAMMA1 - BETA;
-            chknorm = _polyvecl_chknorm(s_signer_response, bound);
+            check_norm = _polyvecl_check_norm(s_signer_response, bound);
             () = #spill(sig);
-            if (chknorm != 0) {
+            if (check_norm != 0) {
                 continue = 1;
             } else {
                 s2 = s_s2; h = s_h;
@@ -239,8 +239,8 @@ fn _crypto_sign_signature_ctx_seed(
                 w0 = _polyveck_reduce(w0);
                 s_w0 = w0;
                 bound = iGAMMA2 - BETA;
-                chknorm = _polyveck_chknorm(w0, bound);
-                if (chknorm != 0) {
+                check_norm = _polyveck_check_norm(w0, bound);
+                if (check_norm != 0) {
                     continue = 1;
                 } else {
                     challenge = s_challenge; t0 = s_t0;
@@ -252,8 +252,8 @@ fn _crypto_sign_signature_ctx_seed(
                     s_h = h;
 
                     bound = iGAMMA2;
-                    chknorm = _polyveck_chknorm(h, bound);
-                    if (chknorm != 0) {
+                    check_norm = _polyveck_check_norm(h, bound);
+                    if (check_norm != 0) {
                         continue = 1;
                     } else {
                         w0 = s_w0;

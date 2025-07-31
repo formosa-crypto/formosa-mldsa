@@ -160,9 +160,9 @@ inline fn __add_zero_after_add(
 }
 
 inline fn __SHAKE256_init_seed_ref(
-        reg ptr u32[25*2] state,
-        reg ptr u8[SEEDBYTES] seed
-        ) -> reg ptr u32[25*2]
+    reg ptr u32[25*2] state,
+    reg ptr u8[SEEDBYTES] seed
+) -> reg ptr u32[25*2]
 {
     state = __add_seed_ref(state, seed);
     state = __add_zero_after_add(state, SEEDBYTES);

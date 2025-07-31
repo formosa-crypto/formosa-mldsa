@@ -142,13 +142,3 @@ inline fn __set_if_true_plus_imm(reg u32 in, inline int i, inline bool b) -> reg
   out = in + i if b;
   return out;
 }
-
-inline fn __coefficient_from_3_bytes(reg ptr u8[3] bytes) -> reg u32 {
-    reg u32 coeff;
-
-    coeff = (32u)bytes[0];
-    coeff = __or_lsl_inplace(coeff, (32u)bytes[1], 8);
-    coeff = __or_lsl_inplace(coeff, (32u)bytes[2], 16);
-
-    return coeff;
-}

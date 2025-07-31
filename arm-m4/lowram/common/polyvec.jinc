@@ -88,19 +88,6 @@ fn _polyvecl_add_inplace(
     return z;
 }
 
-fn _polyvecl_add2_inplace(
-        reg ptr u32[polyvecl] w
-        ) -> reg ptr u32[polyvecl]
-{
-    inline int i;
-    reg ptr u32[N] pw;
-    for i = 0 to L {
-        pw = w[i * N : N];
-        w[i * N : N] = _poly_add2_inplace(pw);
-    }
-    return w;
-}
-
 fn _polyvecl_ntt(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl]
 {
     inline int i;
@@ -161,7 +148,7 @@ fn _polyvecl_pointwise_acc_montgomery(
     return w;
 }
 
-fn _polyvecl_chknorm(reg ptr u32[polyvecl] vector, reg u32 bound) -> reg u32
+fn _polyvecl_check_norm(reg ptr u32[polyvecl] vector, reg u32 bound) -> reg u32
 {
     reg u32 i done result;
     reg bool out_of_bounds;
@@ -173,7 +160,7 @@ fn _polyvecl_chknorm(reg ptr u32[polyvecl] vector, reg u32 bound) -> reg u32
         done = result;
         done = 1 if (out_of_bounds);
     } (done == 0) {
-        result = _poly_chknorm(vector[i : N], bound);
+        result = _poly_check_norm(vector[i : N], bound);
         i += N;
     }
 
@@ -321,7 +308,7 @@ fn _polyveck_pointwise_poly_montgomery_inplace(
     return r;
 }
 
-fn _polyveck_chknorm(reg ptr u32[polyveck] vector, reg u32 bound) -> reg u32
+fn _polyveck_check_norm(reg ptr u32[polyveck] vector, reg u32 bound) -> reg u32
 {
     reg u32 i done result;
     reg bool out_of_bounds;
@@ -333,7 +320,7 @@ fn _polyveck_chknorm(reg ptr u32[polyveck] vector, reg u32 bound) -> reg u32
         done = result;
         done = 1 if (out_of_bounds);
     } (done == 0) {
-        result = _poly_chknorm(vector[i : N], bound);
+        result = _poly_check_norm(vector[i : N], bound);
         i += N;
     }
 
@@ -424,19 +411,6 @@ fn _polyvec_matrix_expand(
     }
 
     return mat;
-}
-
-inline fn __polyvec_matrix_expand_one_element(
-    reg ptr u32[N] matrix_element,
-    reg ptr u8[SEEDBYTES] rho,
-    inline int row_number,
-    inline int column_number
-) -> reg ptr u32[N]
-{
-    reg u32 nonce = __or_lsl(column_number, row_number, 8);
-    matrix_element = _poly_uniform(matrix_element, rho, nonce);
-
-    return matrix_element;
 }
 
 fn _polyvec_matrix_pointwise_montgomery(

@@ -22,22 +22,6 @@ inline fn __make_64(reg u32 h, reg u32 l) -> reg u32[2]
     return y;
 }
 
-inline fn shift_left(reg u32[2] x, inline int i) -> reg u32[2]
-{
-    reg u32 h l;
-    h = __high(x);
-    l = __low(x);
-
-    h <<= i;
-    h |= (l >> (32 - i));
-    l <<= i;
-
-    reg u32[2] y;
-    y = __make_64(h, l);
-
-    return y;
-}
-
 inline fn __shift_right(reg u32[2] x, inline int i) -> reg u32[2]
 {
     reg u32 h l;
@@ -55,11 +39,12 @@ inline fn __shift_right(reg u32[2] x, inline int i) -> reg u32[2]
 }
 
 inline fn __rej_sample(
-        reg ptr u32[N] a,
-        reg u32 ctr,
-        reg u32 t,
-        reg u32 q
-) -> reg ptr u32[N], reg u32
+    reg ptr u32[N] a,
+    reg u32 ctr,
+    reg u32 t,
+    reg u32 q
+) -> reg ptr u32[N],
+     reg u32
 {
     inline bool b;
     b = __cmp_b(t, q);
@@ -82,7 +67,17 @@ inline fn __rej_sample(
  **************************************************/
 fn _poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N]
 {
-    a = __map1__reduce32_8380417(a);
+    reg u32 i elem;
+
+    i = 0;
+    while(i < N)
+    {
+        elem = a[i];
+        elem = __reduce32(elem);
+        a[i] = elem;
+        i += 1;
+    }
+
     return a;
 }
 
@@ -96,7 +91,17 @@ fn _poly_reduce(reg ptr u32[N] a) -> reg ptr u32[N]
  **************************************************/
 fn _poly_caddq(reg ptr u32[N] a) -> reg ptr u32[N]
 {
-    a = __map1__caddq(a);
+    reg u32 i elem;
+
+    i = 0;
+    while(i < N)
+    {
+        elem = a[i];
+        elem = __caddq(elem);
+        a[i] = elem;
+        i += 1;
+    }
+
     return a;
 }
 
@@ -133,27 +138,8 @@ fn _poly_add_inplace(reg ptr u32[N] a b) -> reg ptr u32[N]
     return a;
 }
 
-// TODO: Fix this name
-fn _poly_add2_inplace(reg ptr u32[N] a) -> reg ptr u32[N]
-{
-    reg u32 i coeff_a;
-
-    i = 0;
-    while(i < N)
-    {
-        coeff_a = a[i];
-        coeff_a = __poly_add_body(coeff_a, coeff_a);
-        a[i] = coeff_a;
-
-        i += 1;
-    }
-
-    return a;
-}
-
-
 /**************************************************
- * Name:        JASMIN_MLDSA_poly_chknorm
+ * Name:        JASMIN_MLDSA_poly_check_norm
  *
  * Description: Check infinity norm of polynomial against given bound.
  *              Assumes input coefficients were reduced by JASMIN_MLDSA_reduce32().
@@ -163,7 +149,7 @@ fn _poly_add2_inplace(reg ptr u32[N] a) -> reg ptr u32[N]
  *
  * Returns 0 if norm is strictly smaller than B <= (Q-1)/8 and 1 otherwise.
  **************************************************/
-fn _poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
+fn _poly_check_norm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
     reg u32 r;
     reg u32 q;
     r = 0;
@@ -210,15 +196,12 @@ fn _poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
 // equivalent to _poly_decompose(a1, a0, a1)
 fn _poly_decompose_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[N], reg ptr u32[N] {
     reg u32 i;
-    reg u32 q;
-
-    q = iQ;
+    reg u32 a0_, a1_, a_;
 
     i = 0;
     while (i < N) {
-        reg u32 a0_, a1_, a_;
         a_ = a1[i];
-        a0_, a1_ = __decompose_a0a1(a_, q);
+        a0_, a1_ = __decompose_a0a1(a_);
         a0[i] = a0_;
         a1[i] = a1_;
         i += 1;
@@ -256,9 +239,6 @@ fn _poly_use_hint(
     reg u32 done;
     reg bool out_of_bounds;
 
-    // TODO: Remove the passing of q here.
-    reg u32 q = iQ;
-
     i = 0;
     while (i < N) {
         in_list = 0;
@@ -285,7 +265,7 @@ fn _poly_use_hint(
         }
 
         coefficient = polynomial[i];
-        coefficient = __use_hint(coefficient, hint, q);
+        coefficient = __use_hint(coefficient, hint);
 
         polynomial[i] = coefficient;
         i += 1;
@@ -311,7 +291,7 @@ fn _poly_pointwise_montgomery(reg ptr u32[N] c, reg ptr u32[N] a, reg ptr u32[N]
     while(i < N)
     {
         a_ = a[i]; b_ = b[i];
-        c_ = __mul_montgomery_reduce_8380417(a_, b_);
+        c_ = __mul_montgomery_reduce(a_, b_);
         c[i] = c_;
         i += 1;
     }
@@ -325,7 +305,7 @@ fn _poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg
     {
         a_ = a[i];
         c_ = c[i];
-        c_ = __mul_montgomery_reduce_8380417(a_, c_);
+        c_ = __mul_montgomery_reduce(a_, c_);
         c[i] = c_;
         i += 1;
     }
@@ -628,41 +608,40 @@ fn _poly_schoolbook_multiply_t1_by_challenge(
 }
 
 fn _poly_add_to_compressed_w1_at_index(
-    reg ptr u8[COMPRESSED_W1_SIZE] compressed_w1_element,
+    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element,
     reg u32 coeff,
     reg u32 index
-) -> reg ptr u8[COMPRESSED_W1_SIZE]
+) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
 {
     reg u32 w1_coeff;
     reg u32 offset = 0;
+    reg u32 three_byte_mask = (1 << 24) - 1;
 
     offset = 3;
     offset *= index;
 
-    w1_coeff = __coefficient_from_3_bytes(compressed_w1_element[offset : 3]);
+    w1_coeff = compressed_w1_element.[:u32 offset];
+    w1_coeff &= three_byte_mask;
+
     w1_coeff += coeff;
     w1_coeff = _freeze(w1_coeff);
 
-    compressed_w1_element[offset] = (8u)w1_coeff;
-    w1_coeff >>= 8;
-    offset += 1;
-
-    compressed_w1_element[offset] = (8u)w1_coeff;
-    w1_coeff >>= 8;
-    offset += 1;
+    compressed_w1_element.[:u16 offset] = (16u)w1_coeff;
+    w1_coeff >>= 16;
+    offset += 2;
 
     compressed_w1_element[offset] = (8u)w1_coeff;
 
     return compressed_w1_element;
 }
 
-fn _poly_compute_Az_plus_w1(
-    reg ptr u8[COMPRESSED_W1_SIZE] compressed_w1_element,
+fn _poly_az_plus_w1(
+    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element,
     reg ptr u32[25 * 2] xof_state, // for A
     reg ptr u8[SEEDBYTES] rho,
     reg u32 nonce,
     reg ptr u32[N] signer_response_element
-) -> reg ptr u8[COMPRESSED_W1_SIZE],
+) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
      reg ptr u32[25 * 2]
 {
     reg u32 sampled;
@@ -683,15 +662,16 @@ fn _poly_compute_Az_plus_w1(
         xof_offset = 0;
         while (xof_offset < SHAKE128_RATE) {
             if (sampled < N) {
-                coeff = __coefficient_from_3_bytes(xof_state.[:u8 xof_offset : 3]);
+                coeff = xof_state.[:u32 xof_offset];
+                xof_offset += 3;
+
                 mask = 0x7F_FF_FF;
                 coeff &= mask;
-                xof_offset += 3;
 
                 b = __cmp_b(coeff, iQ);
                 if (b) {
                     () = #unspill(signer_response_element);
-                    coeff = __mul_montgomery_reduce_8380417(coeff, signer_response_element[sampled]);
+                    coeff = __mul_montgomery_reduce(coeff, signer_response_element[sampled]);
 
                     () = #unspill(compressed_w1_element);
                     compressed_w1_element = _poly_add_to_compressed_w1_at_index(compressed_w1_element, coeff, sampled);
@@ -711,18 +691,20 @@ fn _poly_compute_Az_plus_w1(
 
 fn _poly_decompress_w1_element(
     reg ptr u32[N] w1_element,
-    reg ptr u8[COMPRESSED_W1_SIZE] compressed_w1_element
+    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element
 ) -> reg ptr u32[N]
 {
     reg u32 coeff;
     reg u32 i;
     reg u32 offset;
+    reg u32 three_byte_mask = (1 << 24) - 1;
 
     i = 0;
     while (i < N) {
         offset = 3;
         offset *= i;
-        coeff = __coefficient_from_3_bytes(compressed_w1_element[offset : 3]);
+        coeff = compressed_w1_element.[:u32 offset];
+        coeff &= three_byte_mask;
 
         w1_element[i] = coeff;
         i += 1;
@@ -732,9 +714,9 @@ fn _poly_decompress_w1_element(
 }
 
 fn _poly_compress_w1_element(
-    reg ptr u8[COMPRESSED_W1_SIZE] compressed_w1_element,
+    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element,
     reg ptr u32[N] w1_element
-) -> reg ptr u8[COMPRESSED_W1_SIZE]
+) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
 {
     reg u32 coeff;
     reg u32 i;
@@ -748,15 +730,7 @@ fn _poly_compress_w1_element(
         coeff = w1_element[i];
         i += 1;
 
-        compressed_w1_element[offset] = (8u)coeff;
-        offset += 1;
-        coeff >>= 8;
-
-        compressed_w1_element[offset] = (8u)coeff;
-        offset += 1;
-        coeff >>= 8;
-
-        compressed_w1_element[offset] = (8u)coeff;
+        compressed_w1_element.[:u32 offset] = coeff;
     }
 
     return compressed_w1_element;
@@ -764,18 +738,20 @@ fn _poly_compress_w1_element(
 
 fn _poly_subtract_from_compressed_w1_element(
     reg ptr u32[N] polynomial,
-    reg ptr u8[COMPRESSED_W1_SIZE] compressed_w1_element
+    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element
 ) -> reg ptr u32[N]
 {
     reg u32 coeff w1_coeff;
     reg u32 i;
     reg u32 offset;
+    reg u32 three_byte_mask = (1 << 24) - 1;
 
     i = 0;
     while (i < N) {
         offset = 3;
         offset *= i;
-        w1_coeff = __coefficient_from_3_bytes(compressed_w1_element[offset : 3]);
+        w1_coeff = compressed_w1_element.[:u32 offset];
+        w1_coeff &= three_byte_mask;
 
         coeff = polynomial[i];
         w1_coeff -= coeff;

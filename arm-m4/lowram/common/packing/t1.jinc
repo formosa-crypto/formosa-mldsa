@@ -155,7 +155,6 @@ fn _t1_unpack_coefficient_at_index(
         coeff |= temp;
     }
 
-    // TODO: Why can't we just do coeff &= 0x3FF?
     temp = 0x3FF;
     coeff &= temp;
     coeff <<= D;
