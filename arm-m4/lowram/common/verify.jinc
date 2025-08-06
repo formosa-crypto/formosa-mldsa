@@ -26,7 +26,7 @@ inline fn __zero_compressed_w1_element(
  *
  * Returns 0 if signature could be verified correctly and -1 otherwise
  **************************************************/
-fn _verify_internal(
+inline fn __verify_internal(
         reg ptr u8[SIGNATURE_SIZE] signature,
         reg ptr u32[2] ctx_m,
         reg ptr u32[2] ctxlen_mlen,

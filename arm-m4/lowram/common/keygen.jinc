@@ -1,13 +1,17 @@
-inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -> reg ptr u32[polyvecl] {
-    reg u32 i, t;
-
-    i = 0;
-    while (i < polyvecl) {
-      t = s1[i];
-      s1hat[i] = t;
-      i += 1;
-    }
-    return s1hat;
+inline fn __init_shake256_to_generate_seeds(
+    reg ptr u32[25*2] state,
+    reg ptr u8[SEEDBYTES] seed
+) -> reg ptr u32[25*2]
+{
+    state = __add_seed_ref(state, seed);
+    state = __add_zero_after_add(state, SEEDBYTES);
+    reg u32 k = K;
+    state[:u8 SEEDBYTES] = k;
+    reg u32 l = L;
+    state[:u8 SEEDBYTES+1] = l;
+    state = __add_block_end(state, SEEDBYTES + 2, SHAKE256_RATE);
+    state = _keccakf1600_ref(state);
+    return state;
 }
 
 /*************************************************
@@ -24,80 +28,133 @@ inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -
 *
 * Returns 0 (success)
 **************************************************/
-fn _crypto_sign_keypair_seed(
+inline fn __keygen_internal(
     #public reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
     reg ptr u8[SIGNING_KEY_SIZE] signing_key,
     #secret reg ptr u8[SEEDBYTES] seedbuf
-) -> reg ptr u8[VERIFICATION_KEY_SIZE], reg ptr u8[SIGNING_KEY_SIZE] {
-    stack u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
-    stack u32[matKL] mat;
-    stack u32[polyvecl] s1, s1hat;
-    stack u32[polyveck] s2, t1, t0;
+) -> reg ptr u8[VERIFICATION_KEY_SIZE], reg ptr u8[SIGNING_KEY_SIZE]
+{
+    stack u32[N] element_of_A;
+    stack u32[N] error_element;
+    stack u32[N] product;
 
-    stack u8[SEEDBYTES] seed_for_signing;
-    reg ptr u8[CRHBYTES] rhoprime;
-    stack u8[SEEDBYTES] rho;
+    stack u8[CRHBYTES] rho_prime;
+    reg ptr u8[CRHBYTES] rho_prime_ptr;
+
+    stack u32[25 * 2] xof_state;
+    reg ptr u32[25 * 2] pxof_state;
+
+    reg ptr u8[SEEDBYTES] seed_for_signing;
+    reg ptr u8[SEEDBYTES] rho;
+
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
 
     reg u32 nonce;
-    reg u32 vk_word;
 
-    inline int i;
-
-    /****
-    * Implements shake256(seedbuf, 2 * SEEDBYTES + CRHBYTES, seedbuf, SEEDBYTES);
-    ****/
-    stack u32[PQC_SHAKECTX_BYTES*2] state;
-    reg ptr u32[PQC_SHAKECTX_BYTES*2] pstate;
-    pstate = state;
+    inline int row_number column_number;
 
     () = #spill(verification_key, signing_key);
-    pstate = __SHAKE256_init_seed_ref(pstate, seedbuf);
-    state = pstate;
-    /***/
 
-    #declassify rho = #copy(state[:u8 0:SEEDBYTES]);
-    seed_for_signing = #copy(state[:u8 SEEDBYTES + CRHBYTES : SEEDBYTES]);
-
-    /* Expand matrix */
-    mat = _polyvec_matrix_expand(mat, rho);
-
-    rhoprime = state[:u8 SEEDBYTES:CRHBYTES];
-    nonce = 0;
-    /* Sample short vectors s1 and s2 */
-    s1 = _polyvecl_uniform_eta(s1, rhoprime, nonce);
-    nonce = L;
-    rhoprime = state[:u8 SEEDBYTES:CRHBYTES];
-    s2 = _polyveck_uniform_eta(s2, rhoprime, nonce);
-
-    /* Matrix-vector multiplication */
-    s1hat = copy_polyvecl(s1hat, s1);
-
-    s1hat = _polyvecl_ntt(s1hat);
-    t1 = _polyvec_matrix_pointwise_montgomery(t1, mat, s1hat);
-    t1 = _polyveck_reduce(t1);
-    t1 = _polyveck_invntt_tomont(t1);
-
-    /* Add error vector s2 */
-    t1 = _polyveck_add_inplace(t1, s2);
-
-    /* Extract t1 and write public key */
-    t1 = _polyveck_caddq(t1);
-    t1, t0 = _polyveck_power2round_inplace(t1, t0);
+    pxof_state = xof_state;
+    pxof_state = __init_shake256_to_generate_seeds(pxof_state, seedbuf);
+    xof_state = pxof_state;
 
     () = #unspill(verification_key);
-    verification_key = _pack_pk(verification_key, rho, t1);
-
+    rho = verification_key[0 : SEEDBYTES];
+    rho = #copy(xof_state[:u8 0 : SEEDBYTES]);
+    verification_key[0 : SEEDBYTES] = rho;
     () = #spill(verification_key);
-    state = _hash_verification_key(state, verification_key);
-
-    for i = 0 to CRHBYTES / 4 {
-        vk_word = state[i];
-        verification_key_hash[:u32 i] = vk_word;
-    }
 
     () = #unspill(signing_key);
-    signing_key = __pack_signing_key(signing_key, rho, verification_key_hash, seed_for_signing, t0, s1, s2);
+    rho = signing_key[0 : SEEDBYTES];
+    rho = #copy(xof_state[:u8 0 : SEEDBYTES]);
+    signing_key[0 : SEEDBYTES] = rho;
 
+    seed_for_signing = signing_key[SEEDBYTES : SEEDBYTES];
+    seed_for_signing = #copy(xof_state[:u8 SEEDBYTES + CRHBYTES : SEEDBYTES]);
+    signing_key[SEEDBYTES : SEEDBYTES] = seed_for_signing;
+    () = #spill(signing_key);
+
+    rho_prime_ptr = rho_prime;
+    rho_prime_ptr = #copy(xof_state[:u8 SEEDBYTES : CRHBYTES]);
+    rho_prime = rho_prime_ptr;
+
+    // Perform As_1 + s_2
+    for row_number = 0 to K {
+        // First perform A * s_1
+        // Starting with the 0th row of A and s_1
+        nonce = 0;
+        error_element = _poly_uniform_eta(error_element, rho_prime, nonce);
+        if (row_number == 0) {
+            () = #unspill(signing_key);
+            signing_key = __pack_s1_element_in_signing_key(signing_key, error_element, 0);
+            () = #spill(signing_key);
+        }
+
+        nonce = __or_lsl(0, row_number, 8);
+        () = #unspill(signing_key);
+        xof_state = _init_xof_for_element_of_A(xof_state, signing_key[0 : SEEDBYTES], nonce);
+        element_of_A, xof_state = _poly_uniform_(element_of_A, xof_state);
+
+        error_element = _poly_ntt(error_element);
+        product = _poly_pointwise_montgomery(product, element_of_A, error_element);
+
+        // And then the remaining rows of A and s_1
+        for column_number = 1 to L {
+            nonce = column_number;
+            error_element = _poly_uniform_eta(error_element, rho_prime, nonce);
+            if (row_number == 0) {
+                () = #unspill(signing_key);
+                signing_key = __pack_s1_element_in_signing_key(signing_key, error_element, column_number);
+                () = #spill(signing_key);
+            }
+
+            nonce = __or_lsl(column_number, row_number, 8);
+            () = #unspill(signing_key);
+            xof_state = _init_xof_for_element_of_A(xof_state, signing_key[0 : SEEDBYTES], nonce);
+            element_of_A, xof_state = _poly_uniform_(element_of_A, xof_state);
+
+            error_element = _poly_ntt(error_element);
+            element_of_A = _poly_pointwise_montgomery_inplace(element_of_A, error_element);
+            product = _poly_add_inplace(product, element_of_A);
+        }
+
+        product = _poly_reduce(product);
+        product = _poly_invntt_tomont(product);
+
+        nonce = L + row_number;
+        error_element = _poly_uniform_eta(error_element, rho_prime, nonce);
+
+        () = #unspill(signing_key);
+        signing_key = __pack_s2_element_in_signing_key(signing_key, error_element, row_number);
+        () = #spill(signing_key);
+
+        product = _poly_add_inplace(product, error_element);
+        product = _poly_caddq(product);
+
+        // After this call, |product| contains t1 and |error_element| contains
+        // t0; it seemed prudent to preserve the names since they're quite
+        // meaningful until this line.
+        product, error_element = _poly_power2round_inplace(product, error_element);
+
+        () = #unspill(signing_key);
+        signing_key = __pack_t0_element_in_signing_key(signing_key, error_element, row_number);
+        () = #spill(signing_key);
+
+        () = #unspill(verification_key);
+        verification_key = __pack_t1_element_in_verification_key(verification_key, product, row_number);
+        () = #spill(verification_key);
+    }
+
+    // Compute the verification key hash and finish serializing the signing key
     () = #unspill(verification_key);
+    xof_state = _hash_verification_key(xof_state, verification_key);
+
+    () = #unspill(signing_key);
+    verification_key_hash = signing_key[2 * SEEDBYTES : VERIFICATION_KEY_HASH_SIZE];
+    verification_key_hash = #copy(xof_state.[:u8 0 : VERIFICATION_KEY_HASH_SIZE]);
+
+    signing_key[2 * SEEDBYTES : VERIFICATION_KEY_HASH_SIZE] = verification_key_hash;
+
     return verification_key, signing_key;
 }

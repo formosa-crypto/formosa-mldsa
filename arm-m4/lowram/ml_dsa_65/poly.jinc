@@ -386,8 +386,6 @@ fn _poly_uniform_eta(
 
 param int POLYZ_LAST = POLYZ_PACKEDBYTES / SHAKE256_RATE * SHAKE256_RATE;
 param int POLYZ_LAST_SZ = POLYZ_PACKEDBYTES % SHAKE256_RATE;
-
-
 fn _poly_uniform_gamma1(
     reg ptr u32[N] a,
     reg ptr u8[CRHBYTES] seed,
