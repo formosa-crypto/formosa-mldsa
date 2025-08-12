@@ -41,11 +41,12 @@ export fn ml_dsa_65_sign(
     #public reg ptr u32[3] ctx_m_rand,
     #public reg ptr u32[2] ctxlen_mlen,
     #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key
-) -> #public reg ptr u8[SIGNATURE_SIZE], #public reg u32
+) -> #public reg ptr u8[SIGNATURE_SIZE],
+     #public reg u32
 {
     reg u32 status;
 
-    sig, status = _crypto_sign_signature_ctx_seed(sig, ctx_m_rand, ctxlen_mlen, signing_key);
+    sig, status = __sign_internal(sig, ctx_m_rand, ctxlen_mlen, signing_key);
 
     return sig, status;
 }

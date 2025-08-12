@@ -1,4 +1,4 @@
-inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -> reg ptr u32[polyvecl] {
+inline fn __copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -> reg ptr u32[polyvecl] {
     reg u32 i, t;
 
     i = 0;
@@ -26,37 +26,54 @@ inline fn copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -
  *
  * Returns 0 (success) or -1 (context string too long)
  **************************************************/
-fn _crypto_sign_signature_ctx_seed(
-#public reg ptr u8[SIGNATURE_SIZE] sig,
-        reg ptr u32[3] ctx_m_rand,
-        reg ptr u32[2] ctxlen_mlen,
-#secret reg ptr u8[SIGNING_KEY_SIZE] sk
-        )
-    -> #public reg ptr u8[SIGNATURE_SIZE], reg u32
+inline fn __sign_internal(
+    #public reg ptr u8[SIGNATURE_SIZE] sig,
+    reg ptr u32[3] ctx_m_rand,
+    reg ptr u32[2] ctxlen_mlen,
+    #secret reg ptr u8[SIGNING_KEY_SIZE] sk
+) -> #public reg ptr u8[SIGNATURE_SIZE], reg u32
 {
     sig = sig;
 
     reg u32 status;
     stack u8[SEEDBYTES] s_rho;
-    stack u8[CRHBYTES] s_rhoprime;
     stack u32[polyveck] s_t0, s_s2;
     stack u32[polyvecl] s_s1;
     stack u8[SEEDBYTES + RNDBYTES + CRHBYTES] s_key_rnd_mu;
     stack u32[25*2] state;
 
     reg ptr u8[SEEDBYTES] rho, key;
+    reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash;
 
     stack u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
+
+    stack u8[CRHBYTES] rhoprime;
+    reg ptr u8[CRHBYTES] rhoprime_ptr;
 
     reg ptr u32[polyveck] t0, s2;
     reg ptr u32[polyvecl] s1;
     reg ptr u8[RNDBYTES] rnd;
-    reg ptr u8[CRHBYTES] mu rhoprime;
+    reg ptr u8[CRHBYTES] mu;
     reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] key_rnd_mu;
     reg ptr u8[2] mu2;
     reg ptr u32[25*2] pstate;
 
+    stack u32[matKL] matrix_A;
+    stack u32[polyvecl] s_y, signer_response;
+
+    stack u32[polyveck] s_h;
+    reg ptr u32[polyveck] h;
+
+    reg ptr u32[matKL] matrix_A_ptr;
+    stack u32[polyveck] w1 s_w0;
+    reg ptr u32[polyveck] w1_pointer w0;
+
+    stack u32[N] challenge;
+    reg ptr u32[N] challenge_ptr;
+
     reg u32 pos m mlen ctx ctxlen t;
+
+    reg u32 continue nonce;
 
     inline int i;
 
@@ -121,12 +138,8 @@ fn _crypto_sign_signature_ctx_seed(
         pstate = _shake256_add_block_end(pstate, pos);
         pstate = _keccakf1600_ref(pstate);
 
-        // FIXME define a function for this
         mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
-        for i = 0 to CRHBYTES/4 {
-            t = pstate[i];
-            mu[:u32 i] = t;
-        }
+        mu = #copy(pstate.[:u8 0 : CRHBYTES]);
         s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES] = mu;
 
         rnd = s_key_rnd_mu[SEEDBYTES : RNDBYTES];
@@ -144,64 +157,50 @@ fn _crypto_sign_signature_ctx_seed(
         pstate = __add_block_end(pstate, SEEDBYTES + RNDBYTES + CRHBYTES, SHAKE256_RATE);
         pstate = _keccakf1600_ref(pstate);
         state = pstate;
-        rhoprime = s_rhoprime;
-        for i = 0 to CRHBYTES/4 {
-            t = pstate[i];
-            rhoprime[:u32 i] = t;
-        }
-        s_rhoprime = rhoprime;
 
-        stack u32[matKL] s_mat;
-        stack u32[polyvecl] s_y, s_signer_response;
-
-        stack u32[polyveck] s_h;
-        reg ptr u32[polyveck] h;
-
-        reg ptr u32[matKL] mat;
-        stack u32[polyveck] s_w1 s_w0;
-        reg ptr u32[polyveck] w1 w0;
-
-        reg ptr u32[N] challenge;
-        stack u32[N] s_challenge;
-
-        mat = s_mat;
+        rhoprime_ptr = rhoprime;
+        rhoprime_ptr = #copy(pstate.[:u8 0 : CRHBYTES]);
+        rhoprime = rhoprime_ptr;
 
         #declassify rho = s_rho;
-        mat = _polyvec_matrix_expand(mat, rho); s_mat = mat;
+        matrix_A_ptr = matrix_A;
+        matrix_A_ptr = _polyvec_matrix_expand(matrix_A_ptr, rho);
+        matrix_A = matrix_A_ptr;
 
         s1 = s_s1; s1 = _polyvecl_ntt(s1); s_s1 = s1;
         s2 = s_s2; s2 = _polyveck_ntt(s2); s_s2 = s2;
         t0 = s_t0; t0 = _polyveck_ntt(t0); s_t0 = t0;
 
-        reg u32 continue nonce r0;
-        stack u32 s_nonce;
-        r0 = 0;
-        s_nonce = r0;
+        nonce = 0;
+        () = #spill(nonce);
         while {
             /* Sample intermediate vector y */
-            rhoprime = s_rhoprime;
-            nonce = s_nonce;
-            s_y = _polyvecl_uniform_gamma1(s_y, rhoprime, nonce);
-            nonce = s_nonce; nonce += 1; s_nonce = nonce;
+            () = #unspill(nonce);
+            rhoprime_ptr = rhoprime;
+            s_y = _polyvecl_uniform_gamma1(s_y, rhoprime_ptr, nonce);
+
+            () = #unspill(nonce);
+            nonce += 1;
+            () = #spill(nonce);
 
             /* Matrix-vector multiplication */
-            s_signer_response = copy_polyvecl(s_signer_response, s_y);
-            s_signer_response = _polyvecl_ntt(s_signer_response);
-            mat = s_mat;
-            w1 = s_w1;
-            w1 = _polyvec_matrix_pointwise_montgomery(w1, mat, s_signer_response);
-            w1 = _polyveck_reduce(w1);
-            w1 = _polyveck_invntt_tomont(w1);
+            signer_response = __copy_polyvecl(signer_response, s_y);
+            signer_response = _polyvecl_ntt(signer_response);
+            matrix_A_ptr = matrix_A;
+            w1_pointer = w1;
+            w1_pointer = _polyvec_matrix_pointwise_montgomery(w1_pointer, matrix_A_ptr, signer_response);
+            w1_pointer = _polyveck_reduce(w1_pointer);
+            w1_pointer = _polyveck_invntt_tomont(w1_pointer);
 
             /* Decompose w and call the random oracle */
-            w1 = _polyveck_caddq(w1);
+            w1_pointer = _polyveck_caddq(w1_pointer);
             w0 = s_w0;
-            w1, s_w0 = _polyveck_decompose_inplace(w1, w0);
-            s_w1 = w1;
+            w1_pointer, s_w0 = _polyveck_decompose_inplace(w1_pointer, w0);
+            w1 = w1_pointer;
             () = #unspill(sig);
             reg ptr u8[K * POLYW1_PACKEDBYTES] sig1;
             sig1 = sig[0: K * POLYW1_PACKEDBYTES];
-            sig1 = _polyveck_pack_w1(sig1, w1);
+            sig1 = _polyveck_pack_w1(sig1, w1_pointer);
             sig[0: K * POLYW1_PACKEDBYTES] = sig1;
             () = #spill(sig);
             // SHAKE256
@@ -212,39 +211,35 @@ fn _crypto_sign_signature_ctx_seed(
             pstate = _shake256_add_block_end(pstate, pos);
             pstate = _keccakf1600_ref(pstate);
 
-            // FIXME define a function for that
-            reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash;
             () = #unspill(sig);
             commitment_hash = sig[0:COMMITMENT_HASH_SIZE];
-            for i = 0 to COMMITMENT_HASH_SIZE/4 {
-                t = pstate[i];
-                commitment_hash[:u32 i] = t;
-            }
-            state = pstate;
+            commitment_hash = #copy(pstate.[:u8 0 : COMMITMENT_HASH_SIZE]);
             sig[0:COMMITMENT_HASH_SIZE] = commitment_hash;
 
+            state = pstate;
+
             () = #spill(sig);
-            challenge = s_challenge;
+            challenge_ptr = challenge;
 
             #declassify commitment_hash = commitment_hash;
-            state, challenge = _poly_challenge(state, challenge, commitment_hash);
-            challenge = _poly_ntt(challenge);
+            state, challenge_ptr = _poly_challenge(state, challenge_ptr, commitment_hash);
+            challenge_ptr = _poly_ntt(challenge_ptr);
             /* Compute z, reject if it reveals secret */
             s1 = s_s1;
-            s_signer_response = _polyvecl_pointwise_poly_montgomery(s_signer_response, challenge, s1); s_challenge = challenge;
-            s_signer_response = _polyvecl_invntt_tomont(s_signer_response);
-            s_signer_response = _polyvecl_add_inplace(s_signer_response, s_y);
-            s_signer_response = _polyvecl_reduce(s_signer_response);
+            signer_response = _polyvecl_pointwise_poly_montgomery(signer_response, challenge_ptr, s1); challenge = challenge_ptr;
+            signer_response = _polyvecl_invntt_tomont(signer_response);
+            signer_response = _polyvecl_add_inplace(signer_response, s_y);
+            signer_response = _polyvecl_reduce(signer_response);
 
             reg u32 check_norm bound;
             bound = iGAMMA1 - BETA;
-            check_norm = _polyvecl_check_norm(s_signer_response, bound);
+            check_norm = _polyvecl_check_norm(signer_response, bound);
             () = #spill(sig);
             if (check_norm != 0) {
                 continue = 1;
             } else {
                 s2 = s_s2; h = s_h;
-                h = _polyveck_pointwise_poly_montgomery(h, challenge, s2);
+                h = _polyveck_pointwise_poly_montgomery(h, challenge_ptr, s2);
                 h = _polyveck_invntt_tomont(h); s_h = h;
                 w0 = s_w0;
                 w0 = _polyveck_sub_inplace(w0, h);
@@ -255,9 +250,10 @@ fn _crypto_sign_signature_ctx_seed(
                 if (check_norm != 0) {
                     continue = 1;
                 } else {
-                    challenge = s_challenge; t0 = s_t0;
+                    challenge_ptr = challenge;
+                    t0 = s_t0;
                     h = h;  // Needed for regalloc
-                    h = _polyveck_pointwise_poly_montgomery(h, challenge, t0);
+                    h = _polyveck_pointwise_poly_montgomery(h, challenge_ptr, t0);
                     h = _polyveck_invntt_tomont(h);
                     h = h; // Needed for regalloc
                     h = _polyveck_reduce(h);
@@ -270,11 +266,11 @@ fn _crypto_sign_signature_ctx_seed(
                     } else {
                         w0 = s_w0;
                         w0 = _polyveck_add_inplace(w0, h);
-                        s_w0 = w0; w1 = s_w1;
+                        s_w0 = w0; w1_pointer = w1;
                         reg u32 n;
 
                         h = s_h;
-                        n, h = _polyveck_make_hint(h, w0, w1);
+                        n, h = _polyveck_make_hint(h, w0, w1_pointer);
                         s_h = h;
 
                         if (n > MAX_ONES_IN_HINT) {
@@ -283,10 +279,10 @@ fn _crypto_sign_signature_ctx_seed(
                             () = #unspill(sig);
 
                             #declassify h = s_h;
-                            #declassify s_signer_response = s_signer_response;
+                            #declassify signer_response = signer_response;
                             #declassify sig = sig;
 
-                            sig = _pack_sig_nocopy(sig, s_signer_response, h);
+                            sig = _pack_sig_nocopy(sig, signer_response, h);
                             () = #spill(sig);
                             continue = 0;
                         }
