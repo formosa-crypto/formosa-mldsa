@@ -112,9 +112,6 @@ fn __sign_internal(
     reg u64 hint_elements_processed;
     stack u8 infinity_norm_check_result;
 
-    reg bool cf, zf;
-    reg u8 cond;
-
     reg u256 copied_32_bytes;
 
     reg u64 j;
@@ -253,13 +250,15 @@ fn __sign_internal(
             }
         }
 
-        (_, _, _, _, zf) = #CMP_64(hint_elements_processed, ROWS_IN_MATRIX_A);
-        exit_rejection_sampling_loop = #SETcc(zf);
-
-        (_, cf, _, _, zf) = #CMP_64(total_ones_in_hint, MAX_ONES_IN_HINT);
-        cond = #SETcc(cf || zf);
-
-        #declassify exit_rejection_sampling_loop &= cond;
+        if (hint_elements_processed == ROWS_IN_MATRIX_A) {
+            if (total_ones_in_hint <= MAX_ONES_IN_HINT) {
+                exit_rejection_sampling_loop = 1;
+            } else {
+                exit_rejection_sampling_loop = 0;
+            }
+        } else {
+            exit_rejection_sampling_loop = 0;
+        }
     }
 
 

@@ -75,8 +75,7 @@ fn rejection_sample_multiple_blocks(
 
     reg u64 temp;
 
-    reg u8 flg0 flg1;
-    reg bool cf done;
+    reg u64 stop_sampling;
 
     reg u32 coefficient;
 
@@ -91,15 +90,9 @@ fn rejection_sample_multiple_blocks(
     bytes_filled = 0;
     xof_offset = 0;
 
-    _, cf, _, _, _ = #CMP_64(bytes_filled, BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32);
-    flg0 = #SETcc(cf);
+    stop_sampling = 0;
 
-    _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES - 16);
-    flg1 = #SETcc(cf);
-
-    _, _, _, _, done = #TEST_8(flg0, flg1);
-
-    while (!done) {
+    while (stop_sampling != 1) {
         bytestream = randombytes.[:u128 xof_offset];
 
         coefficients = __bytestream_to_coefficients(bytestream);
@@ -141,27 +134,24 @@ fn rejection_sample_multiple_blocks(
             }
         }
 
-        _, cf, _, _, _ = #CMP_64(bytes_filled, BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32);
-        flg0 = #SETcc(cf);
-
-        _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES - 16);
-        flg1 = #SETcc(cf);
-
-        _, _, _, _, done = #TEST_8(flg0, flg1);
+        if (bytes_filled >= BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
+            stop_sampling = 1;
+        } else if (xof_offset >= REJECTION_SAMPLING_BYTES - 16) {
+            stop_sampling = 1;
+        }
     }
 
     filled = bytes_filled;
     filled >>= 2;
 
-    _, cf, _, _, _ = #CMP_64(filled, COEFFICIENTS_IN_POLYNOMIAL);
-    flg0 = #SETcc(cf);
+    // stop_sampling is already 1 here.
+    if (filled < COEFFICIENTS_IN_POLYNOMIAL) {
+        if (xof_offset < REJECTION_SAMPLING_BYTES) {
+            stop_sampling = 0;
+        }
+    }
 
-    _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES);
-    flg1 = #SETcc(cf);
-
-    _, _, _, _, done = #TEST_8(flg0, flg1);
-
-    while (!done) {
+    while (stop_sampling != 1) {
         coefficient = (32u)randombytes[xof_offset];
         #declassify coefficient &= 0xF;
 
@@ -187,14 +177,11 @@ fn rejection_sample_multiple_blocks(
         }
 
         xof_offset += 1;
-
-        _, cf, _, _, _ = #CMP_64(filled, COEFFICIENTS_IN_POLYNOMIAL);
-        flg0 = #SETcc(cf);
-
-        _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES);
-        flg1 = #SETcc(cf);
-
-        _, _, _, _, done = #TEST_8(flg0, flg1);
+        if (xof_offset >= REJECTION_SAMPLING_BYTES) {
+            stop_sampling = 1;
+        } else if (filled >= COEFFICIENTS_IN_POLYNOMIAL) {
+            stop_sampling = 1;
+        }
     }
 
     return error, filled;
@@ -208,21 +195,14 @@ fn rejection_sample_one_block(
 {
     reg u64 xof_offset;
 
-    reg u8 flg0 flg1;
-    reg bool cf done;
+    reg u64 stop_sampling;
 
     reg u32 coefficient;
     xof_offset = 0;
 
-    _, cf, _, _, _ = #CMP_64(filled, COEFFICIENTS_IN_POLYNOMIAL);
-    flg0 = #SETcc(cf);
+    stop_sampling = 0;
 
-    _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES);
-    flg1 = #SETcc(cf);
-
-    _, _, _, _, done = #TEST_8(flg0, flg1);
-
-    while (!done) {
+    while (stop_sampling != 1) {
         coefficient = (32u)randombytes[xof_offset];
         #declassify coefficient &= 0xF;
 
@@ -248,14 +228,11 @@ fn rejection_sample_one_block(
         }
 
         xof_offset += 1;
-
-        _, cf, _, _, _ = #CMP_64(filled, COEFFICIENTS_IN_POLYNOMIAL);
-        flg0 = #SETcc(cf);
-
-        _, cf, _, _, _ = #CMP_64(xof_offset, REJECTION_SAMPLING_BYTES);
-        flg1 = #SETcc(cf);
-
-        _, _, _, _, done = #TEST_8(flg0, flg1);
+        if (xof_offset >= SHAKE256_RATE) {
+            stop_sampling = 1;
+        } else if (filled >= COEFFICIENTS_IN_POLYNOMIAL) {
+            stop_sampling = 1;
+        }
     }
 
     return error, filled;
