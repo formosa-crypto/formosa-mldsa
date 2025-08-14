@@ -103,8 +103,6 @@ namespace error_4x {
         reg u64 filled0 filled1 filled2 filled3;
         reg u64 filled;
 
-        reg u8 flg0 flg1 done;
-        reg bool cf;
         reg u64 stop_sampling;
 
         xof_state = shake256_init(xof_state, rho_prime, starting_domain_separator);
@@ -175,26 +173,14 @@ namespace error_4x {
             polynomial3, filled = rejection_sample_one_block(polynomial3, filled, buf3[0:SHAKE256_RATE]);
             filled3 = filled;
 
-            _, cf, _, _, _ = #CMP_64(filled0, COEFFICIENTS_IN_POLYNOMIAL);
-            flg0 = #SETcc(cf);
-
-            _, cf, _, _, _ = #CMP_64(filled1, COEFFICIENTS_IN_POLYNOMIAL);
-            flg1 = #SETcc(cf);
-
-            _, _, _, _, _, done = #OR_8(flg0, flg1);
-
-            _, cf, _, _, _ = #CMP_64(filled2, COEFFICIENTS_IN_POLYNOMIAL);
-            flg0 = #SETcc(cf);
-
-            _, cf, _, _, _ = #CMP_64(filled3, COEFFICIENTS_IN_POLYNOMIAL);
-            flg1 = #SETcc(cf);
-
-            _, _, _, _, _, flg0 = #OR_8(flg0, flg1);
-            _, _, _, _, _, done = #OR_8(flg0, done);
-
-            if (done == 0) {
-                stop_sampling = 1;
-            } else {
+            stop_sampling = 1;
+            if (filled0 < COEFFICIENTS_IN_POLYNOMIAL) {
+                stop_sampling = 0;
+            } else if (filled1 < COEFFICIENTS_IN_POLYNOMIAL) {
+                stop_sampling = 0;
+            } else if (filled2 < COEFFICIENTS_IN_POLYNOMIAL) {
+                stop_sampling = 0;
+            } else if (filled3 < COEFFICIENTS_IN_POLYNOMIAL) {
                 stop_sampling = 0;
             }
         }

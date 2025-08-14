@@ -237,6 +237,9 @@ fn rejection_sample_one_block(
     xof_offset = 0;
 
     stop_sampling = 0;
+    if (filled >= COEFFICIENTS_IN_POLYNOMIAL) {
+        stop_sampling = 1;
+    }
 
     while (stop_sampling != 1) {
         coefficient = (32u)randombytes[xof_offset];
