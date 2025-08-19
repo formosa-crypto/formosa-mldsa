@@ -30,27 +30,24 @@ inline fn __sign_internal(
     #public reg ptr u8[SIGNATURE_SIZE] sig,
     reg ptr u32[3] ctx_m_rand,
     reg ptr u32[2] ctxlen_mlen,
-    #secret reg ptr u8[SIGNING_KEY_SIZE] sk
+    #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key
 ) -> #public reg ptr u8[SIGNATURE_SIZE], reg u32
 {
     sig = sig;
 
     reg u32 status;
-    stack u8[SEEDBYTES] s_rho;
-    stack u32[polyveck] s_t0, s_s2;
+    stack u32[polyveck] s_s2;
     stack u32[polyvecl] s_s1;
     stack u8[SEEDBYTES + RNDBYTES + CRHBYTES] s_key_rnd_mu;
     stack u32[25*2] state;
 
-    reg ptr u8[SEEDBYTES] rho, key;
+    reg ptr u8[SEEDBYTES] key;
     reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash;
-
-    stack u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
 
     stack u8[CRHBYTES] rhoprime;
     reg ptr u8[CRHBYTES] rhoprime_ptr;
 
-    reg ptr u32[polyveck] t0, s2;
+    reg ptr u32[polyveck] s2;
     reg ptr u32[polyvecl] s1;
     reg ptr u8[RNDBYTES] rnd;
     reg ptr u8[CRHBYTES] mu;
@@ -58,24 +55,27 @@ inline fn __sign_internal(
     reg ptr u8[2] mu2;
     reg ptr u32[25*2] pstate;
 
-    stack u32[matKL] matrix_A;
-    stack u32[polyvecl] s_y, signer_response;
+    stack u32[polyvecl] mask, signer_response;
 
-    stack u32[polyveck] s_h;
+    stack u32[polyveck] hint_vector;
     reg ptr u32[polyveck] h;
+    reg ptr u32[N] hint_polynomial_ptr;
 
-    reg ptr u32[matKL] matrix_A_ptr;
     stack u32[polyveck] w1 s_w0;
     reg ptr u32[polyveck] w1_pointer w0;
 
     stack u32[N] challenge;
     reg ptr u32[N] challenge_ptr;
 
+    stack u32[N] polynomial element_of_A;
+
     reg u32 pos m mlen ctx ctxlen t;
 
-    reg u32 continue nonce;
+    reg u32 continue nonce nonce_for_mask;
+    reg ptr u8[K * POLYW1_PACKEDBYTES] sig1;
 
     inline int i;
+    inline int row_number column_number;
 
     status = -1;
 
@@ -84,19 +84,17 @@ inline fn __sign_internal(
     if (ctxlen <= 255) {
         () = #spill(ctx_m_rand);
 
-        rho = s_rho;
         key = s_key_rnd_mu[0:SEEDBYTES];
-        t0 = s_t0;
         s1 = s_s1;
         s2 = s_s2;
 
         () = #spill(sig, status, ctxlen, ctxlen_mlen);
-        (rho, verification_key_hash, key, t0, s1, s2) = _unpack_sk(rho, verification_key_hash, key, t0, s1, s2, sk);
-        s_rho = rho;
-        s_t0 = t0;
+        (key, s1, s2) = _unpack_sk(key, s1, s2, signing_key);
         s_s1 = s1;
         s_s2 = s2;
         s_key_rnd_mu[0:SEEDBYTES] = key;
+
+        () = #spill(signing_key);
 
         mu2 = s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2];
         t = 0;
@@ -111,7 +109,8 @@ inline fn __sign_internal(
 
         pstate = state;
         // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
-        pstate = __add_crh(pstate, verification_key_hash); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
+        () = #unspill(signing_key);
+        pstate = __add_crh(pstate, signing_key[2 * SEEDBYTES : VERIFICATION_KEY_HASH_SIZE]); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
 
         () = #unspill(ctxlen_mlen);
         t = ctxlen_mlen[0];
@@ -162,33 +161,47 @@ inline fn __sign_internal(
         rhoprime_ptr = #copy(pstate.[:u8 0 : CRHBYTES]);
         rhoprime = rhoprime_ptr;
 
-        #declassify rho = s_rho;
-        matrix_A_ptr = matrix_A;
-        matrix_A_ptr = _polyvec_matrix_expand(matrix_A_ptr, rho);
-        matrix_A = matrix_A_ptr;
-
         s1 = s_s1; s1 = _polyvecl_ntt(s1); s_s1 = s1;
         s2 = s_s2; s2 = _polyveck_ntt(s2); s_s2 = s2;
-        t0 = s_t0; t0 = _polyveck_ntt(t0); s_t0 = t0;
 
-        nonce = 0;
-        () = #spill(nonce);
+        nonce_for_mask = 0;
+        () = #spill(nonce_for_mask);
         while {
             /* Sample intermediate vector y */
-            () = #unspill(nonce);
             rhoprime_ptr = rhoprime;
-            s_y = _polyvecl_uniform_gamma1(s_y, rhoprime_ptr, nonce);
+            () = #unspill(nonce_for_mask);
+            mask, nonce_for_mask = _polyvecl_uniform_gamma1(mask, nonce_for_mask, rhoprime_ptr);
+            () = #spill(nonce_for_mask);
 
-            () = #unspill(nonce);
-            nonce += 1;
-            () = #spill(nonce);
-
-            /* Matrix-vector multiplication */
-            signer_response = __copy_polyvecl(signer_response, s_y);
+            /* Set w = Ay */
+            signer_response = __copy_polyvecl(signer_response, mask);
             signer_response = _polyvecl_ntt(signer_response);
-            matrix_A_ptr = matrix_A;
+
+            for row_number = 0 to K {
+                pstate = state;
+                nonce = __or_lsl(0, row_number, 8);
+                () = #unspill(signing_key);
+                pstate = _init_xof_for_element_of_A(pstate, signing_key[0 : SEEDBYTES], nonce);
+                element_of_A, pstate = _poly_uniform_(element_of_A, pstate);
+                state = pstate;
+
+                w1[row_number * N : N] = _poly_pointwise_montgomery(w1[row_number * N : N], element_of_A, signer_response[0 : N]);
+
+                for column_number = 1 to L {
+                    pstate = state;
+                    nonce = __or_lsl(column_number, row_number, 8);
+                    () = #unspill(signing_key);
+                    pstate = _init_xof_for_element_of_A(pstate, signing_key[0 : SEEDBYTES], nonce);
+                    element_of_A, pstate = _poly_uniform_(element_of_A, pstate);
+                    state = pstate;
+
+                    polynomial = _poly_pointwise_montgomery(polynomial, element_of_A, signer_response[column_number * N : N]);
+
+                    w1[row_number * N : N] = _poly_add_inplace(w1[row_number * N : N], polynomial);
+                }
+            }
+
             w1_pointer = w1;
-            w1_pointer = _polyvec_matrix_pointwise_montgomery(w1_pointer, matrix_A_ptr, signer_response);
             w1_pointer = _polyveck_reduce(w1_pointer);
             w1_pointer = _polyveck_invntt_tomont(w1_pointer);
 
@@ -198,7 +211,6 @@ inline fn __sign_internal(
             w1_pointer, s_w0 = _polyveck_decompose_inplace(w1_pointer, w0);
             w1 = w1_pointer;
             () = #unspill(sig);
-            reg ptr u8[K * POLYW1_PACKEDBYTES] sig1;
             sig1 = sig[0: K * POLYW1_PACKEDBYTES];
             sig1 = _polyveck_pack_w1(sig1, w1_pointer);
             sig[0: K * POLYW1_PACKEDBYTES] = sig1;
@@ -228,7 +240,7 @@ inline fn __sign_internal(
             s1 = s_s1;
             signer_response = _polyvecl_pointwise_poly_montgomery(signer_response, challenge_ptr, s1); challenge = challenge_ptr;
             signer_response = _polyvecl_invntt_tomont(signer_response);
-            signer_response = _polyvecl_add_inplace(signer_response, s_y);
+            signer_response = _polyvecl_add_inplace(signer_response, mask);
             signer_response = _polyvecl_reduce(signer_response);
 
             reg u32 check_norm bound;
@@ -238,28 +250,41 @@ inline fn __sign_internal(
             if (check_norm != 0) {
                 continue = 1;
             } else {
-                s2 = s_s2; h = s_h;
+                s2 = s_s2;
+
+                h = hint_vector;
                 h = _polyveck_pointwise_poly_montgomery(h, challenge_ptr, s2);
-                h = _polyveck_invntt_tomont(h); s_h = h;
+                h = _polyveck_invntt_tomont(h);
+                hint_vector = h;
+
                 w0 = s_w0;
                 w0 = _polyveck_sub_inplace(w0, h);
                 w0 = _polyveck_reduce(w0);
                 s_w0 = w0;
                 bound = iGAMMA2 - BETA;
                 check_norm = _polyveck_check_norm(w0, bound);
+
                 if (check_norm != 0) {
                     continue = 1;
                 } else {
                     challenge_ptr = challenge;
-                    t0 = s_t0;
-                    h = h;  // Needed for regalloc
-                    h = _polyveck_pointwise_poly_montgomery(h, challenge_ptr, t0);
-                    h = _polyveck_invntt_tomont(h);
-                    h = h; // Needed for regalloc
-                    h = _polyveck_reduce(h);
-                    s_h = h;
+
+                    for row_number = 0 to K {
+                        hint_polynomial_ptr = hint_vector[row_number * N : N];
+
+                        () = #unspill(signing_key);
+                        polynomial = _polyt0_unpack(polynomial, signing_key[START_OF_T0_IN_SIGNING_KEY + (row_number * POLYT0_PACKEDBYTES) : POLYT0_PACKEDBYTES]);
+                        polynomial = _poly_ntt(polynomial);
+
+                        hint_polynomial_ptr = _poly_pointwise_montgomery(hint_polynomial_ptr, polynomial, challenge_ptr);
+                        hint_polynomial_ptr = _poly_invntt_tomont(hint_polynomial_ptr);
+                        hint_polynomial_ptr = _poly_reduce(hint_polynomial_ptr);
+                        hint_vector[row_number * N : N] = hint_polynomial_ptr;
+                    }
 
                     bound = iGAMMA2;
+
+                    h = hint_vector;
                     check_norm = _polyveck_check_norm(h, bound);
                     if (check_norm != 0) {
                         continue = 1;
@@ -269,16 +294,16 @@ inline fn __sign_internal(
                         s_w0 = w0; w1_pointer = w1;
                         reg u32 n;
 
-                        h = s_h;
+                        h = hint_vector;
                         n, h = _polyveck_make_hint(h, w0, w1_pointer);
-                        s_h = h;
+                        hint_vector = h;
 
                         if (n > MAX_ONES_IN_HINT) {
                             continue = 1;
                         } else {
                             () = #unspill(sig);
 
-                            #declassify h = s_h;
+                            #declassify h = hint_vector;
                             #declassify signer_response = signer_response;
                             #declassify sig = sig;
 

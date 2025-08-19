@@ -65,45 +65,33 @@ inline fn __pack_t0_element_in_signing_key(
  *              - const polyveck *s2: pointer to output vector s2
  *              - uint8_t sk[]: byte array containing bit-packed sk
  **************************************************/
-fn _unpack_sk
-(reg ptr u8[SEEDBYTES] rho,
- reg ptr u8[VERIFICATION_KEY_HASH_SIZE] tr,
- reg ptr u8[SEEDBYTES] key,
- reg ptr u32[polyveck] t0,
- reg ptr u32[polyvecl] s1,
- reg ptr u32[polyveck] s2,
-#secret reg ptr u8[SIGNING_KEY_SIZE] sk)
- // rho, tr, key, t0, s1, s2
- -> reg ptr u8[SEEDBYTES], reg ptr u8[VERIFICATION_KEY_HASH_SIZE], reg ptr u8[SEEDBYTES],
- reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck]
+fn _unpack_sk(
+    reg ptr u8[SEEDBYTES] key,
+    reg ptr u32[polyvecl] s1,
+    reg ptr u32[polyveck] s2,
+    #secret reg ptr u8[SIGNING_KEY_SIZE] sk
+) -> reg ptr u8[SEEDBYTES],
+     reg ptr u32[polyvecl],
+     reg ptr u32[polyveck]
 {
-    sk = sk; t0 = t0; s1 = s1; s2 = s2;
+    sk = sk; s1 = s1; s2 = s2;
 
     inline int i;
     inline int current_position;
-    current_position = 0;
 
     reg ptr u8[SEEDBYTES] tsk;
-    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] ttr;
 
-    tsk = sk[current_position : SEEDBYTES];
-    rho = #copy(tsk);
-    current_position += SEEDBYTES;
+    current_position = SEEDBYTES;
 
     tsk = sk[current_position :  SEEDBYTES];
     key = #copy(tsk);
     current_position += SEEDBYTES;
 
-    ttr = sk[current_position : VERIFICATION_KEY_HASH_SIZE];
-    tr = #copy(ttr);
     current_position += VERIFICATION_KEY_HASH_SIZE;
 
     reg ptr u8[POLYETA_PACKEDBYTES] nsk;
 
-    () = #spill(t0);
     () = #spill(s2);
-    () = #spill(rho);
-    () = #spill(tr);
     () = #spill(key);
     reg ptr u32[N] ns1;
     for i = 0 to L {
@@ -123,20 +111,6 @@ fn _unpack_sk
         () = #unspill(sk);
         current_position += POLYETA_PACKEDBYTES;
     }
-    () = #unspill(t0);
-    () = #spill(s1, s2);
 
-    reg ptr u32[N] nt0;
-    reg ptr u8[POLYT0_PACKEDBYTES] nnsk;
-    for i = 0 to K {
-        nt0 = t0[i * N: N];
-        nnsk = sk[current_position : POLYT0_PACKEDBYTES];
-        t0[i * N: N] = _polyt0_unpack(nt0, nnsk);
-        current_position += POLYT0_PACKEDBYTES;
-    }
-    () = #unspill(rho);
-    () = #unspill(tr);
-    () = #unspill(key);
-    () = #unspill(s1,s2);
-    return rho, tr, key, t0, s1, s2;
+    return key, s1, s2;
 }

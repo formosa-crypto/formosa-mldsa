@@ -459,7 +459,6 @@ fn _poly_challenge(
             if (pos >= SHAKE256_RATE) {
                 pos = 0;
 
-                // TODO: See if some spilling can be reduced here.
                 () = #spill(j, challenge, pos);
                 s_signs = #copy(signs);
                 state = _keccakf1600_ref(state);
