@@ -36,26 +36,24 @@ inline fn __sign_internal(
     sig = sig;
 
     reg u32 status;
-    stack u32[polyveck] s_s2;
-    stack u32[polyvecl] s_s1;
     stack u8[SEEDBYTES + RNDBYTES + CRHBYTES] s_key_rnd_mu;
     stack u32[25*2] state;
 
-    reg ptr u8[SEEDBYTES] key;
     reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash;
 
     stack u8[CRHBYTES] rhoprime;
     reg ptr u8[CRHBYTES] rhoprime_ptr;
 
-    reg ptr u32[polyveck] s2;
-    reg ptr u32[polyvecl] s1;
     reg ptr u8[RNDBYTES] rnd;
     reg ptr u8[CRHBYTES] mu;
     reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] key_rnd_mu;
     reg ptr u8[2] mu2;
     reg ptr u32[25*2] pstate;
 
-    stack u32[polyvecl] mask, signer_response;
+    stack u32[polyvecl] mask;
+
+    stack u32[polyvecl] signer_response;
+    reg ptr u32[N] signer_response_elem_ptr;
 
     stack u32[polyveck] hint_vector;
     reg ptr u32[polyveck] h;
@@ -84,15 +82,8 @@ inline fn __sign_internal(
     if (ctxlen <= 255) {
         () = #spill(ctx_m_rand);
 
-        key = s_key_rnd_mu[0:SEEDBYTES];
-        s1 = s_s1;
-        s2 = s_s2;
-
         () = #spill(sig, status, ctxlen, ctxlen_mlen);
-        (key, s1, s2) = _unpack_sk(key, s1, s2, signing_key);
-        s_s1 = s1;
-        s_s2 = s2;
-        s_key_rnd_mu[0:SEEDBYTES] = key;
+        s_key_rnd_mu[0 : SEEDBYTES] = #copy(signing_key[SEEDBYTES : SEEDBYTES]);
 
         () = #spill(signing_key);
 
@@ -160,9 +151,6 @@ inline fn __sign_internal(
         rhoprime_ptr = rhoprime;
         rhoprime_ptr = #copy(pstate.[:u8 0 : CRHBYTES]);
         rhoprime = rhoprime_ptr;
-
-        s1 = s_s1; s1 = _polyvecl_ntt(s1); s_s1 = s1;
-        s2 = s_s2; s2 = _polyveck_ntt(s2); s_s2 = s2;
 
         nonce_for_mask = 0;
         () = #spill(nonce_for_mask);
@@ -232,16 +220,29 @@ inline fn __sign_internal(
 
             () = #spill(sig);
             challenge_ptr = challenge;
-
             #declassify commitment_hash = commitment_hash;
             state, challenge_ptr = _poly_challenge(state, challenge_ptr, commitment_hash);
             challenge_ptr = _poly_ntt(challenge_ptr);
+            challenge = challenge_ptr;
+
+            () = #spill(challenge_ptr);
+
             /* Compute z, reject if it reveals secret */
-            s1 = s_s1;
-            signer_response = _polyvecl_pointwise_poly_montgomery(signer_response, challenge_ptr, s1); challenge = challenge_ptr;
-            signer_response = _polyvecl_invntt_tomont(signer_response);
-            signer_response = _polyvecl_add_inplace(signer_response, mask);
-            signer_response = _polyvecl_reduce(signer_response);
+            for column_number = 0 to L {
+                signer_response_elem_ptr = signer_response[column_number * N : N];
+
+                () = #unspill(signing_key);
+                polynomial = _polyeta_unpack(polynomial, signing_key[START_OF_S1_IN_SIGNING_KEY + (column_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
+                polynomial = _poly_ntt(polynomial);
+
+                () = #unspill(challenge_ptr);
+                signer_response_elem_ptr = _poly_pointwise_montgomery(signer_response_elem_ptr, challenge_ptr, polynomial);
+                signer_response_elem_ptr = _poly_invntt_tomont(signer_response_elem_ptr);
+
+                signer_response_elem_ptr = _poly_add_inplace(signer_response_elem_ptr, mask[column_number * N : N]);
+                signer_response_elem_ptr = _poly_reduce(signer_response_elem_ptr);
+                signer_response[column_number * N : N] = signer_response_elem_ptr;
+            }
 
             reg u32 check_norm bound;
             bound = iGAMMA1 - BETA;
@@ -250,13 +251,20 @@ inline fn __sign_internal(
             if (check_norm != 0) {
                 continue = 1;
             } else {
-                s2 = s_s2;
+                for row_number = 0 to K {
+                    hint_polynomial_ptr = hint_vector[row_number * N : N];
+
+                    () = #unspill(signing_key);
+                    polynomial = _polyeta_unpack(polynomial, signing_key[START_OF_S2_IN_SIGNING_KEY + (row_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
+                    polynomial = _poly_ntt(polynomial);
+
+                    () = #unspill(challenge_ptr);
+                    hint_polynomial_ptr = _poly_pointwise_montgomery(hint_polynomial_ptr, polynomial, challenge_ptr);
+                    hint_polynomial_ptr = _poly_invntt_tomont(hint_polynomial_ptr);
+                    hint_vector[row_number * N : N] = hint_polynomial_ptr;
+                }
 
                 h = hint_vector;
-                h = _polyveck_pointwise_poly_montgomery(h, challenge_ptr, s2);
-                h = _polyveck_invntt_tomont(h);
-                hint_vector = h;
-
                 w0 = s_w0;
                 w0 = _polyveck_sub_inplace(w0, h);
                 w0 = _polyveck_reduce(w0);
@@ -267,8 +275,6 @@ inline fn __sign_internal(
                 if (check_norm != 0) {
                     continue = 1;
                 } else {
-                    challenge_ptr = challenge;
-
                     for row_number = 0 to K {
                         hint_polynomial_ptr = hint_vector[row_number * N : N];
 
@@ -276,6 +282,7 @@ inline fn __sign_internal(
                         polynomial = _polyt0_unpack(polynomial, signing_key[START_OF_T0_IN_SIGNING_KEY + (row_number * POLYT0_PACKEDBYTES) : POLYT0_PACKEDBYTES]);
                         polynomial = _poly_ntt(polynomial);
 
+                        () = #unspill(challenge_ptr);
                         hint_polynomial_ptr = _poly_pointwise_montgomery(hint_polynomial_ptr, polynomial, challenge_ptr);
                         hint_polynomial_ptr = _poly_invntt_tomont(hint_polynomial_ptr);
                         hint_polynomial_ptr = _poly_reduce(hint_polynomial_ptr);

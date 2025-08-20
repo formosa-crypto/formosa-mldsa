@@ -67,50 +67,13 @@ inline fn __pack_t0_element_in_signing_key(
  **************************************************/
 fn _unpack_sk(
     reg ptr u8[SEEDBYTES] key,
-    reg ptr u32[polyvecl] s1,
-    reg ptr u32[polyveck] s2,
     #secret reg ptr u8[SIGNING_KEY_SIZE] sk
-) -> reg ptr u8[SEEDBYTES],
-     reg ptr u32[polyvecl],
-     reg ptr u32[polyveck]
+) -> reg ptr u8[SEEDBYTES]
 {
-    sk = sk; s1 = s1; s2 = s2;
-
-    inline int i;
-    inline int current_position;
-
     reg ptr u8[SEEDBYTES] tsk;
 
-    current_position = SEEDBYTES;
-
-    tsk = sk[current_position :  SEEDBYTES];
+    tsk = sk[SEEDBYTES :  SEEDBYTES];
     key = #copy(tsk);
-    current_position += SEEDBYTES;
 
-    current_position += VERIFICATION_KEY_HASH_SIZE;
-
-    reg ptr u8[POLYETA_PACKEDBYTES] nsk;
-
-    () = #spill(s2);
-    () = #spill(key);
-    reg ptr u32[N] ns1;
-    for i = 0 to L {
-        ns1 = s1[i * N: N];
-        nsk = sk[current_position : POLYETA_PACKEDBYTES];
-        s1[i * N: N] = _polyeta_unpack(ns1, nsk);
-        current_position += POLYETA_PACKEDBYTES;
-    }
-
-    () = #unspill(s2);
-    reg ptr u32[N] ns2;
-    for i = 0 to K {
-        ns2 = s2[i * N: N];
-        nsk = sk[current_position : POLYETA_PACKEDBYTES];
-        () = #spill(sk);
-        s2[i * N: N] = _polyeta_unpack(ns2, nsk);
-        () = #unspill(sk);
-        current_position += POLYETA_PACKEDBYTES;
-    }
-
-    return key, s1, s2;
+    return key;
 }
