@@ -58,6 +58,14 @@ nist-drbg-kat-test: $(TESTING_WRAPPER)
 		--implementation-type=$(IMPLEMENTATION_TYPE) \
 		tests/test_nist_drbg_kats.py
 
+.PHONY: nist-drbg-kat-test
+random-nist-drbg-kat-test: $(TESTING_WRAPPER)
+	python3 -m pytest \
+		--parameter-set=$(PARAMETER_SET) \
+		--architecture=$(ARCHITECTURE) \
+		--implementation-type=$(IMPLEMENTATION_TYPE) \
+		tests/test_random_nist_drbg_kat.py
+
 .PHONY: wycheproof-test
 wycheproof-test: $(TESTING_WRAPPER)
 	python3 -m pytest \
