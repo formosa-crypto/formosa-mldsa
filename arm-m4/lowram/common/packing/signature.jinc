@@ -1,6 +1,5 @@
 fn _pack_sig_nocopy(
         reg ptr u8[SIGNATURE_SIZE] sig,
-        reg ptr u32[polyvecl] z,
         reg ptr u32[polyveck] h
         ) -> reg ptr u8[SIGNATURE_SIZE] {
     inline int i;
@@ -8,14 +7,7 @@ fn _pack_sig_nocopy(
     inline int current_position;
     current_position = COMMITMENT_HASH_SIZE;
 
-    reg ptr u32[N] nz;
-    reg ptr u8[POLYZ_PACKEDBYTES] nsig;
-    for i = 0 to L {
-        nz = z[i * N: N];
-        nsig = sig[current_position : POLYZ_PACKEDBYTES];
-        sig[current_position : POLYZ_PACKEDBYTES] = _polyz_pack(nsig, nz);
-        current_position += POLYZ_PACKEDBYTES;
-    }
+    current_position += L * POLYZ_PACKEDBYTES;
 
     reg u32 zero = 0;
     reg ptr u8[HINT_ENCODED_SIZE] pointer_to_hint = sig[current_position : HINT_ENCODED_SIZE];

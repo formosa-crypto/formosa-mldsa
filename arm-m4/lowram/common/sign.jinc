@@ -36,8 +36,10 @@ inline fn __sign_internal(
     sig = sig;
 
     reg u32 status;
-    stack u8[SEEDBYTES + RNDBYTES + CRHBYTES] s_key_rnd_mu;
+    stack u8[CRHBYTES] message_rep;
+
     stack u32[25*2] state;
+    reg ptr u32[25*2] pstate;
 
     reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash;
 
@@ -46,14 +48,12 @@ inline fn __sign_internal(
 
     reg ptr u8[RNDBYTES] rnd;
     reg ptr u8[CRHBYTES] mu;
-    reg ptr u8[SEEDBYTES + RNDBYTES + CRHBYTES] key_rnd_mu;
-    reg ptr u8[2] mu2;
-    reg ptr u32[25*2] pstate;
 
     stack u32[polyvecl] mask;
 
     stack u32[polyvecl] signer_response;
     reg ptr u32[N] signer_response_elem_ptr;
+    reg ptr u8[POLYZ_PACKEDBYTES] packed_signer_response_elem;
 
     stack u32[polyveck] hint_vector;
     reg ptr u32[polyveck] h;
@@ -70,7 +70,10 @@ inline fn __sign_internal(
     reg u32 pos m mlen ctx ctxlen t;
 
     reg u32 continue nonce nonce_for_mask;
-    reg ptr u8[K * POLYW1_PACKEDBYTES] sig1;
+    reg u32 check_norm bound;
+    reg u32 randomness_ptr;
+
+    reg ptr u8[K * POLYW1_PACKEDBYTES] w1_packed_in_sig;
 
     inline int i;
     inline int row_number column_number;
@@ -80,39 +83,22 @@ inline fn __sign_internal(
     ctxlen = ctxlen_mlen[0];
 
     if (ctxlen <= 255) {
-        () = #spill(ctx_m_rand);
-
-        () = #spill(sig, status, ctxlen, ctxlen_mlen);
-        s_key_rnd_mu[0 : SEEDBYTES] = #copy(signing_key[SEEDBYTES : SEEDBYTES]);
-
-        () = #spill(signing_key);
-
-        mu2 = s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2];
-        t = 0;
-        mu2[0] = (8u)t;
-
-        () = #unspill(ctxlen_mlen);
-        t = ctxlen_mlen[0];
-        () = #spill(ctxlen_mlen);
-
-        mu2[1] = (8u)t;
-        s_key_rnd_mu[SEEDBYTES + RNDBYTES : 2] = mu2;
+        () = #spill(ctx_m_rand, sig, status, ctxlen, ctxlen_mlen, signing_key);
 
         pstate = state;
-        // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
+
         () = #unspill(signing_key);
         pstate = __add_crh(pstate, signing_key[2 * SEEDBYTES : VERIFICATION_KEY_HASH_SIZE]); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
 
         () = #unspill(ctxlen_mlen);
         t = ctxlen_mlen[0];
-        () = #spill(ctxlen_mlen);
+
         pstate = __add_message_prefix(pstate, t, VERIFICATION_KEY_HASH_SIZE);
         pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
         pos = VERIFICATION_KEY_HASH_SIZE + 2;
 
         () = #unspill(ctx_m_rand);
         ctx = ctx_m_rand[0];
-        () = #spill(ctx_m_rand);
 
         () = #unspill(ctxlen);
         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
@@ -122,27 +108,32 @@ inline fn __sign_internal(
 
         () = #unspill(ctx_m_rand);
         m = ctx_m_rand[1];
-        () = #spill(ctx_m_rand);
 
         pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
         pstate = _shake256_add_block_end(pstate, pos);
         pstate = _keccakf1600_ref(pstate);
 
-        mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
-        mu = #copy(pstate.[:u8 0 : CRHBYTES]);
-        s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES] = mu;
+        message_rep = #copy(pstate.[:u8 0 : CRHBYTES]);
+        state = pstate;
 
-        rnd = s_key_rnd_mu[SEEDBYTES : RNDBYTES];
+        // Prepare state for obtaining rhoprime
+        () = #unspill(signing_key);
+        state.[:u8 0 : SEEDBYTES] = #copy(signing_key[SEEDBYTES : SEEDBYTES]);
+
+        rnd = state.[:u8 SEEDBYTES : RNDBYTES];
         () = #unspill(ctx_m_rand);
-        reg u32 rand = ctx_m_rand[2];
+        randomness_ptr = ctx_m_rand[2];
         for i = 0 to RNDBYTES/4 {
-            t = [:u32 rand + 4*i];
+            t = [:u32 randomness_ptr + 4*i];
             rnd[:u32 i] = t;
         }
-        s_key_rnd_mu[SEEDBYTES : RNDBYTES] = rnd;
+        state.[:u8 SEEDBYTES : RNDBYTES] = rnd;
 
-        key_rnd_mu = s_key_rnd_mu;
-        pstate = __add_seedrndcrh_ref(pstate, key_rnd_mu);
+        mu = state.[:u8 SEEDBYTES + RNDBYTES : CRHBYTES];
+        mu = #copy(message_rep);
+        state.[:u8 SEEDBYTES + RNDBYTES : CRHBYTES] = mu;
+
+        pstate = state;
         pstate = __add_zero_after_add(pstate, SEEDBYTES + RNDBYTES + CRHBYTES);
         pstate = __add_block_end(pstate, SEEDBYTES + RNDBYTES + CRHBYTES, SHAKE256_RATE);
         pstate = _keccakf1600_ref(pstate);
@@ -199,15 +190,15 @@ inline fn __sign_internal(
             w1_pointer, s_w0 = _polyveck_decompose_inplace(w1_pointer, w0);
             w1 = w1_pointer;
             () = #unspill(sig);
-            sig1 = sig[0: K * POLYW1_PACKEDBYTES];
-            sig1 = _polyveck_pack_w1(sig1, w1_pointer);
-            sig[0: K * POLYW1_PACKEDBYTES] = sig1;
+            w1_packed_in_sig = sig[0: K * POLYW1_PACKEDBYTES];
+            w1_packed_in_sig = _polyveck_pack_w1(w1_packed_in_sig, w1_pointer);
+            sig[0: K * POLYW1_PACKEDBYTES] = w1_packed_in_sig;
             () = #spill(sig);
             // SHAKE256
-            pstate = state; mu = s_key_rnd_mu[SEEDBYTES + RNDBYTES : CRHBYTES];
-            pstate = __add_crh(pstate, mu);
+            pstate = state;
+            pstate = __add_crh(pstate, message_rep);
             pstate = __add_zero_after_add(pstate, CRHBYTES);
-            pstate, pos = __derive_commitment_hash(pstate, CRHBYTES, sig1);
+            pstate, pos = __derive_commitment_hash(pstate, CRHBYTES, w1_packed_in_sig);
             pstate = _shake256_add_block_end(pstate, pos);
             pstate = _keccakf1600_ref(pstate);
 
@@ -227,27 +218,36 @@ inline fn __sign_internal(
 
             () = #spill(challenge_ptr);
 
+            check_norm = 0;
             /* Compute z, reject if it reveals secret */
             for column_number = 0 to L {
-                signer_response_elem_ptr = signer_response[column_number * N : N];
+                if (check_norm == 0) {
+                    signer_response_elem_ptr = signer_response[column_number * N : N];
 
-                () = #unspill(signing_key);
-                polynomial = _polyeta_unpack(polynomial, signing_key[START_OF_S1_IN_SIGNING_KEY + (column_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
-                polynomial = _poly_ntt(polynomial);
+                    () = #unspill(signing_key);
+                    polynomial = _polyeta_unpack(polynomial, signing_key[START_OF_S1_IN_SIGNING_KEY + (column_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
+                    polynomial = _poly_ntt(polynomial);
 
-                () = #unspill(challenge_ptr);
-                signer_response_elem_ptr = _poly_pointwise_montgomery(signer_response_elem_ptr, challenge_ptr, polynomial);
-                signer_response_elem_ptr = _poly_invntt_tomont(signer_response_elem_ptr);
+                    () = #unspill(challenge_ptr);
+                    signer_response_elem_ptr = _poly_pointwise_montgomery(signer_response_elem_ptr, challenge_ptr, polynomial);
+                    signer_response_elem_ptr = _poly_invntt_tomont(signer_response_elem_ptr);
 
-                signer_response_elem_ptr = _poly_add_inplace(signer_response_elem_ptr, mask[column_number * N : N]);
-                signer_response_elem_ptr = _poly_reduce(signer_response_elem_ptr);
-                signer_response[column_number * N : N] = signer_response_elem_ptr;
+                    signer_response_elem_ptr = _poly_add_inplace(signer_response_elem_ptr, mask[column_number * N : N]);
+                    signer_response_elem_ptr = _poly_reduce(signer_response_elem_ptr);
+                    signer_response[column_number * N : N] = signer_response_elem_ptr;
+
+                    bound = iGAMMA1 - BETA;
+                    check_norm = _poly_check_norm(signer_response_elem_ptr, bound);
+                    if (check_norm == 0) {
+                        () = #unspill(sig);
+                        packed_signer_response_elem = sig[COMMITMENT_HASH_SIZE + (column_number * POLYZ_PACKEDBYTES) : POLYZ_PACKEDBYTES];
+                        packed_signer_response_elem = _polyz_pack(packed_signer_response_elem, signer_response_elem_ptr);
+                        sig[COMMITMENT_HASH_SIZE + (column_number * POLYZ_PACKEDBYTES) : POLYZ_PACKEDBYTES] = packed_signer_response_elem;
+                        () = #spill(sig);
+                    }
+                }
             }
 
-            reg u32 check_norm bound;
-            bound = iGAMMA1 - BETA;
-            check_norm = _polyvecl_check_norm(signer_response, bound);
-            () = #spill(sig);
             if (check_norm != 0) {
                 continue = 1;
             } else {
@@ -311,10 +311,9 @@ inline fn __sign_internal(
                             () = #unspill(sig);
 
                             #declassify h = hint_vector;
-                            #declassify signer_response = signer_response;
                             #declassify sig = sig;
 
-                            sig = _pack_sig_nocopy(sig, signer_response, h);
+                            sig = _pack_sig_nocopy(sig, h);
                             () = #spill(sig);
                             continue = 0;
                         }

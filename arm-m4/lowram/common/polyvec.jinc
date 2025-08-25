@@ -32,17 +32,6 @@ fn _polyvecl_uniform_gamma1(
     return v, nonce;
 }
 
-fn _polyvecl_reduce(reg ptr u32[polyvecl] v) -> reg ptr u32[polyvecl]
-{
-    inline int i;
-    reg ptr u32[N] pv;
-    for i = 0 to L {
-        pv = v[i * N : N];
-        v[i * N : N] = _poly_reduce(pv);
-    }
-    return v;
-}
-
 fn _polyvecl_add_inplace(
     reg ptr u32[polyvecl] z,
     reg ptr u32[polyvecl] y
@@ -196,19 +185,6 @@ fn _polyveck_shiftl(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
     for i = 0 to K {
         pv = v[i * N : N];
         v[i * N : N] = _poly_shiftl(pv);
-    }
-    return v;
-}
-
-fn _polyveck_ntt(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
-{
-    inline int i;
-    reg ptr u32[N] pv;
-    stack ptr u32[polyveck] sv;
-    for i = 0 to K {
-        pv = v[i * N : N]; sv = v;
-        sv[i * N : N] = _poly_ntt(pv);
-        v = sv;
     }
     return v;
 }
