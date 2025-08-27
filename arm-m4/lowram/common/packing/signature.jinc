@@ -44,20 +44,6 @@ fn _pack_sig_nocopy(
     return sig;
 }
 
-fn _unpack_signer_response(
-    reg ptr u32[polyvecl] signer_response,
-    reg ptr u8[SIGNATURE_SIZE] sig
-) -> reg ptr u32[polyvecl]
-{
-    inline int i;
-
-    for i = 0 to L {
-        signer_response[i * N: N] = _polyz_unpack(signer_response[i * N : N], sig[COMMITMENT_HASH_SIZE + (i * POLYZ_PACKEDBYTES) : POLYZ_PACKEDBYTES]);
-    }
-
-    return signer_response;
-}
-
 fn _unpack_hint_at_index(
     reg ptr u8[MAX_ONES_IN_HINT] decoded,
     reg u32 index,

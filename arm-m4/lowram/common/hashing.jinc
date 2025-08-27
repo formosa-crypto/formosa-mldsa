@@ -82,20 +82,20 @@ inline fn __add_zero_after_add_naive(reg ptr u32[25*2] state, inline int pos) ->
 }
 
 inline fn __add_nonce_ref(
-        reg ptr u32[25*2] state,
-        inline int i,
-        reg u32 nonce)
-    -> reg ptr u32[25*2]
+    reg ptr u32[25*2] state,
+    inline int i,
+    reg u32 nonce
+) -> reg ptr u32[25*2]
 {
     state[:u16 i] = nonce;
     return state;
 }
 
 inline fn __add_block_end(
-        reg ptr u32[25*2] state,
-        inline int i,
-        inline int rate
-        ) -> reg ptr u32[25*2]
+    reg ptr u32[25*2] state,
+    inline int i,
+    inline int rate
+) -> reg ptr u32[25*2]
 {
     reg u32 t0 t1;
 
@@ -241,27 +241,31 @@ fn _stream128_refill_buffer(
     return state, a, pos, ctr, q, buf;
 }
 
-fn _stream256_init(
-        reg ptr u32[25*2] state,
-        reg ptr u8[CRHBYTES] seed,
-        reg u32 nonce
-        ) -> reg ptr u32[25*2]
+fn _prepare_state_for_shake256(
+    reg ptr u32[25*2] state,
+    reg ptr u8[CRHBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[25*2]
 {
     state = __add_crh(state, seed);
     state = __add_nonce_ref(state, CRHBYTES >> 1, nonce);
     state = __add_zero_after_add(state, CRHBYTES + 2);
     state = __add_block_end(state, CRHBYTES + 2, SHAKE256_RATE);
-    state = _keccakf1600_ref(state);
     return state;
 }
 
 fn _stream256_refill_buffer(
-        reg ptr u32[25*2] state,
-        reg ptr u32[N] a,
-        reg u32 pos,
-        reg u32 ctr ,
-        reg u32 n205
-        ) -> reg ptr u32[25*2], reg ptr u32[N], reg u32, reg u32, reg u32, reg u32
+    reg ptr u32[25*2] state,
+    reg ptr u32[N] a,
+    reg u32 pos,
+    reg u32 ctr ,
+    reg u32 n205
+) -> reg ptr u32[25*2],
+     reg ptr u32[N],
+     reg u32,
+     reg u32,
+     reg u32,
+     reg u32
 {
     if (pos == SHAKE256_RATE >> 2) {
         stack u32 sctr;
@@ -276,9 +280,10 @@ fn _stream256_refill_buffer(
 }
 
 fn _stream256_full_squeeze (
-        reg ptr u8[SHAKE256_RATE] buf, 
-        reg ptr u32[25*2] state
-        ) -> reg ptr u8[SHAKE256_RATE] {
+    reg ptr u8[SHAKE256_RATE] buf,
+    reg ptr u32[25*2] state
+) -> reg ptr u8[SHAKE256_RATE]
+{
     reg u32 i, t;
     i = 0;
 

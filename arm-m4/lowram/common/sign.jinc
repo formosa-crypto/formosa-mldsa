@@ -47,12 +47,15 @@ inline fn __sign_internal(
     reg ptr u8[CRHBYTES] rhoprime_ptr;
 
     reg ptr u8[RNDBYTES] rnd;
-    reg ptr u8[CRHBYTES] mu;
+    reg ptr u8[CRHBYTES] message_rep_ptr;
 
     stack u32[polyvecl] mask;
+    reg ptr u32[polyvecl] mask_ptr;
 
-    stack u32[polyvecl] signer_response;
-    reg ptr u32[N] signer_response_elem_ptr;
+    stack u32[N] mask_element;
+    reg ptr u32[N] mask_element_ptr;
+
+    stack u32[N] signer_response_elem_ptr;
     reg ptr u8[POLYZ_PACKEDBYTES] packed_signer_response_elem;
 
     stack u32[polyveck] hint_vector;
@@ -71,7 +74,7 @@ inline fn __sign_internal(
 
     reg u32 continue nonce nonce_for_mask;
     reg u32 check_norm bound;
-    reg u32 randomness_ptr;
+    reg u32 randomness_ptr idx;
 
     reg ptr u8[K * POLYW1_PACKEDBYTES] w1_packed_in_sig;
 
@@ -129,9 +132,9 @@ inline fn __sign_internal(
         }
         state.[:u8 SEEDBYTES : RNDBYTES] = rnd;
 
-        mu = state.[:u8 SEEDBYTES + RNDBYTES : CRHBYTES];
-        mu = #copy(message_rep);
-        state.[:u8 SEEDBYTES + RNDBYTES : CRHBYTES] = mu;
+        message_rep_ptr = state.[:u8 SEEDBYTES + RNDBYTES : CRHBYTES];
+        message_rep_ptr = #copy(message_rep);
+        state.[:u8 SEEDBYTES + RNDBYTES : CRHBYTES] = message_rep_ptr;
 
         pstate = state;
         pstate = __add_zero_after_add(pstate, SEEDBYTES + RNDBYTES + CRHBYTES);
@@ -152,10 +155,6 @@ inline fn __sign_internal(
             mask, nonce_for_mask = _polyvecl_uniform_gamma1(mask, nonce_for_mask, rhoprime_ptr);
             () = #spill(nonce_for_mask);
 
-            /* Set w = Ay */
-            signer_response = __copy_polyvecl(signer_response, mask);
-            signer_response = _polyvecl_ntt(signer_response);
-
             for row_number = 0 to K {
                 pstate = state;
                 nonce = __or_lsl(0, row_number, 8);
@@ -164,7 +163,20 @@ inline fn __sign_internal(
                 element_of_A, pstate = _poly_uniform_(element_of_A, pstate);
                 state = pstate;
 
-                w1[row_number * N : N] = _poly_pointwise_montgomery(w1[row_number * N : N], element_of_A, signer_response[0 : N]);
+                // We need mask[0 : N]
+                mask_ptr = mask;
+                mask_element_ptr = mask_element;
+                idx = 0;
+                while (idx < N) {
+                    t = mask_ptr[idx];
+                    mask_element_ptr[idx] = t;
+
+                    idx += 1;
+                }
+                mask_element = mask_element_ptr;
+
+                mask_element = _poly_ntt(mask_element);
+                w1[row_number * N : N] = _poly_pointwise_montgomery(w1[row_number * N : N], element_of_A, mask_element);
 
                 for column_number = 1 to L {
                     pstate = state;
@@ -174,7 +186,24 @@ inline fn __sign_internal(
                     element_of_A, pstate = _poly_uniform_(element_of_A, pstate);
                     state = pstate;
 
-                    polynomial = _poly_pointwise_montgomery(polynomial, element_of_A, signer_response[column_number * N : N]);
+                    // We need mask[column_number * N : N]
+
+                    mask_ptr = mask;
+                    mask_element_ptr = mask_element;
+                    idx = 0;
+                    while (idx < N) {
+                        t = N * column_number;
+                        t += idx;
+
+                        t = mask_ptr[t];
+                        mask_element_ptr[idx] = t;
+
+                        idx += 1;
+                    }
+                    mask_element = mask_element_ptr;
+
+                    mask_element = _poly_ntt(mask_element);
+                    polynomial = _poly_pointwise_montgomery(polynomial, element_of_A, mask_element);
 
                     w1[row_number * N : N] = _poly_add_inplace(w1[row_number * N : N], polynomial);
                 }
@@ -222,8 +251,6 @@ inline fn __sign_internal(
             /* Compute z, reject if it reveals secret */
             for column_number = 0 to L {
                 if (check_norm == 0) {
-                    signer_response_elem_ptr = signer_response[column_number * N : N];
-
                     () = #unspill(signing_key);
                     polynomial = _polyeta_unpack(polynomial, signing_key[START_OF_S1_IN_SIGNING_KEY + (column_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
                     polynomial = _poly_ntt(polynomial);
@@ -234,7 +261,6 @@ inline fn __sign_internal(
 
                     signer_response_elem_ptr = _poly_add_inplace(signer_response_elem_ptr, mask[column_number * N : N]);
                     signer_response_elem_ptr = _poly_reduce(signer_response_elem_ptr);
-                    signer_response[column_number * N : N] = signer_response_elem_ptr;
 
                     bound = iGAMMA1 - BETA;
                     check_norm = _poly_check_norm(signer_response_elem_ptr, bound);

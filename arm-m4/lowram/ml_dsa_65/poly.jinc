@@ -153,42 +153,126 @@ fn _polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[
  * Arguments:   - poly *r: pointer to output polynomial
  *              - const uint8_t *a: byte array with bit-packed polynomial
  **************************************************/
-
-fn _polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> reg ptr u32[N] {
-    reg u32 i, j, gamma1, aux;
+fn _polyz_unpack_5_bytes(
+    reg ptr u32[2] poly_z_slice,
+    reg ptr u8[5] block
+) -> reg ptr u32[2]
+{
     reg u32[5] t;
+    reg u32 aux;
+
     inline int k;
 
-    gamma1 = iGAMMA1;
-    i = 0; j = 0;
-    while(i < N) {
-        for k = 0 to 5 { t[k] = (32u) a[j]; j += 1; }
+    reg u32 gamma1 = iGAMMA1;
 
-        /* r->coeffs[2 * i + 0]  = a[5 * i + 0];
-           r->coeffs[2 * i + 0] |= (uint32_t)a[5 * i + 1] << 8;
-           r->coeffs[2 * i + 0] |= (uint32_t)a[5 * i + 2] << 16;
-           r->coeffs[2 * i + 0] &= 0xFFFFF; */
-        aux = __or_lsl(t[0], t[1], 8);
-        aux = __or_lsl_inplace(aux, t[2], 16);
-        aux = __ubfx(aux, 0, 20);
-        aux = gamma1 - aux;
-        r[i] = aux; i += 1;
+    for k = 0 to 5 { t[k] = (32u) block[k]; }
 
-        /* r->coeffs[2 * i + 1]  = a[5 * i + 2] >> 4; */
-        /* r->coeffs[2 * i + 1] |= (uint32_t)a[5 * i + 3] << 4; */
-        /* r->coeffs[2 * i + 1] |= (uint32_t)a[5 * i + 4] << 12; */
-        /* r->coeffs[2 * i + 0] &= 0xFFFFF; */  // this look like a lucky bug
-        aux = t[2] >> 4;
-        aux = __or_lsl_inplace(aux, t[3], 4);
-        aux = __or_lsl_inplace(aux, t[4], 12);
-        aux = gamma1 - aux;
-        r[i] = aux; i += 1;
+    aux = __or_lsl(t[0], t[1], 8);
+    aux = __or_lsl_inplace(aux, t[2], 16);
+    aux = __ubfx(aux, 0, 20);
+    aux = gamma1 - aux;
+    poly_z_slice[0] = aux;
 
-        // Moved up
-        /* r->coeffs[2 * i + 0] = GAMMA1 - r->coeffs[2 * i + 0]; */
-        /* r->coeffs[2 * i + 1] = GAMMA1 - r->coeffs[2 * i + 1]; */
+    aux = t[2] >> 4;
+    aux = __or_lsl_inplace(aux, t[3], 4);
+    aux = __or_lsl_inplace(aux, t[4], 12);
+    aux = gamma1 - aux;
+    poly_z_slice[1] = aux;
+
+    return poly_z_slice;
+}
+fn _polyz_unpack(
+    reg ptr u32[N] poly_z,
+    reg ptr u8[POLYZ_PACKEDBYTES] bytes
+) -> reg ptr u32[N]
+{
+    reg u32 i = 0;
+    reg u32 j = 0;
+
+    while(i < POLYZ_PACKEDBYTES) {
+        poly_z[j : 2] = _polyz_unpack_5_bytes(poly_z[j : 2], bytes[i : 5]);
+        j += 2;
+        i += 5;
     }
-    return r;
+
+    return poly_z;
+}
+
+
+fn _polyz_unpack_streaming(
+    reg ptr u32[N] poly_z,
+    reg u32 fill_from,
+    reg u32 num_leftover_bytes,
+    reg ptr u8[5] first_5_bytes,
+    reg ptr u8[SHAKE256_RATE] bytes
+) -> reg ptr u32[N],
+     reg u32,
+     reg u32,
+     reg ptr u8[5]
+{
+    reg u32 bytes_index;
+    reg u32 j;
+    reg u32 to_copy;
+
+    j = num_leftover_bytes;
+    bytes_index = 0;
+    while (j < 5) {
+        to_copy = (32u)bytes[bytes_index];
+        bytes_index += 1;
+
+        first_5_bytes[j] = (8u)to_copy;
+        j += 1;
+    }
+
+    poly_z[fill_from : 2] = _polyz_unpack_5_bytes(poly_z[fill_from : 2], first_5_bytes);
+    fill_from += 2;
+    first_5_bytes = first_5_bytes;
+
+    while(bytes_index < SHAKE256_RATE - 5) {
+        poly_z[fill_from : 2] = _polyz_unpack_5_bytes(poly_z[fill_from : 2], bytes[bytes_index : 5]);
+        fill_from += 2;
+
+        bytes_index += 5;
+    }
+
+    num_leftover_bytes = 0;
+    while (bytes_index < SHAKE256_RATE) {
+        to_copy = (32u)bytes[bytes_index];
+        bytes_index += 1;
+
+        first_5_bytes[num_leftover_bytes] = (8u)to_copy;
+        num_leftover_bytes += 1;
+    }
+
+    return poly_z, fill_from, num_leftover_bytes, first_5_bytes;
+}
+fn _polyz_unpack_streaming_end(
+    reg ptr u32[N] poly_z,
+    reg ptr u8[5] first_5_bytes,
+    reg ptr u8[96] bytes
+) -> reg ptr u32[N],
+     reg ptr u8[5]
+{
+    reg u32 bytes_index;
+    reg u32 to_copy;
+    reg u32 fill_from;
+
+    to_copy = (32u)bytes[0];
+    first_5_bytes[4] = (8u)to_copy;
+
+    fill_from = 216;
+    poly_z[fill_from : 2] = _polyz_unpack_5_bytes(poly_z[fill_from : 2], first_5_bytes);
+    fill_from += 2;
+
+    bytes_index = 1;
+    while(bytes_index < 96) {
+        poly_z[fill_from : 2] = _polyz_unpack_5_bytes(poly_z[fill_from : 2], bytes[bytes_index : 5]);
+        fill_from += 2;
+
+        bytes_index += 5;
+    }
+
+    return poly_z, first_5_bytes;
 }
 
 inline fn __extr_rej_sample(
@@ -201,66 +285,6 @@ inline fn __extr_rej_sample(
     t = __ubfx(t, 0, 23);
     a, ctr = __rej_sample(a, ctr, t, q);
     return a, ctr;
-}
-
-fn _poly_uniform(
-    reg ptr u32[N] a,
-    reg ptr u8[SEEDBYTES] seed,
-    reg u32 nonce
-) -> reg ptr u32[N]
-{
-    stack u32[25*2] state_;
-    reg ptr u32[25*2] state;
-    stack ptr u32[N] sa;
-    sa = a; state = state_;
-    state = _init_xof_for_element_of_A(state, seed, nonce);
-    a = sa;
-
-    reg u32 ctr, ctr4, pos, q, t;
-    reg u32[3] buf;
-
-    ctr = 0; pos = 0; q = iQ;
-
-    while { ctr4 = ctr + 4; } (ctr4 < N) {
-        state, a, pos, ctr, q, buf = _stream128_refill_buffer(state, a, pos, ctr, q);
-
-        a, ctr = __extr_rej_sample(a, ctr, buf[0], q);  // 3 bytes in buf[0]
-
-        t = buf[0] >>u 24;
-        t = __or_lsl_inplace(t, buf[1], 8);
-        a, ctr = __extr_rej_sample(a, ctr, t, q);
-
-        t = buf[1] >>u 16;
-        t = __or_lsl_inplace(t, buf[2], 16);  // 2 byte in buf[1] U 1 bytes in buf[2]
-        a, ctr = __extr_rej_sample(a, ctr, t, q);
-
-        t = __ubfx(buf[2], 8, 23);
-        a, ctr = __rej_sample(a, ctr, t, q);
-    }
-
-    while (ctr < N) {
-        state, a, pos, ctr, q, buf = _stream128_refill_buffer(state, a, pos, ctr, q);
-
-        a, ctr = __extr_rej_sample(a, ctr, buf[0], q);  // 3 bytes in buf[0]
-
-        if (ctr < N) {
-            t = buf[0] >>u 24;
-            t = __or_lsl_inplace(t, buf[1], 8); // 1 byte in buf[0] U 2 bytes in buf[1]
-            a, ctr = __extr_rej_sample(a, ctr, t, q);
-        }
-
-        if (ctr < N) {
-            t = buf[1] >>u 16;
-            t = __or_lsl_inplace(t, buf[2], 16); // 2 byte in buf[1] U 1 bytes in buf[2]
-            a, ctr = __extr_rej_sample(a, ctr, t, q);
-        }
-
-        if (ctr < N) {
-            t = __ubfx(buf[2], 8, 23);
-            a, ctr = __rej_sample(a, ctr, t, q);
-        }
-    }
-    return a;
 }
 
 fn _poly_uniform_(
@@ -353,7 +377,8 @@ fn _poly_uniform_eta(
     reg ptr u32[25*2] state;
     stack ptr u32[N] sa;
     sa = a; state = state_;
-    state = _stream256_init(state, seed, nonce);
+    state = _prepare_state_for_shake256(state, seed, nonce);
+    state = _keccakf1600_ref(state);
     a = sa;
 
     reg u32 ctr, ctr8, pos, n205, t;
@@ -384,46 +409,39 @@ fn _poly_uniform_eta(
     return a;
 }
 
-param int POLYZ_LAST = POLYZ_PACKEDBYTES / SHAKE256_RATE * SHAKE256_RATE;
-param int POLYZ_LAST_SZ = POLYZ_PACKEDBYTES % SHAKE256_RATE;
 fn _poly_uniform_gamma1(
-    reg ptr u32[N] a,
+    reg ptr u32[N] poly,
     reg ptr u8[CRHBYTES] seed,
     reg u32 nonce
 ) -> reg ptr u32[N]
 {
-    stack u8[POLYZ_PACKEDBYTES] buf_;
-    reg ptr u8[POLYZ_PACKEDBYTES] buf;
-    reg ptr u8[SHAKE256_RATE] bufb;
-    stack u32[25*2] state_;
-    reg ptr u32[25*2] state;
-    stack ptr u32[N] sa;
-    sa = a; state = state_;
-    state = _stream256_init(state, seed, nonce);
+    stack u32[25 * 2] state;
+
+    reg u32 num_leftover_bytes fill_from;
+    stack u8[5] first_5_bytes;
 
     inline int k;
-    for k = 0 to POLYZ_PACKEDBYTES / SHAKE256_RATE {
-        bufb = buf_[SHAKE256_RATE * k : SHAKE256_RATE];
-        bufb = _stream256_full_squeeze(bufb, state);
-        buf_[SHAKE256_RATE * k : SHAKE256_RATE] = bufb;
+
+    state = _prepare_state_for_shake256(state, seed, nonce);
+    () = #spill(poly);
+    state = _keccakf1600_ref(state);
+    () = #unspill(poly);
+
+    num_leftover_bytes = 0;
+    fill_from = 0;
+    for k = 0 to 4 {
+        first_5_bytes = first_5_bytes;
+        poly, fill_from, num_leftover_bytes, first_5_bytes = _polyz_unpack_streaming(poly, fill_from, num_leftover_bytes, first_5_bytes, state[:u8 0 : SHAKE256_RATE]);
+
+        () = #spill(poly, num_leftover_bytes, fill_from);
         state = _keccakf1600_ref(state);
+        () = #unspill(poly, num_leftover_bytes, fill_from);
     }
 
-    reg ptr u8[POLYZ_LAST_SZ] bufc;
-    bufc = buf_[ POLYZ_LAST : POLYZ_LAST_SZ];
+    first_5_bytes = first_5_bytes;
+    poly, first_5_bytes = _polyz_unpack_streaming_end(poly, first_5_bytes, state[:u8 0 : 96]);
 
-    reg u32 i, t;
-    i = 0;
-    while (i < POLYZ_LAST_SZ / 4) {
-        t = state[i];
-        bufc[:u32 i] = t;
-        i += 1;
-    }
-    buf_[  POLYZ_LAST : POLYZ_LAST_SZ] = bufc;
-
-    buf = buf_; a = sa;
-    a = _polyz_unpack(a, buf);
-    return a;
+    return poly;
 }
 
 fn _poly_compress_challenge(

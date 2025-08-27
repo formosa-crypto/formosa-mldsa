@@ -313,29 +313,6 @@ fn _polyveck_pack_w1(
     return r;
 }
 
-fn _polyvec_matrix_expand(
-        reg ptr u32[matKL] mat,
-        reg ptr u8[SEEDBYTES] rho
-) -> reg ptr u32[matKL] {
-    inline int i j;
-    reg ptr u32[N] pmat;
-    reg u32 nonce;
-
-    () = #spill(rho);
-    for i = 0 to K {
-        for j = 0 to L {
-            pmat = mat[i*polyvecl+j*N:N];
-            nonce = (i << 8) + j;
-            () = #spill(mat);
-            pmat = _poly_uniform(pmat, rho, nonce);
-            () = #unspill(mat, rho);
-            mat[i*polyvecl+j*N:N] = pmat;
-        }
-    }
-
-    return mat;
-}
-
 fn _polyvec_matrix_pointwise_montgomery(
         reg ptr u32[polyveck] t,
         reg ptr u32[matKL] mat,
