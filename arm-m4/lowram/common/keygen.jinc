@@ -84,7 +84,7 @@ inline fn __keygen_internal(
         // First perform A * s_1
         // Starting with the 0th row of A and s_1
         nonce = 0;
-        error_element = _poly_uniform_eta(error_element, rho_prime, nonce);
+        error_element = _poly_uniformeta(error_element, rho_prime, nonce);
         if (row_number == 0) {
             () = #unspill(signing_key);
             signing_key = __pack_s1_element_in_signing_key(signing_key, error_element, 0);
@@ -94,7 +94,7 @@ inline fn __keygen_internal(
         nonce = __or_lsl(0, row_number, 8);
         () = #unspill(signing_key);
         xof_state = _init_xof_for_element_of_A(xof_state, signing_key[0 : SEEDBYTES], nonce);
-        element_of_A, xof_state = _poly_uniform_(element_of_A, xof_state);
+        element_of_A, xof_state = _poly_uniform(element_of_A, xof_state);
 
         error_element = _poly_ntt(error_element);
         product = _poly_pointwise_montgomery(product, element_of_A, error_element);
@@ -102,7 +102,7 @@ inline fn __keygen_internal(
         // And then the remaining rows of A and s_1
         for column_number = 1 to L {
             nonce = column_number;
-            error_element = _poly_uniform_eta(error_element, rho_prime, nonce);
+            error_element = _poly_uniformeta(error_element, rho_prime, nonce);
             if (row_number == 0) {
                 () = #unspill(signing_key);
                 signing_key = __pack_s1_element_in_signing_key(signing_key, error_element, column_number);
@@ -112,7 +112,7 @@ inline fn __keygen_internal(
             nonce = __or_lsl(column_number, row_number, 8);
             () = #unspill(signing_key);
             xof_state = _init_xof_for_element_of_A(xof_state, signing_key[0 : SEEDBYTES], nonce);
-            element_of_A, xof_state = _poly_uniform_(element_of_A, xof_state);
+            element_of_A, xof_state = _poly_uniform(element_of_A, xof_state);
 
             error_element = _poly_ntt(error_element);
             element_of_A = _poly_pointwise_montgomery_inplace(element_of_A, error_element);
@@ -123,7 +123,7 @@ inline fn __keygen_internal(
         product = _poly_invntt_tomont(product);
 
         nonce = L + row_number;
-        error_element = _poly_uniform_eta(error_element, rho_prime, nonce);
+        error_element = _poly_uniformeta(error_element, rho_prime, nonce);
 
         () = #unspill(signing_key);
         signing_key = __pack_s2_element_in_signing_key(signing_key, error_element, row_number);

@@ -160,7 +160,7 @@ inline fn __sign_internal(
                 nonce = __or_lsl(0, row_number, 8);
                 () = #unspill(signing_key);
                 pstate = _init_xof_for_element_of_A(pstate, signing_key[0 : SEEDBYTES], nonce);
-                element_of_A, pstate = _poly_uniform_(element_of_A, pstate);
+                element_of_A, pstate = _poly_uniform(element_of_A, pstate);
                 state = pstate;
 
                 // We need mask[0 : N]
@@ -183,7 +183,7 @@ inline fn __sign_internal(
                     nonce = __or_lsl(column_number, row_number, 8);
                     () = #unspill(signing_key);
                     pstate = _init_xof_for_element_of_A(pstate, signing_key[0 : SEEDBYTES], nonce);
-                    element_of_A, pstate = _poly_uniform_(element_of_A, pstate);
+                    element_of_A, pstate = _poly_uniform(element_of_A, pstate);
                     state = pstate;
 
                     // We need mask[column_number * N : N]
