@@ -4,10 +4,7 @@ fn _pack_sig_nocopy(
         ) -> reg ptr u8[SIGNATURE_SIZE] {
     inline int i;
 
-    inline int current_position;
-    current_position = COMMITMENT_HASH_SIZE;
-
-    current_position += L * POLYZ_PACKEDBYTES;
+    inline int current_position = COMMITMENT_HASH_SIZE + (L * POLYZ_PACKEDBYTES);
 
     reg u32 zero = 0;
     reg ptr u8[HINT_ENCODED_SIZE] pointer_to_hint = sig[current_position : HINT_ENCODED_SIZE];

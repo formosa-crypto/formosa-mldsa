@@ -130,17 +130,6 @@ fn _polyvecl_check_norm(reg ptr u32[polyvecl] vector, reg u32 bound) -> reg u32
 /**************************************************************/
 /************ Vectors of polynomials of length K **************/
 /**************************************************************/
-fn _polyveck_reduce(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
-{
-    inline int i;
-    reg ptr u32[N] pv;
-    for i = 0 to K {
-        pv = v[i * N : N];
-        v[i * N : N] = _poly_reduce(pv);
-    }
-    return v;
-}
-
 fn _polyveck_caddq(reg ptr u32[polyveck] v) -> reg ptr u32[polyveck]
 {
     inline int i;
@@ -280,14 +269,16 @@ fn _polyveck_decompose_inplace(
 }
 
 fn _polyveck_make_hint(
-        reg ptr u32[polyveck] h,
-        reg ptr u32[polyveck] v0,
-        reg ptr u32[polyveck] v1
-        ) -> reg u32, reg ptr u32[polyveck]
+    reg ptr u32[polyveck] h,
+    reg ptr u32[polyveck] v0,
+    reg ptr u32[polyveck] v1
+) -> reg ptr u32[polyveck], reg u32
 {
     inline int i;
-    reg u32 s tmp; s = 0;
+    reg u32 s tmp;
     reg ptr u32[N] ph pv0 pv1;
+
+    s = 0;
     for i = 0 to K {
         ph = h[i * N : N]; pv0 = v0[i * N : N]; pv1 = v1[i * N : N];
         () = #spill(v0); // is this the right thing to spill?
@@ -295,7 +286,7 @@ fn _polyveck_make_hint(
         () = #unspill(v0);
         s += tmp;
     }
-    return s, h;
+    return h, s;
 }
 
 fn _polyveck_pack_w1(

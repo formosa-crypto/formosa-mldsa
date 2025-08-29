@@ -60,7 +60,8 @@ inline fn __sign_internal(
 
     stack u32[polyveck] hint_vector;
     reg ptr u32[polyveck] h;
-    reg ptr u32[N] hint_polynomial_ptr;
+    reg ptr u32[N] hint_element_ptr;
+    stack u32[N] hint_element;
 
     stack u32[polyveck] w1 s_w0;
     reg ptr u32[polyveck] w1_pointer w0;
@@ -75,6 +76,7 @@ inline fn __sign_internal(
     reg u32 continue nonce nonce_for_mask;
     reg u32 check_norm bound;
     reg u32 randomness_ptr idx;
+    reg u32 hints total_hints;
 
     reg ptr u8[K * POLYW1_PACKEDBYTES] w1_packed_in_sig;
 
@@ -207,14 +209,15 @@ inline fn __sign_internal(
 
                     w1[row_number * N : N] = _poly_add_inplace(w1[row_number * N : N], polynomial);
                 }
+
+                w1[row_number * N : N] = _poly_reduce(w1[row_number * N : N]);
+                w1[row_number * N : N] = _poly_invntt_tomont(w1[row_number * N : N]);
+                w1[row_number * N : N] = _poly_caddq(w1[row_number * N : N]);
             }
 
             w1_pointer = w1;
-            w1_pointer = _polyveck_reduce(w1_pointer);
-            w1_pointer = _polyveck_invntt_tomont(w1_pointer);
 
             /* Decompose w and call the random oracle */
-            w1_pointer = _polyveck_caddq(w1_pointer);
             w0 = s_w0;
             w1_pointer, s_w0 = _polyveck_decompose_inplace(w1_pointer, w0);
             w1 = w1_pointer;
@@ -223,7 +226,8 @@ inline fn __sign_internal(
             w1_packed_in_sig = _polyveck_pack_w1(w1_packed_in_sig, w1_pointer);
             sig[0: K * POLYW1_PACKEDBYTES] = w1_packed_in_sig;
             () = #spill(sig);
-            // SHAKE256
+
+            // Generate the commitment hash
             pstate = state;
             pstate = __add_crh(pstate, message_rep);
             pstate = __add_zero_after_add(pstate, CRHBYTES);
@@ -278,60 +282,64 @@ inline fn __sign_internal(
                 continue = 1;
             } else {
                 for row_number = 0 to K {
-                    hint_polynomial_ptr = hint_vector[row_number * N : N];
+                    if (check_norm == 0) {
+                        () = #unspill(signing_key);
+                        polynomial = _polyeta_unpack(polynomial, signing_key[START_OF_S2_IN_SIGNING_KEY + (row_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
+                        polynomial = _poly_ntt(polynomial);
 
-                    () = #unspill(signing_key);
-                    polynomial = _polyeta_unpack(polynomial, signing_key[START_OF_S2_IN_SIGNING_KEY + (row_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
-                    polynomial = _poly_ntt(polynomial);
+                        () = #unspill(challenge_ptr);
+                        hint_element = _poly_pointwise_montgomery(hint_element, polynomial, challenge_ptr);
+                        hint_element = _poly_invntt_tomont(hint_element);
 
-                    () = #unspill(challenge_ptr);
-                    hint_polynomial_ptr = _poly_pointwise_montgomery(hint_polynomial_ptr, polynomial, challenge_ptr);
-                    hint_polynomial_ptr = _poly_invntt_tomont(hint_polynomial_ptr);
-                    hint_vector[row_number * N : N] = hint_polynomial_ptr;
+                        s_w0[row_number * N : N] = _poly_sub_inplace(s_w0[row_number * N : N], hint_element);
+
+                        s_w0[row_number * N : N] = _poly_reduce(s_w0[row_number * N : N]);
+
+                        bound = iGAMMA2 - BETA;
+                        check_norm = _poly_check_norm(s_w0[row_number * N : N], bound);
+                    }
                 }
-
-                h = hint_vector;
-                w0 = s_w0;
-                w0 = _polyveck_sub_inplace(w0, h);
-                w0 = _polyveck_reduce(w0);
-                s_w0 = w0;
-                bound = iGAMMA2 - BETA;
-                check_norm = _polyveck_check_norm(w0, bound);
 
                 if (check_norm != 0) {
                     continue = 1;
                 } else {
+                    total_hints = 0;
+                    () = #spill(total_hints);
+
                     for row_number = 0 to K {
-                        hint_polynomial_ptr = hint_vector[row_number * N : N];
+                        if (check_norm == 0) {
+                            hint_element_ptr = hint_vector[row_number * N : N];
 
-                        () = #unspill(signing_key);
-                        polynomial = _polyt0_unpack(polynomial, signing_key[START_OF_T0_IN_SIGNING_KEY + (row_number * POLYT0_PACKEDBYTES) : POLYT0_PACKEDBYTES]);
-                        polynomial = _poly_ntt(polynomial);
+                            () = #unspill(signing_key);
+                            polynomial = _polyt0_unpack(polynomial, signing_key[START_OF_T0_IN_SIGNING_KEY + (row_number * POLYT0_PACKEDBYTES) : POLYT0_PACKEDBYTES]);
+                            polynomial = _poly_ntt(polynomial);
 
-                        () = #unspill(challenge_ptr);
-                        hint_polynomial_ptr = _poly_pointwise_montgomery(hint_polynomial_ptr, polynomial, challenge_ptr);
-                        hint_polynomial_ptr = _poly_invntt_tomont(hint_polynomial_ptr);
-                        hint_polynomial_ptr = _poly_reduce(hint_polynomial_ptr);
-                        hint_vector[row_number * N : N] = hint_polynomial_ptr;
+                            () = #unspill(challenge_ptr);
+                            hint_element_ptr = _poly_pointwise_montgomery(hint_element_ptr, polynomial, challenge_ptr);
+                            hint_element_ptr = _poly_invntt_tomont(hint_element_ptr);
+                            hint_element_ptr = _poly_reduce(hint_element_ptr);
+
+                            bound = iGAMMA2;
+                            check_norm = _poly_check_norm(hint_element_ptr, bound);
+                            if (check_norm == 0) {
+                                s_w0[row_number * N : N] = _poly_add_inplace(s_w0[row_number * N : N], hint_element_ptr);
+
+                                hints, hint_element_ptr = _poly_make_hint(hint_element_ptr, s_w0[row_number *  N : N], w1[row_number * N : N]);
+
+                                () = #unspill(total_hints);
+                                total_hints += hints;
+                                () = #spill(total_hints);
+                            }
+
+                            hint_vector[row_number * N : N] = hint_element_ptr;
+                        }
                     }
 
-                    bound = iGAMMA2;
-
-                    h = hint_vector;
-                    check_norm = _polyveck_check_norm(h, bound);
                     if (check_norm != 0) {
                         continue = 1;
                     } else {
-                        w0 = s_w0;
-                        w0 = _polyveck_add_inplace(w0, h);
-                        s_w0 = w0; w1_pointer = w1;
-                        reg u32 n;
-
-                        h = hint_vector;
-                        n, h = _polyveck_make_hint(h, w0, w1_pointer);
-                        hint_vector = h;
-
-                        if (n > MAX_ONES_IN_HINT) {
+                        () = #unspill(total_hints);
+                        if (total_hints > MAX_ONES_IN_HINT) {
                             continue = 1;
                         } else {
                             () = #unspill(sig);
