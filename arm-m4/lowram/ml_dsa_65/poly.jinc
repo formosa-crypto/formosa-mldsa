@@ -376,7 +376,7 @@ fn _poly_uniform(
 }
 
 /*************************************************
- * Name:        JASMIN_MLDSA_poly_uniformeta
+ * Name:        JASMIN_MLDSA_poly_uniform_eta
  *
  * Description: Sample polynomial with uniformly random coefficients
  *              in [-ETA,ETA] by performing rejection sampling on the
@@ -401,46 +401,47 @@ inline fn rej_eta(
     return a, ctr;
 }
 
-fn _poly_uniformeta(
-        reg ptr u32[N] a,
-#secret reg ptr u8[CRHBYTES] seed,
-        reg u32 nonce
-        ) -> reg ptr u32[N]
+fn _poly_uniform_eta(
+    reg ptr u32[N] poly,
+    #secret reg ptr u8[CRHBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[N]
 {
-    stack u32[25*2] state_;
-    reg ptr u32[25*2] state;
-    stack ptr u32[N] sa;
-    sa = a; state = state_;
-    state = _prepare_state_for_shake256(state, seed, nonce);
-    state = _keccakf1600_ref(state);
-    a = sa;
-
+    stack u32[25*2] state;
     reg u32 ctr, ctr8, pos, n205, t;
     reg u32 buf;
 
-    ctr = 0; pos = 0; n205 = 205;
+    () = #spill(poly);
+    state = _prepare_state_for_shake256(state, seed, nonce);
+    state = _keccakf1600_ref(state);
+    () = #unspill(poly);
 
-    while { ctr8 = ctr + 8; } (ctr8 < N) {
+    ctr = 0;
+    pos = 0;
+    n205 = 205;
+    while {
+        ctr8 = ctr + 8;
+    } (ctr8 < N) {
 
-        state, a, pos, ctr, n205, buf = _stream256_refill_buffer(state, a, pos, ctr, n205);
+        state, poly, pos, ctr, n205, buf = _stream256_refill_buffer(state, poly, pos, ctr, n205);
         inline int i;
         for i = 0 to 8 {
             t = __ubfx(buf, 4*i, 4);
-            a, ctr = rej_eta(a, ctr, t);
+            poly, ctr = rej_eta(poly, ctr, t);
         }
     }
 
     while (ctr < N) {
-        state, a, pos, ctr, n205, buf = _stream256_refill_buffer(state, a, pos, ctr, n205);
+        state, poly, pos, ctr, n205, buf = _stream256_refill_buffer(state, poly, pos, ctr, n205);
         inline int i;
         for i = 0 to 8 {
             if ((i == 0) || (ctr < N)) {
                 t = __ubfx(buf, 4*i, 4);
-                a, ctr = rej_eta(a, ctr, t);
+                poly, ctr = rej_eta(poly, ctr, t);
             }
         }
     }
-    return a;
+    return poly;
 }
 
 

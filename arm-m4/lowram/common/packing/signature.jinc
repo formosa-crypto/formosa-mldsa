@@ -1,44 +1,31 @@
-fn _pack_sig_nocopy(
-        reg ptr u8[SIGNATURE_SIZE] sig,
-        reg ptr u32[polyveck] h
-        ) -> reg ptr u8[SIGNATURE_SIZE] {
-    inline int i;
+fn _pack_hint_element(
+    reg ptr u8[HINT_ENCODED_SIZE] hint_encoded,
+    reg ptr u32[N] hint_element,
+    reg u32 hints_written,
+    reg u32 element_number
+) -> reg ptr u8[HINT_ENCODED_SIZE],
+     reg u32
+{
+    reg u32 i;
+    reg u32 hint;
+    reg u32 index;
 
-    inline int current_position = COMMITMENT_HASH_SIZE + (L * POLYZ_PACKEDBYTES);
-
-    reg u32 zero = 0;
-    reg ptr u8[HINT_ENCODED_SIZE] pointer_to_hint = sig[current_position : HINT_ENCODED_SIZE];
-    reg u32 j = 0;
-    while (j < HINT_ENCODED_SIZE - 4) {
-        pointer_to_hint.[:u32 j] = zero;
-        j += 4;
-    }
-    while (j < HINT_ENCODED_SIZE) {
-        pointer_to_hint[j] = zero;
-        j += 1;
-    }
-
-    reg u32 hj;
-    reg u32 k;
-    k = 0;
-
-    reg ptr u32[N] nh;
-    for i = 0 to K {
-        nh = h[i * N: N];
-        j = 0;
-        while (j < N) {
-            hj = nh[j];
-            if hj != 0 {
-                pointer_to_hint[k] = j;
-                k += 1;
-            }
-            j += 1;
+    i = 0;
+    while (i < N) {
+        hint = hint_element[i];
+        if (hint != 0) {
+            hint_encoded[hints_written] = i;
+            hints_written += 1;
         }
-        pointer_to_hint[i + MAX_ONES_IN_HINT] = k;
-    }
-    sig[current_position : HINT_ENCODED_SIZE] = pointer_to_hint;
 
-    return sig;
+        i += 1;
+    }
+
+    index = MAX_ONES_IN_HINT;
+    index += element_number;
+    hint_encoded[index] = hints_written;
+
+    return hint_encoded, hints_written;
 }
 
 fn _unpack_hint_at_index(

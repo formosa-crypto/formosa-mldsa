@@ -58,9 +58,6 @@ inline fn __sign_internal(
     stack u32[N] signer_response_elem_ptr;
     reg ptr u8[POLYZ_PACKEDBYTES] packed_signer_response_elem;
 
-    stack u32[polyveck] hint_vector;
-    reg ptr u32[polyveck] h;
-    reg ptr u32[N] hint_element_ptr;
     stack u32[N] hint_element;
 
     stack u32[polyveck] w1 s_w0;
@@ -77,6 +74,8 @@ inline fn __sign_internal(
     reg u32 check_norm bound;
     reg u32 randomness_ptr idx;
     reg u32 hints total_hints;
+    reg u32 hints_written;
+    reg u32 row_number_reg;
 
     reg ptr u8[K * POLYW1_PACKEDBYTES] w1_packed_in_sig;
 
@@ -304,53 +303,66 @@ inline fn __sign_internal(
                     continue = 1;
                 } else {
                     total_hints = 0;
-                    () = #spill(total_hints);
+                    hints_written = 0;
+                    () = #spill(total_hints, hints_written);
 
                     for row_number = 0 to K {
                         if (check_norm == 0) {
-                            hint_element_ptr = hint_vector[row_number * N : N];
-
                             () = #unspill(signing_key);
                             polynomial = _polyt0_unpack(polynomial, signing_key[START_OF_T0_IN_SIGNING_KEY + (row_number * POLYT0_PACKEDBYTES) : POLYT0_PACKEDBYTES]);
                             polynomial = _poly_ntt(polynomial);
 
                             () = #unspill(challenge_ptr);
-                            hint_element_ptr = _poly_pointwise_montgomery(hint_element_ptr, polynomial, challenge_ptr);
-                            hint_element_ptr = _poly_invntt_tomont(hint_element_ptr);
-                            hint_element_ptr = _poly_reduce(hint_element_ptr);
+                            hint_element = _poly_pointwise_montgomery(hint_element, polynomial, challenge_ptr);
+                            hint_element = _poly_invntt_tomont(hint_element);
+                            hint_element = _poly_reduce(hint_element);
 
                             bound = iGAMMA2;
-                            check_norm = _poly_check_norm(hint_element_ptr, bound);
+                            check_norm = _poly_check_norm(hint_element, bound);
                             if (check_norm == 0) {
-                                s_w0[row_number * N : N] = _poly_add_inplace(s_w0[row_number * N : N], hint_element_ptr);
+                                s_w0[row_number * N : N] = _poly_add_inplace(s_w0[row_number * N : N], hint_element);
 
-                                hints, hint_element_ptr = _poly_make_hint(hint_element_ptr, s_w0[row_number *  N : N], w1[row_number * N : N]);
+                                hints, hint_element = _poly_make_hint(hint_element, s_w0[row_number *  N : N], w1[row_number * N : N]);
 
                                 () = #unspill(total_hints);
                                 total_hints += hints;
                                 () = #spill(total_hints);
-                            }
 
-                            hint_vector[row_number * N : N] = hint_element_ptr;
+                                () = #unspill(hints_written, sig);
+                                row_number_reg = row_number;
+                                sig[START_OF_HINT_IN_SIGNATURE : HINT_ENCODED_SIZE], hints_written = _pack_hint_element(
+                                    sig[START_OF_HINT_IN_SIGNATURE : HINT_ENCODED_SIZE],
+                                    hint_element,
+                                    hints_written,
+                                    row_number_reg
+                                );
+                                () = #spill(hints_written, sig);
+                            }
                         }
                     }
 
+                    () = #unspill(total_hints);
                     if (check_norm != 0) {
                         continue = 1;
+                    } else if (total_hints > MAX_ONES_IN_HINT) {
+                        continue = 1;
                     } else {
-                        () = #unspill(total_hints);
-                        if (total_hints > MAX_ONES_IN_HINT) {
-                            continue = 1;
-                        } else {
-                            () = #unspill(sig);
+                        continue = 0;
 
-                            #declassify h = hint_vector;
-                            #declassify sig = sig;
+                        // Finish writing out to the encoded hint by zeroing
+                        // the rest of the elements.
+                        idx = START_OF_HINT_IN_SIGNATURE;
+                        () = #unspill(hints_written);
+                        idx += hints_written;
 
-                            sig = _pack_sig_nocopy(sig, h);
-                            () = #spill(sig);
-                            continue = 0;
+                        () = #unspill(sig);
+                        while (hints_written < MAX_ONES_IN_HINT) {
+                            sig[idx] = continue;
+                            idx += 1;
+
+                            hints_written += 1;
                         }
+                        () = #spill(sig);
                     }
                 }
             }
