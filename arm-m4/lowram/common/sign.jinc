@@ -69,13 +69,13 @@ inline fn __sign_internal(
     stack u32[N] polynomial element_of_A;
 
     reg u32 pos m mlen ctx ctxlen t;
-
-    reg u32 continue nonce nonce_for_mask;
+    reg u32 continue nonce;
     reg u32 check_norm bound;
     reg u32 randomness_ptr idx;
     reg u32 hints total_hints;
     reg u32 hints_written;
     reg u32 row_number_reg;
+    reg u32 iteration_number;
 
     reg ptr u8[K * POLYW1_PACKEDBYTES] w1_packed_in_sig;
 
@@ -147,14 +147,14 @@ inline fn __sign_internal(
         rhoprime_ptr = #copy(pstate.[:u8 0 : CRHBYTES]);
         rhoprime = rhoprime_ptr;
 
-        nonce_for_mask = 0;
-        () = #spill(nonce_for_mask);
+        iteration_number = -1;
+        () = #spill(iteration_number);
         while {
+            () = #unspill(iteration_number);
+            iteration_number += 1;
             /* Sample intermediate vector y */
-            rhoprime_ptr = rhoprime;
-            () = #unspill(nonce_for_mask);
-            mask, nonce_for_mask = _polyvecl_uniform_gamma1(mask, nonce_for_mask, rhoprime_ptr);
-            () = #spill(nonce_for_mask);
+            () = #spill(iteration_number);
+            mask = _polyvecl_uniform_gamma1(mask, rhoprime, iteration_number);
 
             for row_number = 0 to K {
                 pstate = state;

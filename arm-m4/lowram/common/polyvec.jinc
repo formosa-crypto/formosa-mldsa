@@ -11,12 +11,17 @@ param int matKL = (K * L) * N;
 
 fn _polyvecl_uniform_gamma1(
     reg ptr u32[polyvecl] v,
-    reg u32 nonce,
-    reg ptr u8[CRHBYTES] seed
-) -> reg ptr u32[polyvecl], reg u32
+    reg ptr u8[CRHBYTES] seed,
+    reg u32 iteration_number
+) -> reg ptr u32[polyvecl]
 {
-    inline int i;
     reg ptr u32[N] polynomial_ptr;
+    reg u32 nonce;
+
+    inline int i;
+
+    nonce = L;
+    nonce *= iteration_number;
 
     for i = 0 to L {
         polynomial_ptr = v[i * N : N];
@@ -29,7 +34,7 @@ fn _polyvecl_uniform_gamma1(
         v[i * N : N] = polynomial_ptr;
     }
 
-    return v, nonce;
+    return v;
 }
 
 fn _polyvecl_add_inplace(
