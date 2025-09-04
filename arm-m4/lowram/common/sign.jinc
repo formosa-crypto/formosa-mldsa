@@ -57,6 +57,7 @@ inline fn __sign_internal(
     reg ptr u32[polyveck] w1_pointer w0;
 
     stack u32[N] challenge;
+    stack u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge;
 
     stack u32[N] polynomial element_of_A;
 
@@ -221,6 +222,7 @@ inline fn __sign_internal(
             () = #spill(sig);
             #declassify commitment_hash = commitment_hash;
             state, challenge = _poly_challenge(state, challenge, commitment_hash);
+            compressed_challenge = _poly_compress_challenge(compressed_challenge, challenge);
             challenge = _poly_ntt(challenge);
 
             check_norm = 0;
@@ -286,20 +288,21 @@ inline fn __sign_internal(
 
                     for row_number = 0 to K {
                         if (check_norm == 0) {
+                            // For what follows, |polynomial| stands in for
+                            // |hint_element|
                             () = #unspill(signing_key);
-                            polynomial = _polyt0_unpack(polynomial, signing_key[START_OF_T0_IN_SIGNING_KEY + (row_number * POLYT0_PACKEDBYTES) : POLYT0_PACKEDBYTES]);
-                            polynomial = _poly_ntt(polynomial);
-
-                            hint_element = _poly_pointwise_montgomery(hint_element, polynomial, challenge);
-                            hint_element = _poly_invntt_tomont(hint_element);
-                            hint_element = _poly_reduce(hint_element);
+                            polynomial = _poly_schoolbook_multiply_t0_by_challenge(
+                                polynomial,
+                                signing_key[START_OF_T0_IN_SIGNING_KEY + (row_number * POLYT0_PACKEDBYTES) : POLYT0_PACKEDBYTES],
+                                compressed_challenge
+                            );
 
                             bound = iGAMMA2;
-                            check_norm = _poly_check_norm(hint_element, bound);
+                            check_norm = _poly_check_norm(polynomial, bound);
                             if (check_norm == 0) {
-                                s_w0[row_number * N : N] = _poly_add_inplace(s_w0[row_number * N : N], hint_element);
+                                s_w0[row_number * N : N] = _poly_add_inplace(s_w0[row_number * N : N], polynomial);
 
-                                hints, hint_element = _poly_make_hint(hint_element, s_w0[row_number *  N : N], w1[row_number * N : N]);
+                                hints, polynomial = _poly_make_hint(polynomial, s_w0[row_number *  N : N], w1[row_number * N : N]);
 
                                 () = #unspill(total_hints);
                                 total_hints += hints;
@@ -309,7 +312,7 @@ inline fn __sign_internal(
                                 row_number_reg = row_number;
                                 sig[START_OF_HINT_IN_SIGNATURE : HINT_ENCODED_SIZE], hints_written = _pack_hint_element(
                                     sig[START_OF_HINT_IN_SIGNATURE : HINT_ENCODED_SIZE],
-                                    hint_element,
+                                    polynomial,
                                     hints_written,
                                     row_number_reg
                                 );

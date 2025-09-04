@@ -213,3 +213,135 @@ fn _polyt0_unpack(reg ptr u32[N] r, reg ptr u8[POLYT0_PACKEDBYTES] a) -> reg ptr
   return r;
 }
 
+fn _t0_unpack_coefficient_at_index(
+    reg ptr u8[POLYT0_PACKEDBYTES] packed,
+    reg u32 index
+) -> reg u32 {
+    reg u32 coeff temp;
+    reg u32 offset;
+    reg u32 start_byte;
+
+    // 8 coefficients are packed in 13 bytes
+    start_byte = (index >> 3);
+    temp = 13;
+    start_byte *= temp;
+
+    offset = index & 0x7;
+
+    if (offset == 0)
+    {
+        coeff = (32u)packed[start_byte];
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 8;
+
+        coeff |= temp;
+    }
+    else if (offset == 1)
+    {
+        start_byte += 1;
+        coeff = (32u)packed[start_byte];
+        coeff >>= 5;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 3;
+        coeff |= temp;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 11;
+        coeff |= temp;
+    }
+    else if (offset == 2)
+    {
+        start_byte += 3;
+        coeff = (32u)packed[start_byte];
+        coeff >>= 2;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 6;
+
+        coeff |= temp;
+    }
+    else if (offset == 3)
+    {
+        start_byte += 4;
+        coeff = (32u)packed[start_byte];
+        coeff >>= 7;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 1;
+        coeff |= temp;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 9;
+        coeff |= temp;
+    }
+    else if (offset == 4)
+    {
+        start_byte += 6;
+        coeff = (32u)packed[start_byte];
+        coeff >>= 4;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 4;
+        coeff |= temp;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 12;
+        coeff |= temp;
+    }
+    else if (offset == 5)
+    {
+        start_byte += 8;
+        coeff = (32u)packed[start_byte];
+        coeff >>= 1;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 7;
+        coeff |= temp;
+    }
+    else if (offset == 6)
+    {
+        start_byte += 9;
+        coeff = (32u)packed[start_byte];
+        coeff >>= 6;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 2;
+        coeff |= temp;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 10;
+        coeff |= temp;
+    }
+    else
+    {
+        start_byte += 11;
+        coeff = (32u)packed[start_byte];
+        coeff >>= 3;
+
+        start_byte += 1;
+        temp = (32u)packed[start_byte];
+        temp <<= 5;
+        coeff |= temp;
+    }
+
+    temp = 0x1FFF;
+    coeff &= temp;
+
+    temp = 1 << (D - 1);
+    coeff = temp - coeff;
+
+    return coeff;
+}

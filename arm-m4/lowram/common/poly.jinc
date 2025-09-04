@@ -606,6 +606,124 @@ fn _poly_schoolbook_multiply_t1_by_challenge(
     return product;
 }
 
+inline fn __t0_by_challenge_helper(
+    reg ptr u32[N] product,
+    reg u32 sign,
+    reg u32 index,
+    reg ptr u8[POLYT0_PACKEDBYTES] t0_element_packed
+) -> reg ptr u32[N] {
+    reg u32 j offset;
+    reg u32 lhs rhs;
+
+    if (sign == 0) {
+        j = 0;
+        while {
+            offset = index + j;
+        } (offset < N) {
+            lhs = product[offset];
+            rhs = _t0_unpack_coefficient_at_index(t0_element_packed, j);
+
+            lhs += rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
+
+        j = N;
+        j -= index;
+        while (j < N) {
+            offset = -N;
+            offset += index;
+            offset += j;
+
+            lhs = product[offset];
+            rhs = _t0_unpack_coefficient_at_index(t0_element_packed, j);
+
+            lhs -= rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
+    } else {
+        j = 0;
+        while {
+            offset = index + j;
+        } (offset < N) {
+            lhs = product[offset];
+            rhs = _t0_unpack_coefficient_at_index(t0_element_packed, j);
+
+            lhs -= rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
+
+        j = N;
+        j -= index;
+        while (j < N) {
+            offset = -N;
+            offset += index;
+            offset += j;
+
+            lhs = product[offset];
+            rhs = _t0_unpack_coefficient_at_index(t0_element_packed, j);
+
+            lhs += rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
+    }
+
+    return product;
+}
+fn _poly_schoolbook_multiply_t0_by_challenge(
+    reg ptr u32[N] product,
+    reg ptr u8[POLYT0_PACKEDBYTES] t0_element_packed,
+    reg ptr u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge
+) -> reg ptr u32[N]
+{
+    reg u32 sign signs index;
+
+    reg u32 i zero;
+
+    i = 0;
+    zero = 0;
+    while (i < N) {
+        product[i] = zero;
+        i += 1;
+    }
+
+    signs = compressed_challenge.[:u32 COMPRESSED_CHALLENGE_SIZE - 8];
+    i = 0;
+    while (i < 32) {
+        index = (32u)compressed_challenge[i];
+        i += 1;
+
+        sign = signs & 1;
+        signs >>= 1;
+
+        product = __t0_by_challenge_helper(product, sign, index, t0_element_packed);
+    }
+
+    signs = compressed_challenge.[:u32 COMPRESSED_CHALLENGE_SIZE - 4];
+    while (i < TAU) {
+        index = (32u)compressed_challenge[i];
+        i += 1;
+
+        sign = signs & 1;
+        signs >>= 1;
+
+        product = __t0_by_challenge_helper(product, sign, index, t0_element_packed);
+    }
+
+    return product;
+}
+
 fn _poly_add_to_compressed_w1_at_index(
     reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element,
     reg u32 coeff,
