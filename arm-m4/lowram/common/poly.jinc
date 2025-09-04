@@ -724,8 +724,8 @@ fn _poly_schoolbook_multiply_t0_by_challenge(
     return product;
 }
 
-fn _poly_add_to_compressed_w1_at_index(
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element,
+fn _poly_add_to_compressed_product_at_index(
+    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_product,
     reg u32 coeff,
     reg u32 index
 ) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
@@ -737,27 +737,26 @@ fn _poly_add_to_compressed_w1_at_index(
     offset = 3;
     offset *= index;
 
-    w1_coeff = compressed_w1_element.[:u32 offset];
+    w1_coeff = compressed_product.[:u32 offset];
     w1_coeff &= three_byte_mask;
 
     w1_coeff += coeff;
     w1_coeff = _freeze(w1_coeff);
 
-    compressed_w1_element.[:u16 offset] = (16u)w1_coeff;
+    compressed_product.[:u16 offset] = (16u)w1_coeff;
     w1_coeff >>= 16;
     offset += 2;
 
-    compressed_w1_element[offset] = (8u)w1_coeff;
+    compressed_product[offset] = (8u)w1_coeff;
 
-    return compressed_w1_element;
+    return compressed_product;
 }
-
-fn _poly_az_plus_w1(
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element,
+fn _poly_compute_A_times_polynomial(
+    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_product,
     reg ptr u32[25 * 2] xof_state, // for A
     reg ptr u8[SEEDBYTES] rho,
     reg u32 nonce,
-    reg ptr u32[N] signer_response_element
+    reg ptr u32[N] polynomial
 ) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
      reg ptr u32[25 * 2]
 {
@@ -767,7 +766,7 @@ fn _poly_az_plus_w1(
 
     inline bool b;
 
-    () = #spill(signer_response_element, compressed_w1_element);
+    () = #spill(polynomial, compressed_product);
 
     xof_state = _prepare_xof_for_element_of_A(xof_state, rho, nonce);
 
@@ -787,12 +786,12 @@ fn _poly_az_plus_w1(
 
                 b = __cmp_b(coeff, iQ);
                 if (b) {
-                    () = #unspill(signer_response_element);
-                    coeff = __mul_montgomery_reduce(coeff, signer_response_element[sampled]);
+                    () = #unspill(polynomial);
+                    coeff = __mul_montgomery_reduce(coeff, polynomial[sampled]);
 
-                    () = #unspill(compressed_w1_element);
-                    compressed_w1_element = _poly_add_to_compressed_w1_at_index(compressed_w1_element, coeff, sampled);
-                    () = #spill(compressed_w1_element);
+                    () = #unspill(compressed_product);
+                    compressed_product = _poly_add_to_compressed_product_at_index(compressed_product, coeff, sampled);
+                    () = #spill(compressed_product);
 
                     sampled += 1;
                 }
@@ -803,7 +802,7 @@ fn _poly_az_plus_w1(
         }
     }
 
-    return compressed_w1_element, xof_state;
+    return compressed_product, xof_state;
 }
 
 fn _poly_decompress_w1_element(
@@ -829,7 +828,6 @@ fn _poly_decompress_w1_element(
 
     return w1_element;
 }
-
 fn _poly_compress_w1_element(
     reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element,
     reg ptr u32[N] w1_element
@@ -878,4 +876,19 @@ fn _poly_subtract_from_compressed_w1_element(
     }
 
     return polynomial;
+}
+
+inline fn __zero_compressed_w_element(
+    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w_element
+) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
+{
+    reg u32 zero = 0;
+    reg u32 i = 0;
+    while (i < COMPRESSED_W1_ELEMENT_SIZE) {
+        compressed_w_element.[:u32 i] = zero;
+        i += 4;
+    }
+    compressed_w_element[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING - 1] = (8u)zero;
+
+    return compressed_w_element;
 }

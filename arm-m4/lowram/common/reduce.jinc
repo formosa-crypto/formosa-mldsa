@@ -88,7 +88,7 @@ fn _freeze(reg u32 a) -> reg u32
 * Returns r.
 **************************************************/
 
-inline fn __montgomery_reduce_8380417(reg u32 a_low a_high) -> reg u32
+inline fn __montgomery_reduce(reg u32 a_low a_high) -> reg u32
 {
   reg u32 a_low_x7 a_low_x7169 a_low_x58728449;
   reg u32 minus_q = -iQ;
@@ -107,9 +107,9 @@ inline fn __montgomery_reduce_8380417(reg u32 a_low a_high) -> reg u32
   return res;
 }
 
-fn _montgomery_reduce_8380417(reg u32 a_low a_high) -> reg u32
+fn _montgomery_reduce(reg u32 a_low a_high) -> reg u32
 {
   reg u32 res;
-  res = __montgomery_reduce_8380417(a_low, a_high);
+  res = __montgomery_reduce(a_low, a_high);
   return res;
 }

@@ -8,7 +8,7 @@ inline fn __pack_s1_element_in_signing_key(
     inline int STARTING_INDEX = START_OF_S1_PACKED + (INDEX * POLYETA_PACKEDBYTES);
 
     signing_key[STARTING_INDEX : POLYETA_PACKEDBYTES] =
-        _polyeta_pack(
+        _poly_eta_pack(
             signing_key[STARTING_INDEX : POLYETA_PACKEDBYTES],
             s1_element
         );
@@ -26,7 +26,7 @@ inline fn __pack_s2_element_in_signing_key(
     inline int STARTING_INDEX = START_OF_S2_PACKED + (INDEX * POLYETA_PACKEDBYTES);
 
     signing_key[STARTING_INDEX : POLYETA_PACKEDBYTES] =
-        _polyeta_pack(
+        _poly_eta_pack(
             signing_key[STARTING_INDEX : POLYETA_PACKEDBYTES],
             s2_element
         );

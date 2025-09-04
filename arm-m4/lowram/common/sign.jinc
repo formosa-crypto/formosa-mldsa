@@ -230,7 +230,7 @@ inline fn __sign_internal(
             for column_number = 0 to L {
                 if (check_norm == 0) {
                     () = #unspill(signing_key);
-                    polynomial = _polyeta_unpack(polynomial, signing_key[START_OF_S1_IN_SIGNING_KEY + (column_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
+                    polynomial = _poly_eta_unpack(polynomial, signing_key[START_OF_S1_IN_SIGNING_KEY + (column_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
                     polynomial = _poly_ntt(polynomial);
 
                     signer_response_elem = _poly_pointwise_montgomery(signer_response_elem, challenge, polynomial);
@@ -264,7 +264,7 @@ inline fn __sign_internal(
                 for row_number = 0 to K {
                     if (check_norm == 0) {
                         () = #unspill(signing_key);
-                        polynomial = _polyeta_unpack(polynomial, signing_key[START_OF_S2_IN_SIGNING_KEY + (row_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
+                        polynomial = _poly_eta_unpack(polynomial, signing_key[START_OF_S2_IN_SIGNING_KEY + (row_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
                         polynomial = _poly_ntt(polynomial);
 
                         hint_element = _poly_pointwise_montgomery(hint_element, polynomial, challenge);
@@ -307,16 +307,17 @@ inline fn __sign_internal(
                                 () = #unspill(total_hints);
                                 total_hints += hints;
                                 () = #spill(total_hints);
-
-                                () = #unspill(hints_written, sig);
-                                row_number_reg = row_number;
-                                sig[START_OF_HINT_IN_SIGNATURE : HINT_ENCODED_SIZE], hints_written = _pack_hint_element(
-                                    sig[START_OF_HINT_IN_SIGNATURE : HINT_ENCODED_SIZE],
-                                    polynomial,
-                                    hints_written,
-                                    row_number_reg
-                                );
-                                () = #spill(hints_written, sig);
+                                if (total_hints <= MAX_ONES_IN_HINT) {
+                                    () = #unspill(hints_written, sig);
+                                    row_number_reg = row_number;
+                                    sig[START_OF_HINT_IN_SIGNATURE : HINT_ENCODED_SIZE], hints_written = _pack_hint_element(
+                                        sig[START_OF_HINT_IN_SIGNATURE : HINT_ENCODED_SIZE],
+                                        polynomial,
+                                        hints_written,
+                                        row_number_reg
+                                    );
+                                    () = #spill(hints_written, sig);
+                                }
                             }
                         }
                     }

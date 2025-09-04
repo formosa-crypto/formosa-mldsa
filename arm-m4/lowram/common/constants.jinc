@@ -15,5 +15,6 @@ param int PQC_SHAKECTX_BYTES = 25;
 param int SHAKE256_RATE = 136;
 param int SHAKE128_RATE = 168;
 
+// TODO: Rename these constants to remove the w1.
 param int COMPRESSED_W1_ELEMENT_SIZE = 3 * N;
 param int COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING = 3 * N + 1;
