@@ -1,31 +1,3 @@
-inline fn __copy_polyvecl(reg ptr u32[polyvecl] s1hat, reg ptr u32[polyvecl] s1) -> reg ptr u32[polyvecl] {
-    reg u32 i, t;
-
-    i = 0;
-    while (i < polyvecl) {
-      t = s1[i];
-      s1hat[i] = t;
-      i += 1;
-    }
-    return s1hat;
-}
-
-/************************************************
- * Name:        crypto_sign_signature_ctx_seed
- *
- * Description: Computes signature.
- *
- * Arguments:   - uint8_t *sig:   pointer to output signature (of length PQCLEAN_MLDSA_CLEAN_CRYPTO_BYTES)
- *              - size_t *siglen: pointer to output length of signature
- *              - uint8_t *m:     pointer to message to be signed
- *              - size_t mlen:    length of message
- *              - uint8_t *ctx:   pointer to context string
- *              - size_t ctxlen:  length of context string
- *              - uint8_t *sk:    pointer to bit-packed secret key
- *              - uint8_t *rand:  pointer to randomness (of length RNDBYTES)
- *
- * Returns 0 (success) or -1 (context string too long)
- **************************************************/
 inline fn __sign_internal(
     #public reg ptr u8[SIGNATURE_SIZE] sig,
     reg ptr u32[3] ctx_m_rand,
@@ -51,15 +23,12 @@ inline fn __sign_internal(
     stack u32[N] signer_response_elem;
     reg ptr u8[POLYZ_PACKEDBYTES] packed_signer_response_elem;
 
-    stack u32[N] hint_element;
-
-    stack u32[polyveck] w1 s_w0;
-    reg ptr u32[polyveck] w1_pointer w0;
+    stack u8[K * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] w_compressed;
 
     stack u32[N] challenge;
     stack u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge;
 
-    stack u32[N] polynomial element_of_A;
+    stack u32[N] polynomial;
 
     reg u32 status;
     reg u32 pos m mlen ctx ctxlen t;
@@ -70,8 +39,6 @@ inline fn __sign_internal(
     reg u32 hints_written;
     reg u32 row_number_reg;
     reg u32 iteration_number;
-
-    reg ptr u8[K * POLYW1_PACKEDBYTES] w1_packed_in_sig;
 
     inline int i;
     inline int row_number column_number;
@@ -146,69 +113,77 @@ inline fn __sign_internal(
         while {
             () = #unspill(iteration_number);
             iteration_number += 1;
-            /* Sample intermediate vector y */
             () = #spill(iteration_number);
 
             for row_number = 0 to K {
-                pstate = state;
-                nonce = __or_lsl(0, row_number, 8);
-                () = #unspill(signing_key);
-                pstate = _init_xof_for_element_of_A(pstate, signing_key[0 : SEEDBYTES], nonce);
-                element_of_A, pstate = _poly_uniform(element_of_A, pstate);
-                state = pstate;
+                w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] =
+                    __zero_compressed_w_element(
+                        w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]);
+            }
 
-                // |polynomial| is mask[0 : N]
+            for column_number = 0 to L {
                 () = #unspill(iteration_number);
                 nonce = L;
                 nonce *= iteration_number;
+                nonce += column_number;
 
+                // Sample an element of the vector |mask|.
                 polynomial = _poly_uniform_gamma1(polynomial, rhoprime, nonce);
                 polynomial = _poly_ntt(polynomial);
-                w1[row_number * N : N] = _poly_pointwise_montgomery(w1[row_number * N : N], element_of_A, polynomial);
 
-                for column_number = 1 to L {
-                    pstate = state;
+                for row_number = 0 to K {
                     nonce = __or_lsl(column_number, row_number, 8);
                     () = #unspill(signing_key);
-                    pstate = _init_xof_for_element_of_A(pstate, signing_key[0 : SEEDBYTES], nonce);
-                    element_of_A, pstate = _poly_uniform(element_of_A, pstate);
+                    pstate = state;
+                    w_compressed[row_number *
+                                 COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING :
+                                 COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
+                    pstate =
+                        _poly_compute_A_times_polynomial(
+                            w_compressed[
+                                row_number *
+                                COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING :
+                                COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
+                            pstate,
+                            signing_key[0 : SEEDBYTES],
+                            nonce,
+                            polynomial
+                        );
                     state = pstate;
-
-                    // |polynomial| is mask[column_number * N : N]
-                    () = #unspill(iteration_number);
-                    nonce = L;
-                    nonce *= iteration_number;
-                    nonce += column_number;
-
-                    polynomial = _poly_uniform_gamma1(polynomial, rhoprime, nonce);
-                    polynomial = _poly_ntt(polynomial);
-                    polynomial = _poly_pointwise_montgomery_inplace(polynomial, element_of_A);
-
-                    w1[row_number * N : N] = _poly_add_inplace(w1[row_number * N : N], polynomial);
                 }
-
-                w1[row_number * N : N] = _poly_reduce(w1[row_number * N : N]);
-                w1[row_number * N : N] = _poly_invntt_tomont(w1[row_number * N : N]);
-                w1[row_number * N : N] = _poly_caddq(w1[row_number * N : N]);
             }
 
-            w1_pointer = w1;
+            for row_number = 0 to K {
+                polynomial =
+                    _poly_decompress_w1_element(
+                        polynomial,
+                        w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
+                    );
+                polynomial = _poly_invntt_tomont(polynomial);
+                polynomial = _poly_caddq(polynomial);
 
-            /* Decompose w and call the random oracle */
-            w0 = s_w0;
-            w1_pointer, s_w0 = _polyveck_decompose_inplace(w1_pointer, w0);
-            w1 = w1_pointer;
-            () = #unspill(sig);
-            w1_packed_in_sig = sig[0: K * POLYW1_PACKEDBYTES];
-            w1_packed_in_sig = _polyveck_pack_w1(w1_packed_in_sig, w1_pointer);
-            sig[0: K * POLYW1_PACKEDBYTES] = w1_packed_in_sig;
-            () = #spill(sig);
+                w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] =
+                    _poly_compress_w1_element(
+                        w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
+                        polynomial
+                    );
+
+                polynomial = _poly_high_bits_inplace(polynomial);
+                () = #unspill(sig);
+                sig[row_number * POLYW1_PACKEDBYTES : POLYW1_PACKEDBYTES] =
+                    _polyw1_pack(
+                        sig[row_number * POLYW1_PACKEDBYTES : POLYW1_PACKEDBYTES],
+                        polynomial
+                    );
+                () = #spill(sig);
+            }
 
             // Generate the commitment hash
             pstate = state;
             pstate = __add_crh(pstate, message_rep);
             pstate = __add_zero_after_add(pstate, CRHBYTES);
-            pstate, pos = __derive_commitment_hash(pstate, CRHBYTES, w1_packed_in_sig);
+            () = #unspill(sig);
+            pstate, pos = __derive_commitment_hash(pstate, CRHBYTES, sig[0 : K * POLYW1_PACKEDBYTES]);
             pstate = _shake256_add_block_end(pstate, pos);
             pstate = _keccakf1600_ref(pstate);
 
@@ -263,19 +238,31 @@ inline fn __sign_internal(
             } else {
                 for row_number = 0 to K {
                     if (check_norm == 0) {
+                        // Here, |polynomial| stands for |hint_element|
                         () = #unspill(signing_key);
                         polynomial = _poly_eta_unpack(polynomial, signing_key[START_OF_S2_IN_SIGNING_KEY + (row_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
                         polynomial = _poly_ntt(polynomial);
 
-                        hint_element = _poly_pointwise_montgomery(hint_element, polynomial, challenge);
-                        hint_element = _poly_invntt_tomont(hint_element);
+                        polynomial = _poly_pointwise_montgomery_inplace(polynomial, challenge);
+                        polynomial = _poly_invntt_tomont(polynomial);
 
-                        s_w0[row_number * N : N] = _poly_sub_inplace(s_w0[row_number * N : N], hint_element);
+                        polynomial =
+                            _poly_subtract_from_compressed_w1_element(
+                                polynomial,
+                                w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
+                            );
 
-                        s_w0[row_number * N : N] = _poly_reduce(s_w0[row_number * N : N]);
+                        w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] =
+                            _poly_compress_w1_element(
+                                w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
+                                polynomial
+                            );
+
+                        polynomial = _poly_low_bits_inplace(polynomial);
+                        polynomial = _poly_reduce(polynomial);
 
                         bound = iGAMMA2 - BETA;
-                        check_norm = _poly_check_norm(s_w0[row_number * N : N], bound);
+                        check_norm = _poly_check_norm(polynomial, bound);
                     }
                 }
 
@@ -300,9 +287,7 @@ inline fn __sign_internal(
                             bound = iGAMMA2;
                             check_norm = _poly_check_norm(polynomial, bound);
                             if (check_norm == 0) {
-                                s_w0[row_number * N : N] = _poly_add_inplace(s_w0[row_number * N : N], polynomial);
-
-                                hints, polynomial = _poly_make_hint(polynomial, s_w0[row_number *  N : N], w1[row_number * N : N]);
+                                polynomial, hints = _poly_make_hint_inplace(polynomial, w_compressed[row_number *  COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]);
 
                                 () = #unspill(total_hints);
                                 total_hints += hints;

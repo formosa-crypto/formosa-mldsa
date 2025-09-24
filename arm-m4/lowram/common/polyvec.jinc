@@ -273,27 +273,6 @@ fn _polyveck_decompose_inplace(
     return v1, v0;
 }
 
-fn _polyveck_make_hint(
-    reg ptr u32[polyveck] h,
-    reg ptr u32[polyveck] v0,
-    reg ptr u32[polyveck] v1
-) -> reg ptr u32[polyveck], reg u32
-{
-    inline int i;
-    reg u32 s tmp;
-    reg ptr u32[N] ph pv0 pv1;
-
-    s = 0;
-    for i = 0 to K {
-        ph = h[i * N : N]; pv0 = v0[i * N : N]; pv1 = v1[i * N : N];
-        () = #spill(v0); // is this the right thing to spill?
-        tmp, h[i * N : N] = _poly_make_hint(ph, pv0, pv1);
-        () = #unspill(v0);
-        s += tmp;
-    }
-    return h, s;
-}
-
 fn _polyveck_pack_w1(
         reg ptr u8[K * POLYW1_PACKEDBYTES] r,
         reg ptr u32[polyveck] w1

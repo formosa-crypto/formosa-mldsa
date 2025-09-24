@@ -312,33 +312,39 @@ fn _poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg
     return c;
 }
 
-/*************************************************
- * Name:        JASMIN_MLDSA_poly_make_hint
- *
- * Description: Compute hint polynomial. The coefficients of which indicate
- *              whether the low bits of the corresponding coefficient of
- *              the input polynomial overflow into the high bits.
- *
- * Arguments:   - poly *h: pointer to output hint polynomial
- *              - const poly *a0: pointer to low part of input polynomial
- *              - const poly *a1: pointer to high part of input polynomial
- *
- * Returns number of 1 bits.
- **************************************************/
-fn _poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> reg u32, reg ptr u32[N]{
-    reg u32 i, s, a0_, a1_, h_, gamma2;
-    gamma2 = iGAMMA2;
-    i = 0; s = 0;
-    while(i < N)
+fn _poly_make_hint_inplace(
+    reg ptr u32[N] polynomial,
+    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] w_compressed
+) -> reg ptr u32[N],
+     reg u32
+{
+    reg u32 w_coeff poly_coeff;
+    reg u32 offset;
+    reg u32 num_hints = 0;
+    reg u32 i = 0;
+    reg u32 three_byte_mask = (1 << 24) - 1;
+
+    while (i < N)
     {
-        a0_ = a0[i];
-        a1_ = a1[i];
-        h_ = __make_hint(a0_, a1_, gamma2);
-        h[i] = h_;
-        s += h_;
+        offset = 3;
+        offset *= i;
+        w_coeff = w_compressed.[:u32 offset];
+        w_coeff &= three_byte_mask;
+
+        poly_coeff = polynomial[i];
+        w_coeff += poly_coeff;
+
+        poly_coeff = -poly_coeff;
+        poly_coeff = __make_hint(poly_coeff, w_coeff);
+
+        polynomial[i] = poly_coeff;
+        if (poly_coeff == 1) {
+            num_hints += 1;
+        }
+
         i += 1;
     }
-    return s, h;
+    return polynomial, num_hints;
 }
 
 /*************************************************
@@ -891,4 +897,34 @@ inline fn __zero_compressed_w_element(
     compressed_w_element[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING - 1] = (8u)zero;
 
     return compressed_w_element;
+}
+
+fn _poly_high_bits_inplace(reg ptr u32[N] poly) -> reg ptr u32[N]
+{
+    reg u32 coeff;
+    reg u32 i = 0;
+    while (i < N) {
+        coeff = poly[i];
+        coeff = __coefficient_high_bits(coeff);
+
+        poly[i] = coeff;
+        i += 1;
+    }
+
+    return poly;
+}
+
+fn _poly_low_bits_inplace(reg ptr u32[N] poly) -> reg ptr u32[N]
+{
+    reg u32 coeff;
+    reg u32 i = 0;
+    while (i < N) {
+        coeff = poly[i];
+        coeff = __coefficient_low_bits(coeff);
+
+        poly[i] = coeff;
+        i += 1;
+    }
+
+    return poly;
 }
