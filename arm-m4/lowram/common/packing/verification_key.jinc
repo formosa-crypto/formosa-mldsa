@@ -15,33 +15,3 @@ inline fn __pack_t1_element_in_verification_key(
 
     return verification_key;
 }
-
-/*************************************************
-* Name:        JASMIN_MLDSA_unpack_pk
-*
-* Description: Unpack public key pk = (rho, t1).
-*
-* Arguments:   - const uint8_t rho[]: output byte array for rho
-*              - const polyveck *t1: pointer to output vector t1
-*              - uint8_t pk[]: byte array containing bit-packed pk
-**************************************************/
-fn _unpack_pk(
-    reg ptr u32[polyveck] t1,
-    reg ptr u8[VERIFICATION_KEY_SIZE] pk
-) -> reg ptr u32[polyveck]
-{
-    pk = pk; t1 = t1;
-
-    reg ptr u8[POLYT1_PACKEDBYTES] npk;
-    reg ptr u32[N] nt1;
-
-    inline int i;
-
-    for i = 0 to K {
-        nt1 = t1[i * N: N];
-        npk = pk[SEEDBYTES + i * POLYT1_PACKEDBYTES : POLYT1_PACKEDBYTES];
-        t1[i * N : N] = _polyt1_unpack(nt1, npk);
-    }
-
-    return t1;
-}

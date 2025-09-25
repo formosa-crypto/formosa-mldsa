@@ -17,7 +17,6 @@ require "packing/z.jinc"
 require "poly.jinc"
 
 require "packing/w1.jinc"
-from Common require "polyvec.jinc"
 
 require "packing/eta.jinc"
 from Common require "packing/signature.jinc"

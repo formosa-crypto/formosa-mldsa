@@ -51,29 +51,3 @@ inline fn __pack_t0_element_in_signing_key(
 
     return signing_key;
 }
-
-/*************************************************
- * Name:        JASMIN_MLDSA_unpack_sk
- *
- * Description: Unpack secret key sk = (rho, tr, key, t0, s1, s2).
- *
- * Arguments:   - const uint8_t rho[]: output byte array for rho
- *              - const uint8_t tr[]: output byte array for tr
- *              - const uint8_t key[]: output byte array for key
- *              - const polyveck *t0: pointer to output vector t0
- *              - const polyvecl *s1: pointer to output vector s1
- *              - const polyveck *s2: pointer to output vector s2
- *              - uint8_t sk[]: byte array containing bit-packed sk
- **************************************************/
-fn _unpack_sk(
-    reg ptr u8[SEEDBYTES] key,
-    #secret reg ptr u8[SIGNING_KEY_SIZE] sk
-) -> reg ptr u8[SEEDBYTES]
-{
-    reg ptr u8[SEEDBYTES] tsk;
-
-    tsk = sk[SEEDBYTES :  SEEDBYTES];
-    key = #copy(tsk);
-
-    return key;
-}
