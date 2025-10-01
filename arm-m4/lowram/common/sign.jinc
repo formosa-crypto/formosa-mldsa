@@ -196,7 +196,7 @@ inline fn __sign_internal(
 
             () = #spill(sig);
             #declassify commitment_hash = commitment_hash;
-            state, challenge = _poly_challenge(state, challenge, commitment_hash);
+            state, challenge = _poly_generate_challenge(state, challenge, commitment_hash);
             compressed_challenge = _poly_compress_challenge(compressed_challenge, challenge);
             challenge = _poly_ntt(challenge);
 

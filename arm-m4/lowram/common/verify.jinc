@@ -86,7 +86,7 @@ inline fn __verify_internal(
         }
 
         () = #unspill(signature);
-        ptr_to_xof_state, polynomial = _poly_challenge(ptr_to_xof_state, polynomial, signature[0 : COMMITMENT_HASH_SIZE]);
+        ptr_to_xof_state, polynomial = _poly_generate_challenge(ptr_to_xof_state, polynomial, signature[0 : COMMITMENT_HASH_SIZE]);
 
         compressed_challenge = _poly_compress_challenge(compressed_challenge, polynomial);
 
