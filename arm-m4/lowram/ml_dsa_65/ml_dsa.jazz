@@ -11,6 +11,14 @@ require "../common/packing/t0.jinc"
 require "../common/reduce.jinc"
 require "../common/ntt.jinc"
 
+require "../common/small_poly/ntt_zetas.jinc"
+require "../common/small_poly/reduce.jinc"
+require "../common/small_poly/ntt.jinc"
+require "../common/small_poly/multiply.jinc"
+require "../common/small_poly/utilities.jinc"
+
+require "../common/reduce.jinc"
+require "../common/ntt.jinc"
 require "rounding.jinc"
 require "../common/rounding.jinc"
 

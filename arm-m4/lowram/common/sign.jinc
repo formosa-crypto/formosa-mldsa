@@ -26,7 +26,8 @@ inline fn __sign_internal(
 
     stack u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge;
 
-    stack u32[N] polynomial0 polynomial1;
+    stack u16[N] small_poly;
+    stack u32[N] polynomial;
 
     reg u32 status;
     reg u32 pos m mlen ctx ctxlen t;
@@ -200,8 +201,14 @@ inline fn __sign_internal(
             /* Compute z, reject if it reveals secret */
             for column_number = 0 to L {
                 if (check_norm == 0) {
-                    polynomial0 = _poly_decompress_challenge(polynomial0, compressed_challenge);
-                    polynomial0 = _poly_ntt(polynomial0);
+                    () = #unspill(signing_key);
+                    small_poly = _small_poly_eta_unpack(small_poly, signing_key[START_OF_S1_IN_SIGNING_KEY + (column_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
+                    //small_poly = _small_poly_ntt(small_poly);
+                    //small_poly = _small_poly_invert_ntt(small_poly);
+
+                    polynomial = _small_poly_to_poly(polynomial, small_poly);
+
+                    polynomial = _poly_ntt(polynomial);
 
                     #unspill(signing_key);
                     polynomial1 = _poly_eta_unpack(polynomial1, signing_key[START_OF_S1_IN_SIGNING_KEY + (column_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);

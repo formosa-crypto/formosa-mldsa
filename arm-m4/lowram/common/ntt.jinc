@@ -56,7 +56,7 @@ fn _poly_ntt(reg ptr u32[N] a) -> reg ptr u32[N] {
     reg u32 len start j k;
     reg u32 zeta t;
 
-    reg ptr u32[N] zetas; 
+    reg ptr u32[N] zetas;
     reg u32 start_len j_len aj aj_len;
     k = 0;
     /* for (len = 128; len > 0; len >>= 1) { */

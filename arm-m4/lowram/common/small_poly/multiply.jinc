@@ -1,0 +1,89 @@
+fn _small_basemul(
+    reg ptr u16[2] result,
+    reg ptr u16[2] a,
+    reg ptr u16[2] b,
+    reg u32 zeta
+) -> reg ptr u16[2]
+{
+    reg u32 a0 = (32s)a[0];
+    reg u32 a1 = (32s)a[1];
+
+    reg u32 b0 b1;
+
+    reg u32 r t;
+
+    b1 = (32s)b[1];
+    r = __fqmul(a1, b1);
+    r = __fqmul(r, zeta);
+
+    b0 = (32s)b[0];
+    t  = __fqmul(a0, b0);
+    r += t;
+    result[0] = (32s)r;
+
+    b1 = (32s)b[1];
+    r = __fqmul(a0, b1);
+
+    b0 = (32s)b[0];
+    t  = __fqmul(a1, b0);
+
+    r += t;
+    result[1] = (32s)r;
+
+    return result;
+}
+
+fn _small_poly_basemul(
+    reg ptr u16[N] rp,
+    reg const ptr u16[N] ap bp
+) -> reg ptr u16[N]
+{
+    reg u32 zeta;
+    reg ptr u16[64] zetasp;
+    reg u32 zetasctr;
+    reg u32 i;
+
+    i = 0;
+    while (i < N - 3)
+    {
+        zetasp = small_zetas[64:64];
+        zetasctr = i;
+        zetasctr >>= 2;
+        zeta = (32s)zetasp[zetasctr];
+
+        rp[i:2] = _small_basemul(rp[i:2], ap[i:2], bp[i:2], zeta);
+        i += 2;
+
+        zeta = -zeta;
+        rp[i:2] = _small_basemul(rp[i:2], ap[i:2], bp[i:2], zeta);
+        i += 2;
+    }
+    return rp;
+}
+
+
+fn _small_poly_multiply_and_invert_ntt(
+    reg ptr u32[N] product,
+    reg const ptr u16[N] lhs rhs
+) -> reg ptr u32[N]
+{
+    reg u32 i coeff;
+    stack u16[N] small_product; /* TODO: Remove this */
+    reg ptr u16[N] small_product_ptr;
+
+    () = #spill(product);
+    small_product = _small_poly_basemul(small_product, lhs, rhs);
+    small_product = _small_poly_invert_ntt(small_product);
+    () = #unspill(product);
+
+    i = 0;
+    while (i < N) {
+        small_product_ptr = small_product;
+        coeff = (32s)small_product_ptr[i];
+
+        product[i] = coeff;
+        i += 1;
+    }
+
+    return product;
+}

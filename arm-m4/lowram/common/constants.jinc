@@ -1,4 +1,5 @@
 param int iQ = 8380417;
+param int SMALL_Q = 3329;
 
 param int SHAKE_TRAIL_BYTE = 0x1f;
 
