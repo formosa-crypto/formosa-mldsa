@@ -1,0 +1,113 @@
+fn _small_poly_invert_ntt(reg ptr u16[N] rp) -> reg ptr u16[N]
+{
+    reg u32 len;
+    reg u32 start;
+    reg u32 j;
+    reg u32 cmp;
+    reg u32 offset;
+
+    reg u32 zeta;
+    reg u32 t;
+    reg u32 s;
+    reg u32 m;
+
+    reg ptr u16[128] zetasp;
+    reg u32 zetasctr;
+
+    zetasp = small_zetas;
+    zetasctr = 127;
+
+    len = 2;
+    while (len <= 128)
+    {
+        start = 0;
+        while (start < 256)
+        {
+            zeta = (32s)zetasp[zetasctr];
+            () = #spill(zetasp);
+            zetasctr -= 1;
+
+            j = start;
+            cmp = start + len;
+            while (j < cmp)
+            {
+                offset = j + len;
+                s = (32s)rp[offset];
+                t = (32s)rp[j];
+                m = s + t;
+                m = __barrett_reduce(m);
+                rp[j] = m;
+                s -= t;
+                s = __fqmul(s, zeta);
+                rp[offset] = s;
+                j += 1;
+            }
+            start = j + len;
+            () = #unspill(zetasp);
+        }
+        len <<= 1;
+    }
+
+    zeta = 1441;
+    j = 0;
+    while (j < N)
+    {
+        t = (32s)rp[j];
+        t = __fqmul(t, zeta);
+        t = __barrett_reduce(t);
+        rp[j] = t;
+        j += 1;
+    }
+    return rp;
+}
+
+fn _small_poly_ntt(reg ptr u16[N] rp) -> reg ptr u16[N]
+{
+    reg u32 len;
+    reg u32 start;
+    reg u32 j;
+    reg u32 cmp;
+    reg u32 offset;
+
+    reg u32 zeta;
+    reg u32 t;
+    reg u32 s;
+    reg u32 m;
+
+    reg ptr u16[128] zetasp;
+    reg u32 zetasctr;
+
+    zetasp = small_zetas;
+    zetasctr = 0;
+    len = 128;
+    while (len >= 2)
+    {
+        start = 0;
+        while (start < 256)
+        {
+          zetasctr += 1;
+          zeta = (32s)zetasp[zetasctr];
+          j = start;
+          cmp = start; cmp += len;
+          while (j < cmp)
+          {
+            s = (32s)rp[j];
+            m = s;
+            offset = j; offset += len;
+            t = (32s)rp[offset];
+            () = #spill(offset);
+            t = __fqmul(t, zeta);
+            m -= t;
+            t += s;
+            () = #unspill(offset);
+            rp[offset] = m;
+            rp[j] = t;
+            j += 1;
+          }
+          start = j; start += len;
+        }
+        len >>= 1;
+    }
+
+    return rp;
+}

@@ -8,6 +8,12 @@ from Common require "hashing.jinc"
 from Common require "packing/t1.jinc"
 from Common require "packing/t0.jinc"
 
+from Common require "small_poly/ntt_zetas.jinc"
+from Common require "small_poly/reduce.jinc"
+from Common require "small_poly/ntt.jinc"
+from Common require "small_poly/multiply.jinc"
+from Common require "small_poly/utilities.jinc"
+
 from Common require "reduce.jinc"
 from Common require "ntt.jinc"
 require "rounding.jinc"

@@ -44,3 +44,31 @@ inline fn _poly_eta_unpack(
     }
     return r;
 }
+
+fn _small_poly_eta_unpack(
+    reg ptr u16[N] small_poly,
+    reg ptr u8[POLYETA_PACKEDBYTES] bytes
+) -> reg ptr u16[N]
+{
+    reg u32 i, j;
+    reg u32 t0 t1;
+    reg u32 aux;
+    i = 0; j = 0;
+
+    while(i < N) {
+        aux = (32u)bytes[j];
+        j += 1;
+
+        t0 = aux & 0x0F;
+        t0 = __imm_sub_reg(ETA, t0);
+        small_poly[i] = (16s)t0;
+        i += 1;
+
+        t1 =  aux >> 4;
+        t1 = __imm_sub_reg(ETA, t1);
+        small_poly[i] =  (16s)t1;
+        i += 1;
+    }
+
+    return small_poly;
+}

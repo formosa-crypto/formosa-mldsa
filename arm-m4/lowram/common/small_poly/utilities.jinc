@@ -1,0 +1,27 @@
+fn _poly_to_small_poly(reg ptr u16[N] small_poly, reg ptr u32[N] poly) -> reg ptr u16[N]
+{
+    reg u32 coeff;
+
+    reg u32 i = 0;
+    while (i < N) {
+        coeff = poly[i];
+        small_poly[i] = (16s)coeff;
+        i += 1;
+    }
+
+    return small_poly;
+}
+
+fn _small_poly_to_poly(reg ptr u32[N] poly, reg ptr u16[N] small_poly) -> reg ptr u32[N]
+{
+    reg u32 coeff;
+
+    reg u32 i = 0;
+    while (i < N) {
+        coeff = (32s)small_poly[i];
+        poly[i] = coeff;
+        i += 1;
+    }
+
+    return poly;
+}
