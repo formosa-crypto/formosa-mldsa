@@ -4,8 +4,8 @@ namespace t1 {
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] t1
     ) -> reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE]
     {
-        reg u64 i;
-        reg u64 input_offset output_offset;
+        reg int i;
+        reg int input_offset output_offset;
         reg u32 encoded_bytes encoded_byte;
 
         input_offset = 0;
@@ -102,7 +102,7 @@ namespace t1 {
         reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] encoded
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 i output_offset input_offset;
+        reg int i output_offset input_offset;
         reg u32 coefficient;
         reg u32 temp1 temp2;
 
