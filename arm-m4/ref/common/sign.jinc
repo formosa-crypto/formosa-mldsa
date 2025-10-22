@@ -32,29 +32,14 @@ fn _shake256_inc_absorb_mem_naive
     return pstate, pos;
 }
 
-/************************************************
- * Name:        crypto_sign_signature_ctx_seed
- *
- * Description: Computes signature.
- *
- * Arguments:   - uint8_t *sig:   pointer to output signature (of length PQCLEAN_MLDSA_CLEAN_CRYPTO_BYTES)
- *              - size_t *siglen: pointer to output length of signature
- *              - uint8_t *m:     pointer to message to be signed
- *              - size_t mlen:    length of message
- *              - uint8_t *ctx:   pointer to context string
- *              - size_t ctxlen:  length of context string
- *              - uint8_t *sk:    pointer to bit-packed secret key
- *              - uint8_t *rand:  pointer to randomness (of length RNDBYTES)
- *
- * Returns 0 (success) or -1 (context string too long)
- **************************************************/
+#[ct = "public * _ * _ * secret -> public * _"]
 fn _crypto_sign_signature_ctx_seed(
-#public reg ptr u8[SIGNATURE_SIZE] sig,
-        reg ptr u32[3] ctx_m_rand,
-        reg ptr u32[2] ctxlen_mlen,
-#secret reg ptr u8[SIGNING_KEY_SIZE] sk
-        )
-    -> #public reg ptr u8[SIGNATURE_SIZE], reg u32
+    reg ptr u8[SIGNATURE_SIZE] sig,
+    reg ptr u32[3] ctx_m_rand,
+    reg ptr u32[2] ctxlen_mlen,
+    reg ptr u8[SIGNING_KEY_SIZE] sk
+) -> reg ptr u8[SIGNATURE_SIZE],
+     reg u32
 {
     sig = sig;
 

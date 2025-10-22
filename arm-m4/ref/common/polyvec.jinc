@@ -9,11 +9,12 @@ param int matKL = (K * L) * N;
 /************ Vectors of polynomials of length L **************/
 /**************************************************************/
 
+#[ct = "_ * secret * _ -> _"]
 fn _polyvecl_uniform_eta(
-        reg ptr u32[polyvecl] v,
-#secret reg ptr u8[CRHBYTES] seed,
-        reg u32 nonce
-        ) -> reg ptr u32[polyvecl]
+    reg ptr u32[polyvecl] v,
+    reg ptr u8[CRHBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[polyvecl]
 {
     inline int i;
     stack ptr u8[CRHBYTES] s_seed;

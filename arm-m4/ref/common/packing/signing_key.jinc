@@ -84,30 +84,21 @@ inline fn __pack_signing_key(
     return signing_key;
 }
 
-/*************************************************
- * Name:        JASMIN_MLDSA_unpack_sk
- *
- * Description: Unpack secret key sk = (rho, tr, key, t0, s1, s2).
- *
- * Arguments:   - const uint8_t rho[]: output byte array for rho
- *              - const uint8_t tr[]: output byte array for tr
- *              - const uint8_t key[]: output byte array for key
- *              - const polyveck *t0: pointer to output vector t0
- *              - const polyvecl *s1: pointer to output vector s1
- *              - const polyveck *s2: pointer to output vector s2
- *              - uint8_t sk[]: byte array containing bit-packed sk
- **************************************************/
-fn _unpack_sk
-(reg ptr u8[SEEDBYTES] rho,
- reg ptr u8[VERIFICATION_KEY_HASH_SIZE] tr,
- reg ptr u8[SEEDBYTES] key,
- reg ptr u32[polyveck] t0,
- reg ptr u32[polyvecl] s1,
- reg ptr u32[polyveck] s2,
-#secret reg ptr u8[SIGNING_KEY_SIZE] sk)
- // rho, tr, key, t0, s1, s2
- -> reg ptr u8[SEEDBYTES], reg ptr u8[VERIFICATION_KEY_HASH_SIZE], reg ptr u8[SEEDBYTES],
- reg ptr u32[polyveck], reg ptr u32[polyvecl], reg ptr u32[polyveck]
+#[ct = "_ * _ * _ * _ * _ * _ * secret -> _ * _ * _ * _ * _ * _"]
+fn _unpack_sk(
+    reg ptr u8[SEEDBYTES] rho,
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] tr,
+    reg ptr u8[SEEDBYTES] key,
+    reg ptr u32[polyveck] t0,
+    reg ptr u32[polyvecl] s1,
+    reg ptr u32[polyveck] s2,
+    reg ptr u8[SIGNING_KEY_SIZE] sk
+) -> reg ptr u8[SEEDBYTES], // rho
+     reg ptr u8[VERIFICATION_KEY_HASH_SIZE], // tr
+     reg ptr u8[SEEDBYTES], // key
+     reg ptr u32[polyveck], // t0
+     reg ptr u32[polyvecl], // s1
+     reg ptr u32[polyveck] // s2
 {
     sk = sk; t0 = t0; s1 = s1; s2 = s2;
 

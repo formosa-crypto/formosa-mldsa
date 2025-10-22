@@ -28,26 +28,29 @@ from Common require "keygen.jinc"
 from Common require "sign.jinc"
 from Common require "verify.jinc"
 
+#[ct = "public * secret * secret -> public * secret"]
 export fn ml_dsa_44_keygen(
-    #public reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    #secret reg ptr u8[SEEDBYTES] seed
-) -> #public reg ptr u8[VERIFICATION_KEY_SIZE],
-    #secret reg ptr u8[SIGNING_KEY_SIZE] {
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    reg ptr u8[SEEDBYTES] seed
+) -> reg ptr u8[VERIFICATION_KEY_SIZE],
+     reg ptr u8[SIGNING_KEY_SIZE]
+{
     verification_key, signing_key = _crypto_sign_keypair_seed(verification_key, signing_key, seed);
 
     #declassify verification_key = verification_key;
-    verification_key = verification_key; signing_key = signing_key;
 
     return verification_key, signing_key;
 }
 
+#[ct = "public * public * public * secret -> public * public"]
 export fn ml_dsa_44_sign(
-    #public reg ptr u8[SIGNATURE_SIZE] sig,
-    #public reg ptr u32[3] ctx_m_rand,
-    #public reg ptr u32[2] ctxlen_mlen,
-    #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key
-) -> #public reg ptr u8[SIGNATURE_SIZE], #public reg u32
+    reg ptr u8[SIGNATURE_SIZE] sig,
+    reg ptr u32[3] ctx_m_rand,
+    reg ptr u32[2] ctxlen_mlen,
+    reg ptr u8[SIGNING_KEY_SIZE] signing_key
+) -> reg ptr u8[SIGNATURE_SIZE],
+     reg u32
 {
     reg u32 status;
 
@@ -56,12 +59,14 @@ export fn ml_dsa_44_sign(
     return sig, status;
 }
 
+#[ct = "public * public * public * public -> public"]
 export fn ml_dsa_44_verify(
-    #public reg ptr u8[SIGNATURE_SIZE] sig,
-    #public reg ptr u32[2] ctx_m,
-    #public reg ptr u32[2] ctxlen_mlen,
-    #public reg ptr u8[VERIFICATION_KEY_SIZE] verification_key
-) -> #public reg u32 {
+    reg ptr u8[SIGNATURE_SIZE] sig,
+    reg ptr u32[2] ctx_m,
+    reg ptr u32[2] ctxlen_mlen,
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key
+) -> reg u32
+{
     reg u32 status;
 
     status = _crypto_sign_verify_ctx(sig, ctx_m, ctxlen_mlen, verification_key);

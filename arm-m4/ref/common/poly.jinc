@@ -479,11 +479,12 @@ inline fn __extr_rej_sample(
     return a, ctr;
 }
 
+#[ct = "_ * secret * _ -> _"]
 fn _poly_uniform_eta(
-        reg ptr u32[N] a,
-#secret reg ptr u8[CRHBYTES] seed,
-        reg u32 nonce
-        ) -> reg ptr u32[N]
+    reg ptr u32[N] a,
+    reg ptr u8[CRHBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[N]
 {
     stack u32[25*2] state_;
     reg ptr u32[25*2] state;
