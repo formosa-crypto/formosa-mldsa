@@ -1,0 +1,57 @@
+fn _poly_uniform_gamma1(
+    reg ptr u32[N] poly,
+    reg ptr u8[CRHBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[N]
+{
+    stack u32[25 * 2] state;
+
+    reg u32 num_leftover_bytes fill_from;
+    stack u8[5] first_5_bytes;
+
+    inline int k;
+
+    state = _prepare_state_for_shake256(state, seed, nonce);
+    () = #spill(poly);
+    state = _keccakf1600_ref(state);
+    () = #unspill(poly);
+
+    num_leftover_bytes = 0;
+    fill_from = 0;
+    for k = 0 to 4 {
+        first_5_bytes = first_5_bytes;
+        poly, fill_from, num_leftover_bytes, first_5_bytes = _polyz_unpack_streaming(poly, fill_from, num_leftover_bytes, first_5_bytes, state[:u8 0 : SHAKE256_RATE]);
+
+        () = #spill(poly, num_leftover_bytes, fill_from);
+        state = _keccakf1600_ref(state);
+        () = #unspill(poly, num_leftover_bytes, fill_from);
+    }
+
+    first_5_bytes = first_5_bytes;
+    poly, first_5_bytes = _polyz_unpack_streaming_end(poly, first_5_bytes, state[:u8 0 : 96]);
+
+    return poly;
+}
+
+inline fn rej_eta(
+    reg ptr u32[N] a,
+    reg u32 ctr,
+    reg u32 t
+) -> reg ptr u32[N],
+     reg u32 
+{
+    #declassify t = t;
+    reg u32 n205 = 205;
+    if (t < 15) {
+        reg u32 aux;
+        aux = t * n205;
+        aux = aux >> 10;
+        aux = __plus_lsl_inplace(aux, aux, 2);
+        aux = t - aux;
+        aux = __imm_sub_reg(2, aux);
+        a[ctr] = aux;
+        ctr += 1;
+    }
+    return a, ctr;
+}
+

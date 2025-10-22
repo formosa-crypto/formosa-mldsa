@@ -661,7 +661,7 @@ fn _poly_add_to_compressed_product_at_index(
 ) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
 {
     reg u32 w1_coeff;
-    reg u32 offset = 0;
+    reg u32 offset;
     reg u32 three_byte_mask = (1 << 24) - 1;
 
     offset = 3;
