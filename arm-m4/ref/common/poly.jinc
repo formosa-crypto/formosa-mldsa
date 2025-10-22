@@ -209,14 +209,6 @@ fn _poly_decompose_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[
     return a1, a0;
 }
 
-
-inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
-    reg u32 c;
-    c = a[i];
-    c = __imm_sub_reg(ETA, c);
-    return c;
-}
-
 /*************************************************
  * Name:        JASMIN_MLDSA_poly_use_hint
  *
@@ -474,4 +466,157 @@ inline fn __rej_sample(
     }
 
     return a, ctr;
+}
+inline fn __extr_rej_sample(
+    reg ptr u32[N] a,
+    reg u32 ctr,
+    reg u32 t,
+    reg u32 q
+) -> reg ptr u32[N], reg u32
+{
+    t = __ubfx(t, 0, 23);
+    a, ctr = __rej_sample(a, ctr, t, q);
+    return a, ctr;
+}
+
+fn _poly_uniform_eta(
+        reg ptr u32[N] a,
+#secret reg ptr u8[CRHBYTES] seed,
+        reg u32 nonce
+        ) -> reg ptr u32[N]
+{
+    stack u32[25*2] state_;
+    reg ptr u32[25*2] state;
+    stack ptr u32[N] sa;
+    sa = a; state = state_;
+    state = _stream256_init(state, seed, nonce);
+    a = sa;
+
+    reg u32 ctr, ctr8, pos, n205, t;
+    reg u32 buf;
+
+    ctr = 0; pos = 0; n205 = 205;
+
+    while { ctr8 = ctr + 8; } (ctr8 < N) {
+
+        state, a, pos, ctr, n205, buf = _stream256_refill_buffer(state, a, pos, ctr, n205);
+        inline int i;
+        for i = 0 to 8 {
+            t = __ubfx(buf, 4*i, 4);
+            a, ctr = rej_eta(a, ctr, t);
+        }
+    }
+
+    while (ctr < N) {
+        state, a, pos, ctr, n205, buf = _stream256_refill_buffer(state, a, pos, ctr, n205);
+        inline int i;
+        for i = 0 to 8 {
+            if ((i == 0) || (ctr < N)) {
+                t = __ubfx(buf, 4*i, 4);
+                a, ctr = rej_eta(a, ctr, t);
+            }
+        }
+    }
+    return a;
+}
+
+param int POLYZ_LAST = POLYZ_PACKEDBYTES / SHAKE256_RATE * SHAKE256_RATE;
+param int POLYZ_LAST_SZ = POLYZ_PACKEDBYTES % SHAKE256_RATE;
+fn _poly_uniform_gamma1(
+    reg ptr u32[N] a,
+    reg ptr u8[CRHBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[N]
+{
+    stack u8[POLYZ_PACKEDBYTES] buf_;
+    reg ptr u8[POLYZ_PACKEDBYTES] buf;
+    reg ptr u8[SHAKE256_RATE] bufb;
+    stack u32[25*2] state_;
+    reg ptr u32[25*2] state;
+    stack ptr u32[N] sa;
+    sa = a; state = state_;
+    state = _stream256_init(state, seed, nonce);
+
+    inline int k;
+    for k = 0 to POLYZ_PACKEDBYTES / SHAKE256_RATE {
+        bufb = buf_[SHAKE256_RATE * k : SHAKE256_RATE];
+        bufb = _stream256_full_squeeze(bufb, state);
+        buf_[SHAKE256_RATE * k : SHAKE256_RATE] = bufb;
+        state = _keccakf1600_ref(state);
+    }
+
+    reg ptr u8[POLYZ_LAST_SZ] bufc;
+    bufc = buf_[ POLYZ_LAST : POLYZ_LAST_SZ];
+
+    reg u32 i, t;
+    i = 0;
+    while (i < POLYZ_LAST_SZ / 4) {
+        t = state[i];
+        bufc[:u32 i] = t;
+        i += 1;
+    }
+    buf_[  POLYZ_LAST : POLYZ_LAST_SZ] = bufc;
+
+    buf = buf_; a = sa;
+    a = _polyz_unpack(a, buf);
+    return a;
+}
+
+fn _poly_uniform(reg ptr u32[N] a,
+        reg ptr u8[SEEDBYTES] seed,
+        reg u32 nonce
+        ) -> reg ptr u32[N]
+{
+    stack u32[25*2] state_;
+    reg ptr u32[25*2] state;
+    stack ptr u32[N] sa;
+    sa = a; state = state_;
+    state = _stream128_init(state, seed, nonce);
+    a = sa;
+
+    reg u32 ctr, ctr4, pos, q, t;
+    reg u32[3] buf;
+
+    ctr = 0; pos = 0; q = iQ;
+
+    while { ctr4 = ctr + 4; } (ctr4 < N) {
+        state, a, pos, ctr, q, buf = _stream128_refill_buffer(state, a, pos, ctr, q);
+
+        a, ctr = __extr_rej_sample(a, ctr, buf[0], q);  // 3 bytes in buf[0]
+
+        t = buf[0] >>u 24;
+        t = __or_lsl_inplace(t, buf[1], 8);
+        a, ctr = __extr_rej_sample(a, ctr, t, q);
+
+        t = buf[1] >>u 16;
+        t = __or_lsl_inplace(t, buf[2], 16);  // 2 byte in buf[1] U 1 bytes in buf[2]
+        a, ctr = __extr_rej_sample(a, ctr, t, q);
+
+        t = __ubfx(buf[2], 8, 23);
+        a, ctr = __rej_sample(a, ctr, t, q);
+    }
+
+    while (ctr < N) {
+        state, a, pos, ctr, q, buf = _stream128_refill_buffer(state, a, pos, ctr, q);
+
+        a, ctr = __extr_rej_sample(a, ctr, buf[0], q);  // 3 bytes in buf[0]
+
+        if (ctr < N) {
+            t = buf[0] >>u 24;
+            t = __or_lsl_inplace(t, buf[1], 8); // 1 byte in buf[0] U 2 bytes in buf[1]
+            a, ctr = __extr_rej_sample(a, ctr, t, q);
+        }
+
+        if (ctr < N) {
+            t = buf[1] >>u 16;
+            t = __or_lsl_inplace(t, buf[2], 16); // 2 byte in buf[1] U 1 bytes in buf[2]
+            a, ctr = __extr_rej_sample(a, ctr, t, q);
+        }
+
+        if (ctr < N) {
+            t = __ubfx(buf[2], 8, 23);
+            a, ctr = __rej_sample(a, ctr, t, q);
+        }
+    }
+    return a;
 }

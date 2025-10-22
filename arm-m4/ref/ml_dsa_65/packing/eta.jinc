@@ -1,0 +1,51 @@
+fn _polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
+reg ptr u8[POLYETA_PACKEDBYTES] {
+
+    reg u32 i, j;
+    reg u32[8] t;
+    /*
+       for (i = 0; i < N / 2; ++i) {
+       t[0] = (uint8_t) (ETA - a->coeffs[2 * i + 0]);
+       t[1] = (uint8_t) (ETA - a->coeffs[2 * i + 1]);
+       r[i] = t[0] | (t[1] << 4);
+       }
+     */
+
+    i = 0; j = 0;
+    while(i < N) {
+        inline int k;
+        for k = 0 to 2 {
+            t[k] = a[i];
+            t[k] = __imm_sub_reg(ETA, t[k]);
+            i += 1;
+        }
+        reg u32 aux;
+        aux = __or_lsl(t[0], t[1], 4);
+        r[j] = aux;
+        j += 1;
+    }
+    return r;
+
+}
+
+inline fn _polyeta_unpack(
+        reg ptr u32[N] r,
+        reg ptr u8[POLYETA_PACKEDBYTES] a
+        ) -> reg ptr u32[N] {
+    reg u32 i, j;
+    reg u32 t0 t1;
+    reg u32 aux;
+    i = 0; j = 0;
+
+    while(i < N) {
+        aux = (32u) a[j];
+        t0 =  aux & 0x0F;
+        r[i] =  __imm_sub_reg(ETA, t0);
+        i += 1;
+        t1 =  aux >> 4;
+        r[i] =  __imm_sub_reg(ETA, t1);
+        i += 1;
+        j +=1 ;
+    }
+    return r;
+}
