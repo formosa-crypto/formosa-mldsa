@@ -10,7 +10,8 @@ fn _poly_eta_pack(
     while(i < N) {
         inline int k;
         for k = 0 to 2 {
-            t[k] = __eta_minus_coeff(a, i);
+            t[k] = a[i];
+            t[k] = __imm_sub_reg(ETA, t[k]);
             i += 1;
         }
         reg u32 aux;

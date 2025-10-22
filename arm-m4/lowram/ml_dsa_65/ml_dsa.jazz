@@ -12,13 +12,13 @@ from Common require "reduce.jinc"
 from Common require "ntt.jinc"
 require "rounding.jinc"
 
-from Common require "poly.jinc"
 require "packing/z.jinc"
-require "poly.jinc"
-
 require "packing/w1.jinc"
-
 require "packing/eta.jinc"
+require "rej_sample.jinc"
+from Common require "poly.jinc"
+require "challenge.jinc"
+
 from Common require "packing/signature.jinc"
 from Common require "packing/signing_key.jinc"
 from Common require "packing/verification_key.jinc"
