@@ -46,4 +46,3 @@ inline fn rej_eta(
     }
     return a, ctr;
 }
-

@@ -93,7 +93,8 @@ inline fn __keygen_internal(
 
         nonce = __or_lsl(0, row_number, 8);
         () = #unspill(signing_key);
-        xof_state = _init_xof_for_element_of_A(xof_state, signing_key[0 : SEEDBYTES], nonce);
+        xof_state = _prepare_xof_for_element_of_A(xof_state, signing_key[0 : SEEDBYTES], nonce);
+        xof_state = _keccakf1600_ref(xof_state);
         element_of_A, xof_state = _poly_uniform(element_of_A, xof_state);
 
         error_element = _poly_ntt(error_element);
@@ -111,7 +112,8 @@ inline fn __keygen_internal(
 
             nonce = __or_lsl(column_number, row_number, 8);
             () = #unspill(signing_key);
-            xof_state = _init_xof_for_element_of_A(xof_state, signing_key[0 : SEEDBYTES], nonce);
+            xof_state = _prepare_xof_for_element_of_A(xof_state, signing_key[0 : SEEDBYTES], nonce);
+            xof_state = _keccakf1600_ref(xof_state);
             element_of_A, xof_state = _poly_uniform(element_of_A, xof_state);
 
             error_element = _poly_ntt(error_element);

@@ -175,7 +175,7 @@ inline fn __verify_internal(
 
                         () = #spill(status);
                         if (status == 0) {
-                            polynomial = _poly_use_hint(polynomial, space_for_1600_bytes.[:u8 0 : MAX_ONES_IN_HINT], number_of_hints);
+                            #declassify polynomial = _poly_use_hint(polynomial, space_for_1600_bytes.[:u8 0 : MAX_ONES_IN_HINT], number_of_hints);
 
                             w1_element_packed = compressed_w1_element[0 : POLYW1_PACKEDBYTES];
                             w1_element_packed = _polyw1_pack(w1_element_packed, polynomial);

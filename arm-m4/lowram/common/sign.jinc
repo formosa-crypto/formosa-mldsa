@@ -20,15 +20,13 @@ inline fn __sign_internal(
 
     reg ptr u8[RNDBYTES] rnd;
 
-    stack u32[N] signer_response_elem;
     reg ptr u8[POLYZ_PACKEDBYTES] packed_signer_response_elem;
 
     stack u8[K * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] w_compressed;
 
-    stack u32[N] challenge;
     stack u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge;
 
-    stack u32[N] polynomial;
+    stack u32[N] polynomial0 polynomial1;
 
     reg u32 status;
     reg u32 pos m mlen ctx ctxlen t;
@@ -128,8 +126,8 @@ inline fn __sign_internal(
                 nonce += column_number;
 
                 // Sample an element of the vector |mask|.
-                polynomial = _poly_uniform_gamma1(polynomial, rhoprime, nonce);
-                polynomial = _poly_ntt(polynomial);
+                polynomial0 = _poly_uniform_gamma1(polynomial0, rhoprime, nonce);
+                polynomial0 = _poly_ntt(polynomial0);
 
                 for row_number = 0 to K {
                     nonce = __or_lsl(column_number, row_number, 8);
@@ -147,33 +145,33 @@ inline fn __sign_internal(
                             pstate,
                             signing_key[0 : SEEDBYTES],
                             nonce,
-                            polynomial
+                            polynomial0
                         );
                     state = pstate;
                 }
             }
 
             for row_number = 0 to K {
-                polynomial =
+                polynomial0 =
                     _poly_decompress_w1_element(
-                        polynomial,
+                        polynomial0,
                         w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
                     );
-                polynomial = _poly_invntt_tomont(polynomial);
-                polynomial = _poly_caddq(polynomial);
+                polynomial0 = _poly_invntt_tomont(polynomial0);
+                polynomial0 = _poly_caddq(polynomial0);
 
                 w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] =
                     _poly_compress_w1_element(
                         w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
-                        polynomial
+                        polynomial0
                     );
 
-                polynomial = _poly_high_bits_inplace(polynomial);
+                polynomial0 = _poly_high_bits_inplace(polynomial0);
                 () = #unspill(sig);
                 sig[row_number * POLYW1_PACKEDBYTES : POLYW1_PACKEDBYTES] =
                     _polyw1_pack(
                         sig[row_number * POLYW1_PACKEDBYTES : POLYW1_PACKEDBYTES],
-                        polynomial
+                        polynomial0
                     );
                 () = #spill(sig);
             }
@@ -195,38 +193,42 @@ inline fn __sign_internal(
             state = pstate;
 
             () = #spill(sig);
-            #declassify commitment_hash = commitment_hash;
-            state, challenge = _poly_generate_challenge(state, challenge, commitment_hash);
-            compressed_challenge = _poly_compress_challenge(compressed_challenge, challenge);
-            challenge = _poly_ntt(challenge);
+            state, polynomial0 = _poly_generate_challenge(state, polynomial0, commitment_hash);
+            compressed_challenge = _poly_compress_challenge(compressed_challenge, polynomial0);
 
             check_norm = 0;
             /* Compute z, reject if it reveals secret */
             for column_number = 0 to L {
                 if (check_norm == 0) {
-                    () = #unspill(signing_key);
-                    polynomial = _poly_eta_unpack(polynomial, signing_key[START_OF_S1_IN_SIGNING_KEY + (column_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
-                    polynomial = _poly_ntt(polynomial);
+                    polynomial0 = _poly_decompress_challenge(polynomial0, compressed_challenge);
+                    polynomial0 = _poly_ntt(polynomial0);
 
-                    signer_response_elem = _poly_pointwise_montgomery(signer_response_elem, challenge, polynomial);
-                    signer_response_elem = _poly_invntt_tomont(signer_response_elem);
+                    () = #unspill(signing_key);
+                    polynomial1 = _poly_eta_unpack(polynomial1, signing_key[START_OF_S1_IN_SIGNING_KEY + (column_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
+                    polynomial1 = _poly_ntt(polynomial1);
+
+                    // Before this line, |polynomial0| contains the challenge
+                    // and |polynomial1| contains s1
+                    // After |polynomial0| is the |signer_response_elem|
+                    polynomial0 = _poly_pointwise_montgomery_inplace(polynomial0, polynomial1);
+                    polynomial0 = _poly_invntt_tomont(polynomial0);
 
                     nonce = L;
 
                     () = #unspill(iteration_number);
                     nonce *= iteration_number;
                     nonce += column_number;
-                    polynomial = _poly_uniform_gamma1(polynomial, rhoprime, nonce);
+                    polynomial1 = _poly_uniform_gamma1(polynomial1, rhoprime, nonce);
 
-                    signer_response_elem = _poly_add_inplace(signer_response_elem, polynomial);
-                    signer_response_elem = _poly_reduce(signer_response_elem);
+                    polynomial0 = _poly_add_inplace(polynomial0, polynomial1);
+                    polynomial0 = _poly_reduce(polynomial0);
 
                     bound = iGAMMA1 - BETA;
-                    check_norm = _poly_check_norm(signer_response_elem, bound);
+                    check_norm = _poly_check_norm(polynomial0, bound);
                     if (check_norm == 0) {
                         () = #unspill(sig);
                         packed_signer_response_elem = sig[COMMITMENT_HASH_SIZE + (column_number * POLYZ_PACKEDBYTES) : POLYZ_PACKEDBYTES];
-                        packed_signer_response_elem = _polyz_pack(packed_signer_response_elem, signer_response_elem);
+                        packed_signer_response_elem = _polyz_pack(packed_signer_response_elem, polynomial0);
                         sig[COMMITMENT_HASH_SIZE + (column_number * POLYZ_PACKEDBYTES) : POLYZ_PACKEDBYTES] = packed_signer_response_elem;
                         () = #spill(sig);
                     }
@@ -238,31 +240,34 @@ inline fn __sign_internal(
             } else {
                 for row_number = 0 to K {
                     if (check_norm == 0) {
-                        // Here, |polynomial| stands for |hint_element|
+                        polynomial0 = _poly_decompress_challenge(polynomial0, compressed_challenge);
+                        polynomial0 = _poly_ntt(polynomial0);
+
+                        // Here, |polynomial1| stands for |hint_element|
                         () = #unspill(signing_key);
-                        polynomial = _poly_eta_unpack(polynomial, signing_key[START_OF_S2_IN_SIGNING_KEY + (row_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
-                        polynomial = _poly_ntt(polynomial);
+                        polynomial1 = _poly_eta_unpack(polynomial1, signing_key[START_OF_S2_IN_SIGNING_KEY + (row_number * POLYETA_PACKEDBYTES) : POLYETA_PACKEDBYTES]);
+                        polynomial1 = _poly_ntt(polynomial1);
 
-                        polynomial = _poly_pointwise_montgomery_inplace(polynomial, challenge);
-                        polynomial = _poly_invntt_tomont(polynomial);
+                        polynomial1 = _poly_pointwise_montgomery_inplace(polynomial1, polynomial0);
+                        polynomial1 = _poly_invntt_tomont(polynomial1);
 
-                        polynomial =
+                        polynomial1 =
                             _poly_subtract_from_compressed_w1_element(
-                                polynomial,
+                                polynomial1,
                                 w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
                             );
 
                         w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] =
                             _poly_compress_w1_element(
                                 w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
-                                polynomial
+                                polynomial1
                             );
 
-                        polynomial = _poly_low_bits_inplace(polynomial);
-                        polynomial = _poly_reduce(polynomial);
+                        polynomial1 = _poly_low_bits_inplace(polynomial1);
+                        polynomial1 = _poly_reduce(polynomial1);
 
                         bound = iGAMMA2 - BETA;
-                        check_norm = _poly_check_norm(polynomial, bound);
+                        check_norm = _poly_check_norm(polynomial1, bound);
                     }
                 }
 
@@ -275,19 +280,21 @@ inline fn __sign_internal(
 
                     for row_number = 0 to K {
                         if (check_norm == 0) {
-                            // For what follows, |polynomial| stands in for
+                            // For what follows, |polynomial0| stands in for
                             // |hint_element|
                             () = #unspill(signing_key);
-                            polynomial = _poly_schoolbook_multiply_t0_by_challenge(
-                                polynomial,
+                            polynomial0 = _poly_schoolbook_multiply_t0_by_challenge(
+                                polynomial0,
                                 signing_key[START_OF_T0_IN_SIGNING_KEY + (row_number * POLYT0_PACKEDBYTES) : POLYT0_PACKEDBYTES],
                                 compressed_challenge
                             );
 
                             bound = iGAMMA2;
-                            check_norm = _poly_check_norm(polynomial, bound);
+                            check_norm = _poly_check_norm(polynomial0, bound);
                             if (check_norm == 0) {
-                                polynomial, hints = _poly_make_hint_inplace(polynomial, w_compressed[row_number *  COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]);
+                                #declassify polynomial0 = polynomial0;
+                                #declassify w_compressed = w_compressed;
+                                polynomial0, hints = _poly_make_hint_inplace(polynomial0, w_compressed[row_number *  COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]);
 
                                 () = #unspill(total_hints);
                                 total_hints += hints;
@@ -297,7 +304,7 @@ inline fn __sign_internal(
                                     row_number_reg = row_number;
                                     sig[START_OF_HINT_IN_SIGNATURE : HINT_ENCODED_SIZE], hints_written = _pack_hint_element(
                                         sig[START_OF_HINT_IN_SIGNATURE : HINT_ENCODED_SIZE],
-                                        polynomial,
+                                        polynomial0,
                                         hints_written,
                                         row_number_reg
                                     );

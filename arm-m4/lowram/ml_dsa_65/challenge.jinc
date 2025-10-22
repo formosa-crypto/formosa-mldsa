@@ -15,7 +15,7 @@ fn _poly_compress_challenge(
     reg u32 i = 0;
 
     while (ones_seen < 32) {
-        coeff = challenge[i];
+        #declassify coeff = challenge[i];
 
         if (coeff != 0) {
             compressed_challenge[output_offset] = i;
@@ -36,7 +36,7 @@ fn _poly_compress_challenge(
     mask = 1;
     signs = 0;
     while (i < N) {
-        coeff = challenge[i];
+        #declassify coeff = challenge[i];
 
         if (coeff != 0) {
             compressed_challenge[output_offset] = i;

@@ -196,7 +196,6 @@ inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
  *              - const poly *a: pointer to input polynomial
  *              - const poly *h: pointer to input hint polynomial
  **************************************************/
-
 fn _poly_use_hint(
     reg ptr u32[N] polynomial,
     reg ptr u8[MAX_ONES_IN_HINT] hints,
@@ -397,6 +396,8 @@ fn _poly_generate_challenge(
             }
 
             b = (32u) state[:u8 pos];
+
+            #declassify b = b;
             pos += 1;
         } (b > j)
 
@@ -918,9 +919,10 @@ fn _poly_uniform(
     return sampled, state;
 }
 
+#[ct = "_ * secret * _ -> _"]
 fn _poly_uniform_eta(
     reg ptr u32[N] poly,
-    #secret reg ptr u8[CRHBYTES] seed,
+    reg ptr u8[CRHBYTES] seed,
     reg u32 nonce
 ) -> reg ptr u32[N]
 {
