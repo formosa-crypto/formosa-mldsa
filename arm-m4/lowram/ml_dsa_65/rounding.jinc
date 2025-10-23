@@ -1,38 +1,3 @@
-/*************************************************
-* Name:        JASMIN_MLDSA_power2round
-*
-* Description: For finite field element a, compute a0, a1 such that
-*              a mod^+ Q = a1*2^D + a0 with -2^{D-1} < a0 <= 2^{D-1}.
-*              Assumes a to be standard representative.
-*
-* Arguments:   - int32_t a: input element
-*              - int32_t *a0: pointer to output element a0
-*
-* Returns a1.
-**************************************************/
-inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32
-{
-  reg u32 a0 a1;
-  a1 = __add_large_imm(a, (1 << (D - 1)) - 1);
-  a1 = a1 >>s D;
-  a0 = __sub_lsl(a, a1, D);
-  return (a0, a1);
-}
-
-/*************************************************
-* Name:        JASMIN_MLDSA_decompose
-*
-* Description: For finite field element a, compute high and low bits a0, a1 such
-*              that a mod^+ Q = a1*ALPHA + a0 with -ALPHA/2 < a0 <= ALPHA/2 except
-*              if a1 = (Q-1)/ALPHA where we set a1 = 0 and
-*              -ALPHA/2 <= a0 = a mod^+ Q - Q < 0. Assumes a to be standard
-*              representative.
-*
-* Arguments:   - int32_t a: input element
-*              - int32_t *a0: pointer to output element a0
-*
-* Returns a1.
-**************************************************/
 inline fn __decompose_a0a1(reg u32 a) -> reg u32, reg u32
 {
   reg u32 a0 a1 aux;
@@ -103,40 +68,18 @@ inline fn __coefficient_high_bits(reg u32 coeff) -> reg u32
 
 inline fn __coefficient_low_bits(reg u32 coeff) -> reg u32
 {
-    reg u32 a0 a1 aux;
+    reg u32 low high aux;
     reg u32 q = iQ;
 
-    a1 = coeff + 127;
-    a1 >>s= 7;
+    high = __coefficient_high_bits(coeff);
 
-    aux = __plus_lsl(a1, a1, 10); // aux = a1 * 1025;
-    aux = __add_large_imm(aux, 1 << 21);
-    a1 = __ubfx(aux, 22, 4);
-
-    aux = __sub_lsl(a1, a1, 10);
-    a0 = __plus_lsl(coeff, aux, 9);
+    aux = __sub_lsl(high, high, 10);
+    low = __plus_lsl(coeff, aux, 9);
 
     aux = 1023;
-    aux = __rsb_lsl(a0, aux, 12);
+    aux = __rsb_lsl(low, aux, 12);
     aux = __and_asr(q, aux, 31);
-    a0 -= aux;
+    low -= aux;
 
-    return a0;
-}
-
-inline fn __make_hint(reg u32 z, reg u32 r) -> reg u32
-{
-    reg u32 r1 v1;
-    reg u32 ret = 0;
-
-    r1 = __coefficient_high_bits(r);
-
-    r += z;
-    v1 = __coefficient_high_bits(r);
-
-    if (r1 != v1) {
-        ret = 1;
-    }
-
-    return ret;
+    return low;
 }

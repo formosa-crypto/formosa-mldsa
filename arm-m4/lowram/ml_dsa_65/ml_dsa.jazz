@@ -10,14 +10,16 @@ from Common require "packing/t0.jinc"
 
 from Common require "reduce.jinc"
 from Common require "ntt.jinc"
+
 require "rounding.jinc"
+from Common require "rounding.jinc"
 
 require "packing/z.jinc"
 require "packing/w1.jinc"
 require "packing/eta.jinc"
 require "rej_sample.jinc"
 from Common require "poly.jinc"
-require "challenge.jinc"
+from Common require "challenge.jinc"
 
 from Common require "packing/signature.jinc"
 from Common require "packing/signing_key.jinc"
