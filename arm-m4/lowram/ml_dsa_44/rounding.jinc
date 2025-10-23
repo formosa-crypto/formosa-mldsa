@@ -74,18 +74,41 @@ inline fn __use_hint(reg u32 a, reg u32 hint) -> reg u32 {
 
 inline fn __coefficient_high_bits(reg u32 coeff) -> reg u32
 {
-    reg u32 high;
+    reg u32 high temp;
 
-    _, high = __decompose_a0a1(coeff);
+    high = coeff + 127;
+    high >>s= 7;
+
+    temp = 11_275;
+    high *= temp;
+    high = __add_large_imm(high, 1 << 23);
+    high >>s= 24;
+
+    /* a1 ^= ((43 - a1) >> 31) & a1; */
+    temp = __imm_sub_reg(43, high);
+    temp >>s= 31;
+    temp &= high;
+    high ^= temp;
 
     return high;
 }
 
 inline fn __coefficient_low_bits(reg u32 coeff) -> reg u32
 {
-    reg u32 low;
+    reg u32 high low temp;
+    reg u32 q = iQ;
 
-    low, _ = __decompose_a0a1(coeff);
+    high = __coefficient_high_bits(coeff);
+
+    temp = iGAMMA2;
+    temp = temp << 1;
+    temp *= high;
+    low = coeff - temp;
+
+    temp = 1023;
+    temp = __rsb_lsl(low, temp, 12);
+    temp = __and_asr(q, temp, 31);
+    low -= temp;
 
     return low;
 }

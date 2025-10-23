@@ -14,6 +14,7 @@ from Common require "ntt.jinc"
 require "rounding.jinc"
 from Common require "rounding.jinc"
 
+require "packing/z_streaming.jinc"
 require "packing/z.jinc"
 require "packing/w1.jinc"
 require "packing/eta.jinc"

@@ -122,5 +122,3 @@ fn _polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> reg ptr u
     }
     return r;
 }
-
-
