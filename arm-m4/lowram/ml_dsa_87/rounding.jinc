@@ -1,3 +1,4 @@
+// TODO: See if this can be generalized.
 inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32
 {
   reg u32 a0 a1;

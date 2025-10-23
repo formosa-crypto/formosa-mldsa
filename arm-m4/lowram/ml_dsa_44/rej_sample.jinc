@@ -1,0 +1,66 @@
+// TODO: Change this to streaming implementation
+param int POLYZ_LAST = POLYZ_PACKEDBYTES / SHAKE256_RATE * SHAKE256_RATE;
+param int POLYZ_LAST_SZ = POLYZ_PACKEDBYTES % SHAKE256_RATE;
+fn _poly_uniform_gamma1(
+    reg ptr u32[N] a,
+    reg ptr u8[CRHBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[N]
+{
+    stack u8[POLYZ_PACKEDBYTES] buf_;
+    reg ptr u8[POLYZ_PACKEDBYTES] buf;
+    reg ptr u8[SHAKE256_RATE] bufb;
+    stack u32[25*2] state_;
+    reg ptr u32[25*2] state;
+    stack ptr u32[N] sa;
+    sa = a; state = state_;
+    state = _prepare_state_for_shake256(state, seed, nonce);
+    state = _keccakf1600_ref(state);
+
+    inline int k;
+    for k = 0 to POLYZ_PACKEDBYTES / SHAKE256_RATE {
+        bufb = buf_[SHAKE256_RATE * k : SHAKE256_RATE];
+        bufb = _stream256_full_squeeze(bufb, state);
+        buf_[SHAKE256_RATE * k : SHAKE256_RATE] = bufb;
+        state = _keccakf1600_ref(state);
+    }
+
+    reg ptr u8[POLYZ_LAST_SZ] bufc;
+    bufc = buf_[ POLYZ_LAST : POLYZ_LAST_SZ];
+
+    reg u32 i, t;
+    i = 0;
+    while (i < POLYZ_LAST_SZ / 4) {
+        t = state[i];
+        bufc[:u32 i] = t;
+        i += 1;
+    }
+    buf_[  POLYZ_LAST : POLYZ_LAST_SZ] = bufc;
+
+    buf = buf_; a = sa;
+    a = _polyz_unpack(a, buf);
+    return a;
+}
+
+inline fn rej_eta(
+    reg ptr u32[N] a,
+    reg u32 ctr,
+    reg u32 t
+) -> reg ptr u32[N],
+     reg u32 
+{
+    #declassify t = t;
+    reg u32 n205 = 205;
+    if (t < 15) {
+        reg u32 aux;
+        aux = t * n205;
+        aux = aux >> 10;
+        aux = __plus_lsl_inplace(aux, aux, 2);
+        aux = t - aux;
+        aux = __imm_sub_reg(2, aux);
+        a[ctr] = aux;
+        ctr += 1;
+    }
+    return a, ctr;
+}
+

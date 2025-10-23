@@ -1,0 +1,117 @@
+inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32 
+{
+    reg u32 a0 a1;
+    a1 = __add_large_imm(a, (1 << (D - 1)) - 1);
+    a1 = a1 >>s D;
+    a0 = __sub_lsl(a, a1, D);
+    return (a0, a1);
+}
+
+inline fn __decompose_a0a1(reg u32 a) -> reg u32, reg u32
+{
+    reg u32 a0 a1 aux;
+    reg u32 q = iQ;
+
+    /* a1  = (a + 127) >> 7; */
+    a1 =  a + 127;
+    a1 >>s= 7;
+
+    /*  a1  = (a1 * 11275 + (1 << 23)) >> 24;*/
+    aux = 11275;
+    a1 = aux * a1;
+    a1 = __add_large_imm(a1, 1 << 23);
+    a1 = a1 >>s 24;
+
+    /* a1 ^= ((43 - a1) >> 31) & a1; */
+    aux = __imm_sub_reg(43, a1);
+    aux = aux >>s 31;
+    aux = aux & a1;
+    a1 = a1 ^ aux;
+
+    /* *a0  = a - a1 * 2 * GAMMA2; */
+    aux = iGAMMA2;
+    aux = aux << 1; // * 2
+    aux = a1 * aux;
+    a0 = a - aux;
+
+    /* *a0 -= (((Q - 1) / 2 - *a0) >> 31) & Q; */
+    /* (Q - 1) / 2 = 1023 * 2^12 */
+    aux = 1023;
+    // (Q - 1) / 2 - *a0
+    aux = __rsb_lsl(a0, aux, 12);
+    aux = __and_asr(q, aux, 31);
+    a0 -= aux;
+
+    return a0, a1;
+}
+
+inline fn __use_hint(reg u32 a, reg u32 hint) -> reg u32 {
+    reg u32 a0 a1;
+    reg u32 r;
+    r = 0;
+
+    a0, a1 = __decompose_a0a1(a);
+
+    if (hint == 0) {
+        r = 1;
+    }
+
+    if (r == 0) {
+        if (a0 >s 0) {
+            if (a1 == 43) {
+                a1 = 0;
+            } else {
+                a1 += 1;
+            }
+            r = 1;
+        }
+
+        if (r == 0) {
+            if (a1 == 0) {
+                a1 = 43;
+                r = 1;
+            }
+        }
+
+        if (r == 0) {
+            a1 -=1 ;
+        }
+    }
+
+    return a1;
+}
+
+inline fn __coefficient_high_bits(reg u32 coeff) -> reg u32
+{
+    reg u32 high;
+
+    _, high = __decompose_a0a1(coeff);
+
+    return high;
+}
+
+inline fn __coefficient_low_bits(reg u32 coeff) -> reg u32
+{
+    reg u32 low;
+
+    low, _ = __decompose_a0a1(coeff);
+
+    return low;
+}
+
+inline fn __make_hint(reg u32 z, reg u32 r) -> reg u32
+{
+    reg u32 r1 v1;
+    reg u32 ret = 0;
+
+    r1 = __coefficient_high_bits(r);
+
+    r += z;
+    v1 = __coefficient_high_bits(r);
+
+    if (r1 != v1) {
+        ret = 1;
+    }
+
+    return ret;
+}
