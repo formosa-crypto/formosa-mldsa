@@ -1,45 +1,36 @@
-// TODO: Change this to streaming implementation
-param int POLYZ_LAST = POLYZ_PACKEDBYTES / SHAKE256_RATE * SHAKE256_RATE;
-param int POLYZ_LAST_SZ = POLYZ_PACKEDBYTES % SHAKE256_RATE;
 fn _poly_uniform_gamma1(
-    reg ptr u32[N] a,
+    reg ptr u32[N] poly,
     reg ptr u8[CRHBYTES] seed,
     reg u32 nonce
 ) -> reg ptr u32[N]
 {
-    stack u8[POLYZ_PACKEDBYTES] buf_;
-    reg ptr u8[POLYZ_PACKEDBYTES] buf;
-    reg ptr u8[SHAKE256_RATE] bufb;
-    stack u32[25*2] state_;
-    reg ptr u32[25*2] state;
-    stack ptr u32[N] sa;
-    sa = a; state = state_;
-    state = _prepare_state_for_shake256(state, seed, nonce);
-    state = _keccakf1600_ref(state);
+    stack u32[25 * 2] state;
+
+    reg u32 num_leftover_bytes fill_from;
+    stack u8[9] first_9_bytes;
 
     inline int k;
-    for k = 0 to POLYZ_PACKEDBYTES / SHAKE256_RATE {
-        bufb = buf_[SHAKE256_RATE * k : SHAKE256_RATE];
-        bufb = _stream256_full_squeeze(bufb, state);
-        buf_[SHAKE256_RATE * k : SHAKE256_RATE] = bufb;
+
+    state = _prepare_state_for_shake256(state, seed, nonce);
+    () = #spill(poly);
+    state = _keccakf1600_ref(state);
+    () = #unspill(poly);
+
+    num_leftover_bytes = 0;
+    fill_from = 0;
+    for k = 0 to 4 {
+        first_9_bytes = first_9_bytes;
+        poly, fill_from, num_leftover_bytes, first_9_bytes = _polyz_unpack_streaming(poly, fill_from, num_leftover_bytes, first_9_bytes, state[:u8 0 : SHAKE256_RATE]);
+
+        () = #spill(poly, num_leftover_bytes, fill_from);
         state = _keccakf1600_ref(state);
+        () = #unspill(poly, num_leftover_bytes, fill_from);
     }
 
-    reg ptr u8[POLYZ_LAST_SZ] bufc;
-    bufc = buf_[ POLYZ_LAST : POLYZ_LAST_SZ];
+    first_9_bytes = first_9_bytes;
+    poly, first_9_bytes = _polyz_unpack_streaming_end(poly, first_9_bytes, state[:u8 0 : 32]);
 
-    reg u32 i, t;
-    i = 0;
-    while (i < POLYZ_LAST_SZ / 4) {
-        t = state[i];
-        bufc[:u32 i] = t;
-        i += 1;
-    }
-    buf_[  POLYZ_LAST : POLYZ_LAST_SZ] = bufc;
-
-    buf = buf_; a = sa;
-    a = _polyz_unpack(a, buf);
-    return a;
+    return poly;
 }
 
 inline fn rej_eta(
