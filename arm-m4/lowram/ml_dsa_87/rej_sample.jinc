@@ -28,7 +28,7 @@ fn _poly_uniform_gamma1(
     }
 
     first_5_bytes = first_5_bytes;
-    poly, first_5_bytes = _polyz_unpack_streaming_end(poly, first_5_bytes, state[:u8 0 : 96]);
+    poly, _ = _polyz_unpack_streaming_end(poly, first_5_bytes, state[:u8 0 : 96]);
 
     return poly;
 }

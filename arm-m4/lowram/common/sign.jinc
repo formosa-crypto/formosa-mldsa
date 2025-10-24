@@ -22,7 +22,7 @@ inline fn __sign_internal(
 
     reg ptr u8[POLYZ_PACKEDBYTES] packed_signer_response_elem;
 
-    stack u8[K * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] w_compressed;
+    stack u8[K * COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] w_compressed;
 
     stack u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge;
 
@@ -114,9 +114,9 @@ inline fn __sign_internal(
             () = #spill(iteration_number);
 
             for row_number = 0 to K {
-                w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] =
+                w_compressed[row_number * COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] =
                     __zero_compressed_w_element(
-                        w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]);
+                        w_compressed[row_number * COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING]);
             }
 
             for column_number = 0 to L {
@@ -134,14 +134,14 @@ inline fn __sign_internal(
                     () = #unspill(signing_key);
                     pstate = state;
                     w_compressed[row_number *
-                                 COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING :
-                                 COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
+                                 COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING :
+                                 COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING],
                     pstate =
                         _poly_compute_A_times_polynomial(
                             w_compressed[
                                 row_number *
-                                COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING :
-                                COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
+                                COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING :
+                                COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING],
                             pstate,
                             signing_key[0 : SEEDBYTES],
                             nonce,
@@ -153,16 +153,16 @@ inline fn __sign_internal(
 
             for row_number = 0 to K {
                 polynomial0 =
-                    _poly_decompress_w1_element(
+                    _poly_decompress_w_element(
                         polynomial0,
-                        w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
+                        w_compressed[row_number * COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING]
                     );
                 polynomial0 = _poly_invntt_tomont(polynomial0);
                 polynomial0 = _poly_caddq(polynomial0);
 
-                w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] =
-                    _poly_compress_w1_element(
-                        w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
+                w_compressed[row_number * COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] =
+                    _poly_compress_w_element(
+                        w_compressed[row_number * COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING],
                         polynomial0
                     );
 
@@ -252,14 +252,14 @@ inline fn __sign_internal(
                         polynomial1 = _poly_invntt_tomont(polynomial1);
 
                         polynomial1 =
-                            _poly_subtract_from_compressed_w1_element(
+                            _poly_subtract_from_compressed_w_element(
                                 polynomial1,
-                                w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
+                                w_compressed[row_number * COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING]
                             );
 
-                        w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] =
-                            _poly_compress_w1_element(
-                                w_compressed[row_number * COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
+                        w_compressed[row_number * COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] =
+                            _poly_compress_w_element(
+                                w_compressed[row_number * COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING],
                                 polynomial1
                             );
 
@@ -294,7 +294,7 @@ inline fn __sign_internal(
                             if (check_norm == 0) {
                                 #declassify polynomial0 = polynomial0;
                                 #declassify w_compressed = w_compressed;
-                                polynomial0, hints = _poly_make_hint_inplace(polynomial0, w_compressed[row_number *  COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]);
+                                polynomial0, hints = _poly_make_hint_inplace(polynomial0, w_compressed[row_number *  COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING]);
 
                                 () = #unspill(total_hints);
                                 total_hints += hints;

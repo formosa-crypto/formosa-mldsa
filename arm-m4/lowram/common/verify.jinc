@@ -23,9 +23,9 @@ inline fn __verify_internal(
 
     // union {
     //     uint8_t w1_packed[POLYW1_PACKEDBYTES];
-    //     uint8_t wcomp[COMPRESSED_W1_ELEMENT_SIZE];
+    //     uint8_t wcomp[COMPRESSED_W_ELEMENT_SIZE];
     // };
-    stack u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element;
+    stack u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_w_element;
     reg ptr u8[POLYW1_PACKEDBYTES] w1_element_packed;
 
     stack u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge;
@@ -114,13 +114,13 @@ inline fn __verify_internal(
                 () = #spill(status);
                 if (status == 0) {
                     polynomial = _poly_ntt(polynomial);
-                    compressed_w1_element = __zero_compressed_w_element(compressed_w1_element);
+                    compressed_w_element = __zero_compressed_w_element(compressed_w_element);
 
                     ptr_to_xof_state = space_for_1600_bytes;
                     nonce = __or_lsl(0, row_number, 8);
 
                     () = #unspill(verification_key);
-                    compressed_w1_element, ptr_to_xof_state = _poly_compute_A_times_polynomial(compressed_w1_element, ptr_to_xof_state, verification_key[0 : SEEDBYTES], nonce, polynomial);
+                    compressed_w_element, ptr_to_xof_state = _poly_compute_A_times_polynomial(compressed_w_element, ptr_to_xof_state, verification_key[0 : SEEDBYTES], nonce, polynomial);
 
                     space_for_1600_bytes = ptr_to_xof_state;
 
@@ -142,7 +142,7 @@ inline fn __verify_internal(
                                 nonce = __or_lsl(column_number, row_number, 8);
 
                                 () = #unspill(verification_key);
-                                compressed_w1_element, ptr_to_xof_state = _poly_compute_A_times_polynomial(compressed_w1_element, ptr_to_xof_state, verification_key[0 : SEEDBYTES], nonce, polynomial);
+                                compressed_w_element, ptr_to_xof_state = _poly_compute_A_times_polynomial(compressed_w_element, ptr_to_xof_state, verification_key[0 : SEEDBYTES], nonce, polynomial);
 
                                 space_for_1600_bytes = ptr_to_xof_state;
                             }
@@ -154,16 +154,16 @@ inline fn __verify_internal(
                         () = #unspill(verification_key);
 
                         // Here |polynomial| is an element of w1
-                        polynomial = _poly_decompress_w1_element(polynomial, compressed_w1_element);
+                        polynomial = _poly_decompress_w_element(polynomial, compressed_w_element);
                         polynomial = _poly_invntt_tomont(polynomial);
                         polynomial = _poly_reduce(polynomial);
                         polynomial = _poly_caddq(polynomial);
-                        compressed_w1_element = _poly_compress_w1_element(compressed_w1_element, polynomial);
+                        compressed_w_element = _poly_compress_w_element(compressed_w_element, polynomial);
 
                         // Here |polynomial| is an element of t1
                         polynomial = _poly_schoolbook_multiply_t1_by_challenge(polynomial, verification_key[SEEDBYTES + (row_number * POLYT1_PACKEDBYTES) : POLYT1_PACKEDBYTES], compressed_challenge);
 
-                        polynomial = _poly_subtract_from_compressed_w1_element(polynomial, compressed_w1_element);
+                        polynomial = _poly_subtract_from_compressed_w_element(polynomial, compressed_w_element);
                         polynomial = _poly_reduce(polynomial);
                         polynomial = _poly_caddq(polynomial);
 
@@ -177,7 +177,7 @@ inline fn __verify_internal(
                         if (status == 0) {
                             #declassify polynomial = _poly_use_hint(polynomial, space_for_1600_bytes.[:u8 0 : MAX_ONES_IN_HINT], number_of_hints);
 
-                            w1_element_packed = compressed_w1_element[0 : POLYW1_PACKEDBYTES];
+                            w1_element_packed = compressed_w_element[0 : POLYW1_PACKEDBYTES];
                             w1_element_packed = _polyw1_pack(w1_element_packed, polynomial);
 
                             ptr_to_xof_state = state_256;
@@ -186,7 +186,7 @@ inline fn __verify_internal(
                             () = #spill(pos);
                             state_256 = ptr_to_xof_state;
 
-                            compressed_w1_element[0 : POLYW1_PACKEDBYTES] = w1_element_packed;
+                            compressed_w_element[0 : POLYW1_PACKEDBYTES] = w1_element_packed;
                         }
                     }
                 }

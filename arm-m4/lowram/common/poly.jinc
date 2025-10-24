@@ -283,7 +283,7 @@ fn _poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg
 
 fn _poly_make_hint_inplace(
     reg ptr u32[N] polynomial,
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] w_compressed
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] w_compressed
 ) -> reg ptr u32[N],
      reg u32
 {
@@ -655,10 +655,10 @@ fn _poly_schoolbook_multiply_t0_by_challenge(
 }
 
 fn _poly_add_to_compressed_product_at_index(
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_product,
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_product,
     reg u32 coeff,
     reg u32 index
-) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
+) -> reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING]
 {
     reg u32 w1_coeff;
     reg u32 offset;
@@ -682,12 +682,12 @@ fn _poly_add_to_compressed_product_at_index(
     return compressed_product;
 }
 fn _poly_compute_A_times_polynomial(
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_product,
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_product,
     reg ptr u32[25 * 2] xof_state, // for A
     reg ptr u8[SEEDBYTES] rho,
     reg u32 nonce,
     reg ptr u32[N] polynomial
-) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
+) -> reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING],
      reg ptr u32[25 * 2]
 {
     reg u32 sampled;
@@ -735,9 +735,9 @@ fn _poly_compute_A_times_polynomial(
     return compressed_product, xof_state;
 }
 
-fn _poly_decompress_w1_element(
+fn _poly_decompress_w_element(
     reg ptr u32[N] w1_element,
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_w_element
 ) -> reg ptr u32[N]
 {
     reg u32 coeff;
@@ -749,7 +749,7 @@ fn _poly_decompress_w1_element(
     while (i < N) {
         offset = 3;
         offset *= i;
-        coeff = compressed_w1_element.[:u32 offset];
+        coeff = compressed_w_element.[:u32 offset];
         coeff &= three_byte_mask;
 
         w1_element[i] = coeff;
@@ -758,10 +758,10 @@ fn _poly_decompress_w1_element(
 
     return w1_element;
 }
-fn _poly_compress_w1_element(
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element,
+fn _poly_compress_w_element(
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_w_element,
     reg ptr u32[N] w1_element
-) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
+) -> reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING]
 {
     reg u32 coeff;
     reg u32 i;
@@ -775,15 +775,15 @@ fn _poly_compress_w1_element(
         coeff = w1_element[i];
         i += 1;
 
-        compressed_w1_element.[:u32 offset] = coeff;
+        compressed_w_element.[:u32 offset] = coeff;
     }
 
-    return compressed_w1_element;
+    return compressed_w_element;
 }
 
-fn _poly_subtract_from_compressed_w1_element(
+fn _poly_subtract_from_compressed_w_element(
     reg ptr u32[N] polynomial,
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_w_element
 ) -> reg ptr u32[N]
 {
     reg u32 coeff w1_coeff;
@@ -795,7 +795,7 @@ fn _poly_subtract_from_compressed_w1_element(
     while (i < N) {
         offset = 3;
         offset *= i;
-        w1_coeff = compressed_w1_element.[:u32 offset];
+        w1_coeff = compressed_w_element.[:u32 offset];
         w1_coeff &= three_byte_mask;
 
         coeff = polynomial[i];
@@ -809,16 +809,16 @@ fn _poly_subtract_from_compressed_w1_element(
 }
 
 inline fn __zero_compressed_w_element(
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w_element
-) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_w_element
+) -> reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING]
 {
     reg u32 zero = 0;
     reg u32 i = 0;
-    while (i < COMPRESSED_W1_ELEMENT_SIZE) {
+    while (i < COMPRESSED_W_ELEMENT_SIZE) {
         compressed_w_element.[:u32 i] = zero;
         i += 4;
     }
-    compressed_w_element[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING - 1] = (8u)zero;
+    compressed_w_element[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING - 1] = (8u)zero;
 
     return compressed_w_element;
 }
