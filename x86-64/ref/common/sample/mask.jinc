@@ -64,8 +64,6 @@ fn __sample_mask_polynomial(
             mask_encoded[mask_encoded_offset] = byte;
             mask_encoded_offset += 1;
         }
-
-        block_being_squeezed += 1;
     }
 
     mask = gamma1::__decode_to_polynomial(mask, mask_encoded[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);

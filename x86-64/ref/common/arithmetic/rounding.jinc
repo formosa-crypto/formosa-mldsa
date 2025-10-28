@@ -75,8 +75,6 @@ namespace coefficient {
 
         stack u8 result;
 
-        result = 0;
-
         // This norm is calculated using the absolute value of the
         // signed representative in the range:
         //
