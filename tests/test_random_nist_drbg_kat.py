@@ -18,7 +18,7 @@ def kats(ml_dsa):
 
 
 def test_against_random_nist_drbg_kat(ml_dsa, kats):
-    random_kat_number = random.randint(0, len(kats) - 1);
+    random_kat_number = random.randint(0, len(kats) - 1)
     kat = kats[random_kat_number]
 
     # Test key generation.
@@ -49,7 +49,5 @@ def test_against_random_nist_drbg_kat(ml_dsa, kats):
     ), print([hex(b) for b in signature[0:32]])
 
     # And lastly, verification.
-    verification_result = ml_dsa.verify(
-        verification_key, context, message, signature
-    )
+    verification_result = ml_dsa.verify(verification_key, context, message, signature)
     assert verification_result == 0

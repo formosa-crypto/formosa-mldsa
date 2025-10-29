@@ -42,6 +42,7 @@ def ml_dsa(request):
             request.config.getoption("--implementation-type"),
         )
 
+
 @pytest.fixture(scope="session")
 def architecture(request):
     return request.config.getoption("--architecture")

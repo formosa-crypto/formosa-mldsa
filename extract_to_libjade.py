@@ -7,25 +7,18 @@ import shutil
 
 
 def list_implementations():
-    print(
-        # x86-64 ref implementations
-        "ml_dsa_44_ref_x86-64",
-        "ml_dsa_65_ref_x86-64",
-        "ml_dsa_87_ref_x86-64",
-        # x86-64 avx2 implementations
-        "ml_dsa_44_avx2_x86-64",
-        "ml_dsa_65_avx2_x86-64",
-        "ml_dsa_87_avx2_x86-64",
-        # arm-m4 ref implementations
-        "ml_dsa_44_ref_arm-m4",
-        "ml_dsa_65_ref_arm-m4",
-        "ml_dsa_87_ref_arm-m4",
-        # arm-m4 lowram implementations
-        "ml_dsa_44_lowram_arm-m4",
-        "ml_dsa_65_lowram_arm-m4",
-        "ml_dsa_87_lowram_arm-m4",
-        sep=os.linesep,
-    )
+    for architecture in ["x86-64", "arm-m4"]:
+        for implementation in ["ref", "avx2", "lowram"]:
+            if architecture == "x86-64" and implementation == "lowram":
+                continue
+            if architecture == "arm-m4" and implementation == "avx2":
+                continue
+            for parameter_set in ["44", "65", "87"]:
+                print(
+                    "ml_dsa_{}_{}_{}".format(
+                        parameter_set, implementation, architecture
+                    )
+                )
 
 
 def generate_unified_source_file(implementation, target_dir):
@@ -60,7 +53,8 @@ def generate_unified_source_file(implementation, target_dir):
     api_h = impl_root / "ml_dsa_{}".format(parameter_set) / "api.h"
     shutil.copy(api_h, target_dir)
 
-if __name__ == "__main__":
+
+def main():
     parser = argparse.ArgumentParser(
         description="List all ML-DSA implementations in this directory and, for a specified implementation, extract a unified jazz file that can be compiled by Jasmin to an assembly file."
     )
@@ -86,3 +80,7 @@ if __name__ == "__main__":
     elif args.generate_implementation:
         impl_name, target_dir = args.generate_implementation
         generate_unified_source_file(impl_name, target_dir)
+
+
+if __name__ == "__main__":
+    main()
