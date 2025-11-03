@@ -32,15 +32,6 @@ from Common require "verify.jinc"
 // and ignores speculative-constant-time (SCT) related information; this is to say,
 // the annotation given to the SCT checker can suffice for the CT checker as well.
 
-// N.B.: Signing and verification assume the domain separation context has already
-// been appended to the message; they do NOT validate whether this was done in
-// accordance with the FIPS-204 specification.
-//
-// Ideally, we'd pass in two additional arguments, one being a pointer to the
-// context string and the other being the size of said string, but we're already
-// at 5 arguments for signing, and Jasmin does not currently support functions
-// that take more than 6 arguments.
-
 // See api.h for the sizes of the buffers expected by these functions.
 
 #[sct="{ptr: transient, val: transient} *
@@ -65,20 +56,28 @@ export fn ml_dsa_87_keygen(
        {ptr: transient, val: secret} *
        transient * transient *
        {ptr: transient, val: secret} ->
-       {ptr: transient, val: transient}"]
+       {ptr: transient, val: transient} * public"]
 export fn ml_dsa_87_sign(
     reg ptr u8[SIGNATURE_SIZE] signature,
     reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    reg u64 message,
-    reg u64 message_size,
+    reg ptr u64[2] context_message_pointers,
+    reg ptr u64[2] context_message_sizes,
     reg ptr u8[32] randomness
-) -> reg ptr u8[SIGNATURE_SIZE]
+) -> reg ptr u8[SIGNATURE_SIZE], reg u64
 {
     _ = #init_msf();
 
-    signature = __sign_internal(signature, signing_key, message, message_size, randomness);
+    reg u64 result;
+    reg u64 context_size = context_message_sizes[0];
 
-    return signature;
+    if (context_size <= 255) {
+        signature = __sign_internal(signature, signing_key, context_message_pointers, context_message_sizes, randomness);
+        result = 0;
+    } else {
+        result = -1;
+    }
+
+    return signature, result;
 }
 
 #[sct="{ptr: transient, val: transient} *
@@ -87,14 +86,21 @@ export fn ml_dsa_87_sign(
        public"]
 export fn ml_dsa_87_verify(
     reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    reg u64 message message_size,
+    reg ptr u64[2] context_message_pointers,
+    reg ptr u64[2] context_message_sizes,
     reg ptr u8[SIGNATURE_SIZE] signature
-) -> reg u64 {
+) -> reg u64
+{
     reg u64 verification_result;
 
     _ = #init_msf();
+    reg u64 context_size = context_message_sizes[0];
 
-    verification_result = __verify_internal(verification_key, message, message_size, signature);
+    if (context_size <= 255) {
+        verification_result = __verify_internal(verification_key, context_message_pointers, context_message_sizes, signature);
+    } else {
+        verification_result = -1;
+    }
 
     return verification_result;
 }

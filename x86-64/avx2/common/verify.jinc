@@ -83,7 +83,8 @@ fn reconstruct_signer_commitment(
 
 fn __verify_internal(
     reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    #spill_to_mmx reg u64 message message_size,
+    #spill_to_mmx reg ptr u64[2] context_message_pointers,
+    #spill_to_mmx reg ptr u64[2] context_message_sizes,
     #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature_encoded
 ) -> reg u64 {
     // 0 indicates success, -1 indicates failure.
@@ -109,7 +110,7 @@ fn __verify_internal(
     hints, result = signature::__decode_hint(hints, signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE]);
 
     if (result == 0) {
-        () = #spill(message, message_size);
+        () = #spill(context_message_pointers, context_message_sizes);
 
         () = #spill(signature_encoded, verification_key);
         matrix_A = sample::__matrix_A(verification_key[0:SEED_FOR_MATRIX_A_SIZE]);
@@ -131,12 +132,13 @@ fn __verify_internal(
         // Compute the expected commitment hash
         () = #unspill(verification_key);
         verification_key_hash = hash_verification_key(verification_key_hash, verification_key);
-        () = #unspill(message, message_size);
 
+        () = #unspill(context_message_pointers, context_message_sizes);
         message_representative = __derive_message_representative(
             verification_key_hash,
-            message,
-            message_size);
+            context_message_pointers,
+            context_message_sizes
+        );
 
         #declassify expected_commitment_hash = __derive_commitment_hash(message_representative, reconstructed_signer_commitment);
 
