@@ -41,8 +41,10 @@ def test_against_random_nist_drbg_kat(ml_dsa, kats):
 
     signing_randomness = bytearray.fromhex(kat["signing_randomness"])
 
-    signature, signing_result = ml_dsa.sign(signing_key, context, message, signing_randomness)
-    assert signing_result == 0;
+    signature, signing_result = ml_dsa.sign(
+        signing_key, context, message, signing_randomness
+    )
+    assert signing_result == 0
 
     sha3_256_hash_of_signature = hashlib.sha3_256(signature).digest()
     assert sha3_256_hash_of_signature == bytes.fromhex(

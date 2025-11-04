@@ -60,6 +60,7 @@ def test_wycheproof_sign(ml_dsa, signing_test_groups):
             elif "InvalidContext" in test["flags"]:
                 assert result == -1
 
+
 def test_wycheproof_verify(ml_dsa, verification_test_groups):
     for test_group in verification_test_groups:
         verification_key = bytearray.fromhex(test_group["publicKey"])

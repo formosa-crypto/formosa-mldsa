@@ -37,7 +37,9 @@ def test_against_pqc_kats(ml_dsa, kats):
 
         signing_randomness = bytearray.fromhex(kat["signing_randomness"])
 
-        signature, result = ml_dsa.sign(signing_key, context, message, signing_randomness)
+        signature, result = ml_dsa.sign(
+            signing_key, context, message, signing_randomness
+        )
         assert result == 0
 
         sha3_256_hash_of_signature = hashlib.sha3_256(signature).digest()
@@ -46,7 +48,5 @@ def test_against_pqc_kats(ml_dsa, kats):
         ), print("Failure at KAT number {}".format(kat["count"]))
 
         # And lastly, verification.
-        result = ml_dsa.verify(
-            verification_key, context, message, signature
-        )
+        result = ml_dsa.verify(verification_key, context, message, signature)
         assert result == 0
