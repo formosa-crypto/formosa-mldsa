@@ -104,7 +104,6 @@ fn __verify_internal(
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints;
 
-    // TODO: Ensure we don't have to check the bounds here.
     signer_response = gamma1::__decode(signer_response, signature_encoded[COMMITMENT_HASH_SIZE: GAMMA1_ENCODED_SIZE]);
 
     hints, result = signature::__decode_hint(hints, signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE]);

@@ -20,7 +20,6 @@ namespace signature {
         inline bool condition;
 
         i = 0;
-        // TODO: See if this can be made a slice to signature.
         while (i < COMMITMENT_HASH_SIZE) {
             bytes = commitment_hash.[:u128 i];
             signature.[:u128 i] = bytes;
