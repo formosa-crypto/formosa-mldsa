@@ -71,7 +71,8 @@ export fn ml_dsa_44_keygen(
 
 #[sct="{ptr: transient, val: transient} *
        {ptr: transient, val: secret} *
-       transient * transient *
+       {ptr: transient, val: transient} *
+       {ptr: transient, val: transient} *
        {ptr: transient, val: secret} ->
        {ptr: transient, val: transient} * public"]
 export fn ml_dsa_44_sign(
@@ -96,16 +97,17 @@ export fn ml_dsa_44_sign(
 }
 
 #[sct="{ptr: transient, val: transient} *
-       transient * transient *
+       {ptr: transient, val: transient} *
+       {ptr: transient, val: transient} *
        {ptr: transient, val: transient} ->
        public"]
 export fn ml_dsa_44_verify(
-    #transient reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    #transient reg ptr u64[2] context_message_pointers,
-    #transient reg ptr u64[2] context_message_sizes,
-    #transient reg ptr u8[SIGNATURE_SIZE] signature
-) -> #public reg u64 {
-    #public reg u64 verification_result;
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg ptr u64[2] context_message_pointers,
+    reg ptr u64[2] context_message_sizes,
+    reg ptr u8[SIGNATURE_SIZE] signature
+) -> reg u64 {
+    reg u64 verification_result;
     reg u64 context_size = context_message_sizes[0];
 
     if (context_size <= 255) {

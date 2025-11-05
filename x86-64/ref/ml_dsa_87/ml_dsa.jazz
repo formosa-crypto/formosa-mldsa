@@ -54,7 +54,8 @@ export fn ml_dsa_87_keygen(
 
 #[sct="{ptr: transient, val: transient} *
        {ptr: transient, val: secret} *
-       transient * transient *
+       {ptr: transient, val: transient} *
+       {ptr: transient, val: transient} *
        {ptr: transient, val: secret} ->
        {ptr: transient, val: transient} * public"]
 export fn ml_dsa_87_sign(
@@ -81,7 +82,8 @@ export fn ml_dsa_87_sign(
 }
 
 #[sct="{ptr: transient, val: transient} *
-       transient * transient *
+       {ptr: transient, val: transient} *
+       {ptr: transient, val: transient} *
        {ptr: transient, val: transient} ->
        public"]
 export fn ml_dsa_87_verify(

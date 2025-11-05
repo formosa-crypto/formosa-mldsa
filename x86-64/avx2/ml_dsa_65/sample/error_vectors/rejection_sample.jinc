@@ -58,9 +58,10 @@ __write_out_8_coefficients(
     return error, bytes_filled, good_overall;
 }
 
+#[ct = "_ * secret -> _ * _"]
 fn rejection_sample_multiple_blocks(
     #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
-    #secret reg ptr u8[REJECTION_SAMPLING_BYTES] randombytes
+    reg ptr u8[REJECTION_SAMPLING_BYTES] randombytes
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
 {
     reg u128 bytestream;

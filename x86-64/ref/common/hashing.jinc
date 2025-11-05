@@ -118,6 +118,8 @@ fn __derive_message_representative(
     state.[:u8 state_offset] = 0;
     state_offset += 1;
 
+    _ = #init_msf();
+
     () = #unspill(context_message_pointers, context_message_sizes);
     context = context_message_pointers[0];
     context_size = context_message_sizes[0];
@@ -141,6 +143,8 @@ fn __derive_message_representative(
         state[:u8 state_offset] ^= byte;
         state_offset += 1;
     }
+
+    _ = #init_msf();
 
     () = #unspill(context_message_pointers, context_message_sizes);
     message = context_message_pointers[1];

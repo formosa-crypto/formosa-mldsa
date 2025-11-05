@@ -25,7 +25,8 @@ fn derive_seed_for_mask(
 
 #[sct="{ptr: public, val: transient} *
        {ptr: public, val: secret} *
-       public * public *
+       {ptr: public, val: public} *
+       {ptr: public, val: public} *
        {ptr: public, val: secret} ->
        {ptr: public, val: transient}"]
 inline
