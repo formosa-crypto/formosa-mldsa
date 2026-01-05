@@ -1,0 +1,104 @@
+fn _polyz_unpack_5_bytes(
+    reg ptr u32[2] poly_z_slice,
+    reg ptr u8[5] block
+) -> reg ptr u32[2]
+{
+    reg u32[5] t;
+    reg u32 aux;
+
+    inline int k;
+
+    reg u32 gamma1 = iGAMMA1;
+
+    for k = 0 to 5 { t[k] = (32u) block[k]; }
+
+    aux = __or_lsl(t[0], t[1], 8);
+    aux = __or_lsl_inplace(aux, t[2], 16);
+    aux = __ubfx(aux, 0, 20);
+    aux = gamma1 - aux;
+    poly_z_slice[0] = aux;
+
+    aux = t[2] >> 4;
+    aux = __or_lsl_inplace(aux, t[3], 4);
+    aux = __or_lsl_inplace(aux, t[4], 12);
+    aux = gamma1 - aux;
+    poly_z_slice[1] = aux;
+
+    return poly_z_slice;
+}
+
+fn _polyz_unpack_streaming(
+    reg ptr u32[N] poly_z,
+    reg u32 fill_from,
+    reg u32 num_leftover_bytes,
+    reg ptr u8[5] first_5_bytes,
+    reg ptr u8[SHAKE256_RATE] bytes
+) -> reg ptr u32[N],
+     reg u32,
+     reg u32,
+     reg ptr u8[5]
+{
+    reg u32 bytes_index;
+    reg u32 j;
+    reg u32 to_copy;
+
+    j = num_leftover_bytes;
+    bytes_index = 0;
+    while (j < 5) {
+        to_copy = (32u)bytes[bytes_index];
+        bytes_index += 1;
+
+        first_5_bytes[j] = (8u)to_copy;
+        j += 1;
+    }
+
+    poly_z[fill_from : 2] = _polyz_unpack_5_bytes(poly_z[fill_from : 2], first_5_bytes);
+    fill_from += 2;
+    first_5_bytes = first_5_bytes;
+
+    while(bytes_index < SHAKE256_RATE - 5) {
+        poly_z[fill_from : 2] = _polyz_unpack_5_bytes(poly_z[fill_from : 2], bytes[bytes_index : 5]);
+        fill_from += 2;
+
+        bytes_index += 5;
+    }
+
+    num_leftover_bytes = 0;
+    while (bytes_index < SHAKE256_RATE) {
+        to_copy = (32u)bytes[bytes_index];
+        bytes_index += 1;
+
+        first_5_bytes[num_leftover_bytes] = (8u)to_copy;
+        num_leftover_bytes += 1;
+    }
+
+    return poly_z, fill_from, num_leftover_bytes, first_5_bytes;
+}
+fn _polyz_unpack_streaming_end(
+    reg ptr u32[N] poly_z,
+    reg ptr u8[5] first_5_bytes,
+    reg ptr u8[96] bytes
+) -> reg ptr u32[N],
+     reg ptr u8[5]
+{
+    reg u32 bytes_index;
+    reg u32 to_copy;
+    reg u32 fill_from;
+
+    to_copy = (32u)bytes[0];
+    first_5_bytes[4] = (8u)to_copy;
+
+    fill_from = 216;
+    poly_z[fill_from : 2] = _polyz_unpack_5_bytes(poly_z[fill_from : 2], first_5_bytes);
+    fill_from += 2;
+
+    bytes_index = 1;
+    while(bytes_index < 96) {
+        poly_z[fill_from : 2] = _polyz_unpack_5_bytes(poly_z[fill_from : 2], bytes[bytes_index : 5]);
+        fill_from += 2;
+
+        bytes_index += 5;
+    }
+
+    return poly_z, first_5_bytes;
+}

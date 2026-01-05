@@ -1,0 +1,79 @@
+/* The correctness of the transformations applied by Jasmin when compiling code
+ * relies on the input code not having undefined behaviour. Running our implementation
+ * through the interpreter is a sanity-check: If we run the interpreter without
+ * crashing the program, at least for the inputs we've given it here,
+ * the program is correct.
+ *
+ * Ideally, we'd want to run the implementation through a safety-checker, but this
+ * checker is outdated and takes an inordinate amount of time to run (on the order
+ * of several days).
+*/
+
+require "ml_dsa.jazz"
+
+fn test_consistency() -> reg bool {
+    stack u8[32] keygen_randomness;
+    stack u8[VERIFICATION_KEY_SIZE] verification_key;
+    stack u8[SIGNING_KEY_SIZE] signing_key;
+
+    reg u32 signing_randomness = 0x2000;
+
+    reg u32 context = 0x3000;
+    reg u32 context_size = 64;
+
+    reg u32 message = 0x4000;
+    reg u32 message_size = 64;
+
+    reg u32[3] ctx_message_randomness_pointers;
+    reg u32[2] ctx_message_lengths;
+
+    stack u8[SIGNATURE_SIZE] signature;
+
+    reg u32 verify_result i;
+
+    i = 0;
+    while (i < 32) {
+        keygen_randomness[i] = i;
+        [:u8 signing_randomness + i] = i;
+
+        i += 1;
+    }
+
+    i = 0;
+    while (i < 64) {
+        [:u8 context + i] = i;
+        [:u8 message + i] = i;
+        i += 1;
+    }
+
+    #[inline]
+    verification_key, signing_key = ml_dsa_87_keygen(verification_key, signing_key, keygen_randomness);
+
+    ctx_message_randomness_pointers[0] = context;
+    ctx_message_lengths[0] = 64;
+
+    ctx_message_randomness_pointers[1] = message;
+    ctx_message_lengths[1] = 64;
+
+    ctx_message_randomness_pointers[2] = signing_randomness;
+    #[inline]
+    signature, _ = ml_dsa_87_sign(signature, ctx_message_randomness_pointers, ctx_message_lengths, signing_key);
+
+    #[inline]
+    verify_result = ml_dsa_87_verify(signature, ctx_message_randomness_pointers[0:2], ctx_message_lengths, verification_key);
+
+    reg bool result;
+    if (verify_result == 0) {
+        result = true;
+    } else {
+        result = false;
+    }
+
+    return result;
+}
+
+exec test_consistency (
+    0x2000:32, // signing_randomness
+    0x3000:64, // Context
+    0x4000:64 // Message
+)

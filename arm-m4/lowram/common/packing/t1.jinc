@@ -43,54 +43,6 @@ fn _polyt1_pack(reg ptr u8[POLYT1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u
   return r;
 }
 
-/*************************************************
-* Name:        JASMIN_MLDSA_polyt1_unpack
-*
-* Description: Unpack polynomial t1 with 10-bit coefficients.
-*              Output coefficients are standard representatives.
-*
-* Arguments:   - poly *r: pointer to output polynomial
-*              - const uint8_t *a: byte array with bit-packed polynomial
-**************************************************/
-fn _polyt1_unpack(reg ptr u32[N] r, reg ptr u8[POLYT1_PACKEDBYTES] a) -> reg ptr u32[N] {
-  reg u32 i, j, aux;
-  reg u32[5] t;
-  inline int k;
-  i = 0; j = 0;
-  while(i < N)
-  {
-    for k = 0 to 5 {
-      t[k] = (32u) a[j]; j += 1;
-    }
-
-    /* r->coeffs[4 * i + 0] = ((a[5 * i + 0] >> 0) | ((uint32_t)a[5 * i + 1] << 8)) & 0x3FF; */
-    aux = t[0];
-    aux = __or_lsl_inplace(aux, t[1], 8);
-    aux = __ubfx(aux, 0, 10);
-    r[i] = aux; i += 1;
-
-    /* r->coeffs[4 * i + 1] = ((a[5 * i + 1] >> 2) | ((uint32_t)a[5 * i + 2] << 6)) & 0x3FF; */
-    aux = t[1] >> 2;
-    aux = __or_lsl_inplace(aux, t[2], 6);
-    aux = __ubfx(aux, 0, 10);
-    r[i] = aux;	i += 1;
-
-    /* r->coeffs[4 * i + 2] = ((a[5 * i + 2] >> 4) | ((uint32_t)a[5 * i + 3] << 4)) & 0x3FF; */
-    aux = t[2] >> 4;
-    aux = __or_lsl_inplace(aux, t[3], 4);
-    aux = __ubfx(aux, 0, 10);
-    r[i] = aux; i += 1;
-
-    /* r->coeffs[4 * i + 3] = ((a[5 * i + 3] >> 6) | ((uint32_t)a[5 * i + 4] << 2)) & 0x3FF; */
-    aux = t[3] >> 6;
-    aux = __or_lsl_inplace(aux, t[4], 2);
-    aux = __ubfx(aux, 0, 10);
-    r[i] = aux; i += 1;
-
-  }
-  return r;
-}
-
 fn _t1_unpack_coefficient_at_index(
     reg ptr u8[POLYT1_PACKEDBYTES] packed,
     reg u32 index

@@ -1,0 +1,21 @@
+inline fn rej_eta(
+        reg ptr u32[N] a, 
+        reg u32 ctr, 
+        reg u32 t
+) -> reg ptr u32[N], reg u32 
+{
+    #declassify t = t;
+    reg u32 n205 = 205;
+    if (t < 15) {
+        reg u32 aux;
+        aux = t * n205;
+        aux = aux >> 10;
+        aux = __plus_lsl_inplace(aux, aux, 2);
+        aux = t - aux;
+        aux = __imm_sub_reg(2, aux);
+        a[ctr] = aux;
+        ctr += 1;
+    }
+    return a, ctr;
+}
+

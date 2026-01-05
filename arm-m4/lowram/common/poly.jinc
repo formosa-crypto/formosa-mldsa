@@ -180,36 +180,6 @@ fn _poly_check_norm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
     return r;
 }
 
-/*************************************************
- * Name:        JASMIN_MLDSA_poly_decompose
- *
- * Description: For all coefficients c of the input polynomial,
- *              compute high and low bits c0, c1 such c mod Q = c1*ALPHA + c0
- *              with -ALPHA/2 < c0 <= ALPHA/2 except c1 = (Q-1)/ALPHA where we
- *              set c1 = 0 and -ALPHA/2 <= c0 = c mod Q - Q < 0.
- *              Assumes coefficients to be standard representatives.
- *
- * Arguments:   - poly *a1: pointer to output polynomial with coefficients c1
- *              - poly *a0: pointer to output polynomial with coefficients c0
- *              - const poly *a: pointer to input polynomial
- **************************************************/
-// equivalent to _poly_decompose(a1, a0, a1)
-fn _poly_decompose_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u32[N], reg ptr u32[N] {
-    reg u32 i;
-    reg u32 a0_, a1_, a_;
-
-    i = 0;
-    while (i < N) {
-        a_ = a1[i];
-        a0_, a1_ = __decompose_a0a1(a_);
-        a0[i] = a0_;
-        a1[i] = a1_;
-        i += 1;
-    }
-
-    return a1, a0;
-}
-
 inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
     reg u32 c;
     c = a[i];
@@ -226,7 +196,6 @@ inline fn __eta_minus_coeff(reg ptr u32[N] a, reg u32 i) -> reg u32 {
  *              - const poly *a: pointer to input polynomial
  *              - const poly *h: pointer to input hint polynomial
  **************************************************/
-
 fn _poly_use_hint(
     reg ptr u32[N] polynomial,
     reg ptr u8[MAX_ONES_IN_HINT] hints,
@@ -312,33 +281,39 @@ fn _poly_pointwise_montgomery_inplace(reg ptr u32[N] c, reg ptr u32[N] a) -> reg
     return c;
 }
 
-/*************************************************
- * Name:        JASMIN_MLDSA_poly_make_hint
- *
- * Description: Compute hint polynomial. The coefficients of which indicate
- *              whether the low bits of the corresponding coefficient of
- *              the input polynomial overflow into the high bits.
- *
- * Arguments:   - poly *h: pointer to output hint polynomial
- *              - const poly *a0: pointer to low part of input polynomial
- *              - const poly *a1: pointer to high part of input polynomial
- *
- * Returns number of 1 bits.
- **************************************************/
-fn _poly_make_hint(reg ptr u32[N] h, reg ptr u32[N] a0, reg ptr u32[N] a1) -> reg u32, reg ptr u32[N]{
-    reg u32 i, s, a0_, a1_, h_, gamma2;
-    gamma2 = iGAMMA2;
-    i = 0; s = 0;
-    while(i < N)
+fn _poly_make_hint_inplace(
+    reg ptr u32[N] polynomial,
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] w_compressed
+) -> reg ptr u32[N],
+     reg u32
+{
+    reg u32 w_coeff poly_coeff;
+    reg u32 offset;
+    reg u32 num_hints = 0;
+    reg u32 i = 0;
+    reg u32 three_byte_mask = (1 << 24) - 1;
+
+    while (i < N)
     {
-        a0_ = a0[i];
-        a1_ = a1[i];
-        h_ = __make_hint(a0_, a1_, gamma2);
-        h[i] = h_;
-        s += h_;
+        offset = 3;
+        offset *= i;
+        w_coeff = w_compressed.[:u32 offset];
+        w_coeff &= three_byte_mask;
+
+        poly_coeff = polynomial[i];
+        w_coeff += poly_coeff;
+
+        poly_coeff = -poly_coeff;
+        poly_coeff = __make_hint(poly_coeff, w_coeff);
+
+        polynomial[i] = poly_coeff;
+        if (poly_coeff == 1) {
+            num_hints += 1;
+        }
+
         i += 1;
     }
-    return s, h;
+    return polynomial, num_hints;
 }
 
 /*************************************************
@@ -368,53 +343,6 @@ fn _poly_power2round_inplace(reg ptr u32[N] a1, reg ptr u32[N] a0) -> reg ptr u3
 }
 
 /*************************************************
- * Name:        JASMIN_MLDSA_poly_shiftl
- *
- * Description: Multiply polynomial by 2^D without modular reduction. Assumes
- *              input coefficients to be less than 2^{31-D} in absolute value.
- *
- * Arguments:   - poly *a: pointer to input/output polynomial
- **************************************************/
-fn _poly_shiftl(reg ptr u32[N] a) -> reg ptr u32[N] {
-    reg u32 i, a_;
-
-    i = 0;
-    while(i < N)
-    {
-        a_ = a[i];
-        a_ <<= D;
-        a[i] = a_;
-        i += 1;
-    }
-    return a;
-}
-
-/*************************************************
- * Name:        JASMIN_MLDSA_poly_sub
- *
- * Description: Subtract polynomials. No modular reduction is
- *              performed.
- *
- * Arguments:   - poly *c: pointer to output polynomial
- *              - const poly *a: pointer to first input polynomial
- *              - const poly *b: pointer to second input polynomial to be
- *                               subtraced from first input polynomial
- **************************************************/
-fn _poly_sub_inplace(reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
-    reg u32 i, a_, b_, c_;
-
-    i = 0;
-    while(i < N) {
-        a_ = a[i];
-        b_ = b[i];
-        c_ = a_ - b_;
-        a[i] = c_;
-        i += 1;
-    }
-    return a;
-}
-
-/*************************************************
  * Name:        JASMIN_MLDSA_challenge
  *
  * Description: Implementation of H. Samples polynomial with TAU nonzero
@@ -424,7 +352,7 @@ fn _poly_sub_inplace(reg ptr u32[N] a, reg ptr u32[N] b) -> reg ptr u32[N] {
  * Arguments:   - poly *c: pointer to output polynomial
  *              - const uint8_t mu[]: byte array containing seed of length SEEDBYTES
  **************************************************/
-fn _poly_challenge(
+fn _poly_generate_challenge(
     reg ptr u32[25 * 2] state,
     reg ptr u32[N] challenge,
     reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash
@@ -468,6 +396,8 @@ fn _poly_challenge(
             }
 
             b = (32u) state[:u8 pos];
+
+            #declassify b = b;
             pos += 1;
         } (b > j)
 
@@ -606,41 +536,158 @@ fn _poly_schoolbook_multiply_t1_by_challenge(
     return product;
 }
 
-fn _poly_add_to_compressed_w1_at_index(
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element,
+inline fn __t0_by_challenge_helper(
+    reg ptr u32[N] product,
+    reg u32 sign,
+    reg u32 index,
+    reg ptr u8[POLYT0_PACKEDBYTES] t0_element_packed
+) -> reg ptr u32[N] {
+    reg u32 j offset;
+    reg u32 lhs rhs;
+
+    if (sign == 0) {
+        j = 0;
+        while {
+            offset = index + j;
+        } (offset < N) {
+            lhs = product[offset];
+            rhs = _t0_unpack_coefficient_at_index(t0_element_packed, j);
+
+            lhs += rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
+
+        j = N;
+        j -= index;
+        while (j < N) {
+            offset = -N;
+            offset += index;
+            offset += j;
+
+            lhs = product[offset];
+            rhs = _t0_unpack_coefficient_at_index(t0_element_packed, j);
+
+            lhs -= rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
+    } else {
+        j = 0;
+        while {
+            offset = index + j;
+        } (offset < N) {
+            lhs = product[offset];
+            rhs = _t0_unpack_coefficient_at_index(t0_element_packed, j);
+
+            lhs -= rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
+
+        j = N;
+        j -= index;
+        while (j < N) {
+            offset = -N;
+            offset += index;
+            offset += j;
+
+            lhs = product[offset];
+            rhs = _t0_unpack_coefficient_at_index(t0_element_packed, j);
+
+            lhs += rhs;
+
+            product[offset] = lhs;
+
+            j += 1;
+        }
+    }
+
+    return product;
+}
+fn _poly_schoolbook_multiply_t0_by_challenge(
+    reg ptr u32[N] product,
+    reg ptr u8[POLYT0_PACKEDBYTES] t0_element_packed,
+    reg ptr u8[COMPRESSED_CHALLENGE_SIZE] compressed_challenge
+) -> reg ptr u32[N]
+{
+    reg u32 sign signs index;
+
+    reg u32 i zero;
+
+    i = 0;
+    zero = 0;
+    while (i < N) {
+        product[i] = zero;
+        i += 1;
+    }
+
+    signs = compressed_challenge.[:u32 COMPRESSED_CHALLENGE_SIZE - 8];
+    i = 0;
+    while (i < 32) {
+        index = (32u)compressed_challenge[i];
+        i += 1;
+
+        sign = signs & 1;
+        signs >>= 1;
+
+        product = __t0_by_challenge_helper(product, sign, index, t0_element_packed);
+    }
+
+    signs = compressed_challenge.[:u32 COMPRESSED_CHALLENGE_SIZE - 4];
+    while (i < TAU) {
+        index = (32u)compressed_challenge[i];
+        i += 1;
+
+        sign = signs & 1;
+        signs >>= 1;
+
+        product = __t0_by_challenge_helper(product, sign, index, t0_element_packed);
+    }
+
+    return product;
+}
+
+fn _poly_add_to_compressed_product_at_index(
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_product,
     reg u32 coeff,
     reg u32 index
-) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
+) -> reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING]
 {
     reg u32 w1_coeff;
-    reg u32 offset = 0;
+    reg u32 offset;
     reg u32 three_byte_mask = (1 << 24) - 1;
 
     offset = 3;
     offset *= index;
 
-    w1_coeff = compressed_w1_element.[:u32 offset];
+    w1_coeff = compressed_product.[:u32 offset];
     w1_coeff &= three_byte_mask;
 
     w1_coeff += coeff;
     w1_coeff = _freeze(w1_coeff);
 
-    compressed_w1_element.[:u16 offset] = (16u)w1_coeff;
+    compressed_product.[:u16 offset] = (16u)w1_coeff;
     w1_coeff >>= 16;
     offset += 2;
 
-    compressed_w1_element[offset] = (8u)w1_coeff;
+    compressed_product[offset] = (8u)w1_coeff;
 
-    return compressed_w1_element;
+    return compressed_product;
 }
-
-fn _poly_az_plus_w1(
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element,
+fn _poly_compute_A_times_polynomial(
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_product,
     reg ptr u32[25 * 2] xof_state, // for A
     reg ptr u8[SEEDBYTES] rho,
     reg u32 nonce,
-    reg ptr u32[N] signer_response_element
-) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING],
+    reg ptr u32[N] polynomial
+) -> reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING],
      reg ptr u32[25 * 2]
 {
     reg u32 sampled;
@@ -649,7 +696,7 @@ fn _poly_az_plus_w1(
 
     inline bool b;
 
-    () = #spill(signer_response_element, compressed_w1_element);
+    () = #spill(polynomial, compressed_product);
 
     xof_state = _prepare_xof_for_element_of_A(xof_state, rho, nonce);
 
@@ -669,12 +716,12 @@ fn _poly_az_plus_w1(
 
                 b = __cmp_b(coeff, iQ);
                 if (b) {
-                    () = #unspill(signer_response_element);
-                    coeff = __mul_montgomery_reduce(coeff, signer_response_element[sampled]);
+                    () = #unspill(polynomial);
+                    coeff = __mul_montgomery_reduce(coeff, polynomial[sampled]);
 
-                    () = #unspill(compressed_w1_element);
-                    compressed_w1_element = _poly_add_to_compressed_w1_at_index(compressed_w1_element, coeff, sampled);
-                    () = #spill(compressed_w1_element);
+                    () = #unspill(compressed_product);
+                    compressed_product = _poly_add_to_compressed_product_at_index(compressed_product, coeff, sampled);
+                    () = #spill(compressed_product);
 
                     sampled += 1;
                 }
@@ -685,12 +732,12 @@ fn _poly_az_plus_w1(
         }
     }
 
-    return compressed_w1_element, xof_state;
+    return compressed_product, xof_state;
 }
 
-fn _poly_decompress_w1_element(
+fn _poly_decompress_w_element(
     reg ptr u32[N] w1_element,
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_w_element
 ) -> reg ptr u32[N]
 {
     reg u32 coeff;
@@ -702,7 +749,7 @@ fn _poly_decompress_w1_element(
     while (i < N) {
         offset = 3;
         offset *= i;
-        coeff = compressed_w1_element.[:u32 offset];
+        coeff = compressed_w_element.[:u32 offset];
         coeff &= three_byte_mask;
 
         w1_element[i] = coeff;
@@ -711,11 +758,10 @@ fn _poly_decompress_w1_element(
 
     return w1_element;
 }
-
-fn _poly_compress_w1_element(
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element,
+fn _poly_compress_w_element(
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_w_element,
     reg ptr u32[N] w1_element
-) -> reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING]
+) -> reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING]
 {
     reg u32 coeff;
     reg u32 i;
@@ -729,15 +775,15 @@ fn _poly_compress_w1_element(
         coeff = w1_element[i];
         i += 1;
 
-        compressed_w1_element.[:u32 offset] = coeff;
+        compressed_w_element.[:u32 offset] = coeff;
     }
 
-    return compressed_w1_element;
+    return compressed_w_element;
 }
 
-fn _poly_subtract_from_compressed_w1_element(
+fn _poly_subtract_from_compressed_w_element(
     reg ptr u32[N] polynomial,
-    reg ptr u8[COMPRESSED_W1_ELEMENT_SIZE_WITH_PADDING] compressed_w1_element
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_w_element
 ) -> reg ptr u32[N]
 {
     reg u32 coeff w1_coeff;
@@ -749,7 +795,7 @@ fn _poly_subtract_from_compressed_w1_element(
     while (i < N) {
         offset = 3;
         offset *= i;
-        w1_coeff = compressed_w1_element.[:u32 offset];
+        w1_coeff = compressed_w_element.[:u32 offset];
         w1_coeff &= three_byte_mask;
 
         coeff = polynomial[i];
@@ -761,3 +807,160 @@ fn _poly_subtract_from_compressed_w1_element(
 
     return polynomial;
 }
+
+inline fn __zero_compressed_w_element(
+    reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING] compressed_w_element
+) -> reg ptr u8[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING]
+{
+    reg u32 zero = 0;
+    reg u32 i = 0;
+    while (i < COMPRESSED_W_ELEMENT_SIZE) {
+        compressed_w_element.[:u32 i] = zero;
+        i += 4;
+    }
+    compressed_w_element[COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING - 1] = (8u)zero;
+
+    return compressed_w_element;
+}
+
+fn _poly_high_bits_inplace(reg ptr u32[N] poly) -> reg ptr u32[N]
+{
+    reg u32 coeff;
+    reg u32 i = 0;
+    while (i < N) {
+        coeff = poly[i];
+        coeff = __coefficient_high_bits(coeff);
+
+        poly[i] = coeff;
+        i += 1;
+    }
+
+    return poly;
+}
+
+fn _poly_low_bits_inplace(reg ptr u32[N] poly) -> reg ptr u32[N]
+{
+    reg u32 coeff;
+    reg u32 i = 0;
+    while (i < N) {
+        coeff = poly[i];
+        coeff = __coefficient_low_bits(coeff);
+
+        poly[i] = coeff;
+        i += 1;
+    }
+
+    return poly;
+}
+
+inline fn __extr_rej_sample(
+        reg ptr u32[N] a,
+        reg u32 ctr,
+        reg u32 t,
+        reg u32 q
+        ) -> reg ptr u32[N], reg u32
+{
+    t = __ubfx(t, 0, 23);
+    a, ctr = __rej_sample(a, ctr, t, q);
+    return a, ctr;
+}
+
+fn _poly_uniform(
+    reg ptr u32[N] sampled,
+    reg ptr u32[25 * 2] state
+) -> reg ptr u32[N],
+     reg ptr u32[25 * 2]
+{
+    reg u32 ctr, ctr4, pos, q, t;
+    reg u32[3] buf;
+
+    ctr = 0; pos = 0; q = iQ;
+
+    while { ctr4 = ctr + 4; } (ctr4 < N) {
+        state, sampled, pos, ctr, q, buf = _stream128_refill_buffer(state, sampled, pos, ctr, q);
+
+        sampled, ctr = __extr_rej_sample(sampled, ctr, buf[0], q);  // 3 bytes in buf[0]
+
+        t = buf[0] >>u 24;
+        t = __or_lsl_inplace(t, buf[1], 8);
+        sampled, ctr = __extr_rej_sample(sampled, ctr, t, q);
+
+        t = buf[1] >>u 16;
+        t = __or_lsl_inplace(t, buf[2], 16);  // 2 byte in buf[1] U 1 bytes in buf[2]
+        sampled, ctr = __extr_rej_sample(sampled, ctr, t, q);
+
+        t = __ubfx(buf[2], 8, 23);
+        sampled, ctr = __rej_sample(sampled, ctr, t, q);
+    }
+
+    while (ctr < N) {
+        state, sampled, pos, ctr, q, buf = _stream128_refill_buffer(state, sampled, pos, ctr, q);
+
+        sampled, ctr = __extr_rej_sample(sampled, ctr, buf[0], q);  // 3 bytes in buf[0]
+
+        if (ctr < N) {
+            t = buf[0] >>u 24;
+            t = __or_lsl_inplace(t, buf[1], 8); // 1 byte in buf[0] U 2 bytes in buf[1]
+            sampled, ctr = __extr_rej_sample(sampled, ctr, t, q);
+        }
+
+        if (ctr < N) {
+            t = buf[1] >>u 16;
+            t = __or_lsl_inplace(t, buf[2], 16); // 2 byte in buf[1] U 1 bytes in buf[2]
+            sampled, ctr = __extr_rej_sample(sampled, ctr, t, q);
+        }
+
+        if (ctr < N) {
+            t = __ubfx(buf[2], 8, 23);
+            sampled, ctr = __rej_sample(sampled, ctr, t, q);
+        }
+    }
+
+    return sampled, state;
+}
+
+#[ct = "_ * secret * _ -> _"]
+fn _poly_uniform_eta(
+    reg ptr u32[N] poly,
+    reg ptr u8[CRHBYTES] seed,
+    reg u32 nonce
+) -> reg ptr u32[N]
+{
+    stack u32[25*2] state;
+    reg u32 ctr, ctr8, pos, n205, t;
+    reg u32 buf;
+
+    () = #spill(poly);
+    state = _prepare_state_for_shake256(state, seed, nonce);
+    state = _keccakf1600_ref(state);
+    () = #unspill(poly);
+
+    ctr = 0;
+    pos = 0;
+    n205 = 205;
+    while {
+        ctr8 = ctr + 8;
+    } (ctr8 < N) {
+
+        state, poly, pos, ctr, n205, buf = _stream256_refill_buffer(state, poly, pos, ctr, n205);
+        inline int i;
+        for i = 0 to 8 {
+            t = __ubfx(buf, 4*i, 4);
+            poly, ctr = rej_eta(poly, ctr, t);
+        }
+    }
+
+    while (ctr < N) {
+        state, poly, pos, ctr, n205, buf = _stream256_refill_buffer(state, poly, pos, ctr, n205);
+        inline int i;
+        for i = 0 to 8 {
+            if ((i == 0) || (ctr < N)) {
+                t = __ubfx(buf, 4*i, 4);
+                poly, ctr = rej_eta(poly, ctr, t);
+            }
+        }
+    }
+    return poly;
+}
+
+

@@ -50,8 +50,6 @@ namespace polynomial {
             bound += STEP;
 
             while (offset < bound) {
-                // TODO: Loading these values as a 64u will result in the
-                // wrong answer, maybe this should be reflected in the types?
                 t64 = (64s)polynomial[offset + STEP];
                 zeta = (64s)zetas[zeta_i];
 

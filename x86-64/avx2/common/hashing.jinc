@@ -148,11 +148,12 @@ fn __shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr
     }
     return state, offset;
 }
+
 inline
 fn __derive_message_representative(
     reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash,
-    #spill_to_mmx reg u64 message,
-    #spill_to_mmx reg u64 message_size
+    #spill_to_mmx reg ptr u64[2] context_message_pointers,
+    #spill_to_mmx reg ptr u64[2] context_message_sizes
 ) -> stack u8[MESSAGE_REPRESENTATIVE_SIZE]
 {
     stack u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative;
@@ -161,9 +162,13 @@ fn __derive_message_representative(
 
     reg u8 byte;
     reg u64 state_offset;
-    #spill_to_mmx reg u64 message_offset;
+
+    reg u64 context context_size context_offset;
+    reg u64 message message_size message_offset;
 
     reg u256 copied_32_bytes;
+
+    () = #spill(context_message_pointers, context_message_sizes);
 
     // Absorb ...
 
@@ -176,9 +181,44 @@ fn __derive_message_representative(
     copied_32_bytes = verification_key_hash.[:u256 32];
     state.[:u256 32] = copied_32_bytes;
 
-    state_offset = 64;
+    context_offset = 0;
+
+    () = #unspill(context_message_pointers);
+    context = context_message_pointers[0];
+
+    () = #unspill(context_message_sizes);
+    context_size = context_message_sizes[0];
+
+    // We first need to absorb `0 || context_size` before absorbing the context.
+    state.[:u8 64] = 0;
+    state.[:u8 65] = context_size;
+
+    state_offset = 66;
+
+    while(context_offset < context_size) {
+        if (state_offset >= SHAKE256_RATE) {
+            () = #spill(context, context_offset, context_size);
+            state = _keccakf1600_ref1(state);
+            () = #unspill(context, context_offset, context_size);
+
+            state_offset = 0;
+        }
+
+        byte = [:u8 context + context_offset];
+        context_offset += 1;
+
+        state[:u8 state_offset] ^= byte;
+        state_offset += 1;
+    }
 
     message_offset = 0;
+
+    () = #unspill(context_message_pointers);
+    message = context_message_pointers[1];
+
+    () = #unspill(context_message_sizes);
+    message_size = context_message_sizes[1];
+
     while(message_offset < message_size) {
         if (state_offset >= SHAKE256_RATE) {
             () = #spill(message, message_offset, message_size);

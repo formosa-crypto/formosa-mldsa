@@ -66,6 +66,24 @@ class ML_DSA_X86_64(ML_DSA):
         char_array = ctypes.c_char * len(ba)
         return char_array.from_buffer_copy(ba)
 
+    def prepare_context_and_message_for_api(self, context, message):
+        uint8_t_ptr = ctypes.POINTER(ctypes.c_uint8)
+
+        context_buffer = self.bytearray_to_ctype(context)
+        context_buffer_ptr = ctypes.cast(context_buffer, uint8_t_ptr)
+        context_len = len(context)
+
+        message_buffer = self.bytearray_to_ctype(message)
+        message_buffer_ptr = ctypes.cast(message_buffer, uint8_t_ptr)
+        message_len = len(message)
+
+        context_message_pointers = (uint8_t_ptr * 2)(
+            context_buffer_ptr, message_buffer_ptr
+        )
+        context_message_sizes = (ctypes.c_size_t * 2)(context_len, message_len)
+
+        return context_message_pointers, context_message_sizes
+
     def generate_keypair(self, randomness):
         verification_key = ctypes.create_string_buffer(
             b"255", self.verification_key_size
@@ -81,25 +99,29 @@ class ML_DSA_X86_64(ML_DSA):
     def sign(self, signing_key, context, message, randomness):
         signature = ctypes.create_string_buffer(b"255", self.signature_size)
 
-        # TODO: Handle this in the Jasmin code.
-        message = bytearray([0, len(context)]) + context + message
-        self.sign_internal(
+        context_message_pointers, context_message_sizes = (
+            self.prepare_context_and_message_for_api(context, message)
+        )
+
+        result = self.sign_internal(
             signature,
             self.bytearray_to_ctype_copy(signing_key),
-            self.bytearray_to_ctype(message),
-            len(message),
+            context_message_pointers,
+            context_message_sizes,
             self.bytearray_to_ctype(randomness),
         )
 
-        return signature.raw
+        return signature.raw, result
 
     def verify(self, verification_key, context, message, signature):
-        # TODO: Handle this in the Jasmin code.
-        message = bytearray([0, len(context)]) + context + message
+        context_message_pointers, context_message_sizes = (
+            self.prepare_context_and_message_for_api(context, message)
+        )
+
         return self.verify_internal(
             self.bytearray_to_ctype_copy(verification_key),
-            self.bytearray_to_ctype(message),
-            len(message),
+            context_message_pointers,
+            context_message_sizes,
             self.bytearray_to_ctype_copy(signature),
         )
 
@@ -136,7 +158,7 @@ class ML_DSA_ARM_M4(ML_DSA):
 
     def sign(self, signing_key, context, message, randomness):
         input_bytes = (
-            len(context).to_bytes(1, byteorder="little")
+            len(context).to_bytes(4, byteorder="little")
             + context
             + len(message).to_bytes(4, byteorder="little")
             + message
@@ -144,22 +166,39 @@ class ML_DSA_ARM_M4(ML_DSA):
             + signing_key
         )
 
-        output = subprocess.check_output(
-            [self.wrapper_name, "1"], input=input_bytes, text=False
+        result = subprocess.run(
+            [self.wrapper_name, "1"], input=input_bytes, capture_output=True, text=False
         )
 
-        return output
+        if result.returncode == 0:
+            returncode = 0
+        elif result.returncode == 255:
+            returncode = -1
+        else:  # shouldn't be possible
+            assert False
+
+        return result.stdout, returncode
 
     def verify(self, verification_key, context, message, signature):
         input_bytes = (
-            len(context).to_bytes(1, byteorder="little")
+            len(context).to_bytes(4, byteorder="little")
             + context
             + len(message).to_bytes(4, byteorder="little")
             + message
             + signature
             + verification_key
         )
-        output = subprocess.check_output(
-            [self.wrapper_name, "2"], input=input_bytes, text=False
+
+        result = subprocess.run(
+            [self.wrapper_name, "2"],
+            input=input_bytes,
         )
-        return int.from_bytes(output)
+
+        if result.returncode == 0:
+            returncode = 0
+        elif result.returncode == 255:
+            returncode = -1
+        else:  # shouldn't be possible
+            assert False
+
+        return returncode

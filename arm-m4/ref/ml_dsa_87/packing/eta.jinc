@@ -1,0 +1,119 @@
+fn _polyeta_pack(reg ptr u8[POLYETA_PACKEDBYTES] r, reg ptr u32[N] a) ->
+reg ptr u8[POLYETA_PACKEDBYTES] {
+    reg u32 i, j;
+    reg u32[7] t;
+    /*
+       for (i = 0; i < N / 8; ++i) {
+       t[0] = (uint8_t) (ETA - a->coeffs[8 * i + 0]);
+       t[1] = (uint8_t) (ETA - a->coeffs[8 * i + 1]);
+       t[2] = (uint8_t) (ETA - a->coeffs[8 * i + 2]);
+       t[3] = (uint8_t) (ETA - a->coeffs[8 * i + 3]);
+       t[4] = (uint8_t) (ETA - a->coeffs[8 * i + 4]);
+       t[5] = (uint8_t) (ETA - a->coeffs[8 * i + 5]);
+       t[6] = (uint8_t) (ETA - a->coeffs[8 * i + 6]);
+       t[7] = (uint8_t) (ETA - a->coeffs[8 * i + 7]);
+
+       r[3 * i + 0]  = (t[0] >> 0) | (t[1] << 3) | (t[2] << 6);
+       r[3 * i + 1]  = (t[2] >> 2) | (t[3] << 1) | (t[4] << 4) | (t[5] << 7);
+       r[3 * i + 2]  = (t[5] >> 1) | (t[6] << 2) | (t[7] << 5);
+       }
+     */
+
+    i = 0; j = 0;
+    while(i < N) {
+        inline int k;
+        for k = 0 to 7 {
+            t[k] = a[i];
+            t[k] = __imm_sub_reg(ETA, t[k]);
+            i += 1;
+        }
+        reg u32 aux;
+        aux = __or_lsl(t[0], t[1], 3);
+        aux = __or_lsl_inplace(aux, t[2], 6);
+        r[j] = aux; j += 1;
+        aux = __ubfx(t[2], 2, 6);
+        aux = __or_lsl_inplace(aux, t[3], 1);
+        aux = __or_lsl_inplace(aux, t[4], 4);
+        aux = __or_lsl_inplace(aux, t[5], 7);
+        r[j] = aux;
+        j += 1;
+        aux = __ubfx(t[5], 1, 7);
+        aux = __or_lsl_inplace(aux, t[6], 2);
+
+        // Reuse t[6] to store t[7]
+        t[6] = a[i];
+        t[6] = __imm_sub_reg(ETA, t[6]);
+        i += 1;
+
+        aux = __or_lsl_inplace(aux, t[6], 5);
+        r[j] = aux; j += 1;
+    }
+
+    return r;
+}
+
+fn _polyeta_unpack(reg ptr u32[N] r, reg ptr u8[POLYETA_PACKEDBYTES] a) -> reg ptr u32[N] {
+    reg u32 i, j;
+    reg u32[3] t;
+    inline int k;
+    reg u32 aux;
+    i = 0; j = 0;
+    while(i < N) {
+
+        for k = 0 to 3 { t[k] = (32u) a[j]; j +=1; }
+
+        /* r->coeffs[8 * i + 0] =  (a[3 * i + 0] >> 0) & 7;
+           r->coeffs[8 * i + 0] = ETA - r->coeffs[8 * i + 0]; */
+        aux = __ubfx(t[0], 0, 3);
+        aux = __imm_sub_reg(ETA, aux);
+        r[i] = aux; i += 1;
+
+        /* r->coeffs[8 * i + 1] =  (a[3 * i + 0] >> 3) & 7;
+           r->coeffs[8 * i + 1] = ETA - r->coeffs[8 * i + 1]; */
+        aux = __ubfx(t[0], 3, 3);
+        aux = __imm_sub_reg(ETA, aux);
+        r[i] = aux; i += 1;
+
+        /* r->coeffs[8 * i + 2] = ((a[3 * i + 0] >> 6) | (a[3 * i + 1] << 2)) & 7;
+           r->coeffs[8 * i + 2] = ETA - r->coeffs[8 * i + 2]; */
+        aux = t[0] >> 6;
+        aux = __or_lsl(aux, t[1], 2);
+        aux &= 7;
+        aux = __imm_sub_reg(ETA, aux);
+        r[i] = aux; i += 1;
+
+        /* r->coeffs[8 * i + 3] =  (a[3 * i + 1] >> 1) & 7;
+           r->coeffs[8 * i + 3] = eta - r->coeffs[8 * i + 3]; */
+        aux = __ubfx(t[1], 1, 3);
+        aux = __imm_sub_reg(ETA, aux);
+        r[i] = aux; i += 1;
+
+        /* r->coeffs[8 * i + 4] =  (a[3 * i + 1] >> 4) & 7;
+           r->coeffs[8 * i + 4] = eta - r->coeffs[8 * i + 4]; */
+        aux = __ubfx(t[1], 4, 3);
+        aux = __imm_sub_reg(ETA, aux);
+        r[i] = aux; i += 1;
+
+        /* r->coeffs[8 * i + 5] = ((a[3 * i + 1] >> 7) | (a[3 * i + 2] << 1)) & 7;
+           r->coeffs[8 * i + 5] = ETA - r->coeffs[8 * i + 5]; */
+        aux = t[1] >> 7;
+        aux = __or_lsl(aux, t[2], 1);
+        aux &= 7;
+        aux = __imm_sub_reg(ETA, aux);
+        r[i] = aux; i += 1;
+
+        /* r->coeffs[8 * i + 6] =  (a[3 * i + 2] >> 2) & 7;
+           r->coeffs[8 * i + 6] = eta - r->coeffs[8 * i + 6]; */
+        aux = __ubfx(t[2], 2, 3);
+        aux = __imm_sub_reg(ETA, aux);
+        r[i] = aux; i += 1;
+
+        /* r->coeffs[8 * i + 7] =  (a[3 * i + 2] >> 5) & 7;
+           r->coeffs[8 * i + 7] = eta - r->coeffs[8 * i + 7]; */
+        aux = __ubfx(t[2], 5, 3);
+        aux = __imm_sub_reg(ETA, aux);
+        r[i] = aux; i += 1;
+    }
+
+    return r;
+}

@@ -1,0 +1,12 @@
+fn _polyw1_pack(reg ptr u8[POLYW1_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYW1_PACKEDBYTES] {
+    reg u32 i, j, aux;
+    reg u32[2] t;
+    inline int k;
+    i = 0; j = 0;
+    while (i < N) {
+        for k = 0 to 2 { t[k] = a[i]; i += 1; }
+        aux = __or_lsl(t[0], t[1], 4);
+        r[j] = aux; j += 1;
+    }
+    return r;
+}

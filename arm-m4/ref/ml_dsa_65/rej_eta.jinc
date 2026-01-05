@@ -1,0 +1,13 @@
+inline fn rej_eta(
+        reg ptr u32[N] a,
+        reg u32 ctr,
+        reg u32 t
+        ) -> reg ptr u32[N], reg u32
+{
+    #declassify t = t;
+    if (t < 9) {
+        a[ctr] = __imm_sub_reg(4, t);
+        ctr += 1;
+    }
+    return a, ctr;
+}

@@ -12,14 +12,22 @@
 require "ml_dsa.jazz"
 
 fn test_consistency() -> reg bool {
-    stack u8[VERIFICATION_KEY_SIZE] verification_key;
-    stack u8[SIGNING_KEY_SIZE] signing_key;
-    stack u8[SIGNATURE_SIZE] signature;
     stack u8[32] keygen_randomness;
     stack u8[32] signing_randomness;
 
+    stack u8[VERIFICATION_KEY_SIZE] verification_key;
+    stack u8[SIGNING_KEY_SIZE] signing_key;
+
+    reg u64 context = 0x3000;
+    reg u64 context_size = 237;
+
     reg u64 message = 0x4000;
-    reg u64 message_size = 64;
+    reg u64 message_size = 777;
+
+    reg u64[2] context_message_pointers;
+    reg u64[2] context_message_lengths;
+
+    stack u8[SIGNATURE_SIZE] signature;
 
     reg u64 verify_result i;
 
@@ -32,17 +40,31 @@ fn test_consistency() -> reg bool {
     }
 
     i = 0;
-    while (i < 64) {
+    while (i < context_size) {
+        [:u8 context + i] = i;
+        i += 1;
+    }
+
+    i = 0;
+    while (i < message_size) {
         [:u8 message + i] = i;
         i += 1;
     }
 
     #[inline]
     verification_key, signing_key = ml_dsa_65_keygen(verification_key, signing_key, keygen_randomness);
+
+    context_message_pointers[0] = context;
+    context_message_lengths[0] = context_size;
+
+    context_message_pointers[1] = message;
+    context_message_lengths[1] = message_size;
+
     #[inline]
-    signature = ml_dsa_65_sign(signature, signing_key, message, message_size, signing_randomness);
+    signature, _ = ml_dsa_65_sign(signature, signing_key, context_message_pointers, context_message_lengths, signing_randomness);
+
     #[inline]
-    verify_result = ml_dsa_65_verify(verification_key, message, message_size, signature);
+    verify_result = ml_dsa_65_verify(verification_key, context_message_pointers, context_message_lengths, signature);
 
     reg bool result;
     if (verify_result == 0) {
@@ -55,5 +77,6 @@ fn test_consistency() -> reg bool {
 }
 
 exec test_consistency (
-    0x4000:64 // Message
+    0x3000:237, // Context
+    0x4000:777 // Message
 )

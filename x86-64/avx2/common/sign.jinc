@@ -62,8 +62,8 @@ inline
 fn __sign_internal(
     #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature,
     #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    reg u64 pointer_to_message,
-    reg u64 message_size,
+    reg ptr u64[2] context_message_pointers,
+    reg ptr u64[2] context_message_sizes,
     #spill_to_mmx reg ptr u8[32] randomness
 ) -> reg ptr u8[SIGNATURE_SIZE]
 {
@@ -125,8 +125,8 @@ fn __sign_internal(
     () = #unspill(signing_key);
     message_representative = __derive_message_representative(
         signing_key[64:VERIFICATION_KEY_HASH_SIZE],
-        pointer_to_message,
-        message_size);
+        context_message_pointers,
+        context_message_sizes);
 
     () = #unspill(randomness);
     () = #unspill(signing_key);

@@ -1,0 +1,25 @@
+inline fn __power2round_a0a1(reg u32 a) -> reg u32, reg u32
+{
+  reg u32 a0 a1;
+  a1 = __add_large_imm(a, (1 << (D - 1)) - 1);
+  a1 = a1 >>s D;
+  a0 = __sub_lsl(a, a1, D);
+  return (a0, a1);
+}
+
+inline fn __make_hint(reg u32 z, reg u32 r) -> reg u32
+{
+    reg u32 r1 v1;
+    reg u32 ret = 0;
+
+    r1 = __coefficient_high_bits(r);
+
+    r += z;
+    v1 = __coefficient_high_bits(r);
+
+    if (r1 != v1) {
+        ret = 1;
+    }
+
+    return ret;
+}

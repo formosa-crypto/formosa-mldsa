@@ -13,10 +13,12 @@ jobs:
       matrix:
         architecture: ["arm-m4", "x86-64"]
         parameter_set: ["44", "65", "87"]
-        implementation_type: ["ref", "avx2"]
+        implementation_type: ["ref", "avx2", "lowram"]
         exclude:
         - architecture: arm-m4
           implementation_type: avx2
+        - architecture: x86-64
+          implementation_type: lowram
     steps:
     - uses: actions/checkout@v4
     - uses: cachix/install-nix-action@v25

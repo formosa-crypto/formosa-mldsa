@@ -84,6 +84,10 @@ int main(void) {
   uint8_t signing_key[SIGNING_KEY_SIZE];
 
   uint8_t message[MESSAGE_SIZE];
+
+  const uint8_t* context_message_pointers[2] = {message, NULL};
+  const size_t context_message_sizes[2] = {MESSAGE_SIZE, 0};
+
   uint8_t signature[SIGNATURE_SIZE];
 
   uint64_t observations[DATA_POINTS] = {0};
@@ -110,14 +114,12 @@ int main(void) {
          (unsigned long long)average(observations, DATA_POINTS));
 
   // Benchmark signing.
-  message[0] = 0;
-  message[1] = 0;
   for (size_t i = 0; i < DATA_POINTS; i++) {
     notrandombytes(signing_randomness, 32);
-    notrandombytes(&message[2], MESSAGE_SIZE - 2);
+    notrandombytes(message, MESSAGE_SIZE);
 
     before = cpucycles();
-    SIGN(signature, signing_key, message, sizeof(message), signing_randomness);
+    SIGN(signature, signing_key, context_message_pointers, context_message_sizes, signing_randomness);
     after = cpucycles();
 
     observations[i] = (after - cpucycles_overhead) - before;
@@ -129,7 +131,7 @@ int main(void) {
   // Benchmark verification.
   for (size_t i = 0; i < DATA_POINTS; i++) {
     before = cpucycles();
-    VERIFY(verification_key, message, sizeof(message), signature);
+    VERIFY(verification_key, context_message_pointers, context_message_sizes, signature);
     after = cpucycles();
 
     observations[i] = (after - cpucycles_overhead) - before;

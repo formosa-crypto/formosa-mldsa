@@ -1,0 +1,124 @@
+fn _polyz_pack(reg ptr u8[POLYZ_PACKEDBYTES] r, reg ptr u32[N] a) -> reg ptr u8[POLYZ_PACKEDBYTES] {
+    reg u32 i, j, aux, gamma1;
+    reg u32[4] t;
+    inline int k;
+
+    gamma1 = iGAMMA1;
+
+    i = 0; j = 0;
+    while (i < N) {
+        for k = 0 to 4 {
+            t[k] = a[i]; t[k] = gamma1 - t[k];
+            i += 1;
+        }
+
+        /* r[9 * i + 0]  = (uint8_t) t[0]; */
+        r[j] = t[0]; j += 1;
+
+        /* r[9 * i + 1]  = (uint8_t) (t[0] >> 8); */
+        aux = t[0] >> 8;
+        r[j] = aux; j += 1;
+
+        /* r[9 * i + 2]  = (uint8_t) (t[0] >> 16); */
+        /* r[9 * i + 2] |= (uint8_t) (t[1] << 2); */
+        aux = t[0] >> 16;
+        aux = __or_lsl_inplace(aux, t[1], 2);
+        r[j] = aux; j += 1;
+
+        /* r[9 * i + 3]  = (uint8_t) (t[1] >> 6); */
+        aux = t[1] >> 6;
+        r[j] = aux; j += 1;
+
+        /* r[9 * i + 4]  = (uint8_t) (t[1] >> 14); */
+        /* r[9 * i + 4] |= (uint8_t) (t[2] << 4); */
+        aux = t[1] >> 14;
+        aux = __or_lsl_inplace(aux, t[2], 4);
+        r[j] = aux; j += 1;
+
+
+        /* r[9 * i + 5]  = (uint8_t) (t[2] >> 4); */
+        aux = t[2] >> 4;
+        r[j] = aux; j += 1;
+
+        /*  r[9 * i + 6]  = (uint8_t) (t[2] >> 12); */
+        /*  r[9 * i + 6] |= (uint8_t) (t[3] << 6); */
+        aux = t[2] >> 12;
+        aux = __or_lsl_inplace(aux, t[3], 6);
+        r[j] = aux; j += 1;
+
+        /* r[9 * i + 7]  = (uint8_t) (t[3] >> 2); */
+        aux = t[3] >> 2;
+        r[j] = aux; j += 1;
+
+        /* r[9 * i + 8]  = (uint8_t) (t[3] >> 10); */
+        aux = t[3] >> 10;
+        r[j] = aux; j += 1;
+    }
+    return r;
+}
+
+fn _polyz_unpack(reg ptr u32[N] r, reg ptr u8[POLYZ_PACKEDBYTES] a) -> reg ptr u32[N] {
+    reg u32 i, j, gamma1, aux;
+    reg u32[6] t;
+    inline int k;
+
+    i = 0; j = 0;
+    while(i < N) {
+        for k = 0 to 6 { t[k] = (32u) a[j]; j += 1; }
+        gamma1 = iGAMMA1;
+
+        /*  r->coeffs[4 * i + 0]  = a[9 * i + 0];
+            r->coeffs[4 * i + 0] |= (uint32_t)a[9 * i + 1] << 8;
+            r->coeffs[4 * i + 0] |= (uint32_t)a[9 * i + 2] << 16;
+            r->coeffs[4 * i + 0] &= 0x3FFFF; */
+        aux = __or_lsl(t[0], t[1], 8);
+        aux = __or_lsl_inplace(aux, t[2], 16);
+        aux = __ubfx(aux, 0, 18);
+        aux = gamma1 - aux;
+        r[i] = aux; i += 1;
+
+        /*  r->coeffs[4 * i + 1]  = a[9 * i + 2] >> 2;
+            r->coeffs[4 * i + 1] |= (uint32_t)a[9 * i + 3] << 6;
+            r->coeffs[4 * i + 1] |= (uint32_t)a[9 * i + 4] << 14;
+            r->coeffs[4 * i + 1] &= 0x3FFFF; */
+        aux = t[2] >> 2;
+        aux = __or_lsl_inplace(aux, t[3], 6);
+        aux = __or_lsl_inplace(aux, t[4], 14);
+        aux = __ubfx(aux, 0, 18);
+        aux = gamma1 - aux;
+        r[i] = aux; i += 1;
+
+        /*  r->coeffs[4 * i + 2]  = a[9 * i + 4] >> 4;
+            r->coeffs[4 * i + 2] |= (uint32_t)a[9 * i + 5] << 4;
+            r->coeffs[4 * i + 2] |= (uint32_t)a[9 * i + 6] << 12;
+            r->coeffs[4 * i + 2] &= 0x3FFFF; */
+        aux = t[4] >> 4;
+        aux = __or_lsl_inplace(aux, t[5], 4);
+
+
+        // Reuse t[0], t[1], t[2] to store t[6], t[7], t[8]
+
+        t[0] = (32u)a[j]; j += 1;
+        t[1] = (32u)a[j]; j += 1;
+        t[2] = (32u)a[j]; j += 1;
+
+        aux = __or_lsl_inplace(aux, t[0], 12);
+        aux = __ubfx(aux, 0, 18);
+        aux = gamma1 - aux;
+        r[i] = aux; i += 1;
+
+        /*  r->coeffs[4 * i + 3]  = a[9 * i + 6] >> 6;
+            r->coeffs[4 * i + 3] |= (uint32_t)a[9 * i + 7] << 2;
+            r->coeffs[4 * i + 3] |= (uint32_t)a[9 * i + 8] << 10;
+            r->coeffs[4 * i + 3] &= 0x3FFFF; */
+
+        aux = t[0] >> 6;
+        aux = __or_lsl_inplace(aux, t[1], 2);
+
+        aux = __or_lsl_inplace(aux, t[2], 10);
+        aux = __ubfx(aux, 0, 18);
+        aux = gamma1 - aux;
+        r[i] = aux; i += 1;
+    }
+    return r;
+}

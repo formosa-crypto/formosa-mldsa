@@ -188,20 +188,6 @@ inline fn __shake256_init_with_commitment_hash(
     return state;
 }
 
-fn _init_xof_for_element_of_A(
-    reg ptr u32[25*2] state,
-    reg ptr u8[SEEDBYTES] seed,
-    reg u32 nonce
-) -> reg ptr u32[25*2]
-{
-    state = __add_seed_ref(state, seed);
-    state = __add_nonce_ref(state, SEEDBYTES >> 1, nonce);
-    state = __add_zero_after_add(state, SEEDBYTES + 2);
-    state = __add_block_end(state, SEEDBYTES + 2, SHAKE128_RATE);
-    state = _keccakf1600_ref(state);
-    return state;
-}
-
 fn _prepare_xof_for_element_of_A(
     reg ptr u32[25*2] state,
     reg ptr u8[SEEDBYTES] seed,
@@ -212,6 +198,8 @@ fn _prepare_xof_for_element_of_A(
     state = __add_nonce_ref(state, SEEDBYTES >> 1, nonce);
     state = __add_zero_after_add(state, SEEDBYTES + 2);
     state = __add_block_end(state, SEEDBYTES + 2, SHAKE128_RATE);
+
+    #declassify state = state;
     return state;
 }
 
@@ -277,22 +265,6 @@ fn _stream256_refill_buffer(
     reg u32 buf;
     buf = state[ pos]; pos += 1; 
     return state, a, pos, ctr, n205, buf;
-}
-
-fn _stream256_full_squeeze (
-    reg ptr u8[SHAKE256_RATE] buf,
-    reg ptr u32[25*2] state
-) -> reg ptr u8[SHAKE256_RATE]
-{
-    reg u32 i, t;
-    i = 0;
-
-    while (i < SHAKE256_RATE / 4) {
-        t = state[ i];
-        buf[:u32  i] = t;
-        i += 1;
-    }
-    return buf;
 }
 
 fn _hash_verification_key(
