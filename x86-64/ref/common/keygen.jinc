@@ -33,9 +33,9 @@ fn __prepare_state_for_shake256(
        {ptr: public, val: transient} * {ptr: public, val: secret}"]
 inline
 fn __keygen_internal(
-    #spill_to_mmx reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    #spill_to_mmx reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    #spill_to_mmx reg ptr u8[32] randomness
+    #[spill_to_mmx] reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    #[spill_to_mmx] reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    #[spill_to_mmx] reg ptr u8[32] randomness
 ) -> reg ptr u8[VERIFICATION_KEY_SIZE],
      reg ptr u8[SIGNING_KEY_SIZE]
 {
@@ -45,14 +45,14 @@ fn __keygen_internal(
     stack u64[25] state;
 
     // PRF outputs
-    #public stack u8[32] seed_for_matrix_A;
-    #secret stack u8[64] seed_for_error_vectors;
-    #secret stack u8[32] seed_for_signing;
+    #[public] stack u8[32] seed_for_matrix_A;
+    #[secret] stack u8[64] seed_for_error_vectors;
+    #[secret] stack u8[32] seed_for_signing;
 
     // Matrices and vectors
     stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
-    #secret stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
-    #secret stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
+    #[secret] stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
+    #[secret] stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t t0 t1;
 
@@ -65,7 +65,7 @@ fn __keygen_internal(
     state = __prepare_state_for_shake256(randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
     state = _keccakf1600_ref1(state);
 
-    #declassify seed_for_matrix_A = state[:u8 0:SEED_FOR_MATRIX_A_SIZE];
+    #[declassify] seed_for_matrix_A = state[:u8 0:SEED_FOR_MATRIX_A_SIZE];
 
     seed_for_error_vectors = state[:u8 SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
     seed_for_signing = state[:u8 SEED_FOR_MATRIX_A_SIZE + SEED_FOR_ERROR_VECTORS_SIZE:SEED_FOR_SIGNING_SIZE];
@@ -119,7 +119,7 @@ fn __keygen_internal(
         i += 1;
     }
 
-    #declassify verification_key[32: T1_ENCODED_SIZE]
+    #[declassify] verification_key[32: T1_ENCODED_SIZE]
     = t1::__encode(verification_key[32: T1_ENCODED_SIZE], t1);
 
     // ... and finish serializing the signing key.

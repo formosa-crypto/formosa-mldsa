@@ -65,7 +65,7 @@ namespace column_vector {
 
     inline
     fn __add(
-        #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs
+        #[spill_to_mmx] reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs
     ) -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] sum;

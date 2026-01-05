@@ -2,7 +2,7 @@ namespace s2 {
     inline
     fn __encode(
         reg ptr u8[S2_ENCODED_SIZE] encoded,
-        #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2
+        #[spill_to_mmx] reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2
     ) -> reg ptr u8[S2_ENCODED_SIZE]
     {
         inline int i;
@@ -24,7 +24,7 @@ namespace s2 {
     inline
     fn __decode(
         reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2,
-        #spill_to_mmx reg ptr u8[S2_ENCODED_SIZE] encoded
+        #[spill_to_mmx] reg ptr u8[S2_ENCODED_SIZE] encoded
     ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         () = #spill(encoded);

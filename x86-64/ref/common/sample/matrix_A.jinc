@@ -28,13 +28,13 @@ fn __absorb_for_shake128(
 }
 
 fn rejection_sample_less_than_field_modulus(
-    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result,
-    #spill_to_mmx reg u64 sampled,
+    #[spill_to_mmx] reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result,
+    #[spill_to_mmx] reg u64 sampled,
     reg ptr u64[25] state
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
 {
     reg u64 xof_offset;
-    #public reg u32 try_coefficient byte;
+    #[public] reg u32 try_coefficient byte;
 
     inline bool b;
 
@@ -53,7 +53,7 @@ fn rejection_sample_less_than_field_modulus(
 
             try_coefficient = 0;
             for k = 0 to 3 {
-                #declassify byte = (32u)state[:u8 xof_offset + k];
+                #[declassify] byte = (32u)state[:u8 xof_offset + k];
 
                 byte <<= 8 * k;
                 try_coefficient |= byte;
@@ -82,13 +82,13 @@ fn rejection_sample_less_than_field_modulus(
 
 inline
 fn __sample_polynomial(
-    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result,
+    #[spill_to_mmx] reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] result,
     reg ptr u8[32] rho,
     inline int i,
     inline int j
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
 {
-    #spill_to_mmx reg u64 coefficients_sampled;
+    #[spill_to_mmx] reg u64 coefficients_sampled;
     stack u64[25] state;
 
     () = #spill(result);
@@ -113,7 +113,7 @@ fn __sample_polynomial(
 namespace sample {
     inline
     fn __matrix_A(
-         #spill_to_mmx reg ptr u8[32] rho
+         #[spill_to_mmx] reg ptr u8[32] rho
     ) -> stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
