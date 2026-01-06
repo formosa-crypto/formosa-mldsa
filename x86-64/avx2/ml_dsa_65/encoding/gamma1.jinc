@@ -42,7 +42,7 @@ namespace gamma1 {
         reg u256 gamma1;
 
         reg u64 temp;
-        reg u64 input_offset output_offset;
+        reg int input_offset output_offset;
         stack u8[16] final_output_block;
 
         inline int i;
@@ -51,11 +51,10 @@ namespace gamma1 {
         gamma1 = (256u)#VMOV_64(temp);
         gamma1 = #VPBROADCAST_8u32(gamma1);
 
-        input_offset = 0;
         output_offset = 0;
+        input_offset = 0;
         while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
             coefficients = polynomial.[:u256 input_offset];
-            input_offset += 32;
 
             lower, upper = coefficients_to_bytestream(gamma1, coefficients);
 
@@ -64,6 +63,7 @@ namespace gamma1 {
 
             output.[:u128 output_offset] = upper;
             output_offset += 10;
+            input_offset += 32;
         }
 
         coefficients = polynomial.[:u256 input_offset];
@@ -102,7 +102,7 @@ namespace gamma1 {
         reg u128 temp1;
 
         reg u64 temp;
-        reg u64 output_offset input_offset;
+        reg int output_offset input_offset;
 
         temp = GAMMA1;
         temp1 = #VMOV_64(temp);
