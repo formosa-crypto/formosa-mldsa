@@ -116,7 +116,7 @@ namespace gamma1 {
 
         input_offset = 0;
         output_offset = 0;
-        while (input_offset < ENCODED_GAMMA1_POLYNOMIAL_SIZE) {
+        while (output_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
             sixteen_bytes = bytes.[:u128 input_offset];
             input_offset += 4;
 
