@@ -46,24 +46,24 @@ namespace t1 {
         reg u256 coefficients;
         reg u128 bytestream;
 
-        reg u64 input_offset output_offset;
+        reg int input_offset output_offset;
         stack u8[16] final_encoded_output;
 
         inline int i;
 
-        input_offset = 0;
         output_offset = 0;
+        input_offset = 0;
 
         // The last 10 encoded bytes of output (resulting from the 32 input bytes)
         // will need to be written out carefully.
         while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
             coefficients = t1.[:u256 input_offset];
-            input_offset += 32;
 
             bytestream = coefficients_to_bytestream(coefficients);
 
             t1_encoded.[:u128 output_offset] = bytestream;
             output_offset += 10;
+            input_offset += 32;
         }
         coefficients = t1.[:u256 input_offset];
 
@@ -119,7 +119,7 @@ namespace t1 {
         reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] t1_encoded
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 output_offset input_offset;
+        reg int output_offset input_offset;
 
         reg u128 bytestream;
 
@@ -130,7 +130,7 @@ namespace t1 {
 
         input_offset = 0;
         output_offset = 0;
-        while (input_offset < T1_POLYNOMIAL_ENCODED_SIZE - 10) {
+        while (output_offset < (COEFFICIENTS_IN_POLYNOMIAL - 8)*4) {
             // We process only 10 bytes at a time.
             bytestream = t1_encoded.[:u128 input_offset];
             input_offset += 10;
