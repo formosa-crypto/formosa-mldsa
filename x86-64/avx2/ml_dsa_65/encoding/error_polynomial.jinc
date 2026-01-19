@@ -14,7 +14,8 @@ namespace error_polynomial {
         reg u256 shift encoding_shuffles;
         reg u256 eta;
 
-        reg u64 input_offset output_offset temp;
+        reg int input_offset output_offset;
+        reg u64 temp;
 
         temp = (16 << 8) + 1;
         shift = (256u)#VMOV(temp);
@@ -28,7 +29,7 @@ namespace error_polynomial {
 
         input_offset = 0;
         output_offset = 0;
-        while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+        while (output_offset < ENCODED_ERROR_POLYNOMIAL_SIZE) {
             c0 = polynomial.[:u256 input_offset];
             c0 = #VPSUB_8u32(eta, c0);
             input_offset += 32;
@@ -107,8 +108,8 @@ namespace error_polynomial {
         reg u256 mask shifts;
         reg u256 eta;
 
-        reg u64 input_offset output_offset temp;
-        reg u64 byte_group;
+        reg int input_offset output_offset byte_group;
+        reg u64 temp;
 
         temp = (1 << 4) - 1;
         mask = (256u)#VMOV(temp);
@@ -127,7 +128,6 @@ namespace error_polynomial {
         output_offset = 0;
         while (input_offset < ENCODED_ERROR_POLYNOMIAL_SIZE) {
             bytes = encoded.[:u128 input_offset];
-            input_offset += 16;
 
             byte_group = 0;
             while (byte_group < 4) {
@@ -146,6 +146,7 @@ namespace error_polynomial {
                 bytes = #VPSRLDQ_128(bytes, 4);
                 byte_group += 1;
             }
+            input_offset += 16;
         }
 
         return decoded;
