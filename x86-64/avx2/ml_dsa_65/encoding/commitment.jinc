@@ -15,7 +15,8 @@ namespace commitment {
         reg u256 c0 c1 c2 c3 c4 c5 c6 c7;
         reg u256 shift encoding_shuffles;
 
-        reg u64 input_offset output_offset temp;
+        reg int input_offset output_offset;
+        reg u64 temp;
 
         temp = (16 << 8) + 1;
         shift = (256u)#VMOV(temp);
@@ -25,7 +26,7 @@ namespace commitment {
 
         input_offset = 0;
         output_offset = 0;
-        while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
+        while (output_offset < ENCODED_COMMITMENT_POLYNOMIAL_SIZE) {
             // Since each coefficient is only 4-bits long, we load 64 coefficients,
             // allowing us to pack the entire 256-bit AVX2 register.
             c0 = commitment.[:u256 input_offset];
