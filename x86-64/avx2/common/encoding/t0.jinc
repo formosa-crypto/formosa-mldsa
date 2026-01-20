@@ -47,21 +47,21 @@ namespace t0 {
         reg u256 coefficients;
         reg u128 bytestream;
 
-        reg u64 input_offset output_offset;
+        reg int input_offset output_offset;
         stack u8[16] final_encoded_output;
 
         inline int i;
 
-        input_offset = 0;
         output_offset = 0;
+        input_offset = 0;
         while (input_offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL - 32) {
             coefficients = t0.[:u256 input_offset];
-            input_offset += 32;
 
             bytestream = coefficients_to_bytestream(coefficients);
 
             t0_encoded.[:u128 output_offset] = bytestream;
             output_offset += 13;
+            input_offset += 32;
         }
 
         coefficients = t0.[:u256 input_offset];
@@ -148,19 +148,19 @@ namespace t0 {
         reg u128 bytestream;
         reg u256 coefficients;
 
-        reg u64 input_offset output_offset;
+        reg int input_offset output_offset;
 
-        input_offset = 0;
         output_offset = 0;
+        input_offset = 0;
         while (input_offset < T0_POLYNOMIAL_ENCODED_SIZE - 13) {
             // We process only 13 bytes at a time.
             bytestream = t0_encoded.[:u128 input_offset];
-            input_offset += 13;
 
             coefficients = bytestream_to_coefficients(bytestream);
 
             t0.[:u256 output_offset] = coefficients;
             output_offset += 32;
+            input_offset += 13;
         }
 
         bytestream = t0_encoded.[:u128 T0_POLYNOMIAL_ENCODED_SIZE - 16];
