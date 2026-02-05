@@ -10,7 +10,7 @@ namespace signature {
     {
         reg int i j hints_written hint_offset;
         reg u32 hint_coefficient;
-        inline bool condition;
+        inline bool condition1, condition2;
 
         // Clear the hints buffer
         // TODO: Use avx2 to zero this.
@@ -23,9 +23,9 @@ namespace signature {
         // Write out hints
         hints_written = 0;
         i = 0;
-        while {condition = i < ROWS_IN_MATRIX_A;} (condition) {
+        while {condition1 = i < ROWS_IN_MATRIX_A;} (condition1) {
             j = 0;
-            while {condition = j < COEFFICIENTS_IN_POLYNOMIAL;} (condition) {
+            while {condition2 = j < COEFFICIENTS_IN_POLYNOMIAL;} (condition2) {
                 hint_offset = i;
                 hint_offset <<= LOG_2_COEFFICIENTS_IN_POLYNOMIAL;
                 hint_offset += j;
@@ -79,7 +79,7 @@ namespace signature {
     ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64
     {
         reg u64 j;
-        reg u8 done;
+        reg u8 done1, done2, done3;
         reg bool within_bounds;
         reg u64 index;
         reg u64 hint hint_at_j hint_at_j_minus_one;
@@ -92,9 +92,9 @@ namespace signature {
         encoded_offset = 0;
         while {
             within_bounds = encoded_offset >= ROWS_IN_MATRIX_A;
-            done = #SETcc(within_bounds);
-            done |= ill_formed_hint;
-        } (done == 0) {
+            done1 = #SETcc(within_bounds);
+            done1 |= ill_formed_hint;
+        } (done1 == 0) {
             decoded_offset = encoded_offset;
             decoded_offset <<= LOG_2_COEFFICIENTS_IN_POLYNOMIAL;
             j = 0;
@@ -117,9 +117,9 @@ namespace signature {
 
                     while {
                         within_bounds = j >= current_true_hints_seen;
-                        done = #SETcc(within_bounds);
-                        done |= ill_formed_hint;
-                    } (done == 0) {
+                        done2 = #SETcc(within_bounds);
+                        done2 |= ill_formed_hint;
+                    } (done2 == 0) {
                         // Coefficients are ordered for strong unforgeability
                         hint_at_j = (64u)hint_encoded[j];
 
@@ -152,9 +152,9 @@ namespace signature {
         encoded_offset = previous_true_hints_seen;
         while {
             within_bounds = encoded_offset >= MAX_ONES_IN_HINT;
-            done = #SETcc(within_bounds);
-            done |= ill_formed_hint;
-        } (done == 0) {
+            done3 = #SETcc(within_bounds);
+            done3 |= ill_formed_hint;
+        } (done3 == 0) {
             hint = (64u)hint_encoded[encoded_offset];
 
             if(hint != 0) {
