@@ -7,6 +7,7 @@ namespace gamma1 {
             -1, -1, -1, -1, 12, 11, 10, 9, 8,
             4, 3, 2, 1, 0]
     };
+    
     fn coefficients_to_bytestream(reg u256 gamma1, reg u256 coefficients) -> reg u128, reg u128 {
         reg u256 shifts;
         reg u256 bytestream;
@@ -79,6 +80,25 @@ namespace gamma1 {
         }
 
         return output;
+    }
+
+    inline
+    fn __encode(
+        reg ptr u8[GAMMA1_ENCODED_SIZE] encoded,
+        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] decoded
+    ) -> reg ptr u8[GAMMA1_ENCODED_SIZE]
+    {
+        inline int i;
+
+        for i = 0 to COLUMNS_IN_MATRIX_A {
+            encoded[i * ENCODED_GAMMA1_POLYNOMIAL_SIZE : ENCODED_GAMMA1_POLYNOMIAL_SIZE] =
+                __encode_polynomial(
+                    encoded[i * ENCODED_GAMMA1_POLYNOMIAL_SIZE : ENCODED_GAMMA1_POLYNOMIAL_SIZE],
+                    decoded[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
+                );
+        }
+
+        return encoded;
     }
 
     u256[2] DECODING_SHIFTS_TABLE = {

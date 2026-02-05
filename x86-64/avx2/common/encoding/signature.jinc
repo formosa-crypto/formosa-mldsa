@@ -3,37 +3,14 @@ namespace signature {
     param int START_OF_HINT = START_OF_GAMMA1 + GAMMA1_ENCODED_SIZE;
 
     inline
-    fn __encode(
+    fn __encode_hint(
         reg ptr u8[SIGNATURE_SIZE] signature,
-        reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash,
-        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response,
         reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint
     ) -> reg ptr u8[SIGNATURE_SIZE]
     {
-        reg u64 i j hints_written hint_offset;
+        reg int i j hints_written hint_offset;
         reg u32 hint_coefficient;
-
-        reg u128 bytes;
-
-        inline int k;
-        inline int offset;
         inline bool condition;
-
-        i = 0;
-        while (i < COMMITMENT_HASH_SIZE) {
-            bytes = commitment_hash.[:u128 i];
-            signature.[:u128 i] = bytes;
-
-            i += 16;
-        }
-
-        for k = 0 to COLUMNS_IN_MATRIX_A {
-            offset = START_OF_GAMMA1 + (k * ENCODED_GAMMA1_POLYNOMIAL_SIZE);
-            signature[offset : ENCODED_GAMMA1_POLYNOMIAL_SIZE] = gamma1::__encode_polynomial(
-                signature[offset : ENCODED_GAMMA1_POLYNOMIAL_SIZE],
-                signer_response[k * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
-            );
-        }
 
         // Clear the hints buffer
         // TODO: Use avx2 to zero this.
@@ -42,7 +19,6 @@ namespace signature {
             signature[START_OF_HINT + i] = 0;
             i += 1;
         }
-
 
         // Write out hints
         hints_written = 0;
@@ -67,6 +43,31 @@ namespace signature {
             signature[START_OF_HINT + MAX_ONES_IN_HINT + i] = (8u) hints_written;
             i += 1;
         }
+        return signature;
+    }
+
+    inline
+    fn __encode(
+        reg ptr u8[SIGNATURE_SIZE] signature,
+        reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash,
+        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response,
+        reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint
+    ) -> reg ptr u8[SIGNATURE_SIZE]
+    {
+        reg int i;
+        reg u128 bytes;
+
+        i = 0;
+        while (i < COMMITMENT_HASH_SIZE) {
+            bytes = commitment_hash.[:u128 i];
+            signature.[:u128 i] = bytes;
+            i += 16;
+        }
+
+        signature[START_OF_GAMMA1 : GAMMA1_ENCODED_SIZE] = 
+           gamma1::__encode(signature[START_OF_GAMMA1 : GAMMA1_ENCODED_SIZE], signer_response);
+
+        signature = __encode_hint(signature, hint);
 
         return signature;
     }
