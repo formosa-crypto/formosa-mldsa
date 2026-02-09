@@ -78,13 +78,11 @@ namespace signature {
         reg ptr u8[HINT_ENCODED_SIZE] hint_encoded
     ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64
     {
-        reg u64 j;
+        reg int j, index, previous_true_hints_seen current_true_hints_seen;
+        reg int decoded_offset encoded_offset;
         reg u8 done1, done2, done3;
         reg bool within_bounds;
-        reg u64 index;
-        reg u64 hint hint_at_j hint_at_j_minus_one;
-        reg u64 previous_true_hints_seen current_true_hints_seen;
-        reg u64 decoded_offset encoded_offset ill_formed_hint;
+        reg u64 hint hint_at_j hint_at_j_minus_one ill_formed_hint;
 
         ill_formed_hint = 0;
         previous_true_hints_seen = 0;
@@ -100,7 +98,7 @@ namespace signature {
             j = 0;
 
             while (j < COEFFICIENTS_IN_POLYNOMIAL) {
-                index = #LEA_64(decoded_offset + j);
+                index = decoded_offset + j;
                 hints[index] = 0;
                 j += 1;
             }
@@ -133,7 +131,7 @@ namespace signature {
 
                         if (ill_formed_hint == 0) {
                             // h->vec[i].coeffs[sig[j]] = 1;
-                            index = #LEA_64(decoded_offset + hint_at_j);
+                            index = decoded_offset + hint_at_j;
                             hints[index] = 1;
 
                             j += 1;
@@ -160,7 +158,10 @@ namespace signature {
             if(hint != 0) {
                 ill_formed_hint = 1;
             }
-            encoded_offset += 1;
+
+            if (ill_formed_hint == 0) {
+                encoded_offset += 1;
+            }
         }
 
         // Do this so we can indicate success with 0 and failure with -1.
