@@ -15,7 +15,7 @@ namespace commitment {
         reg u256 c0 c1 c2 c3 c4 c5 c6 c7;
         reg u256 shift encoding_shuffles;
 
-        reg int input_offset output_offset;
+        reg ui64 input_offset output_offset;
         reg u64 temp;
 
         temp = (16 << 8) + 1;

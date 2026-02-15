@@ -10,7 +10,7 @@ namespace signature {
     {
         inline bool condition;
         reg u64 msf;
-        reg int i j hints_written hint_offset;
+        reg ui64 i j hints_written hint_offset;
         reg u32 hint_coefficient;
 
         msf = #init_msf();

@@ -5,11 +5,11 @@ namespace gamma1 {
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE]
     {
-        reg int i;
+        reg ui64 i;
         reg u32 encoded_bytes;
         reg u8 byte;
         reg u32 t0 t1;
-        reg int output_offset;
+        reg ui64 output_offset;
 
         output_offset = 0;
 
@@ -68,8 +68,8 @@ namespace gamma1 {
     {
         reg u32 coefficient temp;
 
-        reg int output_offset = 0;
-        reg int input_offset = 0;
+        reg ui64 output_offset = 0;
+        reg ui64 input_offset = 0;
 
         while(input_offset < ENCODED_GAMMA1_POLYNOMIAL_SIZE) {
             // polynomial[2*i+0]  = bytes[5*i+0];

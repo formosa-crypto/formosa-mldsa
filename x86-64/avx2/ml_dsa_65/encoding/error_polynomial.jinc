@@ -14,7 +14,7 @@ namespace error_polynomial {
         reg u256 shift encoding_shuffles;
         reg u256 eta;
 
-        reg int input_offset output_offset;
+        reg ui64 input_offset output_offset;
         reg u64 temp;
 
         temp = (16 << 8) + 1;
@@ -108,7 +108,7 @@ namespace error_polynomial {
         reg u256 mask shifts;
         reg u256 eta;
 
-        reg int input_offset output_offset byte_group;
+        reg ui64 input_offset output_offset byte_group;
         reg u64 temp;
 
         temp = (1 << 4) - 1;

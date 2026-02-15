@@ -47,7 +47,7 @@ namespace t0 {
         reg u256 coefficients;
         reg u128 bytestream;
 
-        reg int input_offset output_offset;
+        reg ui64 input_offset output_offset;
         stack u8[16] final_encoded_output;
 
         inline int i;
@@ -148,7 +148,7 @@ namespace t0 {
         reg u128 bytestream;
         reg u256 coefficients;
 
-        reg int input_offset output_offset;
+        reg ui64 input_offset output_offset;
 
         output_offset = 0;
         input_offset = 0;

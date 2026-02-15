@@ -8,7 +8,7 @@ namespace signature {
         reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint
     ) -> reg ptr u8[SIGNATURE_SIZE]
     {
-        reg int i j hints_written hint_offset;
+        reg ui64 i j hints_written hint_offset;
         reg u32 hint_coefficient;
         inline bool condition1, condition2;
 
@@ -33,14 +33,14 @@ namespace signature {
                 hint_coefficient = hint[hint_offset];
 
                 if (hint_coefficient != 0) {
-                    signature[START_OF_HINT + hints_written] = (8u)j;
+                    signature[START_OF_HINT + hints_written] = (8u)(64u)j;
                     hints_written += 1;
                 }
 
                 j += 1;
             }
 
-            signature[START_OF_HINT + MAX_ONES_IN_HINT + i] = (8u) hints_written;
+            signature[START_OF_HINT + MAX_ONES_IN_HINT + i] = (8u)(64u) hints_written;
             i += 1;
         }
         return signature;
@@ -54,7 +54,7 @@ namespace signature {
         reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint
     ) -> reg ptr u8[SIGNATURE_SIZE]
     {
-        reg int i;
+        reg ui64 i;
         reg u128 bytes;
 
         i = 0;
@@ -78,8 +78,8 @@ namespace signature {
         reg ptr u8[HINT_ENCODED_SIZE] hint_encoded
     ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64
     {
-        reg int j, index, previous_true_hints_seen current_true_hints_seen;
-        reg int decoded_offset encoded_offset;
+        reg ui64 j, index, previous_true_hints_seen current_true_hints_seen;
+        reg ui64 decoded_offset encoded_offset;
         reg u8 done1, done2, done3;
         reg bool within_bounds;
         reg u64 hint hint_at_j hint_at_j_minus_one ill_formed_hint;
@@ -103,7 +103,7 @@ namespace signature {
                 j += 1;
             }
 
-            current_true_hints_seen = (64u)hint_encoded[MAX_ONES_IN_HINT + encoded_offset];
+            current_true_hints_seen = (64ui)(64u)hint_encoded[MAX_ONES_IN_HINT + encoded_offset];
 
             if (current_true_hints_seen < previous_true_hints_seen) {
                 ill_formed_hint = 1;
@@ -131,7 +131,7 @@ namespace signature {
 
                         if (ill_formed_hint == 0) {
                             // h->vec[i].coeffs[sig[j]] = 1;
-                            index = decoded_offset + hint_at_j;
+                            index = decoded_offset + (64ui)hint_at_j;
                             hints[index] = 1;
 
                             j += 1;

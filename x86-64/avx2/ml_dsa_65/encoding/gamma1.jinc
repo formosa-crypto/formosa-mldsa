@@ -43,7 +43,7 @@ namespace gamma1 {
         reg u256 gamma1;
 
         reg u64 temp;
-        reg int input_offset output_offset;
+        reg ui64 input_offset output_offset;
         stack u8[16] final_output_block;
 
         inline int i;
@@ -122,7 +122,7 @@ namespace gamma1 {
         reg u128 temp1;
 
         reg u64 temp;
-        reg int output_offset input_offset;
+        reg ui64 output_offset input_offset;
 
         temp = GAMMA1;
         temp1 = #VMOV_64(temp);

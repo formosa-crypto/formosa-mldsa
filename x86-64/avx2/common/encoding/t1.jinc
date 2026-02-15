@@ -46,7 +46,7 @@ namespace t1 {
         reg u256 coefficients;
         reg u128 bytestream;
 
-        reg int input_offset output_offset;
+        reg ui64 input_offset output_offset;
         stack u8[16] final_encoded_output;
 
         inline int i;
@@ -119,7 +119,7 @@ namespace t1 {
         reg ptr u8[T1_POLYNOMIAL_ENCODED_SIZE] t1_encoded
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg int output_offset input_offset;
+        reg ui64 output_offset input_offset;
 
         reg u128 bytestream;
 
