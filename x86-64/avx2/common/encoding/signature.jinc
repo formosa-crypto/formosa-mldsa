@@ -98,7 +98,8 @@ namespace signature {
             j = 0;
 
             while (j < COEFFICIENTS_IN_POLYNOMIAL) {
-                index = decoded_offset + j;
+                index = decoded_offset;
+                index += j;
                 hints[index] = 0;
                 j += 1;
             }
@@ -131,7 +132,8 @@ namespace signature {
 
                         if (ill_formed_hint == 0) {
                             // h->vec[i].coeffs[sig[j]] = 1;
-                            index = decoded_offset + (64ui)hint_at_j;
+                            index = decoded_offset;
+                            index += (64ui)hint_at_j;
                             hints[index] = 1;
 
                             j += 1;
