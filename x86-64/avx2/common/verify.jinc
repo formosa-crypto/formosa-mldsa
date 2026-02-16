@@ -104,9 +104,7 @@ fn __verify_internal(
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints;
 
-    signer_response = gamma1::__decode(signer_response, signature_encoded[COMMITMENT_HASH_SIZE: GAMMA1_ENCODED_SIZE]);
-
-    hints, result = signature::__decode_hint(hints, signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE]);
+    (signer_response, hints, result) = signature::__decode(signer_response, hints, signature_encoded);
 
     if (result == 0) {
         () = #spill(context_message_pointers, context_message_sizes);
