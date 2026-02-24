@@ -6,6 +6,30 @@ Jasmin implementations of the pure, hedged version of ML-DSA for **x86-64** and 
 - [Overview](#overview)
 - [Quickstart](#quickstart)
 
+## ⚠️ Security and Correctness Notice
+
+This repository is **experimental**.
+
+The code has been **lightly tested only** and has **not been formally
+verified or proven** with respect to:
+
+- Memory safety
+- Constant-time behavior
+- Speculative constant-time behavior
+- Functional correctness
+
+Accordingly, **this code MUST NOT be used in production**.
+
+An ongoing effort is underway to conduct comprehensive testing
+(e.g., valgrind, KAT, and related tooling) and to formally analyze and
+prove the relevant security and correctness properties. Once completed,
+the repository will be updated with the corresponding proofs, test
+artifacts, and accompanying documentation.
+
+Until then, this implementation should be considered research-grade
+software and is provided strictly for evaluation and experimentation
+purposes.
+
 ## Overview
 
 This repository contains, for all parameter sets, the following implementations of the pure, hedged version of ML-DSA:
