@@ -32,6 +32,7 @@ fn shake256_absorb_34(
     reg u256[7] state = shake256_init_state();
     state, _ = A32::__absorb_avx2(state, 0, seed, UNFINISHED, SHAKE256_RATE);
     state, _ = A2::__absorb_avx2(state, 32, extra, SHAKE, SHAKE256_RATE);
+    state = shake256_permute(state);
     return state;
 }
 
@@ -46,6 +47,7 @@ fn shake256_absorb_66(
     state, _ = A64::__absorb_avx2(state, 0, rho_prime, UNFINISHED, SHAKE256_RATE);
     ds[:u16 0] = domain_separator;
     state, _ = A2::__absorb_avx2(state, 64, ds, SHAKE, SHAKE256_RATE);
+    state = shake256_permute(state);
     return state;
 }
 
@@ -56,6 +58,7 @@ fn shake256_absorb_128(
 {
     reg u256[7] state = shake256_init_state();
     state, _ = A128::__absorb_avx2(state, 0, block, SHAKE, SHAKE256_RATE);
+    state = shake256_permute(state);
     return state;
 }
 
@@ -66,6 +69,7 @@ fn shake256_absorb_commitment_hash(
 {
     reg u256[7] state = shake256_init_state();
     state, _ = A_COMMITMENT_HASH::__absorb_avx2(state, 0, hash, SHAKE, SHAKE256_RATE);
+    state = shake256_permute(state);
     return state;
 }
 
@@ -83,6 +87,7 @@ fn shake256_absorb_block(
 ) -> reg u256[7]
 {
     state, _ = A136::__absorb_avx2(state, 0, block, UNFINISHED, R136);
+    state = shake256_permute(state);
     return state;
 }
 
