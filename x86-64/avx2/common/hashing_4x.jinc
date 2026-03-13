@@ -1,4 +1,51 @@
-require "keccak_4x/api.jinc"
+// Absorbs 32 bytes of rho (broadcast to all 4 lanes) followed by a
+// per-lane 2-byte domain separator with SHAKE128 padding.
+fn shake128_absorb_34_4x(
+    reg ptr u256[25] state,
+    reg ptr u8[32] rho,
+    reg ptr u16[4] domain_separators
+) -> reg ptr u256[25]
+{
+    stack u8[2] d0 d1 d2 d3;
+
+    state = __state_init_avx2x4(state);
+
+    state, _ = A32::__absorb_bcast_avx2x4(state, 0, rho, UNFINISHED, SHAKE128_RATE);
+
+    d0[:u16 0] = domain_separators[0];
+    d1[:u16 0] = domain_separators[1];
+    d2[:u16 0] = domain_separators[2];
+    d3[:u16 0] = domain_separators[3];
+    state, _ = A2::__absorb_avx2x4(state, 32, d0, d1, d2, d3, SHAKE, SHAKE128_RATE);
+
+    return state;
+}
+
+// Absorbs 64 bytes of rho_prime (broadcast to all 4 lanes) followed by
+// consecutive per-lane 2-byte domain separators [DS, DS+1, DS+2, DS+3]
+// with SHAKE256 padding.
+fn shake256_absorb_66_4x(
+    reg ptr u256[25] state,
+    reg ptr u8[64] rho_prime,
+    reg u16 starting_domain_separator
+) -> reg ptr u256[25]
+{
+    stack u8[2] d0 d1 d2 d3;
+    reg u16 t;
+
+    state = __state_init_avx2x4(state);
+
+    state, _ = A64::__absorb_bcast_avx2x4(state, 0, rho_prime, UNFINISHED, SHAKE256_RATE);
+
+    t = starting_domain_separator;
+    d0[:u16 0] = t; t += 1;
+    d1[:u16 0] = t; t += 1;
+    d2[:u16 0] = t; t += 1;
+    d3[:u16 0] = t;
+    state, _ = A2::__absorb_avx2x4(state, 64, d0, d1, d2, d3, SHAKE, SHAKE256_RATE);
+
+    return state;
+}
 
 fn shake128_squeezeblock4x(
     reg ptr u256[25] state,
@@ -10,22 +57,11 @@ fn shake128_squeezeblock4x(
     reg ptr u8[SHAKE128_RATE],
     reg ptr u8[SHAKE128_RATE]
 {
-    reg u256 t256;
-    reg u128 t128;
-    inline int i;
-    #[msf] reg u64 msf = #init_msf();
+    reg ui64 offset;
 
-    state, msf = _KeccakF1600_StatePermute4x(state, msf);
-
-    for i = 0 to (SHAKE128_RATE / 8) {
-        t256 = state[i];
-        t128 = (128u)t256;
-        h0[:u64 i] = #VMOVLPD(t128);
-        h1[:u64 i] = #VMOVHPD(t128);
-        t128 = #VEXTRACTI128(t256, 1);
-        h2[:u64 i] = #VMOVLPD(t128);
-        h3[:u64 i] = #VMOVHPD(t128);
-    }
+    state = _keccakf1600_avx2x4(state);
+    offset = 0;
+    h0, h1, h2, h3, _ = A168::__dumpstate_avx2x4(h0, h1, h2, h3, offset, SHAKE128_RATE, state);
 
     return state, h0, h1, h2, h3;
 }
@@ -34,29 +70,17 @@ fn shake256_squeezeblock4x(
     reg ptr u256[25] state,
     reg ptr u8[SHAKE256_RATE] h0 h1 h2 h3
 ) ->
-    reg ptr u256[25], // TODO: Possible strange behaviour when annotating this?
+    reg ptr u256[25],
     reg ptr u8[SHAKE256_RATE],
     reg ptr u8[SHAKE256_RATE],
     reg ptr u8[SHAKE256_RATE],
     reg ptr u8[SHAKE256_RATE]
 {
-    reg u256 t256;
-    stack u64[4] output_bytes;
+    reg ui64 offset;
 
-    inline int i;
-    #[msf] reg u64 msf = #init_msf();
-
-    state, msf = _KeccakF1600_StatePermute4x(state, msf);
-
-    for i = 0 to (SHAKE256_RATE / 8) {
-        t256 = state[i];
-        output_bytes.[:u256 0] = t256;
-
-        h0[:u64 i] = output_bytes[0];
-        h1[:u64 i] = output_bytes[1];
-        h2[:u64 i] = output_bytes[2];
-        h3[:u64 i] = output_bytes[3];
-    }
+    state = _keccakf1600_avx2x4(state);
+    offset = 0;
+    h0, h1, h2, h3, _ = A136::__dumpstate_avx2x4(h0, h1, h2, h3, offset, SHAKE256_RATE, state);
 
     return state, h0, h1, h2, h3;
 }

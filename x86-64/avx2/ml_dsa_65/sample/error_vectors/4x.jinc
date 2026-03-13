@@ -10,48 +10,6 @@ namespace error_4x {
     param int REJECTION_SAMPLE_INPUT_SIZE = REJECTION_SAMPLING_BYTES;
     require "rejection_sample.jinc"
 
-    fn shake256_init(
-        reg ptr u256[25] state,
-        reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
-        reg u16 starting_domain_separator
-    ) -> reg ptr u256[25]
-    {
-        reg u256 t256 zeros;
-        reg u64 t64;
-
-        inline int i lane;
-
-        zeros = #set0_256();
-        for i = 0 to 25 {
-            state[i] = zeros;
-        }
-
-        for i = 0 to 8 {
-            // N.B.: SEED_FOR_ERROR_VECTORS_SIZE is always 64.
-            t64 = rho_prime.[:u64 8 * i];
-            t256 = (256u)t64;
-            t256 = #VPBROADCAST_4u64(t256);
-            state[i] = t256;
-        }
-
-        for lane = 0 to 4 {
-            t64 = (64u)starting_domain_separator;
-            t64 = #LEA_64(0x1F0000 + t64);
-
-            t256 = (256u)t64;
-            t256 = #VPBROADCAST_4u64(t256);
-            t256 = #VPADD_4u64(t256, CONST_0123);
-            state[8] = t256;
-        }
-
-        t64 = 0x8000000000000000;
-        t256 = (256u)t64;
-        t256 = #VPBROADCAST_4u64(t256);
-        state[16] = t256;
-
-        return state;
-    }
-
     fn __shake256_squeeze_multiple_blocks_4x(
       reg ptr u256[25] state,
       reg ptr u8[REJECTION_SAMPLE_INPUT_SIZE] b0 b1 b2 b3
@@ -104,7 +62,7 @@ namespace error_4x {
 
         reg u64 stop_sampling;
 
-        xof_state = shake256_init(xof_state, rho_prime, starting_domain_separator);
+        xof_state = shake256_absorb_66_4x(xof_state, rho_prime, starting_domain_separator);
 
         xof_state,
         buf0,

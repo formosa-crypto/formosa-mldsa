@@ -3,36 +3,7 @@ namespace sample {
     fn __initialize_xof(
         reg ptr u8[COMMITMENT_HASH_SIZE] commitment_hash
     ) -> reg u256[7] {
-        reg u256[7] state;
-        reg u256 zero_256 = #set0_256();
-
-        reg u128 copied_16_bytes;
-        reg u64 i;
-
-        stack u8[SHAKE256_RATE] initial_block;
-
-        // COMMITMENT_HASH_SIZE could be one of 32, 48, 64,
-        // so just initialize the block to 0 beforehand to keep things simple.
-        i = 0;
-        while (i < 128) {
-            initial_block.[:u256 i] = zero_256;
-            i += 32;
-        }
-        initial_block.[:u64 128] = 0;
-
-        i = 0;
-        while (i < COMMITMENT_HASH_SIZE) {
-            copied_16_bytes = commitment_hash.[:u128 i];
-            initial_block.[:u128 i] = copied_16_bytes;
-
-            i += 16;
-        }
-        initial_block.[:u8 COMMITMENT_HASH_SIZE] = 0x1f;
-        initial_block.[:u8 SHAKE256_RATE - 1] = 0x80;
-
-        state = __state_init_avx2();
-        state = shake256_absorb_block(state, initial_block);
-
+        reg u256[7] state = shake256_absorb_commitment_hash(commitment_hash);
         return state;
     }
 
@@ -67,7 +38,7 @@ namespace sample {
         while(i < COEFFICIENTS_IN_POLYNOMIAL) {
             while {
                 if(xof_offset >= SHAKE256_RATE) {
-                    state = _keccakf1600_avx2(state);
+                    state = shake256_permute(state);
                     xof_block = shake256_squeeze_block(xof_block, state);
                     xof_offset = 0;
                 }

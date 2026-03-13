@@ -4,7 +4,7 @@ fn derive_seed_for_mask(
     reg ptr u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative,
     #[spill_to_mmx] reg ptr u8[64] seed_for_mask
 ) -> reg ptr u8[64] {
-    stack u8[SHAKE256_RATE] block;
+    stack u8[128] block;
 
     reg u256[7] state;
     reg u256 copied_32_bytes;
@@ -22,13 +22,7 @@ fn derive_seed_for_mask(
     copied_32_bytes = message_representative.[:u256 32];
     block.[:u256 96] = copied_32_bytes;
 
-    block.[:u64 128] = 0;
-
-    block.[128] = 0x1f;
-    block.[SHAKE256_RATE - 1] = 0x80;
-
-    state = __state_init_avx2();
-    state = shake256_absorb_block(state, block);
+    state = shake256_absorb_128(block);
 
     seed_for_mask = squeeze_64_bytes(seed_for_mask, state);
 

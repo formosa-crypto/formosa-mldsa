@@ -1,18 +1,76 @@
+fn shake256_init_state() -> reg u256[7]
+{
+    reg u256[7] state = __state_init_avx2();
+    return state;
+}
+
+fn shake256_permute(reg u256[7] state) -> reg u256[7]
+{
+    state = _keccakf1600_avx2(state);
+    return state;
+}
+
+fn squeeze_128_bytes(reg ptr u8[128] array, reg u256[7] state) -> reg ptr u8[128]
+{
+    reg ui64 offset;
+    offset = 0;
+    array, _ = A128::__dumpstate_avx2(array, offset, 128, state);
+    return array;
+}
+
+// Absorbs 32 bytes of seed followed by 2 bytes (extra) with SHAKE256 padding.
+// Used by key generation to absorb (randomness || rows || cols).
+fn shake256_absorb_34(
+    reg ptr u8[32] seed,
+    reg ptr u8[2] extra
+) -> reg u256[7]
+{
+    reg u256[7] state = shake256_init_state();
+    state, _ = A32::__absorb_avx2(state, 0, seed, UNFINISHED, SHAKE256_RATE);
+    state, _ = A2::__absorb_avx2(state, 32, extra, SHAKE, SHAKE256_RATE);
+    return state;
+}
+
+// Absorbs 64 bytes of rho_prime followed by a 2-byte domain separator with
+// SHAKE256 padding. Single-lane mirror of shake256_absorb_66_4x.
+fn shake256_absorb_66(
+    reg ptr u8[64] rho_prime,
+    reg u16 domain_separator
+) -> reg u256[7]
+{
+    stack u8[2] ds;
+    reg u256[7] state = shake256_init_state();
+    state, _ = A64::__absorb_avx2(state, 0, rho_prime, UNFINISHED, SHAKE256_RATE);
+    ds[:u16 0] = domain_separator;
+    state, _ = A2::__absorb_avx2(state, 64, ds, SHAKE, SHAKE256_RATE);
+    return state;
+}
+
+// Absorbs 128 bytes with SHAKE256 padding.
+// Used by signing to absorb (k || randomness || message_representative).
+fn shake256_absorb_128(
+    reg ptr u8[128] block
+) -> reg u256[7]
+{
+    reg u256[7] state = shake256_init_state();
+    state, _ = A128::__absorb_avx2(state, 0, block, SHAKE, SHAKE256_RATE);
+    return state;
+}
+
+// Absorbs COMMITMENT_HASH_SIZE bytes with SHAKE256 padding.
+// Used by challenge generation; size is 32/48/64 depending on the variant.
+fn shake256_absorb_commitment_hash(
+    reg ptr u8[COMMITMENT_HASH_SIZE] hash
+) -> reg u256[7]
+{
+    reg u256[7] state = shake256_init_state();
+    state, _ = A_COMMITMENT_HASH::__absorb_avx2(state, 0, hash, SHAKE, SHAKE256_RATE);
+    return state;
+}
+
 fn shake256_add_rate_bit(reg u256[7] st) -> reg u256[7]
 {
-    reg u256 t256;
-    reg u128 t128;
-
-    reg u64 t64;
-
-    t64 = 1;
-    t64 <<= (8*SHAKE256_RATE - 1) % 64;
-
-    t128 = (128u)t64;
-    t256 = #set0_256();
-    t256 = #VINSERTI128(t256, t128, 0);
-
-    st[3] ^= t256;
+    st = __addratebit_avx2(st, R136);
     return st;
 }
 
@@ -21,44 +79,7 @@ fn shake256_absorb_block(
     reg ptr u8[SHAKE256_RATE] block
 ) -> reg u256[7]
 {
-    reg u64 t64;
-    reg u256 r0, r1, r2, r3, r4, r5, r6;
-    reg u128 t128_0, t128_1;
-
-    t64 = block.[:u64 0];
-    t128_0 = (128u) t64;
-    r0 = #VPBROADCAST_4u64(t128_0);
-    state[0] ^= r0;
-
-    r1 = block.[:u256 8];
-    state[1] ^= r1;
-
-    t64 = block.[:u64 40];
-    t128_1 = (128u) t64;
-
-    r3 = block.[:u256 48];
-
-    t64 = block.[:u64 80];
-    t128_0 = (128u) t64;
-
-    r4 = block.[:u256 88];
-
-    t64 = block.[:u64 120];
-    t128_1 = #VPINSR_2u64(t128_1, t64, 1);
-
-    t64 = block.[:u64 128];
-    r5 = (256u)#VMOV_64(t64);
-
-    t64 = 0;
-    t128_0 = #VPINSR_2u64(t128_0, t64, 1);
-    r2 = (2u128)[t128_1, t128_0];
-    state[2] ^= r2;
-
-    r6 = #set0_256();
-    state = __addstate_r3456_avx2(state, r3, r4, r5, r6);
-
-    state = _keccakf1600_avx2(state);
-
+    state, _ = A136::__absorb_avx2(state, 0, block, UNFINISHED, R136);
     return state;
 }
 
@@ -67,83 +88,23 @@ fn shake256_squeeze_block(
     reg u256[7] state
 ) -> reg ptr u8[SHAKE256_RATE]
 {
-    reg u256 t256_0 t256_1 t256_2 t256_3 t256_4;
-    reg u128 t128_0 t128_1;
-
-    // [ 0, 0 ]
-    t128_0 = (128u) state[0];
-    block.[:u64 0] = t128_0;
-    // [ 1, 2, 3, 4 ]
-    block.[:u256 1*8] = state[1];
-
-    // [ 16, 7, 8, 19 ]
-    t256_0 = #VPBLEND_8u32(state[3], state[4], (8u1)[1,1,1,1,0,0,0,0]);
-    // [ 11, 22, 23, 14 ]
-    t256_1 = #VPBLEND_8u32(state[4], state[3], (8u1)[1,1,1,1,0,0,0,0]);
-    // [ 21, 17, 18, 24 ]
-    t256_2 = #VPBLEND_8u32(state[5], state[6], (8u1)[1,1,1,1,0,0,0,0]);
-    // [ 6, 12, 13, 9 ]
-    t256_3 = #VPBLEND_8u32(state[6], state[5], (8u1)[1,1,1,1,0,0,0,0]);
-
-    // [ 5, 15 ]
-    //  state[2] = TTT[0];
-    t128_1 = #VEXTRACTI128(state[2], 1);
-    block.[:u64 40] = t128_1;
-
-    // [ 6, 7, 8, 9 ]
-    t256_4 = #VPBLEND_8u32(t256_0, t256_3, (8u1)[1,1,0,0,0,0,1,1]);
-    block.[:u256 48] = t256_4;
-
-    // [ 10, 20 ]
-    t128_0 = (128u) state[2];
-    block.[:u64 80] = t128_0;
-
-    // [ 11, 12, 13, 14 ]
-    t256_4 = #VPBLEND_8u32(t256_3, t256_1, (8u1)[1,1,0,0,0,0,1,1]);
-    block.[:u256 88] = t256_4;
-
-    // [ 15 ]
-    block.[:u64 120] = #VPEXTR_64(t128_1, 1);
-
-    // [ 16, 17, 18, 19 ]
-    t256_4 = #VPBLEND_8u32(t256_2, t256_0, (8u1)[1,1,0,0,0,0,1,1]);
-    t128_0 = (128u)t256_4;
-    block.[:u64 128] = t128_0;
-
+    reg ui64 offset;
+    offset = 0;
+    block, _ = A136::__dumpstate_avx2(block, offset, SHAKE256_RATE, state);
     return block;
 }
 
 fn squeeze_64_bytes(reg ptr u8[64] array, reg u256[7] state) -> reg ptr u8[64] {
-    reg u128 t128;
-    reg u256 t256;
-
-    // state[0] = [0, 0, 0, 0]
-    t128 = (128u)state[0];
-    array.[:u64 0] = t128;
-    // [ 1, 2, 3, 4 ]
-    array.[:u256 8] = state[1];
-
-    // state[2] = [10, 20, 5, 15]
-    // state[3] = [16, 7, 8, 19]
-    // state[6] = [6, 12, 13, 9]
-    // t256 should contain [ 6, 7, 8, 9 ]
-    t256 = #VPBLEND_8u32(state[6], state[3], 0b0_0_0_0_1_1_0_0);
-
-    // We first need to get 8 bytes from state[2][2]
-    t128 = #VEXTRACTI128(state[2], 1);
-    array.[:u64 40] = t128;
-
-    // We need 16 more bytes from t256
-    t128 = (128u)t256;
-    array.[:u128 48] = t128;
-
+    reg ui64 offset;
+    offset = 0;
+    array, _ = A64::__dumpstate_avx2(array, offset, 64, state);
     return array;
 }
 
 inline
 fn __shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u64[25], reg u64 {
     if (offset >= SHAKE256_RATE) {
-        state = _keccakf1600_ref1(state);
+        state = _keccakf1600_ref(state);
         offset = 0;
     }
     return state, offset;
@@ -172,7 +133,7 @@ fn __derive_message_representative(
 
     // Absorb ...
 
-    state = __keccak_init_ref1(state);
+    state = __state_init_ref(state);
 
     // VERIFICATION_KEY_HASH_SIZE is always 64.
     copied_32_bytes = verification_key_hash.[:u256 0];
@@ -198,7 +159,7 @@ fn __derive_message_representative(
     while(context_offset < context_size) {
         if (state_offset >= SHAKE256_RATE) {
             () = #spill(context, context_offset, context_size);
-            state = _keccakf1600_ref1(state);
+            state = _keccakf1600_ref(state);
             () = #unspill(context, context_offset, context_size);
 
             state_offset = 0;
@@ -222,7 +183,7 @@ fn __derive_message_representative(
     while(message_offset < message_size) {
         if (state_offset >= SHAKE256_RATE) {
             () = #spill(message, message_offset, message_size);
-            state = _keccakf1600_ref1(state);
+            state = _keccakf1600_ref(state);
             () = #unspill(message, message_offset, message_size);
 
             state_offset = 0;
@@ -243,7 +204,7 @@ fn __derive_message_representative(
     state, _ = __shake256_consider_permute(state, state_offset);
     state[:u8 SHAKE256_RATE-1] ^= 0x80;
 
-    state = _keccakf1600_ref1(state);
+    state = _keccakf1600_ref(state);
 
     // MESSAGE_REPRESENTATIVE_SIZE is always 64.
     copied_32_bytes = state.[:u256 0];

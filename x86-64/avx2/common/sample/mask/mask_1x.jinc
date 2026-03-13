@@ -2,31 +2,7 @@ inline fn __setup_state_to_generate_mask(
     reg ptr u8[64] rho_prime,
     reg u16 domain_separator
 ) -> reg u256[7] {
-    stack u8[SHAKE256_RATE] initial_block;
-
-    reg u256[7] state = __state_init_avx2();
-
-    reg u256 copied_32_bytes;
-    reg u256 zero_256 = #set0_256();
-
-    copied_32_bytes = rho_prime.[:u256 0];
-    initial_block.[:u256 0] = copied_32_bytes;
-
-    copied_32_bytes = rho_prime.[:u256 32];
-    initial_block.[:u256 32] = copied_32_bytes;
-
-    initial_block.[:u16 64] = domain_separator;
-    initial_block.[:u8 66] = 0x1f;
-
-    initial_block.[:u256 67] = zero_256;
-    initial_block.[:u256 99] = zero_256;
-
-    initial_block.[:u32 131] = 0;
-
-    initial_block.[:u8 SHAKE256_RATE - 1] = 0x80;
-
-    state = shake256_absorb_block(state, initial_block);
-
+    reg u256[7] state = shake256_absorb_66(rho_prime, domain_separator);
     return state;
 }
 
@@ -51,7 +27,7 @@ fn __sample_mask_polynomial_1x(
     for i = 0 to MASK_1X_BLOCKS_TO_SQUEEZE {
         mask_encoded[i * SHAKE256_RATE : SHAKE256_RATE] = shake256_squeeze_block(mask_encoded[i * SHAKE256_RATE : SHAKE256_RATE], state);
 
-        state = _keccakf1600_avx2(state);
+        state = shake256_permute(state);
     }
 
     mask = gamma1::__decode_to_polynomial(mask, mask_encoded[0 : ENCODED_GAMMA1_POLYNOMIAL_SIZE]);

@@ -1,0 +1,3 @@
+[submodule "formosa-keccak"]
+	path = formosa-keccak
+	url = https://github.com/formosa-crypto/formosa-keccak.git
