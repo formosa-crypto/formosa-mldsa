@@ -81,16 +81,6 @@ fn shake256_add_rate_bit(reg u256[7] st) -> reg u256[7]
 }
 
 inline
-fn shake256_absorb_block(
-    reg u256[7] state,
-    reg ptr u8[SHAKE256_RATE] block
-) -> reg u256[7]
-{
-    state, _ = A136::__absorb_avx2(state, 0, block, UNFINISHED, R136);
-    return state;
-}
-
-inline
 fn shake256_squeeze_block(
     reg ptr u8[SHAKE256_RATE] block,
     reg u256[7] state
@@ -111,116 +101,91 @@ fn squeeze_64_bytes(reg ptr u8[64] array, reg u256[7] state) -> reg ptr u8[64] {
 }
 
 inline
-fn __shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr u64[25], reg u64 {
-    if (offset >= SHAKE256_RATE) {
-        state = _keccakf1600_ref(state);
-        offset = 0;
-    }
-    return state, offset;
+fn squeeze_commitment_hash_bytes(reg ptr u8[COMMITMENT_HASH_SIZE] array, reg u256[7] state) -> reg ptr u8[COMMITMENT_HASH_SIZE] {
+    reg ui64 offset;
+    offset = 0;
+    array, _ = A_COMMITMENT_HASH::__dumpstate_avx2(array, offset, COMMITMENT_HASH_SIZE, state);
+    return array;
 }
 
 inline
 fn __derive_message_representative(
     reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash,
-    #[spill_to_mmx] reg ptr u64[2] context_message_pointers,
-    #[spill_to_mmx] reg ptr u64[2] context_message_sizes
+    #[spill_to_mmx] reg ui64 context_pointer,
+    #[spill_to_mmx] reg ui64 context_size,
+    #[spill_to_mmx] reg ui64 message_pointer,
+    #[spill_to_mmx] reg ui64 message_size
 ) -> stack u8[MESSAGE_REPRESENTATIVE_SIZE]
 {
     stack u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative;
-
-    stack u64[25] state;
-
-    reg u8 byte;
-    reg u64 state_offset;
-
-    reg u64 context context_size context_offset;
-    reg u64 message message_size message_offset;
+    stack keccak_updstate state;
+    stack u8[66] prefix;
 
     reg u256 copied_32_bytes;
+    reg ui64 buf len;
 
-    () = #spill(context_message_pointers, context_message_sizes);
-
-    // Absorb ...
-
-    state = __state_init_ref(state);
-
+    // Build the fixed 66-byte prefix: vk_hash || 0 || context_size.
     // VERIFICATION_KEY_HASH_SIZE is always 64.
     copied_32_bytes = verification_key_hash.[:u256 0];
-    state.[:u256 0] = copied_32_bytes;
-
+    prefix.[:u256 0] = copied_32_bytes;
     copied_32_bytes = verification_key_hash.[:u256 32];
-    state.[:u256 32] = copied_32_bytes;
+    prefix.[:u256 32] = copied_32_bytes;
+    prefix[:u8 64] = 0;
+    prefix[:u8 65] = (8u) (64u) context_size;
 
-    context_offset = 0;
+    () = #spill(context_pointer, context_size, message_pointer, message_size);
 
-    () = #unspill(context_message_pointers);
-    context = context_message_pointers[0];
+    // Initialize SHAKE256 streaming state: rate = 136 = 17*8 bytes, trail byte = 0x1f.
+    state = _init_updstate_avx2(state, 17, SHAKE);
 
-    () = #unspill(context_message_sizes);
-    context_size = context_message_sizes[0];
+    // One-shot absorb of the fixed-size prefix.
+    state = A66::_update_updstate_avx2(state, prefix);
 
-    // We first need to absorb `0 || context_size` before absorbing the context.
-    state.[:u8 64] = 0;
-    state.[:u8 65] = context_size;
+    // Absorb context (variable-length, accessed via memory pointer).
+    () = #unspill(context_pointer, context_size);
+    buf = context_pointer;
+    len = context_size;
+    state = _absorb_m_updstate_avx2(state, buf, len);
 
-    state_offset = 66;
+    // Absorb message (variable-length, accessed via memory pointer).
+    () = #unspill(message_pointer, message_size);
+    buf = message_pointer;
+    len = message_size;
+    state = _absorb_m_updstate_avx2(state, buf, len);
 
-    while(context_offset < context_size) {
-        if (state_offset >= SHAKE256_RATE) {
-            () = #spill(context, context_offset, context_size);
-            state = _keccakf1600_ref(state);
-            () = #unspill(context, context_offset, context_size);
-
-            state_offset = 0;
-        }
-
-        byte = [:u8 context + context_offset];
-        context_offset += 1;
-
-        state[:u8 state_offset] ^= byte;
-        state_offset += 1;
-    }
-
-    message_offset = 0;
-
-    () = #unspill(context_message_pointers);
-    message = context_message_pointers[1];
-
-    () = #unspill(context_message_sizes);
-    message_size = context_message_sizes[1];
-
-    while(message_offset < message_size) {
-        if (state_offset >= SHAKE256_RATE) {
-            () = #spill(message, message_offset, message_size);
-            state = _keccakf1600_ref(state);
-            () = #unspill(message, message_offset, message_size);
-
-            state_offset = 0;
-        }
-
-        byte = [:u8 message + message_offset];
-        message_offset += 1;
-
-        state[:u8 state_offset] ^= byte;
-        state_offset += 1;
-    }
-
-    // Absorb separator byte
-    state, state_offset = __shake256_consider_permute(state, state_offset);
-    state[:u8 state_offset] ^= 0x1f;
-
-    // Finish
-    state, _ = __shake256_consider_permute(state, state_offset);
-    state[:u8 SHAKE256_RATE-1] ^= 0x80;
-
-    state = _keccakf1600_ref(state);
-
-    // MESSAGE_REPRESENTATIVE_SIZE is always 64.
-    copied_32_bytes = state.[:u256 0];
-    message_representative.[:u256 0] = copied_32_bytes;
-
-    copied_32_bytes = state.[:u256 32];
-    message_representative.[:u256 32] = copied_32_bytes;
+    // Finalize the SHAKE256 stream, then permute and squeeze MESSAGE_REPRESENTATIVE_SIZE = 64 bytes.
+    state = _finish_updstate_avx2(state);
+    state, message_representative = A64::_squeeze_updstate_avx2(state, message_representative);
 
     return message_representative;
+}
+
+inline
+fn hash_verification_key(
+    #[spill_to_mmx] reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash,
+    #[spill_to_mmx] reg ptr u8[VERIFICATION_KEY_SIZE] verification_key
+) -> reg ptr u8[VERIFICATION_KEY_HASH_SIZE]
+{
+    reg u256[7] state;
+    state = shake256_init_state();
+    state, _ = A_VERIFICATION_KEY::__absorb_avx2(state, 0, verification_key, SHAKE, SHAKE256_RATE);
+    state = shake256_permute(state);
+    verification_key_hash = squeeze_64_bytes(verification_key_hash, state);
+    return verification_key_hash;
+}
+
+inline
+fn __derive_commitment_hash(
+    reg ptr u8[64] message_representative,
+    #[spill_to_mmx] reg ptr u8[ENCODED_COMMITMENT_SIZE] encoded_commitment
+) -> stack u8[COMMITMENT_HASH_SIZE]
+{
+    stack u8[COMMITMENT_HASH_SIZE] commitment_hash;
+    reg u256[7] state;
+    state = shake256_init_state();
+    state, _ = A64::__absorb_avx2(state, 0, message_representative, UNFINISHED, SHAKE256_RATE);
+    state, _ = A_ENCODED_COMMITMENT::__absorb_avx2(state, 64, encoded_commitment, SHAKE, SHAKE256_RATE);
+    state = shake256_permute(state);
+    commitment_hash = squeeze_commitment_hash_bytes(commitment_hash, state);
+    return commitment_hash;
 }

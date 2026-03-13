@@ -56,8 +56,10 @@ inline
 fn __sign_internal(
     #[spill_to_mmx] reg ptr u8[SIGNATURE_SIZE] signature,
     #[secret] reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    reg ptr u64[2] context_message_pointers,
-    reg ptr u64[2] context_message_sizes,
+    #[spill_to_mmx] reg ui64 context_pointer,
+    #[spill_to_mmx] reg ui64 context_size,
+    #[spill_to_mmx] reg ui64 message_pointer,
+    #[spill_to_mmx] reg ui64 message_size,
     #[spill_to_mmx] reg ptr u8[32] randomness
 ) -> reg ptr u8[SIGNATURE_SIZE]
 {
@@ -112,15 +114,17 @@ fn __sign_internal(
 
     inline int i;
 
-    () = #spill(signature, randomness, signing_key);
+    () = #spill(signature, randomness, signing_key, message_pointer, message_size);
     #[declassify] seed_for_matrix_A = signing_key[0:32];
     matrix_A = sample::__matrix_A(seed_for_matrix_A);
 
-    () = #unspill(signing_key);
+    () = #unspill(signing_key, message_pointer, message_size);
     message_representative = __derive_message_representative(
         signing_key[64:VERIFICATION_KEY_HASH_SIZE],
-        context_message_pointers,
-        context_message_sizes);
+        context_pointer,
+        context_size,
+        message_pointer,
+        message_size);
 
     () = #unspill(randomness);
     () = #unspill(signing_key);

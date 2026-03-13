@@ -9,6 +9,8 @@ from Keccak require "avx2/keccak1600_fixedsizes.jinc"
 
 from Keccak require "avx2/keccak1600x4_fixedsizes.jinc"
 
+from Keccak require "avx2/keccak1600_updstate.jinc"
+
 namespace A2 {
   param int _ASIZE = 2;
   from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
@@ -25,6 +27,12 @@ namespace A64 {
   param int _ASIZE = 64;
   from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
   from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
+  from Keccak require "avx2/keccak1600_updstate_ASIZE.jinc"
+}
+
+namespace A66 {
+  param int _ASIZE = 66;
+  from Keccak require "avx2/keccak1600_updstate_ASIZE.jinc"
 }
 
 namespace A128 {
@@ -45,6 +53,16 @@ namespace A168 {
 
 namespace A_COMMITMENT_HASH {
   param int _ASIZE = COMMITMENT_HASH_SIZE;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+}
+
+namespace A_VERIFICATION_KEY {
+  param int _ASIZE = VERIFICATION_KEY_SIZE;
+  from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
+}
+
+namespace A_ENCODED_COMMITMENT {
+  param int _ASIZE = ENCODED_COMMITMENT_SIZE;
   from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
 }
 

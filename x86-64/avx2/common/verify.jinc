@@ -83,8 +83,10 @@ fn reconstruct_signer_commitment(
 
 fn __verify_internal(
     reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    #[spill_to_mmx] reg ptr u64[2] context_message_pointers,
-    #[spill_to_mmx] reg ptr u64[2] context_message_sizes,
+    #[spill_to_mmx] reg ui64 context_pointer,
+    #[spill_to_mmx] reg ui64 context_size,
+    #[spill_to_mmx] reg ui64 message_pointer,
+    #[spill_to_mmx] reg ui64 message_size,
     #[spill_to_mmx] reg ptr u8[SIGNATURE_SIZE] signature_encoded
 ) -> reg u64 {
     // 0 indicates success, -1 indicates failure.
@@ -104,10 +106,10 @@ fn __verify_internal(
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hints;
 
+    () = #spill(context_pointer, context_size, message_pointer, message_size);
     (signer_response, hints, result) = signature::__decode(signer_response, hints, signature_encoded);
 
     if (result == 0) {
-        () = #spill(context_message_pointers, context_message_sizes);
 
         () = #spill(signature_encoded, verification_key);
         matrix_A = sample::__matrix_A(verification_key[0:SEED_FOR_MATRIX_A_SIZE]);
@@ -130,11 +132,13 @@ fn __verify_internal(
         () = #unspill(verification_key);
         verification_key_hash = hash_verification_key(verification_key_hash, verification_key);
 
-        () = #unspill(context_message_pointers, context_message_sizes);
+        () = #unspill(context_pointer, context_size, message_pointer, message_size);
         message_representative = __derive_message_representative(
             verification_key_hash,
-            context_message_pointers,
-            context_message_sizes
+            context_pointer,
+            context_size,
+            message_pointer,
+            message_size
         );
 
         #[declassify] expected_commitment_hash = __derive_commitment_hash(message_representative, reconstructed_signer_commitment);

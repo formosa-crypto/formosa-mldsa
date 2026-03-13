@@ -27,8 +27,6 @@ from Common require "encoding/signature.jinc"
 from Common require "encoding/s1.jinc"
 from Common require "encoding/s2.jinc"
 
-require "hashing.jinc"
-
 from Common require "sample/error_vector_shuffles.jinc"
 require "sample/error_vectors/4x.jinc"
 require "sample/error_vectors.jinc"
@@ -75,16 +73,19 @@ export fn ml_dsa_87_keygen(
 export fn ml_dsa_87_sign(
     #[spill_to_mmx] reg ptr u8[SIGNATURE_SIZE] signature,
     reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    reg ptr u64[2] context_message_pointers,
-    reg ptr u64[2] context_message_sizes,
+    reg ptr u64[2] context,
+    reg ui64 message_pointer,
+    reg ui64 message_size,
     reg ptr u8[32] randomness
 ) -> reg ptr u8[SIGNATURE_SIZE], reg u64
 {
     reg u64 result;
-    reg u64 context_size = context_message_sizes[0];
+    reg ui64 context_pointer context_size;
+    context_pointer = (64ui) context[0];
+    context_size = (64ui) context[1];
 
     if (context_size <= 255) {
-        signature = __sign_internal(signature, signing_key, context_message_pointers, context_message_sizes, randomness);
+        signature = __sign_internal(signature, signing_key, context_pointer, context_size, message_pointer, message_size, randomness);
         result = 0;
     } else {
         result = -1;
@@ -100,15 +101,18 @@ export fn ml_dsa_87_sign(
        public"]
 export fn ml_dsa_87_verify(
     reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
-    reg ptr u64[2] context_message_pointers,
-    reg ptr u64[2] context_message_sizes,
+    reg ptr u64[2] context,
+    reg ui64 message_pointer,
+    reg ui64 message_size,
     reg ptr u8[SIGNATURE_SIZE] signature
 ) -> reg u64 {
     reg u64 verification_result;
-    reg u64 context_size = context_message_sizes[0];
+    reg ui64 context_pointer context_size;
+    context_pointer = (64ui) context[0];
+    context_size = (64ui) context[1];
 
     if (context_size <= 255) {
-        verification_result = __verify_internal(verification_key, context_message_pointers, context_message_sizes, signature);
+        verification_result = __verify_internal(verification_key, context_pointer, context_size, message_pointer, message_size, signature);
     } else {
         verification_result = -1;
     }
