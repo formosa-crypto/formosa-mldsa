@@ -87,7 +87,6 @@ fn shake256_absorb_block(
 ) -> reg u256[7]
 {
     state, _ = A136::__absorb_avx2(state, 0, block, UNFINISHED, R136);
-    state = shake256_permute(state);
     return state;
 }
 
