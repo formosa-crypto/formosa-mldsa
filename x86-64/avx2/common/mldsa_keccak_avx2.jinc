@@ -1,27 +1,14 @@
-/* Link to the formosa-keccak submodule for the AVX2 ML-DSA implementation.
-   This is the single point of integration with formosa-keccak, following
-   the same pattern as formosa-mlkem's mlkem_keccak_avx2.jinc. */
-
-/* AVX2 single-lane permutation and state helpers:
-   _keccakf1600_avx2, __state_init_avx2, __addstate_r3456_avx2, ... */
 from Keccak require "avx2/keccak1600.jinc"
 
-/* Reference single-lane permutation: _keccakf1600_ref1 */
 from Keccak require "ref/select_bmi1.jinc"
 from Keccak require "ref/keccak1600.jinc"
 
-/* AVX2 4x parallel permutation: _keccakf1600_avx2x4 */
 from Keccak require "avx2/keccakf1600x4.jinc"
 
-/* Fixed-size absorb/squeeze for single-lane AVX2:
-   __absorb_avx2, __dumpstate_avx2, __squeeze_avx2, __addratebit_avx2, ... */
 from Keccak require "avx2/keccak1600_fixedsizes.jinc"
 
-/* Fixed-size absorb/squeeze for 4-way AVX2:
-   __absorb_avx2x4, __dumpstate_avx2x4, __squeeze_avx2x4, ... */
 from Keccak require "avx2/keccak1600x4_fixedsizes.jinc"
 
-/* Namespace instantiations for the buffer sizes used in ML-DSA */
 namespace A2 {
   param int _ASIZE = 2;
   from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"
@@ -56,7 +43,6 @@ namespace A168 {
   from Keccak require "avx2/keccak1600x4_fixedsizes_ASIZE.jinc"
 }
 
-/* Namespace instantiation parameterized by COMMITMENT_HASH_SIZE (32/48/64 per variant) */
 namespace A_COMMITMENT_HASH {
   param int _ASIZE = COMMITMENT_HASH_SIZE;
   from Keccak require "avx2/keccak1600_fixedsizes_ASIZE.jinc"

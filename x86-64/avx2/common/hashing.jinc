@@ -1,15 +1,18 @@
+inline
 fn shake256_init_state() -> reg u256[7]
 {
     reg u256[7] state = __state_init_avx2();
     return state;
 }
 
+inline
 fn shake256_permute(reg u256[7] state) -> reg u256[7]
 {
     state = _keccakf1600_avx2(state);
     return state;
 }
 
+inline
 fn squeeze_128_bytes(reg ptr u8[128] array, reg u256[7] state) -> reg ptr u8[128]
 {
     reg ui64 offset;
@@ -20,6 +23,7 @@ fn squeeze_128_bytes(reg ptr u8[128] array, reg u256[7] state) -> reg ptr u8[128
 
 // Absorbs 32 bytes of seed followed by 2 bytes (extra) with SHAKE256 padding.
 // Used by key generation to absorb (randomness || rows || cols).
+inline
 fn shake256_absorb_34(
     reg ptr u8[32] seed,
     reg ptr u8[2] extra
@@ -31,8 +35,7 @@ fn shake256_absorb_34(
     return state;
 }
 
-// Absorbs 64 bytes of rho_prime followed by a 2-byte domain separator with
-// SHAKE256 padding. Single-lane mirror of shake256_absorb_66_4x.
+inline
 fn shake256_absorb_66(
     reg ptr u8[64] rho_prime,
     reg u16 domain_separator
@@ -46,8 +49,7 @@ fn shake256_absorb_66(
     return state;
 }
 
-// Absorbs 128 bytes with SHAKE256 padding.
-// Used by signing to absorb (k || randomness || message_representative).
+inline
 fn shake256_absorb_128(
     reg ptr u8[128] block
 ) -> reg u256[7]
@@ -57,8 +59,7 @@ fn shake256_absorb_128(
     return state;
 }
 
-// Absorbs COMMITMENT_HASH_SIZE bytes with SHAKE256 padding.
-// Used by challenge generation; size is 32/48/64 depending on the variant.
+inline
 fn shake256_absorb_commitment_hash(
     reg ptr u8[COMMITMENT_HASH_SIZE] hash
 ) -> reg u256[7]
@@ -68,12 +69,14 @@ fn shake256_absorb_commitment_hash(
     return state;
 }
 
+inline
 fn shake256_add_rate_bit(reg u256[7] st) -> reg u256[7]
 {
     st = __addratebit_avx2(st, R136);
     return st;
 }
 
+inline
 fn shake256_absorb_block(
     reg u256[7] state,
     reg ptr u8[SHAKE256_RATE] block
@@ -83,6 +86,7 @@ fn shake256_absorb_block(
     return state;
 }
 
+inline
 fn shake256_squeeze_block(
     reg ptr u8[SHAKE256_RATE] block,
     reg u256[7] state
@@ -94,6 +98,7 @@ fn shake256_squeeze_block(
     return block;
 }
 
+inline
 fn squeeze_64_bytes(reg ptr u8[64] array, reg u256[7] state) -> reg ptr u8[64] {
     reg ui64 offset;
     offset = 0;

@@ -1,5 +1,4 @@
-// Absorbs 32 bytes of rho (broadcast to all 4 lanes) followed by a
-// per-lane 2-byte domain separator with SHAKE128 padding.
+inline
 fn shake128_absorb_34_4x(
     reg ptr u256[25] state,
     reg ptr u8[32] rho,
@@ -21,9 +20,7 @@ fn shake128_absorb_34_4x(
     return state;
 }
 
-// Absorbs 64 bytes of rho_prime (broadcast to all 4 lanes) followed by
-// consecutive per-lane 2-byte domain separators [DS, DS+1, DS+2, DS+3]
-// with SHAKE256 padding.
+inline
 fn shake256_absorb_66_4x(
     reg ptr u256[25] state,
     reg ptr u8[64] rho_prime,
@@ -47,6 +44,7 @@ fn shake256_absorb_66_4x(
     return state;
 }
 
+inline
 fn shake128_squeezeblock4x(
     reg ptr u256[25] state,
     reg ptr u8[SHAKE128_RATE] h0 h1 h2 h3
@@ -66,6 +64,7 @@ fn shake128_squeezeblock4x(
     return state, h0, h1, h2, h3;
 }
 
+inline
 fn shake256_squeezeblock4x(
     reg ptr u256[25] state,
     reg ptr u8[SHAKE256_RATE] h0 h1 h2 h3
