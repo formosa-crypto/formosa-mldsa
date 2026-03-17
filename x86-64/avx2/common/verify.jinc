@@ -4,7 +4,7 @@ fn __compare_commitment_hashes(reg ptr u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg 
     reg u128 result_vec temp;
 
     reg u64 result;
-    reg u64 offset;
+    reg ui64 offset;
 
     offset = 0;
 
