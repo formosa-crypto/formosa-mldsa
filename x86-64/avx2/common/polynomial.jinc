@@ -90,16 +90,18 @@ namespace polynomial {
     fn __check_infinity_norm(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
         inline int threshold
-    ) -> reg u8
+    ) -> reg u64
     {
         reg u256 coefficients;
         reg u256 threshold_vector;
         reg u256 exceeds exceeds_any;
         reg u32 msb_mask;
-        reg u8 result;
+        reg u64 result;
+        reg u8 res8;
         reg bool zf;
 
-        reg u64 offset temp;
+        reg ui64 offset;
+        reg u64 temp;
 
         temp = threshold - 1;
         threshold_vector = (256u)#VMOV(temp);
@@ -124,7 +126,8 @@ namespace polynomial {
         msb_mask = #MOVEMASK_8u32(exceeds_any);
 
         _, _, _, _, zf = #TEST_32(msb_mask, msb_mask);
-        result = #SETcc(!zf);
+        res8 = #SETcc(!zf);
+        result = (64u)res8;
 
         return result;
     }
@@ -133,7 +136,7 @@ namespace polynomial {
     fn __shift_coefficients_left(reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] {
         reg u256 coefficients;
 
-        reg u64 offset;
+        reg ui64 offset;
 
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {

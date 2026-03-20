@@ -1,14 +1,15 @@
 inline
-fn __initialize_xof(
-    reg ptr u8[32] randomness,
-    reg u8 number_of_rows,
-    reg u8 number_of_columns
-) -> reg u256[7] {
+fn __keygen_prf(
+    reg ptr  u8[128] prf_output,
+    reg ptr u8[32] randomness
+) -> reg ptr u8[128] {
     stack u8[2] extra;
-    extra[:u8 0] = number_of_rows;
-    extra[:u8 1] = number_of_columns;
-    reg u256[7] state = shake256_absorb_34(randomness, extra);
-    return state;
+    reg u256[7] state;
+    extra[:u8 0] = ROWS_IN_MATRIX_A;
+    extra[:u8 1] = COLUMNS_IN_MATRIX_A;
+    state = shake256_absorb_34(randomness, extra);
+    prf_output = squeeze_128_bytes(prf_output, state);
+    return prf_output;
 }
 
 #[sct="{ptr: public, val: transient} *
@@ -27,7 +28,6 @@ fn __keygen_internal(
     reg ptr u8[VERIFICATION_KEY_SIZE] verification_key_pointer_copy;
 
     // PRF
-    reg u256[7] state;
     stack u8[128] prf_output;
 
     // PRF outputs
@@ -48,8 +48,7 @@ fn __keygen_internal(
 
     () = #spill(verification_key, signing_key);
 
-    state = __initialize_xof(randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
-    prf_output = squeeze_128_bytes(prf_output, state);
+    prf_output = __keygen_prf(prf_output,randomness);
 
     #[declassify] seed_for_matrix_A = prf_output[:u8 0:SEED_FOR_MATRIX_A_SIZE];
     matrix_A = sample::__matrix_A(seed_for_matrix_A);

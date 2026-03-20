@@ -106,7 +106,7 @@ fn __sign_internal(
 
     reg u64 ones_in_hint total_ones_in_hint;
     reg u64 hint_elements_processed;
-    stack u8 infinity_norm_check_result;
+    stack u64 infinity_norm_check_result;
 
     reg u256 copied_32_bytes;
 

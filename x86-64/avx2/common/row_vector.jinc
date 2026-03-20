@@ -80,12 +80,12 @@ namespace row_vector {
 
     inline
     fn __check_infinity_norm(reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector, inline int threshold)
-        -> reg u8
+        -> reg u64
     {
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] vector_element;
-        reg u8 result;
+        reg u64 result;
 
-        reg u8 ret;
+        reg u64 ret;
 
         inline int i;
 
