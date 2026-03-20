@@ -122,7 +122,7 @@ namespace signature {
             if (current_true_hints_seen < previous_true_hints_seen) {
                 ill_formed_hint = 1;
             } else {
-                if (previous_true_hints_seen > MAX_ONES_IN_HINT) {
+                if (current_true_hints_seen > MAX_ONES_IN_HINT) {
                     ill_formed_hint = 1;
                 } else {
                     j = previous_true_hints_seen;
