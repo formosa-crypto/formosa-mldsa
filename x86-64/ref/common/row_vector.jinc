@@ -51,8 +51,8 @@ namespace row_vector {
 
     inline
     fn __dot_product(
-        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output,
-        #spill_to_mmx reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs
+        #[spill_to_mmx] reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] output,
+        #[spill_to_mmx] reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[COEFFICIENTS_IN_POLYNOMIAL] product;
@@ -79,8 +79,8 @@ namespace row_vector {
 
     inline
     fn __multiply_by_polynomial(
-        #spill_to_mmx reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector,
-        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly
+        #[spill_to_mmx] reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector,
+        #[spill_to_mmx] reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly
     ) -> stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] product;

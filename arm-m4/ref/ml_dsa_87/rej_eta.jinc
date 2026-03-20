@@ -4,7 +4,7 @@ inline fn rej_eta(
         reg u32 t
 ) -> reg ptr u32[N], reg u32 
 {
-    #declassify t = t;
+    #[declassify] t = t;
     reg u32 n205 = 205;
     if (t < 15) {
         reg u32 aux;

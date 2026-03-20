@@ -40,7 +40,7 @@ export fn ml_dsa_65_keygen(
 {
     verification_key, signing_key = __keygen_internal(verification_key, signing_key, seed);
 
-    #declassify verification_key = verification_key;
+    #[declassify] verification_key = verification_key;
 
     return verification_key, signing_key;
 }

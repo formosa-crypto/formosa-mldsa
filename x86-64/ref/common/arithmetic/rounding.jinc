@@ -24,13 +24,13 @@ namespace coefficient {
     }
 
     inline
-    fn __make_hint(reg u32 a0, reg u32 a1, reg u64 msf) -> reg u32, #msf reg u64 {
+    fn __make_hint(reg u32 a0, reg u32 a1, reg u64 msf) -> reg u32, #[msf] reg u64 {
         reg u32 result;
         inline bool condition;
 
         result = 0;
 
-        #declassify condition = a0 >s GAMMA2;
+        #[declassify] condition = a0 >s GAMMA2;
         if (condition) {
             msf = #update_msf(condition, msf);
 
@@ -38,18 +38,18 @@ namespace coefficient {
         } else {
             msf = #update_msf(!condition, msf);
 
-            #declassify condition = a0 <s -GAMMA2;
+            #[declassify] condition = a0 <s -GAMMA2;
             if (condition) {
                 msf = #update_msf(condition, msf);
                 result = 1;
             } else {
                 msf = #update_msf(!condition, msf);
 
-                #declassify condition = a0 == -GAMMA2;
+                #[declassify] condition = a0 == -GAMMA2;
                 if (condition) {
                     msf = #update_msf(condition, msf);
 
-                    #declassify condition = a1 != 0;
+                    #[declassify] condition = a1 != 0;
                     if (condition) {
                         msf = #update_msf(condition, msf);
                         result = 1;
@@ -66,7 +66,7 @@ namespace coefficient {
     }
 
     inline
-    fn __check_norm(#secret reg u32 coefficient, inline int threshold) -> stack u8
+    fn __check_norm(#[secret] reg u32 coefficient, inline int threshold) -> stack u8
     {
         reg u32 sign_mask;
         stack u32 c;

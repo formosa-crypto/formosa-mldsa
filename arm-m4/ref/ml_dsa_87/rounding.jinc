@@ -45,7 +45,7 @@ inline fn __make_hint(reg u32 a0, reg u32 a1, reg u32 gamma2) -> reg u32
 
     res = 1;
 
-    #declassify a0 = a0;
+    #[declassify] a0 = a0;
     if (a0 <=s gamma2) {
         mgamma2 = -gamma2;
 
@@ -57,7 +57,7 @@ inline fn __make_hint(reg u32 a0, reg u32 a1, reg u32 gamma2) -> reg u32
                 res = 0;
             }
 
-            #declassify a1 = a1;
+            #[declassify] a1 = a1;
             if (a1 == 0) {
                 res = 0;
             }

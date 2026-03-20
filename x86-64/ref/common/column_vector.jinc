@@ -50,7 +50,7 @@ namespace column_vector {
         -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t1 t0;
-        #spill_to_mmx reg u64 i;
+        #[spill_to_mmx] reg u64 i;
         reg u32 x y1 y2;
 
         i = 0;
@@ -71,7 +71,7 @@ namespace column_vector {
 
     inline
     fn __add(
-        #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs
+        #[spill_to_mmx] reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] lhs rhs
     ) -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] sum;
@@ -131,8 +131,8 @@ namespace column_vector {
 
     inline
     fn __multiply_by_polynomial(
-        #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector,
-        #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly
+        #[spill_to_mmx] reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] vector,
+        #[spill_to_mmx] reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] poly
     ) -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] product;

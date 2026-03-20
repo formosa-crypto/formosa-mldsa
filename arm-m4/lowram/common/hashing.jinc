@@ -199,7 +199,7 @@ fn _prepare_xof_for_element_of_A(
     state = __add_zero_after_add(state, SEEDBYTES + 2);
     state = __add_block_end(state, SEEDBYTES + 2, SHAKE128_RATE);
 
-    #declassify state = state;
+    #[declassify] state = state;
     return state;
 }
 

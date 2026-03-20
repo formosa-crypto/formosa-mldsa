@@ -292,8 +292,8 @@ inline fn __sign_internal(
                             bound = iGAMMA2;
                             check_norm = _poly_check_norm(polynomial0, bound);
                             if (check_norm == 0) {
-                                #declassify polynomial0 = polynomial0;
-                                #declassify w_compressed = w_compressed;
+                                #[declassify] polynomial0 = polynomial0;
+                                #[declassify] w_compressed = w_compressed;
                                 polynomial0, hints = _poly_make_hint_inplace(polynomial0, w_compressed[row_number *  COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING : COMPRESSED_W_ELEMENT_SIZE_WITH_PADDING]);
 
                                 () = #unspill(total_hints);
@@ -344,6 +344,6 @@ inline fn __sign_internal(
         () = #unspill(sig);
     }
 
-    #declassify sig = sig;
+    #[declassify] sig = sig;
     return sig, status;
 }

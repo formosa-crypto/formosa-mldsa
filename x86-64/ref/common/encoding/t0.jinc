@@ -210,7 +210,7 @@ namespace t0 {
 
     inline fn __encode(
         reg ptr u8[T0_ENCODED_SIZE] encoded,
-        #spill_to_mmx reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0
+        #[spill_to_mmx] reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0
     ) -> reg ptr u8[T0_ENCODED_SIZE]
     {
         inline int j;

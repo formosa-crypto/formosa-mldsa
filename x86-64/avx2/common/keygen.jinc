@@ -91,14 +91,14 @@ fn __keygen_internal(
     stack u8[128] prf_output;
 
     // PRF outputs
-    #public stack u8[32] seed_for_matrix_A;
-    #secret stack u8[64] seed_for_error_vectors;
-    #secret stack u8[32] seed_for_signing;
+    #[public] stack u8[32] seed_for_matrix_A;
+    #[secret] stack u8[64] seed_for_error_vectors;
+    #[secret] stack u8[32] seed_for_signing;
 
     // Matrices and vectors
     stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
-    #secret stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
-    #secret stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
+    #[secret] stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
+    #[secret] stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
 
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t t0 t1;
 
@@ -111,7 +111,7 @@ fn __keygen_internal(
     state = __initialize_xof(randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
     prf_output = squeeze_128_bytes(prf_output, state);
 
-    #declassify seed_for_matrix_A = prf_output[:u8 0:SEED_FOR_MATRIX_A_SIZE];
+    #[declassify] seed_for_matrix_A = prf_output[:u8 0:SEED_FOR_MATRIX_A_SIZE];
     matrix_A = sample::__matrix_A(seed_for_matrix_A);
 
     seed_for_error_vectors = prf_output[:u8 SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
@@ -154,7 +154,7 @@ fn __keygen_internal(
 
     verification_key[32: T1_ENCODED_SIZE]
         = t1::__encode(verification_key[32: T1_ENCODED_SIZE], t1);
-    #declassify verification_key = verification_key;
+    #[declassify] verification_key = verification_key;
 
     // ... and finish serializing the signing key.
     verification_key_pointer_copy = verification_key;

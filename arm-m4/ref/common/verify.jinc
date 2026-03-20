@@ -122,7 +122,7 @@ fn _crypto_sign_verify_ctx(
                 for i = 0 to COMMITMENT_HASH_SIZE {
                     if (status == 0) {
                         ci = (32u)commitment_hash[i];
-                        #declassify c2i = (32u)pstate[:u8 i];
+                        #[declassify] c2i = (32u)pstate[:u8 i];
                         if (ci != c2i) {
                             status = i + 1;
                         }

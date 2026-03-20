@@ -154,7 +154,7 @@ fn _crypto_sign_signature_ctx_seed(
         reg ptr u32[N] cp;
         mat = s_mat;
 
-        #declassify rho = s_rho;
+        #[declassify] rho = s_rho;
         mat = _polyvec_matrix_expand(mat, rho); s_mat = mat;
 
         s1 = s_s1; s1 = _polyvecl_ntt(s1); s_s1 = s1;
@@ -214,7 +214,7 @@ fn _crypto_sign_signature_ctx_seed(
             () = #spill(sig);
             cp = s_cp;
 
-            #declassify commitment_hash = commitment_hash;
+            #[declassify] commitment_hash = commitment_hash;
             cp = _poly_challenge(cp, commitment_hash);
             cp = _poly_ntt(cp);
             /* Compute z, reject if it reveals secret */
@@ -265,9 +265,9 @@ fn _crypto_sign_signature_ctx_seed(
                         } else {
                             () = #unspill(sig);
 
-                            #declassify h = h;
-                            #declassify s_signer_response = s_signer_response;
-                            #declassify sig = sig;
+                            #[declassify] h = h;
+                            #[declassify] s_signer_response = s_signer_response;
+                            #[declassify] sig = sig;
 
                             sig = _pack_sig_nocopy(sig, s_signer_response, h);
                             () = #spill(sig);
@@ -281,6 +281,6 @@ fn _crypto_sign_signature_ctx_seed(
         () = #unspill(sig);
     }
 
-    #declassify sig = sig;
+    #[declassify] sig = sig;
     return sig, status;
 }

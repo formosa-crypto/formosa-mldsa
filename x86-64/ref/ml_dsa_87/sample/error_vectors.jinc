@@ -33,12 +33,12 @@ fn __absorb_to_generate_errors(
 
 fn rejection_sample_less_than_eta(
     reg ptr u64[25] state,
-    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
-    #spill_to_mmx reg u64 sampled
+    #[spill_to_mmx] reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
+    #[spill_to_mmx] reg u64 sampled
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
 {
     reg u64 xof_offset;
-    #public reg u32 coefficient coefficient_mod_5;
+    #[public] reg u32 coefficient coefficient_mod_5;
     reg u8 byte;
 
     inline bool b;
@@ -56,7 +56,7 @@ fn rejection_sample_less_than_eta(
 
             byte = state[:u8 xof_offset];
 
-            #declassify coefficient = (32u)byte;
+            #[declassify] coefficient = (32u)byte;
             coefficient &= 0x0F;
 
             coefficient = #protect_32(coefficient, msf);
@@ -85,7 +85,7 @@ fn rejection_sample_less_than_eta(
             if (b) {
                 msf = #update_msf(b, msf);
 
-                #declassify coefficient = (32u)byte;
+                #[declassify] coefficient = (32u)byte;
                 coefficient >>= 4;
                 coefficient = #protect_32(coefficient, msf);
 
@@ -125,10 +125,10 @@ inline
 fn __sample_error_polynomial(
     reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
     inline int i,
-    #spill_to_mmx reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error
+    #[spill_to_mmx] reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error
 ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
 {
-    #spill_to_mmx reg u64 coefficients_sampled;
+    #[spill_to_mmx] reg u64 coefficients_sampled;
     stack u64[25] state;
 
     () = #spill(error);
@@ -153,8 +153,8 @@ fn __sample_error_polynomial(
 namespace sample {
     inline
     fn __error_vectors(stack u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime)
-        -> #secret stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
-           #secret stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
+        -> #[secret] stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
+           #[secret] stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
         stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
         stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
 

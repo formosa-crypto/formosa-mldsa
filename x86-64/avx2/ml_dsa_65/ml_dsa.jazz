@@ -59,7 +59,7 @@ from Common require "verify.jinc"
 export fn ml_dsa_65_keygen(
     reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
     reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    #spill_to_mmx reg ptr u8[32] randomness
+    #[spill_to_mmx] reg ptr u8[32] randomness
 ) -> reg ptr u8[VERIFICATION_KEY_SIZE],
      reg ptr u8[SIGNING_KEY_SIZE]
 {
@@ -76,7 +76,7 @@ export fn ml_dsa_65_keygen(
        {ptr: transient, val: secret} ->
        {ptr: transient, val: transient} * public"]
 export fn ml_dsa_65_sign(
-    #spill_to_mmx reg ptr u8[SIGNATURE_SIZE] signature,
+    #[spill_to_mmx] reg ptr u8[SIGNATURE_SIZE] signature,
     reg ptr u8[SIGNING_KEY_SIZE] signing_key,
     reg ptr u64[2] context_message_pointers,
     reg ptr u64[2] context_message_sizes,

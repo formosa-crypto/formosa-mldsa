@@ -165,7 +165,7 @@ fn _poly_check_norm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
 
     reg u32 i; i = 0;
     while {
-        #declassify t = a[i];
+        #[declassify] t = a[i];
         t = -t if t <s 0;
 
         i += 1;
@@ -397,7 +397,7 @@ fn _poly_generate_challenge(
 
             b = (32u) state[:u8 pos];
 
-            #declassify b = b;
+            #[declassify] b = b;
             pos += 1;
         } (b > j)
 

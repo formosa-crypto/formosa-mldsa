@@ -13,7 +13,7 @@ fn shake128_squeezeblock4x(
     reg u256 t256;
     reg u128 t128;
     inline int i;
-    #msf reg u64 msf = #init_msf();
+    #[msf] reg u64 msf = #init_msf();
 
     state, msf = _KeccakF1600_StatePermute4x(state, msf);
 
@@ -44,7 +44,7 @@ fn shake256_squeezeblock4x(
     stack u64[4] output_bytes;
 
     inline int i;
-    #msf reg u64 msf = #init_msf();
+    #[msf] reg u64 msf = #init_msf();
 
     state, msf = _KeccakF1600_StatePermute4x(state, msf);
 

@@ -38,7 +38,7 @@ export fn ml_dsa_87_keygen(
 {
     verification_key, signing_key = _crypto_sign_keypair_seed(verification_key, signing_key, seed);
 
-    #declassify verification_key = verification_key;
+    #[declassify] verification_key = verification_key;
 
     return verification_key, signing_key;
 }

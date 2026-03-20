@@ -161,7 +161,7 @@ fn _poly_chknorm(reg ptr u32[N] a, reg u32 B) -> reg u32 {
 
     reg u32 i; i = 0;
     while {
-#declassify t = a[i];
+#[declassify] t = a[i];
         t = -t if t <s 0;
 
         i += 1;

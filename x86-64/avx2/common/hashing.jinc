@@ -152,8 +152,8 @@ fn __shake256_consider_permute(reg ptr u64[25] state, reg u64 offset) -> reg ptr
 inline
 fn __derive_message_representative(
     reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash,
-    #spill_to_mmx reg ptr u64[2] context_message_pointers,
-    #spill_to_mmx reg ptr u64[2] context_message_sizes
+    #[spill_to_mmx] reg ptr u64[2] context_message_pointers,
+    #[spill_to_mmx] reg ptr u64[2] context_message_sizes
 ) -> stack u8[MESSAGE_REPRESENTATIVE_SIZE]
 {
     stack u8[MESSAGE_REPRESENTATIVE_SIZE] message_representative;

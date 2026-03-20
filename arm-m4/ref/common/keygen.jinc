@@ -36,7 +36,7 @@ fn _crypto_sign_keypair_seed(
     /***/
 
     reg ptr u8[SEEDBYTES] rho;
-    #declassify rho = state[:u8 0:SEEDBYTES];
+    #[declassify] rho = state[:u8 0:SEEDBYTES];
 
     /* Expand matrix */
     mat = _polyvec_matrix_expand(mat, rho);
