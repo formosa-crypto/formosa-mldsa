@@ -1,0 +1,136 @@
+// Refactored keygen implementation following the mldsa-native call tree structure.
+//
+// Function hierarchy (mirrors mld_compute_t0_t1_tr_from_sk_components):
+//   __keygen_internal                    ← non-inline, top-level keygen
+//     __keygen_prf                       ← H(randomness || K || L): expand seed
+//     __compute_t0_t1                    ← mld_compute_t0_t1_tr_from_sk_components
+//                                           (matrix multiply, power2round; returns t0, t1)
+
+inline
+fn __keygen_prf(
+    reg ptr u8[128] prf_output,
+    reg ptr u8[32] randomness
+) -> reg ptr u8[128] {
+    stack u8[2] extra;
+    reg u256[7] state;
+    extra[:u8 0] = ROWS_IN_MATRIX_A;
+    extra[:u8 1] = COLUMNS_IN_MATRIX_A;
+    state = shake256_absorb_34(randomness, extra);
+    prf_output = squeeze_128_bytes(prf_output, state);
+    return prf_output;
+}
+
+// Compute t = A·s1_ntt + s2, then power2round(t) → (t1, t0).
+// Mirrors the matrix-vector and rounding steps of
+// mld_compute_t0_t1_tr_from_sk_components from mldsa-native.
+// s1 must already be in NTT form (caller's responsibility); s2 is read-only.
+inline fn __compute_t0_t1(
+    #[spill_to_mmx] reg ptr u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A,
+    #[spill_to_mmx] reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1,
+    #[spill_to_mmx] reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2
+) -> stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
+     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+{
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t t0 t1;
+
+    t = row_vector::__multiply_with_matrix_A(matrix_A, s1);
+    t = column_vector::reduce32(t);
+    t = column_vector::invert_ntt_montgomery(t);
+
+    t = column_vector::__add(t, s2);
+    t = column_vector::__conditionally_add_modulus(t);
+
+    t1, t0 = column_vector::__power2round(t);
+    return t1, t0;
+}
+
+#[sct="{ptr: public, val: transient} *
+       {ptr: public, val: secret} *
+       {ptr: public, val: secret} ->
+       {ptr: public, val: transient} * {ptr: public, val: secret}"]
+fn __keygen_internal(
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    reg ptr u8[SIGNING_KEY_SIZE] signing_key,
+    reg ptr u8[32] randomness
+)
+    -> reg ptr u8[VERIFICATION_KEY_SIZE],
+       reg ptr u8[SIGNING_KEY_SIZE]
+{
+    reg ptr u8[VERIFICATION_KEY_SIZE] verification_key_pointer_copy;
+
+    // PRF
+    stack u8[128] prf_output;
+
+    // PRF outputs
+    #[public] stack u8[32] seed_for_matrix_A;
+    #[secret] stack u8[64] seed_for_error_vectors;
+    #[secret] stack u8[32] seed_for_signing;
+
+    // Matrices and vectors
+    stack u32[ROWS_IN_MATRIX_A * COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] matrix_A;
+    #[secret] stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
+    #[secret] stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
+
+    stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] t0 t1;
+
+    reg ptr u8[VERIFICATION_KEY_HASH_SIZE] verification_key_hash;
+
+    reg u256 copied_32_bytes;
+
+    () = #spill(verification_key, signing_key);
+
+    prf_output = __keygen_prf(prf_output, randomness);
+
+    #[declassify] seed_for_matrix_A = prf_output[:u8 0:SEED_FOR_MATRIX_A_SIZE];
+    matrix_A = sample::__matrix_A(seed_for_matrix_A);
+
+    seed_for_error_vectors = prf_output[:u8 SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
+    seed_for_signing = prf_output[:u8 SEED_FOR_MATRIX_A_SIZE + SEED_FOR_ERROR_VECTORS_SIZE:SEED_FOR_SIGNING_SIZE];
+
+    s1, s2 = sample::__error_vectors(seed_for_error_vectors);
+
+    // Serialize s1 and s2 before applying the NTT.
+    () = #unspill(signing_key);
+
+    // SEED_FOR_MATRIX_A_SIZE is always 32.
+    copied_32_bytes = seed_for_matrix_A.[:u256 0];
+    signing_key.[:u256 0] = copied_32_bytes;
+    verification_key.[:u256 0] = copied_32_bytes;
+
+    // SEED_FOR_SIGNING_SIZE is always 32.
+    copied_32_bytes = seed_for_signing.[:u256 0];
+    signing_key.[:u256 32] = copied_32_bytes;
+
+    signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY : S1_ENCODED_SIZE] =
+        s1::__encode(signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE], s1);
+
+    signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY : S2_ENCODED_SIZE] =
+        s2::__encode(signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY : S2_ENCODED_SIZE], s2);
+
+    () = #spill(signing_key);
+
+    s1 = row_vector::ntt(s1);
+
+    // Compute t = A·NTT(s1) + s2, power2round → (t1, t0).
+    t1, t0 = __compute_t0_t1(matrix_A, s1, s2);
+
+    // Encode t1 into the verification key.
+    verification_key[32: T1_ENCODED_SIZE]
+        = t1::__encode(verification_key[32: T1_ENCODED_SIZE], t1);
+    #[declassify] verification_key = verification_key;
+
+    // Hash the verification key → tr, store in signing key.
+    // Unspill signing_key here: the tr goes into signing_key[64:],
+    // and hash_verification_key is a function call that uses all registers.
+    verification_key_pointer_copy = verification_key;
+    () = #unspill(signing_key);
+    verification_key_hash = signing_key[64:VERIFICATION_KEY_HASH_SIZE];
+    verification_key_hash = hash_verification_key(verification_key_hash, verification_key_pointer_copy);
+    signing_key[64:VERIFICATION_KEY_HASH_SIZE] = verification_key_hash;
+
+    // Encode t0 into the signing key.
+    signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]
+        = t0::__encode(signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE], t0);
+
+    return verification_key, signing_key;
+}
