@@ -35,7 +35,7 @@ from Common require "keygen.jinc"
 
 require "sample/mask.jinc"
 require "encoding/commitment.jinc"
-from Common require "sign.jinc"
+from Common require "sign_new.jinc"
 
 from Common require "verify.jinc"
 
