@@ -31,7 +31,7 @@ from Common require "sample/error_vector_shuffles.jinc"
 require "sample/error_vectors/4x.jinc"
 require "sample/error_vectors.jinc"
 require "sample/matrix_A.jinc"
-from Common require "keygen.jinc"
+from Common require "keygen_new.jinc"
 
 require "sample/mask.jinc"
 require "encoding/commitment.jinc"
