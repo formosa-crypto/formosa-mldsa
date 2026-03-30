@@ -1,3 +1,6 @@
 [submodule "formosa-keccak"]
 	path = formosa-keccak
 	url = https://github.com/formosa-crypto/formosa-keccak.git
+[submodule "bench/mldsa-native"]
+	path = bench/mldsa-native
+	url = https://github.com/pq-code-package/mldsa-native

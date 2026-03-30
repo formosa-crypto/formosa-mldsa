@@ -91,23 +91,6 @@ check-sct: $(IMPLEMENTATION)/ml_dsa.jazz
 	env JASMINPATH="Common=$(COMMON):Keccak=$(KECCAK)" $(JASMINCT) $(JASMINCT_FLAGS) --speculative $^
 
 # --------------------------------------------------------------------
-#  Benchmarking
-# --------------------------------------------------------------------
-bench_jasmin.o: $(OUTPUT_FILE_NAME).s bench/bench_jasmin.c bench/notrandombytes.c $(IMPLEMENTATION)/api.h
-	$(CC) -Wall -Werror \
-		  -DIMPLEMENTATION_TYPE=$(IMPLEMENTATION_TYPE) \
-		  -DKEYGEN=ml_dsa_$(PARAMETER_SET)_keygen \
-		  -DSIGN=ml_dsa_$(PARAMETER_SET)_sign \
-		  -DVERIFY=ml_dsa_$(PARAMETER_SET)_verify \
-		  $^ -I $(IMPLEMENTATION) -o $@
-
-bench_pqclean_65_avx2.o: bench/bench_pqclean_65_avx2.c bench/notrandombytes.c bench/pqclean_ml_dsa_65_avx2/libml-dsa-65_avx2.a
-	$(CC) -Wall -Werror $^ -o $@
-
-bench/pqclean_ml_dsa_65_avx2/libml-dsa-65_avx2.a:
-	$(MAKE) -C bench/pqclean_ml_dsa_65_avx2
-
-# --------------------------------------------------------------------
 .PHONY: clean
 clean:
 	rm -fr *.s *.so *.o *.core
