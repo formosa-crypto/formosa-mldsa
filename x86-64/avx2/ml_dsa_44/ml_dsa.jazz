@@ -85,8 +85,7 @@ export fn ml_dsa_44_sign(
     context_size = (64ui) context[1];
 
     if (context_size <= 255) {
-        signature = __sign_internal(signature, signing_key, context_pointer, context_size, message_pointer, message_size, randomness);
-        result = 0;
+        signature, result = __sign_internal(signature, signing_key, context_pointer, context_size, message_pointer, message_size, randomness);
     } else {
         result = -1;
     }
