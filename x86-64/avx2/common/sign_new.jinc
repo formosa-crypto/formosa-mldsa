@@ -178,6 +178,8 @@ inline fn __make_hint_vector(
 ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64 {
     reg u64 total_ones_in_hint ones_in_hint;
     reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hint_element;
+    reg bool hint_count_exceeded;
+    reg u8 hint_count_fail;
     inline int i;
 
     total_ones_in_hint = 0;
@@ -194,15 +196,10 @@ inline fn __make_hint_vector(
         }
     }
 
-    #[declassify] infinity_norm_check_result = infinity_norm_check_result;
-    if (infinity_norm_check_result == 0) {
-        #[declassify] total_ones_in_hint = total_ones_in_hint;
-        if (total_ones_in_hint <= MAX_ONES_IN_HINT) {
-            infinity_norm_check_result = 0;
-        } else {
-            infinity_norm_check_result = 1;
-        }
-    }
+    // Branchless hint count check (mirrors mldsa-native: no declassify of total_ones_in_hint).
+    hint_count_exceeded = total_ones_in_hint > MAX_ONES_IN_HINT;
+    hint_count_fail = #SETcc(hint_count_exceeded);
+    infinity_norm_check_result |= (64u) hint_count_fail;
 
     return hint, infinity_norm_check_result;
 }
@@ -353,6 +350,8 @@ fn __sign_internal(
 
         // Compute hints using w0_minus_cs2_plus_ct0 and w1.
         // Also checks that the total number of hint bits does not exceed MAX_ONES_IN_HINT.
+        // Mirrors mldsa-native: declassify the fully-processed w0 buffer before make_hint.
+        #[declassify] w0_minus_cs2_plus_ct0 = w0_minus_cs2_plus_ct0;
         hint, infinity_norm_check_result =
             __make_hint_vector(w0_minus_cs2_plus_ct0, w1, hint, infinity_norm_check_result);
 
