@@ -1,6 +1,7 @@
 import atexit
 import argparse
 import git
+import os
 import subprocess
 import sys
 
@@ -45,6 +46,9 @@ def shell(command, expect=0, cwd=None):
     return completed.stdout.decode("utf-8")
 
 
+BENCH_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
 parser = argparse.ArgumentParser(
     prog="compare_performance.py",
     description="Compare the difference in the performance of a specified implementation between two repository commits.",
@@ -77,18 +81,18 @@ if repo.is_dirty(path=args.implementation):
 print("Measuring baseline performance at commit '{}'".format(args.old))
 repo.git.checkout(args.old, args.implementation)
 
-shell(["make", "bench_jasmin.o"])
+shell(["make", "bench_jasmin"], cwd=BENCH_DIR)
 
-old = shell(["./bench_jasmin.o"])
+old = shell(["./bench_jasmin"], cwd=BENCH_DIR)
 old = parse_bench_output(old)
 
 # Measure new performance
 print("Now measuring performance at commit '{}'".format(args.new))
 repo.git.checkout(args.new, args.implementation)
 
-shell(["make", "bench_jasmin.o"])
+shell(["make", "bench_jasmin"], cwd=BENCH_DIR)
 
-new = shell(["./bench_jasmin.o"])
+new = shell(["./bench_jasmin"], cwd=BENCH_DIR)
 new = parse_bench_output(new)
 
 # Now compute some statistics
