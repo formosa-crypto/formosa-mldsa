@@ -176,7 +176,7 @@ inline fn __make_hint_vector(
     reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint,
     reg u64 infinity_norm_check_result
 ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64 {
-    reg u64 total_ones_in_hint ones_in_hint;
+    reg u64 total_ones_in_hint ones_in_hint hint_count_fail_64;
     reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hint_element;
     reg bool hint_count_exceeded;
     reg u8 hint_count_fail;
@@ -199,7 +199,8 @@ inline fn __make_hint_vector(
     // Branchless hint count check (mirrors mldsa-native: no declassify of total_ones_in_hint).
     hint_count_exceeded = total_ones_in_hint > MAX_ONES_IN_HINT;
     hint_count_fail = #SETcc(hint_count_exceeded);
-    infinity_norm_check_result |= (64u) hint_count_fail;
+    hint_count_fail_64 = (64u)(8u) hint_count_fail;
+    infinity_norm_check_result |= hint_count_fail_64;
 
     return hint, infinity_norm_check_result;
 }
