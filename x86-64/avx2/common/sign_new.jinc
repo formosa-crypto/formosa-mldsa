@@ -265,6 +265,7 @@ fn __sign_internal(
     reg u64 infinity_norm_check_result result;
     reg u32 kappa_diff;
     reg bool kappa_zf;
+    reg u8 kappa_bit;
 
     reg u256 copied_32_bytes;
 
@@ -365,9 +366,11 @@ fn __sign_internal(
         // Branchless kappa bound check (mirrors mldsa-native MLD_NONCE_UB).
         // domain_separator_for_mask has just been incremented by L inside __mask.
         // XOR with the bound gives 0 iff we have reached it; TEST sets ZF accordingly.
-        kappa_diff = (32u) domain_separator_for_mask ^ MASK_DOMAIN_SEPARATOR_UB;
+        kappa_diff = (32u) domain_separator_for_mask;
+        kappa_diff ^= MASK_DOMAIN_SEPARATOR_UB;
         _, _, _, _, kappa_zf = #TEST_32(kappa_diff, kappa_diff);
-        kappa_exceeded |= #SETcc(kappa_zf);
+        kappa_bit = #SETcc(kappa_zf);
+        kappa_exceeded |= kappa_bit;
         exit_rejection_sampling_loop |= kappa_exceeded;
     }
 
@@ -378,6 +381,9 @@ fn __sign_internal(
     signature = signature::__encode(signature, commitment_hash, signer_response, hint);
 
     // result = 0 on success, -1 (all-ones) if kappa bound was reached.
-    result = 0 - (64u) kappa_exceeded;
+    // Broadcast bit 0 of kappa_exceeded to all 64 bits via arithmetic shift.
+    result = (64u) kappa_exceeded;
+    result <<= 63;
+    result >>s= 63;
     return signature, result;
 }
