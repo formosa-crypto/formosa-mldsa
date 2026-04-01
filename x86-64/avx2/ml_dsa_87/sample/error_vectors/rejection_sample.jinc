@@ -64,7 +64,7 @@ __write_out_8_coefficients(
 
     shuffle_table_idx = good;
     shuffle_table_idx <<= 3;
-    shuffles = (128u)shuffle_table_pointer.[:u64 shuffle_table_idx];
+    shuffles = #VMOV_64(shuffle_table_pointer.[:u64 shuffle_table_idx]);
 
     error_coefficients_128 = #VPSHUFB_128(coefficient_block, shuffles);
     error_coefficients = #VPMOVSX_8u8_8u32(error_coefficients_128);
