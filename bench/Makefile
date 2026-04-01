@@ -11,7 +11,7 @@ COMMON = $(ROOT_DIR)/$(ARCHITECTURE)/$(IMPLEMENTATION_TYPE)/common
 IMPLEMENTATION = $(ROOT_DIR)/$(ARCHITECTURE)/$(IMPLEMENTATION_TYPE)/ml_dsa_$(PARAMETER_SET)
 OUTPUT_FILE_NAME = $(ROOT_DIR)/ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)_$(ARCHITECTURE)
 
-.PHONY: all clean
+.PHONY: all clean compare_performance
 
 all: bench_jasmin bench_mldsa_native_65
 
@@ -41,3 +41,6 @@ bench_mldsa_native_65: bench_mldsa_native_65.c bench_common.c notrandombytes.c $
 clean:
 	$(MAKE) -C $(MLDSA_NATIVE_DIR) clean
 	rm -rf bench_jasmin bench_mldsa_native_65
+
+compare_performance:
+	python3 compare_performance.py $(if $(MARKDOWN),--markdown,) $(if $(COLOR),--color $(COLOR),)

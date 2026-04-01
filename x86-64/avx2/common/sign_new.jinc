@@ -64,28 +64,31 @@ inline fn __compute_z_and_check_norm(
     reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1,
     #[spill_to_mmx] reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] verifier_challenge,
     reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask,
-    reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response
+    reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] signer_response,
+    reg u64 infinity_norm_check_result
 ) -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64 {
-    reg u64 infinity_norm_check_result;
-    inline int i;
+    reg ui64 base;
 
-    infinity_norm_check_result = 0;
-    for i = 0 to COLUMNS_IN_MATRIX_A {
+    base = 0;
+    while {
         #[declassify] infinity_norm_check_result = infinity_norm_check_result;
-        if (infinity_norm_check_result == 0) {
-            signer_response[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
-                __compute_signer_response_element(
-                    s1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                    verifier_challenge,
-                    mask[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                    signer_response[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]
-                );
-            infinity_norm_check_result =
-                polynomial::__check_infinity_norm(
-                    signer_response[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                    (int)(GAMMA1 - BETA)
-                );
+        if (infinity_norm_check_result != 0) {
+            base = COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL;
         }
+    } (base < COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
+        signer_response[base : COEFFICIENTS_IN_POLYNOMIAL] =
+            __compute_signer_response_element(
+                s1[base : COEFFICIENTS_IN_POLYNOMIAL],
+                verifier_challenge,
+                mask[base : COEFFICIENTS_IN_POLYNOMIAL],
+                signer_response[base : COEFFICIENTS_IN_POLYNOMIAL]
+            );
+        infinity_norm_check_result =
+            polynomial::__check_infinity_norm(
+                signer_response[base : COEFFICIENTS_IN_POLYNOMIAL],
+                (int)(GAMMA1 - BETA)
+            );
+        base = base + COEFFICIENTS_IN_POLYNOMIAL;
     }
     return signer_response, infinity_norm_check_result;
 }
@@ -101,29 +104,33 @@ inline fn __apply_cs2_and_check_norm(
     reg u64 infinity_norm_check_result
 ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64 {
     stack u32[COEFFICIENTS_IN_POLYNOMIAL] cs2;
-    inline int i;
+    reg ui64 base;
 
-    for i = 0 to ROWS_IN_MATRIX_A {
+    base = 0;
+    while {
         #[declassify] infinity_norm_check_result = infinity_norm_check_result;
-        if (infinity_norm_check_result == 0) {
-            cs2 = polynomial::pointwise_montgomery_multiply_and_reduce(
-                      cs2,
-                      s2[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                      verifier_challenge);
-            cs2 = polynomial::invert_ntt_montgomery(cs2);
-            w0_minus_cs2[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
-                polynomial::subtract(
-                    w0_minus_cs2[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                    w0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                    cs2);
-            w0_minus_cs2[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
-                polynomial::reduce32(
-                    w0_minus_cs2[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]);
-            infinity_norm_check_result =
-                polynomial::__check_infinity_norm(
-                    w0_minus_cs2[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                    (int)(GAMMA2 - BETA));
+        if (infinity_norm_check_result != 0) {
+            base = ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL;
         }
+    } (base < ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
+        cs2 = polynomial::pointwise_montgomery_multiply_and_reduce(
+                    cs2,
+                    s2[base : COEFFICIENTS_IN_POLYNOMIAL],
+                    verifier_challenge);
+        cs2 = polynomial::invert_ntt_montgomery(cs2);
+        w0_minus_cs2[base : COEFFICIENTS_IN_POLYNOMIAL] =
+            polynomial::subtract(
+                w0_minus_cs2[base : COEFFICIENTS_IN_POLYNOMIAL],
+                w0[base : COEFFICIENTS_IN_POLYNOMIAL],
+                cs2);
+        w0_minus_cs2[base : COEFFICIENTS_IN_POLYNOMIAL] =
+            polynomial::reduce32(
+                w0_minus_cs2[base : COEFFICIENTS_IN_POLYNOMIAL]);
+        infinity_norm_check_result =
+            polynomial::__check_infinity_norm(
+                w0_minus_cs2[base : COEFFICIENTS_IN_POLYNOMIAL],
+                (int)(GAMMA2 - BETA));
+        base = base + COEFFICIENTS_IN_POLYNOMIAL;
     }
     return w0_minus_cs2, infinity_norm_check_result;
 }
@@ -140,28 +147,32 @@ inline fn __apply_ct0_and_check_norm(
     reg u64 infinity_norm_check_result
 ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64 {
     stack u32[COEFFICIENTS_IN_POLYNOMIAL] ct0;
-    inline int i;
+    reg ui64 base;
 
-    for i = 0 to ROWS_IN_MATRIX_A {
+    base = 0;
+    while {
+        #[declassify] infinity_norm_check_result = infinity_norm_check_result;
+        if (infinity_norm_check_result != 0) {
+            base = ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL;
+        }
+    } (base < ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
+        ct0 = polynomial::pointwise_montgomery_multiply_and_reduce(
+                    ct0,
+                    t0[base : COEFFICIENTS_IN_POLYNOMIAL],
+                    verifier_challenge);
+        ct0 = polynomial::invert_ntt_montgomery(ct0);
+        ct0 = polynomial::reduce32(ct0);
+        infinity_norm_check_result =
+            polynomial::__check_infinity_norm(ct0, GAMMA2);
         #[declassify] infinity_norm_check_result = infinity_norm_check_result;
         if (infinity_norm_check_result == 0) {
-            ct0 = polynomial::pointwise_montgomery_multiply_and_reduce(
-                      ct0,
-                      t0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                      verifier_challenge);
-            ct0 = polynomial::invert_ntt_montgomery(ct0);
-            ct0 = polynomial::reduce32(ct0);
-            infinity_norm_check_result =
-                polynomial::__check_infinity_norm(ct0, GAMMA2);
-            #[declassify] infinity_norm_check_result = infinity_norm_check_result;
-            if (infinity_norm_check_result == 0) {
-                w0_minus_cs2_plus_ct0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
-                    polynomial::add(
-                        w0_minus_cs2_plus_ct0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                        w0_minus_cs2[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                        ct0);
-            }
+            w0_minus_cs2_plus_ct0[base : COEFFICIENTS_IN_POLYNOMIAL] =
+                polynomial::add(
+                    w0_minus_cs2_plus_ct0[base : COEFFICIENTS_IN_POLYNOMIAL],
+                    w0_minus_cs2[base : COEFFICIENTS_IN_POLYNOMIAL],
+                    ct0);
         }
+        base = base + COEFFICIENTS_IN_POLYNOMIAL;
     }
     return w0_minus_cs2_plus_ct0, infinity_norm_check_result;
 }
@@ -180,20 +191,24 @@ inline fn __make_hint_vector(
     reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hint_element;
     reg bool hint_count_exceeded;
     reg u8 hint_count_fail;
-    inline int i;
+    reg ui64 base;
 
     total_ones_in_hint = 0;
-    for i = 0 to ROWS_IN_MATRIX_A {
+    base = 0;
+    while {
         #[declassify] infinity_norm_check_result = infinity_norm_check_result;
-        if (infinity_norm_check_result == 0) {
-            hint_element = hint[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL];
-            hint_element, ones_in_hint = polynomial::__make_hint(
-                hint_element,
-                w0_minus_cs2_plus_ct0[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                w1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL]);
-            hint[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] = hint_element;
-            total_ones_in_hint += ones_in_hint;
+        if (infinity_norm_check_result != 0) {
+            base = ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL;
         }
+    } (base < ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL) {
+        hint_element = hint[base : COEFFICIENTS_IN_POLYNOMIAL];
+        hint_element, ones_in_hint = polynomial::__make_hint(
+            hint_element,
+            w0_minus_cs2_plus_ct0[base : COEFFICIENTS_IN_POLYNOMIAL],
+            w1[base : COEFFICIENTS_IN_POLYNOMIAL]);
+        hint[base : COEFFICIENTS_IN_POLYNOMIAL] = hint_element;
+        total_ones_in_hint += ones_in_hint;
+        base = base + COEFFICIENTS_IN_POLYNOMIAL;
     }
 
     // Branchless hint count check (mirrors mldsa-native: no declassify of total_ones_in_hint).
@@ -337,9 +352,7 @@ fn __sign_internal(
 
         verifier_challenge = polynomial::ntt(verifier_challenge);
 
-        // Compute z = mask + c*s1, reject if z reveals the secret (mirrors mld_compute_pack_z).
-        signer_response, infinity_norm_check_result =
-            __compute_z_and_check_norm(s1, verifier_challenge, mask, signer_response);
+        infinity_norm_check_result = 0;
 
         // Compute w0_minus_cs2[i] = w0[i] - c*s2[i] for each row, check norm.
         w0_minus_cs2, infinity_norm_check_result =
@@ -348,6 +361,10 @@ fn __sign_internal(
         // Compute w0_minus_cs2_plus_ct0[i] = w0_minus_cs2[i] + c*t0[i] for each row, check norm.
         w0_minus_cs2_plus_ct0, infinity_norm_check_result =
             __apply_ct0_and_check_norm(w0_minus_cs2_plus_ct0, w0_minus_cs2, t0, verifier_challenge, infinity_norm_check_result);
+
+        // Compute z = mask + c*s1, reject if z reveals the secret (mirrors mld_compute_pack_z).
+        signer_response, infinity_norm_check_result =
+            __compute_z_and_check_norm(s1, verifier_challenge, mask, signer_response, infinity_norm_check_result);
 
         // Compute hints using w0_minus_cs2_plus_ct0 and w1.
         // Also checks that the total number of hint bits does not exceed MAX_ONES_IN_HINT.
