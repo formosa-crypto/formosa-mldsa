@@ -22,7 +22,7 @@ u256 TWO_POW_22_VECTOR = (8u32)[
     1 << 22
 ];
 
-fn montgomery_multiply_and_reduce(reg u256 lhs, reg u256 rhs) -> reg u256
+inline fn montgomery_multiply_and_reduce(reg u256 lhs, reg u256 rhs) -> reg u256
 {
     reg u256 lhs_high rhs_high;
     reg u256 product_low product_high;
