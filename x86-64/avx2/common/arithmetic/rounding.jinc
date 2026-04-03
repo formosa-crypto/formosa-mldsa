@@ -3,7 +3,7 @@ namespace polynomial {
     fn __make_hint(
         #[spill_to_mmx] reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hints,
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] low_coefficients high_coefficients
-    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg ui64
     {
         reg u256 hint_block;
         reg u256 low abs_low high;
@@ -12,7 +12,8 @@ namespace polynomial {
         reg u256 low_equals_minus_gamma2_and_high_is_nonzero;
 
         reg u64 offset temp;
-        reg u64 num_hints weight;
+        reg u64 num_hints;
+        reg ui64 weight;
 
         temp = GAMMA2;
         gamma2 = (256u)#VMOV_64(temp);
@@ -51,7 +52,7 @@ namespace polynomial {
             hints.[:u256 offset] = hint_block;
             offset += 32;
 
-            weight += num_hints;
+            weight += (ui64)num_hints;
         }
 
         return hints, weight;
