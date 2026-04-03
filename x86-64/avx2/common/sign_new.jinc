@@ -187,7 +187,8 @@ inline fn __make_hint_vector(
     reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] hint,
     reg u64 infinity_norm_check_result
 ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL], reg u64 {
-    reg u64 total_ones_in_hint ones_in_hint hint_count_fail_64;
+    reg ui64 total_ones_in_hint ones_in_hint;
+    reg u64 hint_count_fail_64;
     reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] hint_element;
     reg bool hint_count_exceeded;
     reg u8 hint_count_fail;

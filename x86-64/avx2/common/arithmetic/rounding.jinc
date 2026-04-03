@@ -52,7 +52,7 @@ namespace polynomial {
             hints.[:u256 offset] = hint_block;
             offset += 32;
 
-            weight += (ui64)num_hints;
+            weight += (64ui)num_hints;
         }
 
         return hints, weight;
