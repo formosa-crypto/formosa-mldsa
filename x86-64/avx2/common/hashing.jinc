@@ -123,6 +123,8 @@ fn __derive_message_representative(
 
     reg u256 copied_32_bytes;
     reg ui64 buf len;
+    reg ui8 rate64;
+    reg u8 trailb;
 
     // Build the fixed 66-byte prefix: vk_hash || 0 || context_size.
     // VERIFICATION_KEY_HASH_SIZE is always 64.
@@ -136,10 +138,13 @@ fn __derive_message_representative(
     () = #spill(context_pointer, context_size, message_pointer, message_size);
 
     // Initialize SHAKE256 streaming state: rate = 136 = 17*8 bytes, trail byte = 0x1f.
-    state = _init_updstate_avx2(state, 17, SHAKE);
+    rate64 = 17;
+    trailb = SHAKE;
+    state = _init_updstate_avx2(state, rate64, trailb);
 
     // One-shot absorb of the fixed-size prefix.
-    state = A66::_update_updstate_avx2(state, prefix);
+    len = 66;
+    state = A66::_update_updstate_avx2(state, prefix, len);
 
     // Absorb context (variable-length, accessed via memory pointer).
     () = #unspill(context_pointer, context_size);
@@ -155,7 +160,8 @@ fn __derive_message_representative(
 
     // Finalize the SHAKE256 stream, then permute and squeeze MESSAGE_REPRESENTATIVE_SIZE = 64 bytes.
     state = _finish_updstate_avx2(state);
-    state, message_representative = A64::_squeeze_updstate_avx2(state, message_representative);
+    len = 64;
+    state, message_representative = A64::_squeeze_updstate_avx2(state, message_representative, len);
 
     return message_representative;
 }
