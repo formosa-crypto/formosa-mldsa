@@ -273,13 +273,15 @@ fn __sign_internal(
     stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] w;
     stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] mask_as_ntt;
 
-    #[public] reg u8 exit_rejection_sampling_loop;
-    #[public] reg u8 kappa_exceeded;
+    #[public] reg u64 exit_rejection_sampling_loop;
+    reg u64 kappa_exceeded;
 
     reg u64 infinity_norm_check_result result;
+    stack u64 last_norm_check_result;
     reg u32 kappa_diff;
     reg bool kappa_zf;
     reg u8 kappa_bit;
+    reg u64 kappa_bit_64;
 
     reg u256 copied_32_bytes;
 
@@ -324,7 +326,7 @@ fn __sign_internal(
     //
     // The security of this rejection sampling loop CANNOT be established through
     // type-checking alone, and requires proving work in EasyCrypt.
-    while (exit_rejection_sampling_loop != 1) {
+    while (exit_rejection_sampling_loop == 0) {
         mask, domain_separator_for_mask = sample::__mask(seed_for_mask, domain_separator_for_mask);
 
         // Deep copy mask into mask_as_ntt using AVX2.
@@ -374,12 +376,12 @@ fn __sign_internal(
         hint, infinity_norm_check_result =
             __make_hint_vector(w0_minus_cs2_plus_ct0, w1, hint, infinity_norm_check_result);
 
+        // Branchless loop-exit flag: pass (0) → exit (1), fail (1) → continue (0).
+        // infinity_norm_check_result is always 0 or 1 (SETcc values ORed together).
         #[declassify] infinity_norm_check_result = infinity_norm_check_result;
-        if (infinity_norm_check_result == 0) {
-            exit_rejection_sampling_loop = 1;
-        } else {
-            exit_rejection_sampling_loop = 0;
-        }
+        last_norm_check_result = infinity_norm_check_result;
+        exit_rejection_sampling_loop = infinity_norm_check_result;
+        exit_rejection_sampling_loop ^= 1;
 
         // Branchless kappa bound check (mirrors mldsa-native MLD_NONCE_UB).
         // domain_separator_for_mask has just been incremented by L inside __mask.
@@ -388,7 +390,8 @@ fn __sign_internal(
         kappa_diff ^= MASK_DOMAIN_SEPARATOR_UB;
         _, _, _, _, kappa_zf = #TEST_32(kappa_diff, kappa_diff);
         kappa_bit = #SETcc(kappa_zf);
-        kappa_exceeded |= kappa_bit;
+        kappa_bit_64 = (64u) kappa_bit;
+        kappa_exceeded |= kappa_bit_64;
         exit_rejection_sampling_loop |= kappa_exceeded;
     }
 
@@ -398,9 +401,10 @@ fn __sign_internal(
     #[declassify] signer_response = signer_response;
     signature = signature::__encode(signature, commitment_hash, signer_response, hint);
 
-    // result = 0 on success, -1 (all-ones) if kappa bound was reached.
-    // Broadcast bit 0 of kappa_exceeded to all 64 bits via arithmetic shift.
-    result = (64u) kappa_exceeded;
+    // result = 0 on success, -1 on failure.
+    // last_norm_check_result is 0 iff the exiting iteration produced a valid
+    // signature (reset to 0 each iteration). Broadcast bit 0 to all 64 bits.
+    result = last_norm_check_result;
     result <<= 63;
     result >>s= 63;
     return signature, result;
