@@ -285,7 +285,7 @@ fn __sign_internal(
 
     reg u256 copied_32_bytes;
 
-    reg u64 j;
+    reg ui64 j;
 
     () = #spill(signature, randomness, signing_key, message_pointer, message_size);
     #[declassify] seed_for_matrix_A = signing_key[0:32];
