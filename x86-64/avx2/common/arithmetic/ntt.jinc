@@ -181,17 +181,17 @@ namespace polynomial {
     // ----------- Layers 3,4,5 -------------
     fn ntt_round(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
-        reg u64 step,
-        reg u64 step_by,
-        reg u64 start,
+        reg ui64 step,
+        reg ui64 step_by,
+        reg ui64 start,
         reg u256 zetas
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 coeffs_i coeffs_i_plus_step;
         reg u256 product;
 
-        reg u64 offset bound;
-        reg u64 i index index_plus_step;
+        reg ui64 offset bound;
+        reg ui64 i index index_plus_step;
 
         offset = start;
         offset *= step;
@@ -229,9 +229,9 @@ namespace polynomial {
          reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 start;
+        reg ui64 start;
         reg u256 zetas;
-        reg u64 step step_by;
+        reg ui64 step step_by;
 
         step = 1 << 3;
         step_by = (1 << 3) / COEFFICIENTS_PER_YMM_REGISTER;
@@ -250,9 +250,9 @@ namespace polynomial {
          reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 start;
+        reg ui64 start;
         reg u256 zetas;
-        reg u64 step step_by;
+        reg ui64 step step_by;
 
         step = 1 << 4;
         step_by = (1 << 4) / COEFFICIENTS_PER_YMM_REGISTER;
@@ -271,9 +271,9 @@ namespace polynomial {
          reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 start;
+        reg ui64 start;
         reg u256 zetas;
-        reg u64 step step_by;
+        reg ui64 step step_by;
 
         step = 1 << 5;
         step_by = (1 << 5) / COEFFICIENTS_PER_YMM_REGISTER;

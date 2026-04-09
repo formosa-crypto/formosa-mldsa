@@ -60,7 +60,7 @@ namespace polynomial {
         reg u256 lhs_coeffs rhs_coeffs;
         reg u256 product_coeffs;
 
-        reg u64 offset;
+        reg ui64 offset;
 
         offset = 0;
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
@@ -86,7 +86,7 @@ namespace polynomial {
         reg u256 zero mask;
         reg u256 lhs rhs;
         reg u256 modulus;
-        reg u64 offset;
+        reg ui64 offset;
 
         modulus = MODULUS_VECTOR;
 
@@ -114,7 +114,7 @@ namespace polynomial {
         reg u256 two_pow_22 modulus;
         reg u256 a t;
 
-        reg u64 offset;
+        reg ui64 offset;
 
         two_pow_22 = TWO_POW_22_VECTOR;
         modulus = MODULUS_VECTOR;

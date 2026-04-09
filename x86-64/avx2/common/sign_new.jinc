@@ -316,6 +316,7 @@ fn __sign_internal(
 
     exit_rejection_sampling_loop = 0;
     kappa_exceeded = 0;
+    last_norm_check_result = 1;
 
     // WARNING WARNING WARNING
     //

@@ -2,7 +2,7 @@ namespace polynomial {
     // ----------- Layer 0 -------------
     fn invert_at_layer_0(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
-        reg u64 start,
+        reg ui64 start,
         reg u256 zetas
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -10,7 +10,7 @@ namespace polynomial {
         reg u256 low_values high_values;
         reg u256 differences sums;
 
-        reg u64 coeffs_i_start coeffs_i_plus_1_start;
+        reg ui64 coeffs_i_start coeffs_i_plus_1_start;
 
         coeffs_i_start = start;
         coeffs_i_start *= 32;
@@ -45,7 +45,7 @@ namespace polynomial {
          reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 start;
+        reg ui64 start;
         reg u256 zetas;
 
         inline int i;
@@ -62,7 +62,7 @@ namespace polynomial {
     // ----------- Layer 1 -------------
     fn invert_at_layer_1(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
-        reg u64 start,
+        reg ui64 start,
         reg u256 zetas
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -70,7 +70,7 @@ namespace polynomial {
         reg u256 low_values high_values;
         reg u256 sums differences;
 
-        reg u64 coeffs_i_start coeffs_i_plus_1_start;
+        reg ui64 coeffs_i_start coeffs_i_plus_1_start;
 
         coeffs_i_start = start;
         coeffs_i_start *= 32;
@@ -100,7 +100,7 @@ namespace polynomial {
          reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 start;
+        reg ui64 start;
         reg u256 zetas;
 
         inline int i;
@@ -117,7 +117,7 @@ namespace polynomial {
     // ----------- Layer 2 -------------
     fn invert_at_layer_2(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
-        reg u64 start,
+        reg ui64 start,
         reg u256 zetas
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
@@ -125,7 +125,7 @@ namespace polynomial {
         reg u256 low_values high_values;
         reg u256 sums differences;
 
-        reg u64 coeffs_i_start coeffs_i_plus_1_start;
+        reg ui64 coeffs_i_start coeffs_i_plus_1_start;
 
         coeffs_i_start = start;
         coeffs_i_start *= 32;
@@ -155,7 +155,7 @@ namespace polynomial {
          reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
-        reg u64 start;
+        reg ui64 start;
         reg u256 zetas;
 
         inline int i;
@@ -172,21 +172,21 @@ namespace polynomial {
     // ----------- Helper for layers 3 and beyond -------------
     fn invert_ntt_round(
         reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
-        reg u64 offset,
-        reg u64 step_by,
+        reg ui64 offset,
+        reg ui64 step_by,
         reg u32 zeta
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 a_minus_b;
 
-        reg u64 index_i index_i_plus_step_by;
+        reg ui64 index_i index_i_plus_step_by;
         reg u256 coeffs_i coeffs_i_plus_step_by;
         reg u256 zetas;
 
         zetas = (256u)#VMOV_32(zeta);
         zetas = #VPBROADCAST_8u32(zetas);
 
-        reg u64 i;
+        reg ui64 i;
 
         i = offset;
         offset += step_by;
@@ -222,7 +222,7 @@ namespace polynomial {
         inline int STEP = 8; // 1 << layer
         inline int STEP_BY = STEP / COEFFICIENTS_PER_YMM_REGISTER;
 
-        reg u64 offset step_by;
+        reg ui64 offset step_by;
         reg u32 zeta;
 
         inline int i;
@@ -244,7 +244,7 @@ namespace polynomial {
         inline int STEP = 16; // 1 << layer
         inline int STEP_BY = STEP / COEFFICIENTS_PER_YMM_REGISTER;
 
-        reg u64 offset step_by;
+        reg ui64 offset step_by;
         reg u32 zeta;
 
         inline int i;
@@ -266,7 +266,7 @@ namespace polynomial {
         inline int STEP = 32; // 1 << layer
         inline int STEP_BY = STEP / COEFFICIENTS_PER_YMM_REGISTER;
 
-        reg u64 offset step_by;
+        reg ui64 offset step_by;
         reg u32 zeta;
 
         inline int i;
@@ -288,7 +288,7 @@ namespace polynomial {
         inline int STEP = 64; // 1 << layer
         inline int STEP_BY = STEP / COEFFICIENTS_PER_YMM_REGISTER;
 
-        reg u64 offset step_by;
+        reg ui64 offset step_by;
         reg u32 zeta;
 
         inline int i;
@@ -310,7 +310,7 @@ namespace polynomial {
         inline int STEP = 128; // 1 << layer
         inline int STEP_BY = STEP / COEFFICIENTS_PER_YMM_REGISTER;
 
-        reg u64 offset step_by;
+        reg ui64 offset step_by;
         reg u32 zeta;
 
         inline int i;
@@ -330,7 +330,8 @@ namespace polynomial {
     ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
     {
         reg u256 coefficients twiddle_factors;
-        reg u64 i temp;
+        reg ui64 i;
+        reg u64 temp;
 
         polynomial = invert_ntt_at_layer_0(polynomial);
         polynomial = invert_ntt_at_layer_1(polynomial);

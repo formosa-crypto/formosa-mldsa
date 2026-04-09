@@ -11,7 +11,8 @@ namespace polynomial {
         reg u256 low_out_of_bounds;
         reg u256 low_equals_minus_gamma2_and_high_is_nonzero;
 
-        reg u64 offset temp;
+        reg ui64 offset;
+        reg u64 temp;
         reg u64 num_hints;
         reg ui64 weight;
 
@@ -70,7 +71,8 @@ namespace polynomial {
         reg u256 high low;
         reg u256 half_t0_bits ones_vector;
 
-        reg u64 offset temp;
+        reg ui64 offset;
+        reg u64 temp;
 
         half_t0_bits = HALF_OF_BITS_IN_T0_VECTOR;
 
