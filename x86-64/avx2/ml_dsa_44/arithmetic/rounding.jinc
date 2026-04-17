@@ -20,7 +20,7 @@ namespace polynomial {
 
         reg u256 lower upper mask zeros;
 
-        reg u64 offset;
+        reg ui64 offset;
 
         modulus = MODULUS_VECTOR;
         modulus_halved = #VPSRL_8u32(modulus, 1);
@@ -80,7 +80,7 @@ namespace polynomial {
 
         stack u32[COEFFICIENTS_IN_POLYNOMIAL] highs lows;
 
-        reg u64 offset;
+        reg ui64 offset;
 
         max = CONSTANTS_TABLE[4]; // 43
 
