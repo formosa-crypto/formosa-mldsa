@@ -344,12 +344,12 @@ fn __sign_internal(
         w = column_vector::invert_ntt_montgomery(w);
 
         w = column_vector::__conditionally_add_modulus(w);
-        #[declassify] w0, w1 = column_vector::__decompose(w);
+        w0, w1 = column_vector::__decompose(w);
 
         commitment_encoded = commitment::__encode(w1);
 
         () = #spill(domain_separator_for_mask);
-        #[declassify] commitment_hash = __derive_commitment_hash(message_representative, commitment_encoded);
+        commitment_hash = __derive_commitment_hash(message_representative, commitment_encoded);
 
         verifier_challenge = sample::__challenge(verifier_challenge, commitment_hash);
         () = #unspill(domain_separator_for_mask);
@@ -372,8 +372,7 @@ fn __sign_internal(
 
         // Compute hints using w0_minus_cs2_plus_ct0 and w1.
         // Also checks that the total number of hint bits does not exceed MAX_ONES_IN_HINT.
-        // Mirrors mldsa-native: declassify the fully-processed w0 buffer before make_hint.
-        #[declassify] w0_minus_cs2_plus_ct0 = w0_minus_cs2_plus_ct0;
+        w0_minus_cs2_plus_ct0 = w0_minus_cs2_plus_ct0;
         hint, infinity_norm_check_result =
             __make_hint_vector(w0_minus_cs2_plus_ct0, w1, hint, infinity_norm_check_result);
 
