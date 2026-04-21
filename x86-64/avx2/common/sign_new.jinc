@@ -210,14 +210,11 @@ inline fn __make_hint_vector(
         hint[base : COEFFICIENTS_IN_POLYNOMIAL] = hint_element;
         total_ones_in_hint += ones_in_hint;
         base = base + COEFFICIENTS_IN_POLYNOMIAL;
+        hint_count_exceeded = total_ones_in_hint > MAX_ONES_IN_HINT;
+        hint_count_fail = #SETcc(hint_count_exceeded);
+        hint_count_fail_64 = (64u)(8u) hint_count_fail;
+        infinity_norm_check_result |= hint_count_fail_64;
     }
-
-    // Branchless hint count check (mirrors mldsa-native: no declassify of total_ones_in_hint).
-    hint_count_exceeded = total_ones_in_hint > MAX_ONES_IN_HINT;
-    hint_count_fail = #SETcc(hint_count_exceeded);
-    hint_count_fail_64 = (64u)(8u) hint_count_fail;
-    infinity_norm_check_result |= hint_count_fail_64;
-
     return hint, infinity_norm_check_result;
 }
 
