@@ -9,7 +9,7 @@ def signing_test_groups(ml_dsa):
     kat_file = (
         Path(__file__).parent
         / "wycheproof"
-        / "mldsa_{}_standard_sign_test.json".format(ml_dsa.parameter_set)
+        / "mldsa_{}_sign.json".format(ml_dsa.parameter_set)
     )
     with open(kat_file, "r") as tests_raw:
         return json.load(tests_raw)["testGroups"]
@@ -20,7 +20,7 @@ def verification_test_groups(ml_dsa):
     kat_file = (
         Path(__file__).parent
         / "wycheproof"
-        / "mldsa_{}_standard_verify_test.json".format(ml_dsa.parameter_set)
+        / "mldsa_{}_verify.json".format(ml_dsa.parameter_set)
     )
     with open(kat_file, "r") as tests_raw:
         return json.load(tests_raw)["testGroups"]
