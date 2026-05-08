@@ -1,9 +1,9 @@
 inline fn __sign_internal(
-    #public reg ptr u8[SIGNATURE_SIZE] sig,
+    #[public] reg ptr u8[SIGNATURE_SIZE] sig,
     reg ptr u32[3] ctx_m_rand,
     reg ptr u32[2] ctxlen_mlen,
-    #secret reg ptr u8[SIGNING_KEY_SIZE] signing_key
-) -> #public reg ptr u8[SIGNATURE_SIZE], reg u32
+    #[secret] reg ptr u8[SIGNING_KEY_SIZE] signing_key
+) -> #[public] reg ptr u8[SIGNATURE_SIZE], reg u32
 {
     sig = sig;
 

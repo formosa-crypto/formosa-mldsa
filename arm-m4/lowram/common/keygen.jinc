@@ -29,9 +29,9 @@ inline fn __init_shake256_to_generate_seeds(
 * Returns 0 (success)
 **************************************************/
 inline fn __keygen_internal(
-    #public reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
+    #[public] reg ptr u8[VERIFICATION_KEY_SIZE] verification_key,
     reg ptr u8[SIGNING_KEY_SIZE] signing_key,
-    #secret reg ptr u8[SEEDBYTES] seedbuf
+    #[secret] reg ptr u8[SEEDBYTES] seedbuf
 ) -> reg ptr u8[VERIFICATION_KEY_SIZE], reg ptr u8[SIGNING_KEY_SIZE]
 {
     stack u32[N] element_of_A;
