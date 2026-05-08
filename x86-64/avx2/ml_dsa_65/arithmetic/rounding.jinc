@@ -71,12 +71,14 @@ namespace polynomial {
     {
         reg u256 hints;
         reg u256 coefficients;
-        reg u256 high low;
+        reg u256 high low low_lanes_which_are_zero;
         reg u256 mask;
 
         stack u32[COEFFICIENTS_IN_POLYNOMIAL] highs lows;
 
         reg u64 offset;
+
+        reg u256 zeros = #set0_256();
 
         mask = CONSTANTS_TABLE[0]; // 15
 
@@ -86,6 +88,9 @@ namespace polynomial {
         while (offset < BYTES_PER_UNCOMPRESSED_POLYNOMIAL) {
             low = lows.[:u256 offset];
             hints = hint_polynomial.[:u256 offset];
+
+            low_lanes_which_are_zero = #VPCMPEQ_8u32(low, zeros);
+            low = #VPOR_256(low, low_lanes_which_are_zero);
 
             hints = #VPSIGN_8s32(hints, low);
 

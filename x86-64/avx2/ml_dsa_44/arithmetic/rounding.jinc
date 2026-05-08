@@ -94,7 +94,9 @@ namespace polynomial {
             high = highs.[:u256 offset];
             hints = hint_polynomial.[:u256 offset];
 
-            t = #BLENDV_8u32(zeros, hints, low);
+            low = #VPCMPGT_8u32(low, zeros);
+
+            t = #BLENDV_8u32(hints, zeros, low);
             t = #VPSLL_8u32(t, 1);
             hints = #VPSUB_8u32(hints, t);
 
