@@ -158,5 +158,6 @@ inline fn __keygen_internal(
 
     signing_key[2 * SEEDBYTES : VERIFICATION_KEY_HASH_SIZE] = verification_key_hash;
 
+    () = #unspill(verification_key);
     return verification_key, signing_key;
 }

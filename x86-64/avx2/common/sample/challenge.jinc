@@ -71,7 +71,8 @@ namespace sample {
                     xof_block = shake256_squeeze_block(xof_block, state);
                     xof_offset = 0;
                 }
-                #[declassify] sample_at = (64u) xof_block[xof_offset];
+                sample_at = (64u) xof_block[xof_offset];
+                () = #declassify(sample_at);
 
                 xof_offset += 1;
             } (sample_at > i)
