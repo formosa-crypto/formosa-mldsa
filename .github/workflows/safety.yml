@@ -5,7 +5,6 @@ on:
 
 jobs:
   safety-sanity-check:
-    if: github.ref == 'refs/heads/main'
     name: check
     runs-on: ubuntu-latest
     strategy:
