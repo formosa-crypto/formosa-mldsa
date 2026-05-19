@@ -5,7 +5,6 @@ on:
 
 jobs:
   arm-m4-kat-tests:
-    if: github.ref == 'refs/heads/main'
     name: kat-tests
     runs-on: ubuntu-latest
     strategy:
