@@ -42,7 +42,7 @@ namespace coefficient {
         reg u32 a0;
         reg u32 a1;
 
-        inline bool b;
+        reg bool b;
 
         a0, a1 = __decompose(a);
 

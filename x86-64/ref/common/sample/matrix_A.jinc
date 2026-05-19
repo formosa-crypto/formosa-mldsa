@@ -36,7 +36,7 @@ fn rejection_sample_less_than_field_modulus(
     reg u64 xof_offset;
     #[public] reg u32 try_coefficient byte;
 
-    inline bool b;
+    reg bool b;
 
     inline int k;
 

@@ -96,7 +96,7 @@ inline fn __decompose_a0a1(reg u32 a q) -> reg u32, reg u32
 inline fn __make_hint(reg u32 a0, reg u32 a1, reg u32 gamma2) -> reg u32
 {
     reg u32 mgamma2 res;
-    inline bool lt eq;
+    reg bool lt eq;
 
     res = 1;
     #[declassify] a0 = a0;

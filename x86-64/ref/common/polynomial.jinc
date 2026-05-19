@@ -144,7 +144,7 @@ namespace polynomial {
 
         reg u64 msf = #init_msf();
 
-        inline bool condition;
+        reg bool condition;
 
         weight = 0;
         i = 0;
@@ -210,7 +210,7 @@ namespace polynomial {
 
         reg u64 msf = #init_msf();
 
-        inline bool b;
+        reg bool b;
 
         i = 0;
         while { b = i < COEFFICIENTS_IN_POLYNOMIAL; } (b) {
