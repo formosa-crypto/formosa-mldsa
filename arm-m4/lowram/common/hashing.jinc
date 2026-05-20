@@ -312,7 +312,8 @@ fn _hash_verification_key(
         state_offset += 1;
     }
 
-    state = __add_block_end(state, state_offset * 4, SHAKE256_RATE);
+    state_offset <<= 2;
+    state = _shake256_add_block_end(state, state_offset);
     state = _keccakf1600_ref(state);
 
     return state;
