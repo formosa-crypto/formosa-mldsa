@@ -17,7 +17,7 @@ namespace signature {
 
         inline int k;
         inline int offset;
-        inline bool condition;
+        reg bool condition;
 
         i = 0;
         while (i < COMMITMENT_HASH_SIZE) {

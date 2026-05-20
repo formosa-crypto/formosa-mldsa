@@ -41,7 +41,7 @@ fn rejection_sample_less_than_eta(
     #[public] reg u32 coefficient coefficient_mod_5;
     reg u8 byte;
 
-    inline bool b;
+    reg bool b;
 
     reg u64 msf = #init_msf();
 

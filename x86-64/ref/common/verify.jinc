@@ -5,7 +5,7 @@ fn __compare_commitment_hashes(reg ptr u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg 
 
     reg u64 result;
 
-    inline bool condition;
+    reg bool condition;
 
     reg u64 msf = #init_msf();
 

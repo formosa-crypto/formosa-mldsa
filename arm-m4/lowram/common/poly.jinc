@@ -46,7 +46,7 @@ inline fn __rej_sample(
 ) -> reg ptr u32[N],
      reg u32
 {
-    inline bool b;
+    reg bool b;
     b = __cmp_b(t, q);
 
     if (b) {
@@ -694,7 +694,7 @@ fn _poly_compute_A_times_polynomial(
     reg u32 xof_offset;
     reg u32 coeff mask;
 
-    inline bool b;
+    reg bool b;
 
     () = #spill(polynomial, compressed_product);
 

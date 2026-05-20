@@ -457,7 +457,7 @@ inline fn __rej_sample(
         reg u32 q
         ) -> reg ptr u32[N], reg u32
 {
-    inline bool b;
+    reg bool b;
     b = __cmp_b(t, q);
 
     if (b) {
