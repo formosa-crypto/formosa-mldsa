@@ -56,7 +56,8 @@ fn rejection_sample_less_than_eta(
 
             byte = state[:u8 xof_offset];
 
-            #[declassify] coefficient = (32u)byte;
+            coefficient = (32u)byte;
+            () = #declassify(coefficient);
             coefficient &= 0x0F;
 
             coefficient = #protect_32(coefficient, msf);
@@ -85,7 +86,8 @@ fn rejection_sample_less_than_eta(
             if (b) {
                 msf = #update_msf(b, msf);
 
-                #[declassify] coefficient = (32u)byte;
+                coefficient = (32u)byte;
+                () = #declassify(coefficient);
                 coefficient >>= 4;
                 coefficient = #protect_32(coefficient, msf);
 

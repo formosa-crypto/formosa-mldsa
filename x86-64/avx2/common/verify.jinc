@@ -24,7 +24,7 @@ fn __compare_commitment_hashes(reg ptr u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg 
     }
 
     result = (64u)#MOVEMASK_16u8(result_vec);
-    #[declassify] result = result;
+    () = #declassify(result);
 
     if (result == 0xFF_FF) {
         result = 0;
@@ -123,7 +123,8 @@ fn __verify_internal(
             A_times_signer_response = row_vector::__multiply_with_matrix_A(matrix_A, signer_response);
             () = #unspill(signature_encoded);
 
-            #[declassify] challenge = sample::__challenge(challenge, signature_encoded[0:COMMITMENT_HASH_SIZE]);
+            challenge = sample::__challenge(challenge, signature_encoded[0:COMMITMENT_HASH_SIZE]);
+            () = #declassify(challenge);
             challenge = polynomial::ntt(challenge);
 
             () = #unspill(verification_key);
@@ -144,7 +145,8 @@ fn __verify_internal(
                 context_message_sizes
             );
 
-            #[declassify] expected_commitment_hash = __derive_commitment_hash(message_representative, reconstructed_signer_commitment);
+            expected_commitment_hash = __derive_commitment_hash(message_representative, reconstructed_signer_commitment);
+            () = #declassify(expected_commitment_hash);
 
             () = #unspill(signature_encoded);
             result = __compare_commitment_hashes(expected_commitment_hash, signature_encoded[0:COMMITMENT_HASH_SIZE]);

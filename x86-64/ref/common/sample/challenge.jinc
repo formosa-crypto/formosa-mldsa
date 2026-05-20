@@ -68,7 +68,8 @@ namespace sample {
 
                     xof_offset = 0;
                 }
-                #[declassify] sample_at = (64u) state[:u8 xof_offset];
+                sample_at = (64u) state[:u8 xof_offset];
+                () = #declassify(sample_at);
                 _ = #init_msf();
 
                 xof_offset += 1;
