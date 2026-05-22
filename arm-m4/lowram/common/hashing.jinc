@@ -295,9 +295,9 @@ fn _hash_verification_key(
             state[state_offset] = state_word;
             state_offset += 1;
         }
-        () = #spill(vk_offset, verification_key);
+        #spill(vk_offset, verification_key);
         state = _keccakf1600_ref(state);
-        () = #unspill(vk_offset, verification_key);
+        #unspill(vk_offset, verification_key);
     }
 
     state_offset = 0;
@@ -341,9 +341,9 @@ inline fn __derive_commitment_hash
         pstate[:u8 pos] = s;
         pos += 1; ctr += 1;
         if (pos == SHAKE256_RATE) {
-            () = #spill(ctr, pos, m);
+            #spill(ctr, pos, m);
             pstate = _keccakf1600_ref(pstate);
-            () = #unspill(ctr, pos, m);
+            #unspill(ctr, pos, m);
             pos = 0;
         }
     }
@@ -375,9 +375,9 @@ fn _shake256_absorb_w1_element
 
         if (pos == SHAKE256_RATE) {
             pos = 0;
-            () = #spill(ctr, pos, w1_element);
+            #spill(ctr, pos, w1_element);
             pstate = _keccakf1600_ref(pstate);
-            () = #unspill(ctr, pos, w1_element);
+            #unspill(ctr, pos, w1_element);
         }
     }
 
@@ -409,9 +409,9 @@ fn _shake256_inc_absorb_mem_naive(
         mlen -= 1;
 
         if (pos == SHAKE256_RATE) {
-            () = #spill(m, mlen, pos);
+            #spill(m, mlen, pos);
             pstate = _keccakf1600_ref(pstate);
-            () = #unspill(m, mlen, pos);
+            #unspill(m, mlen, pos);
             pos = 0;
         }
 

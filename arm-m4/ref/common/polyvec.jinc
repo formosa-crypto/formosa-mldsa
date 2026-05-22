@@ -381,9 +381,9 @@ fn _polyveck_make_hint(
     reg ptr u32[N] ph pv0 pv1;
     for i = 0 to K {
         ph = h[i * N : N]; pv0 = v0[i * N : N]; pv1 = v1[i * N : N];
-        () = #spill(v0); // is this the right thing to spill?
+        #spill(v0); // is this the right thing to spill?
         tmp, h[i * N : N] = _poly_make_hint(ph, pv0, pv1);
-        () = #unspill(v0);
+        #unspill(v0);
         s += tmp;
     }
     return s, h;
@@ -426,14 +426,14 @@ fn _polyvec_matrix_expand(
     reg ptr u32[N] pmat;
     reg u32 nonce;
 
-    () = #spill(rho);
+    #spill(rho);
     for i = 0 to K {
         for j = 0 to L {
             pmat = mat[i*polyvecl+j*N:N];
             nonce = (i << 8) + j;
-            () = #spill(mat);
+            #spill(mat);
             pmat = _poly_uniform(pmat, rho, nonce);
-            () = #unspill(mat, rho);
+            #unspill(mat, rho);
             mat[i*polyvecl+j*N:N] = pmat;
         }
     }

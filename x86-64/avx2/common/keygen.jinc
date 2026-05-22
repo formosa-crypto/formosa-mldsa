@@ -106,13 +106,13 @@ fn __keygen_internal(
 
     reg u256 copied_32_bytes;
 
-    () = #spill(verification_key, signing_key);
+    #spill(verification_key, signing_key);
 
     state = __initialize_xof(randomness, ROWS_IN_MATRIX_A, COLUMNS_IN_MATRIX_A);
     prf_output = squeeze_128_bytes(prf_output, state);
 
     seed_for_matrix_A = prf_output[:u8 0:SEED_FOR_MATRIX_A_SIZE];
-    () = #declassify(seed_for_matrix_A);
+    #declassify(seed_for_matrix_A);
     matrix_A = sample::__matrix_A(seed_for_matrix_A);
 
     seed_for_error_vectors = prf_output[:u8 SEED_FOR_MATRIX_A_SIZE:SEED_FOR_ERROR_VECTORS_SIZE];
@@ -122,7 +122,7 @@ fn __keygen_internal(
 
     // Serialize most of the signing key here; in particular serialize 
     // s1 and s2 before applying the NTT to them.
-    () = #unspill(signing_key);
+    #unspill(signing_key);
 
     // SEED_FOR_MATRIX_A_SIZE is always 32.
     copied_32_bytes = seed_for_matrix_A.[:u256 0];
@@ -139,7 +139,7 @@ fn __keygen_internal(
     signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY : S2_ENCODED_SIZE] =
         s2::__encode(signing_key[START_OF_S2_IN_ENCODED_SIGNING_KEY : S2_ENCODED_SIZE], s2);
 
-    () = #spill(signing_key);
+    #spill(signing_key);
     s1 = row_vector::ntt(s1);
 
     t = row_vector::__multiply_with_matrix_A(matrix_A, s1);
@@ -155,7 +155,7 @@ fn __keygen_internal(
 
     verification_key[32: T1_ENCODED_SIZE]
         = t1::__encode(verification_key[32: T1_ENCODED_SIZE], t1);
-    () = #declassify(verification_key);
+    #declassify(verification_key);
 
     // ... and finish serializing the signing key.
     verification_key_pointer_copy = verification_key;

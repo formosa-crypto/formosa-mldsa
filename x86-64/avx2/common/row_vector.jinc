@@ -25,20 +25,20 @@ namespace row_vector {
         stack u32[COEFFICIENTS_IN_POLYNOMIAL] product;
 
         output = polynomial::__zero(output);
-        () = #spill(output, lhs, rhs);
+        #spill(output, lhs, rhs);
 
         inline int i;
         for i = 0 to COLUMNS_IN_MATRIX_A {
-            () = #unspill(lhs, rhs);
+            #unspill(lhs, rhs);
             product = polynomial::pointwise_montgomery_multiply_and_reduce(
                 product,
                 lhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL],
                 rhs[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
             );
 
-            () = #unspill(output);
+            #unspill(output);
             output = polynomial::__pointwise_add_to_total(output, product);
-            () = #spill(output);
+            #spill(output);
         }
 
         return output;

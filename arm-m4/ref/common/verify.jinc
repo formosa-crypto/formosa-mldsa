@@ -39,13 +39,13 @@ fn _crypto_sign_verify_ctx(
     ctxlen = ctxlen_mlen[0];
 
     if (ctxlen <= 255) {
-        () = #spill(ctxlen_mlen, ctx_m, ctxlen);
+        #spill(ctxlen_mlen, ctx_m, ctxlen);
         rho, t1 = _unpack_pk(rho, t1, pk);
 
-        () = #spill(pk);
+        #spill(pk);
         commitment_hash, z, h, status = _unpack_sig(commitment_hash, z, h, sig);
-        () = #unspill(pk);
-        () = #spill(sig);
+        #unspill(pk);
+        #spill(sig);
 
         if (status == 0) {
             reg u32 bound;
@@ -60,7 +60,7 @@ fn _crypto_sign_verify_ctx(
                 // VERIFICATION_KEY_HASH_SIZE (64) + 2 < SHAKE256_RATE (136)
                 pstate = __add_crh_ref(pstate, crh_byte_hash); // VERIFICATION_KEY_HASH_SIZE = CRHBYTES
 
-                () = #unspill(ctxlen_mlen, ctx_m);
+                #unspill(ctxlen_mlen, ctx_m);
                 message_prefix = crh_byte_hash[0 : 2];
                 t = 0;
                 message_prefix[0] = (8u)t;
@@ -68,16 +68,16 @@ fn _crypto_sign_verify_ctx(
                 message_prefix[1] = (8u)t;
                 crh_byte_hash[0 : 2] = message_prefix;
 
-                () = #spill(ctxlen_mlen, t, ctx_m);
+                #spill(ctxlen_mlen, t, ctx_m);
                 pstate = __add_message_prefix(pstate, VERIFICATION_KEY_HASH_SIZE, message_prefix);
-                () = #spill(message_prefix);
+                #spill(message_prefix);
                 pstate = __add_zero_after_add_naive(pstate, VERIFICATION_KEY_HASH_SIZE + 2);
                 pos = VERIFICATION_KEY_HASH_SIZE + 2;
                 ctx = ctx_m[0];
-                () = #spill(ctx_m, ctxlen_mlen);
-                () = #unspill(ctxlen);
+                #spill(ctx_m, ctxlen_mlen);
+                #unspill(ctxlen);
                 pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, ctx, ctxlen);
-                () = #unspill(ctx_m, ctxlen_mlen);
+                #unspill(ctx_m, ctxlen_mlen);
                 mlen = ctxlen_mlen[1];
                 m = ctx_m[1];
                 pstate, pos = _shake256_inc_absorb_mem_naive(pstate, pos, m, mlen);
@@ -89,7 +89,7 @@ fn _crypto_sign_verify_ctx(
                     t = pstate[i];
                     crh_byte_hash[:u32 i] = t;
                 }
-                () = #spill(pstate);
+                #spill(pstate);
 
                 cp = _poly_challenge(cp, commitment_hash);
                 mat = _polyvec_matrix_expand(mat, rho);
@@ -110,7 +110,7 @@ fn _crypto_sign_verify_ctx(
                 w1 = _polyveck_use_hint_inplace(w1, h);
                 buf = _polyveck_pack_w1(buf, w1);
 
-                () = #unspill(pstate);
+                #unspill(pstate);
                 pstate = __add_crh_ref(pstate, crh_byte_hash);
                 pstate = __add_zero_after_add(pstate, CRHBYTES);
                 pstate, pos = __derive_commitment_hash(pstate, CRHBYTES, buf);
@@ -123,7 +123,7 @@ fn _crypto_sign_verify_ctx(
                     if (status == 0) {
                         ci = (32u)commitment_hash[i];
                         c2i = (32u)pstate[:u8 i];
-                        () = #declassify(c2i);
+                        #declassify(c2i);
                         if (ci != c2i) {
                             status = i + 1;
                         }

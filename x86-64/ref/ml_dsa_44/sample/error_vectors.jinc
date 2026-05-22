@@ -57,7 +57,7 @@ fn rejection_sample_less_than_eta(
             byte = state[:u8 xof_offset];
 
             coefficient = (32u)byte;
-            () = #declassify(coefficient);
+            #declassify(coefficient);
             coefficient &= 0x0F;
 
             coefficient = #protect_32(coefficient, msf);
@@ -87,7 +87,7 @@ fn rejection_sample_less_than_eta(
                 msf = #update_msf(b, msf);
 
                 coefficient = (32u)byte;
-                () = #declassify(coefficient);
+                #declassify(coefficient);
                 coefficient >>= 4;
                 coefficient = #protect_32(coefficient, msf);
 
@@ -133,18 +133,18 @@ fn __sample_error_polynomial(
     #[spill_to_mmx] reg u64 coefficients_sampled;
     stack u64[25] state;
 
-    () = #spill(error);
+    #spill(error);
     state = __absorb_to_generate_errors(rho_prime, i);
     state = _keccakf1600_ref1(state);
-    () = #unspill(error);
+    #unspill(error);
 
     coefficients_sampled = 0;
     error, coefficients_sampled = rejection_sample_less_than_eta(state, error, coefficients_sampled);
 
     while (coefficients_sampled < COEFFICIENTS_IN_POLYNOMIAL) {
-        () = #spill(coefficients_sampled, error);
+        #spill(coefficients_sampled, error);
         state = _keccakf1600_ref1(state);
-        () = #unspill(coefficients_sampled, error);
+        #unspill(coefficients_sampled, error);
 
         error, coefficients_sampled = rejection_sample_less_than_eta(state, error, coefficients_sampled);
     }

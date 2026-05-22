@@ -23,7 +23,7 @@ fn __hash_verification_key(
 
     verification_key_offset = 0;
 
-    () = #spill(hash);
+    #spill(hash);
 
     // Absorb ...
 
@@ -39,9 +39,9 @@ fn __hash_verification_key(
             state_offset += 1;
         }
 
-        () = #spill(verification_key, verification_key_offset);
+        #spill(verification_key, verification_key_offset);
         state = _keccakf1600_ref1(state);
-        () = #unspill(verification_key, verification_key_offset);
+        #unspill(verification_key, verification_key_offset);
 
         state_offset = 0;
     }
@@ -63,7 +63,7 @@ fn __hash_verification_key(
 
     state = _keccakf1600_ref1(state);
 
-    () = #unspill(hash);
+    #unspill(hash);
 
     state_offset = 0;
     while(state_offset < VERIFICATION_KEY_HASH_SIZE) {
@@ -100,7 +100,7 @@ fn __derive_message_representative(
     #[spill_to_mmx] reg u64 context context_size context_offset;
     #[spill_to_mmx] reg u64 message message_size message_offset;
 
-    () = #spill(context_message_pointers, context_message_sizes);
+    #spill(context_message_pointers, context_message_sizes);
 
     // Absorb ...
 
@@ -120,7 +120,7 @@ fn __derive_message_representative(
 
     _ = #init_msf();
 
-    () = #unspill(context_message_pointers, context_message_sizes);
+    #unspill(context_message_pointers, context_message_sizes);
     context = context_message_pointers[0];
     context_size = context_message_sizes[0];
 
@@ -130,9 +130,9 @@ fn __derive_message_representative(
     context_offset = 0;
     while(context_offset < context_size) {
         if (state_offset >= SHAKE256_RATE) {
-            () = #spill(context, context_offset, context_size);
+            #spill(context, context_offset, context_size);
             state = _keccakf1600_ref1(state);
-            () = #unspill(context, context_offset, context_size);
+            #unspill(context, context_offset, context_size);
 
             ?{}, state_offset = #set0_64();
         }
@@ -146,16 +146,16 @@ fn __derive_message_representative(
 
     _ = #init_msf();
 
-    () = #unspill(context_message_pointers, context_message_sizes);
+    #unspill(context_message_pointers, context_message_sizes);
     message = context_message_pointers[1];
     message_size = context_message_sizes[1];
 
     message_offset = 0;
     while(message_offset < message_size) {
         if (state_offset >= SHAKE256_RATE) {
-            () = #spill(message, message_offset, message_size);
+            #spill(message, message_offset, message_size);
             state = _keccakf1600_ref1(state);
-            () = #unspill(message, message_offset, message_size);
+            #unspill(message, message_offset, message_size);
 
             ?{}, state_offset = #set0_64();
         }
@@ -227,9 +227,9 @@ fn __derive_commitment_hash(
             state_offset += 1;
         }
 
-        () = #spill(encoded_commitment, encoded_commitment_offset);
+        #spill(encoded_commitment, encoded_commitment_offset);
         state = _keccakf1600_ref1(state);
-        () = #unspill(encoded_commitment, encoded_commitment_offset);
+        #unspill(encoded_commitment, encoded_commitment_offset);
 
         state_offset = 0;
     }

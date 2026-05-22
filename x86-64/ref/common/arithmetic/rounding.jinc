@@ -31,7 +31,7 @@ namespace coefficient {
         result = 0;
 
         condition = a0 >s GAMMA2;
-        () = #declassify(condition);
+        #declassify(condition);
         if (condition) {
             msf = #update_msf(condition, msf);
 
@@ -40,7 +40,7 @@ namespace coefficient {
             msf = #update_msf(!condition, msf);
 
             condition = a0 <s -GAMMA2;
-            () = #declassify(condition);
+            #declassify(condition);
             if (condition) {
                 msf = #update_msf(condition, msf);
                 result = 1;
@@ -48,12 +48,12 @@ namespace coefficient {
                 msf = #update_msf(!condition, msf);
 
                 condition = a0 == -GAMMA2;
-                () = #declassify(condition);
+                #declassify(condition);
                 if (condition) {
                     msf = #update_msf(condition, msf);
 
                     condition = a1 != 0;
-                    () = #declassify(condition);
+                    #declassify(condition);
                     if (condition) {
                         msf = #update_msf(condition, msf);
                         result = 1;

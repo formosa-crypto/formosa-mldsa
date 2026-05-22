@@ -63,7 +63,7 @@ export fn ml_dsa_65_keygen(
 ) -> reg ptr u8[VERIFICATION_KEY_SIZE],
      reg ptr u8[SIGNING_KEY_SIZE]
 {
-    () = #spill(randomness);
+    #spill(randomness);
     verification_key, signing_key = __keygen_internal(verification_key, signing_key, randomness);
 
     return verification_key, signing_key;

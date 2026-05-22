@@ -12,9 +12,9 @@ fn _poly_uniform_gamma1(
     inline int k;
 
     state = _prepare_state_for_shake256(state, seed, nonce);
-    () = #spill(poly);
+    #spill(poly);
     state = _keccakf1600_ref(state);
-    () = #unspill(poly);
+    #unspill(poly);
 
     num_leftover_bytes = 0;
     fill_from = 0;
@@ -22,9 +22,9 @@ fn _poly_uniform_gamma1(
         first_9_bytes = first_9_bytes;
         poly, fill_from, num_leftover_bytes, first_9_bytes = _polyz_unpack_streaming(poly, fill_from, num_leftover_bytes, first_9_bytes, state[:u8 0 : SHAKE256_RATE]);
 
-        () = #spill(poly, num_leftover_bytes, fill_from);
+        #spill(poly, num_leftover_bytes, fill_from);
         state = _keccakf1600_ref(state);
-        () = #unspill(poly, num_leftover_bytes, fill_from);
+        #unspill(poly, num_leftover_bytes, fill_from);
     }
 
     first_9_bytes = first_9_bytes;

@@ -54,7 +54,7 @@ fn rejection_sample_less_than_field_modulus(
             try_coefficient = 0;
             for k = 0 to 3 {
                 byte = (32u)state[:u8 xof_offset + k];
-                () = #declassify(byte);
+                #declassify(byte);
 
                 byte <<= 8 * k;
                 try_coefficient |= byte;
@@ -92,18 +92,18 @@ fn __sample_polynomial(
     #[spill_to_mmx] reg u64 coefficients_sampled;
     stack u64[25] state;
 
-    () = #spill(result);
+    #spill(result);
     state = __absorb_for_shake128(state, rho, i, j);
     state = _keccakf1600_ref1(state);
-    () = #unspill(result);
+    #unspill(result);
 
     coefficients_sampled = 0;
     result, coefficients_sampled = rejection_sample_less_than_field_modulus(result, coefficients_sampled, state);
 
     while (coefficients_sampled < COEFFICIENTS_IN_POLYNOMIAL) {
-        () = #spill(coefficients_sampled, result);
+        #spill(coefficients_sampled, result);
         state = _keccakf1600_ref1(state);
-        () = #unspill(coefficients_sampled, result);
+        #unspill(coefficients_sampled, result);
 
         result, coefficients_sampled = rejection_sample_less_than_field_modulus(result, coefficients_sampled, state);
     }
@@ -121,11 +121,11 @@ namespace sample {
 
         inline int i j;
 
-        () = #spill(rho);
+        #spill(rho);
 
         for i = 0 to ROWS_IN_MATRIX_A {
             for j = 0 to COLUMNS_IN_MATRIX_A {
-                () = #unspill(rho);
+                #unspill(rho);
                 matrix_A[(i * COLUMNS_IN_MATRIX_A + j) * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
                     __sample_polynomial
                     (

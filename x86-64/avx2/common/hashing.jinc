@@ -168,7 +168,7 @@ fn __derive_message_representative(
 
     reg u256 copied_32_bytes;
 
-    () = #spill(context_message_pointers, context_message_sizes);
+    #spill(context_message_pointers, context_message_sizes);
 
     // Absorb ...
 
@@ -183,10 +183,10 @@ fn __derive_message_representative(
 
     context_offset = 0;
 
-    () = #unspill(context_message_pointers);
+    #unspill(context_message_pointers);
     context = context_message_pointers[0];
 
-    () = #unspill(context_message_sizes);
+    #unspill(context_message_sizes);
     context_size = context_message_sizes[0];
 
     // We first need to absorb `0 || context_size` before absorbing the context.
@@ -197,9 +197,9 @@ fn __derive_message_representative(
 
     while(context_offset < context_size) {
         if (state_offset >= SHAKE256_RATE) {
-            () = #spill(context, context_offset, context_size);
+            #spill(context, context_offset, context_size);
             state = _keccakf1600_ref1(state);
-            () = #unspill(context, context_offset, context_size);
+            #unspill(context, context_offset, context_size);
 
             state_offset = 0;
         }
@@ -213,17 +213,17 @@ fn __derive_message_representative(
 
     message_offset = 0;
 
-    () = #unspill(context_message_pointers);
+    #unspill(context_message_pointers);
     message = context_message_pointers[1];
 
-    () = #unspill(context_message_sizes);
+    #unspill(context_message_sizes);
     message_size = context_message_sizes[1];
 
     while(message_offset < message_size) {
         if (state_offset >= SHAKE256_RATE) {
-            () = #spill(message, message_offset, message_size);
+            #spill(message, message_offset, message_size);
             state = _keccakf1600_ref1(state);
-            () = #unspill(message, message_offset, message_size);
+            #unspill(message, message_offset, message_size);
 
             state_offset = 0;
         }

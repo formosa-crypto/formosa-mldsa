@@ -30,14 +30,14 @@ fn _crypto_sign_keypair_seed(
     reg ptr u32[PQC_SHAKECTX_BYTES*2] pstate;
     pstate = state;
 
-    () = #spill(pk, sk);
+    #spill(pk, sk);
     pstate = __SHAKE256_init_seed_ref(pstate, seedbuf);
     state = pstate;
     /***/
 
     reg ptr u8[SEEDBYTES] rho;
     rho = state[:u8 0:SEEDBYTES];
-    () = #declassify(rho);
+    #declassify(rho);
 
     /* Expand matrix */
     mat = _polyvec_matrix_expand(mat, rho);
@@ -68,21 +68,21 @@ fn _crypto_sign_keypair_seed(
     t1 = _polyveck_caddq(t1);
     t1, t0 = _polyveck_power2round_inplace(t1, t0);
 
-    () = #unspill(pk);
+    #unspill(pk);
     rho = state[:u8 0:SEEDBYTES];
     pk = _pack_pk(pk, rho, t1);
 
     /* Compute H(rho, t1) and write secret key */
-    () = #spill(pk);
+    #spill(pk);
     verification_key_hash = _hash_verification_key(verification_key_hash, pk);
 
     reg ptr u8[SEEDBYTES] key;
     rho = state[:u8 0:SEEDBYTES];
     key = state[:u8 SEEDBYTES + CRHBYTES : SEEDBYTES];
 
-    () = #unspill(sk);
+    #unspill(sk);
     sk = __pack_signing_key(sk, rho, verification_key_hash, key, t0, s1, s2);
 
-    () = #unspill(pk);
+    #unspill(pk);
     return pk, sk;
 }

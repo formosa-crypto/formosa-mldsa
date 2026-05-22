@@ -50,9 +50,9 @@ fn __sample_mask_polynomial(
 
     mask_encoded_offset = 0;
     for block_being_squeezed = 0 to SHAKE256_BLOCKS_FOR_GAMMA1_ENCODED_POLYNOMIAL {
-        () = #spill(mask, mask_encoded_offset);
+        #spill(mask, mask_encoded_offset);
         state = _keccakf1600_ref1(state);
-        () = #unspill(mask, mask_encoded_offset);
+        #unspill(mask, mask_encoded_offset);
 
         _ = #init_msf();
 

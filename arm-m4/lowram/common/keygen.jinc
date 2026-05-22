@@ -53,19 +53,19 @@ inline fn __keygen_internal(
 
     inline int row_number column_number;
 
-    () = #spill(verification_key, signing_key);
+    #spill(verification_key, signing_key);
 
     pxof_state = xof_state;
     pxof_state = __init_shake256_to_generate_seeds(pxof_state, seedbuf);
     xof_state = pxof_state;
 
-    () = #unspill(verification_key);
+    #unspill(verification_key);
     rho = verification_key[0 : SEEDBYTES];
     rho = #copy(xof_state[:u8 0 : SEEDBYTES]);
     verification_key[0 : SEEDBYTES] = rho;
-    () = #spill(verification_key);
+    #spill(verification_key);
 
-    () = #unspill(signing_key);
+    #unspill(signing_key);
     rho = signing_key[0 : SEEDBYTES];
     rho = #copy(xof_state[:u8 0 : SEEDBYTES]);
     signing_key[0 : SEEDBYTES] = rho;
@@ -73,7 +73,7 @@ inline fn __keygen_internal(
     seed_for_signing = signing_key[SEEDBYTES : SEEDBYTES];
     seed_for_signing = #copy(xof_state[:u8 SEEDBYTES + CRHBYTES : SEEDBYTES]);
     signing_key[SEEDBYTES : SEEDBYTES] = seed_for_signing;
-    () = #spill(signing_key);
+    #spill(signing_key);
 
     rho_prime_ptr = rho_prime;
     rho_prime_ptr = #copy(xof_state[:u8 SEEDBYTES : CRHBYTES]);
@@ -86,13 +86,13 @@ inline fn __keygen_internal(
         nonce = 0;
         error_element = _poly_uniform_eta(error_element, rho_prime, nonce);
         if (row_number == 0) {
-            () = #unspill(signing_key);
+            #unspill(signing_key);
             signing_key = __pack_s1_element_in_signing_key(signing_key, error_element, 0);
-            () = #spill(signing_key);
+            #spill(signing_key);
         }
 
         nonce = __or_lsl(0, row_number, 8);
-        () = #unspill(signing_key);
+        #unspill(signing_key);
         xof_state = _prepare_xof_for_element_of_A(xof_state, signing_key[0 : SEEDBYTES], nonce);
         xof_state = _keccakf1600_ref(xof_state);
         element_of_A, xof_state = _poly_uniform(element_of_A, xof_state);
@@ -105,13 +105,13 @@ inline fn __keygen_internal(
             nonce = column_number;
             error_element = _poly_uniform_eta(error_element, rho_prime, nonce);
             if (row_number == 0) {
-                () = #unspill(signing_key);
+                #unspill(signing_key);
                 signing_key = __pack_s1_element_in_signing_key(signing_key, error_element, column_number);
-                () = #spill(signing_key);
+                #spill(signing_key);
             }
 
             nonce = __or_lsl(column_number, row_number, 8);
-            () = #unspill(signing_key);
+            #unspill(signing_key);
             xof_state = _prepare_xof_for_element_of_A(xof_state, signing_key[0 : SEEDBYTES], nonce);
             xof_state = _keccakf1600_ref(xof_state);
             element_of_A, xof_state = _poly_uniform(element_of_A, xof_state);
@@ -127,9 +127,9 @@ inline fn __keygen_internal(
         nonce = L + row_number;
         error_element = _poly_uniform_eta(error_element, rho_prime, nonce);
 
-        () = #unspill(signing_key);
+        #unspill(signing_key);
         signing_key = __pack_s2_element_in_signing_key(signing_key, error_element, row_number);
-        () = #spill(signing_key);
+        #spill(signing_key);
 
         product = _poly_add_inplace(product, error_element);
         product = _poly_caddq(product);
@@ -139,25 +139,25 @@ inline fn __keygen_internal(
         // meaningful until this line.
         product, error_element = _poly_power2round_inplace(product, error_element);
 
-        () = #unspill(signing_key);
+        #unspill(signing_key);
         signing_key = __pack_t0_element_in_signing_key(signing_key, error_element, row_number);
-        () = #spill(signing_key);
+        #spill(signing_key);
 
-        () = #unspill(verification_key);
+        #unspill(verification_key);
         verification_key = __pack_t1_element_in_verification_key(verification_key, product, row_number);
-        () = #spill(verification_key);
+        #spill(verification_key);
     }
 
     // Compute the verification key hash and finish serializing the signing key
-    () = #unspill(verification_key);
+    #unspill(verification_key);
     xof_state = _hash_verification_key(xof_state, verification_key);
 
-    () = #unspill(signing_key);
+    #unspill(signing_key);
     verification_key_hash = signing_key[2 * SEEDBYTES : VERIFICATION_KEY_HASH_SIZE];
     verification_key_hash = #copy(xof_state.[:u8 0 : VERIFICATION_KEY_HASH_SIZE]);
 
     signing_key[2 * SEEDBYTES : VERIFICATION_KEY_HASH_SIZE] = verification_key_hash;
 
-    () = #unspill(verification_key);
+    #unspill(verification_key);
     return verification_key, signing_key;
 }

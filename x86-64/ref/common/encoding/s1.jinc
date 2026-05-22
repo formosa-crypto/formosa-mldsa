@@ -7,7 +7,7 @@ namespace s1 {
     {
         inline int i;
 
-        () = #spill(s1);
+        #spill(s1);
 
         for i = 0 to COLUMNS_IN_MATRIX_A {
             encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE] =
@@ -15,7 +15,7 @@ namespace s1 {
                     encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE],
                     s1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
                 );
-            () = #unspill(s1);
+            #unspill(s1);
         }
         return encoded;
     }
@@ -28,7 +28,7 @@ namespace s1 {
     {
         inline int i;
 
-        () = #spill(encoded);
+        #spill(encoded);
 
         for i = 0 to COLUMNS_IN_MATRIX_A {
             s1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
@@ -36,7 +36,7 @@ namespace s1 {
                     s1[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
                     encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE]
                 );
-            () = #unspill(encoded);
+            #unspill(encoded);
         }
 
         return s1;

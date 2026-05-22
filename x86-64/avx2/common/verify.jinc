@@ -24,7 +24,7 @@ fn __compare_commitment_hashes(reg ptr u8[COMMITMENT_HASH_SIZE] lhs rhs) -> reg 
     }
 
     result = (64u)#MOVEMASK_16u8(result_vec);
-    () = #declassify(result);
+    #declassify(result);
 
     if (result == 0xFF_FF) {
         result = 0;
@@ -47,7 +47,7 @@ fn reconstruct_signer_commitment(
 
     stack u32[COEFFICIENTS_IN_POLYNOMIAL] Az_element t1_element commitment_element hints_element c_times_t1;
 
-    () = #spill(challenge_as_ntt);
+    #spill(challenge_as_ntt);
 
     inline int i;
 
@@ -61,7 +61,7 @@ fn reconstruct_signer_commitment(
         t1_element = polynomial::__shift_coefficients_left(t1_element);
         t1_element = polynomial::ntt(t1_element);
 
-        () = #unspill(challenge_as_ntt);
+        #unspill(challenge_as_ntt);
         c_times_t1 = polynomial::pointwise_montgomery_multiply_and_reduce(c_times_t1, challenge_as_ntt, t1_element);
 
         commitment_element = commitment[i * COEFFICIENTS_IN_POLYNOMIAL: COEFFICIENTS_IN_POLYNOMIAL];
@@ -114,20 +114,20 @@ fn __verify_internal(
         hints, result = signature::__decode_hint(hints, signature_encoded[signature::START_OF_HINT:HINT_ENCODED_SIZE]);
 
         if (result == 0) {
-            () = #spill(context_message_pointers, context_message_sizes);
+            #spill(context_message_pointers, context_message_sizes);
 
-            () = #spill(signature_encoded, verification_key);
+            #spill(signature_encoded, verification_key);
             matrix_A = sample::__matrix_A(verification_key[0:SEED_FOR_MATRIX_A_SIZE]);
 
             signer_response = row_vector::ntt(signer_response);
             A_times_signer_response = row_vector::__multiply_with_matrix_A(matrix_A, signer_response);
-            () = #unspill(signature_encoded);
+            #unspill(signature_encoded);
 
             challenge = sample::__challenge(challenge, signature_encoded[0:COMMITMENT_HASH_SIZE]);
-            () = #declassify(challenge);
+            #declassify(challenge);
             challenge = polynomial::ntt(challenge);
 
-            () = #unspill(verification_key);
+            #unspill(verification_key);
             reconstructed_signer_commitment = reconstruct_signer_commitment(
                                                     verification_key[SEED_FOR_MATRIX_A_SIZE: T1_ENCODED_SIZE],
                                                     challenge,
@@ -135,10 +135,10 @@ fn __verify_internal(
                                                     hints);
 
             // Compute the expected commitment hash
-            () = #unspill(verification_key);
+            #unspill(verification_key);
             verification_key_hash = hash_verification_key(verification_key_hash, verification_key);
 
-            () = #unspill(context_message_pointers, context_message_sizes);
+            #unspill(context_message_pointers, context_message_sizes);
             message_representative = __derive_message_representative(
                 verification_key_hash,
                 context_message_pointers,
@@ -146,9 +146,9 @@ fn __verify_internal(
             );
 
             expected_commitment_hash = __derive_commitment_hash(message_representative, reconstructed_signer_commitment);
-            () = #declassify(expected_commitment_hash);
+            #declassify(expected_commitment_hash);
 
-            () = #unspill(signature_encoded);
+            #unspill(signature_encoded);
             result = __compare_commitment_hashes(expected_commitment_hash, signature_encoded[0:COMMITMENT_HASH_SIZE]);
         }
     }

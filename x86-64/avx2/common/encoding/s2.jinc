@@ -7,7 +7,7 @@ namespace s2 {
     {
         inline int i;
 
-        () = #spill(s2);
+        #spill(s2);
 
         for i = 0 to ROWS_IN_MATRIX_A {
             encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE] =
@@ -16,7 +16,7 @@ namespace s2 {
                     s2[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
                 );
 
-            () = #unspill(s2);
+            #unspill(s2);
         }
         return encoded;
     }
@@ -27,7 +27,7 @@ namespace s2 {
         #[spill_to_mmx] reg ptr u8[S2_ENCODED_SIZE] encoded
     ) -> reg ptr u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
     {
-        () = #spill(encoded);
+        #spill(encoded);
 
         inline int i;
         for i = 0 to ROWS_IN_MATRIX_A {
@@ -36,7 +36,7 @@ namespace s2 {
                     s2[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
                     encoded[ENCODED_ERROR_POLYNOMIAL_SIZE * i : ENCODED_ERROR_POLYNOMIAL_SIZE]
                 );
-            () = #unspill(encoded);
+            #unspill(encoded);
         }
 
         return s2;

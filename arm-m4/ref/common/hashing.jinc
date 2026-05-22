@@ -303,7 +303,7 @@ fn _hash_verification_key(
 
     pstate = state;
     pstate = __keccak_init_ref(pstate);
-    () = #spill(verification_key_hash);
+    #spill(verification_key_hash);
     reg u32 last;
 
     i = 0;
@@ -321,9 +321,9 @@ fn _hash_verification_key(
             i += 1;
             j += 1;
         }
-        () = #spill(i, inp);
+        #spill(i, inp);
         pstate = _keccakf1600_ref(pstate);
-        () = #unspill(i, inp);
+        #unspill(i, inp);
     }
 
     j = 0;
@@ -340,7 +340,7 @@ fn _hash_verification_key(
 
     pstate = _keccakf1600_ref(pstate);
 
-    () = #unspill(verification_key_hash);
+    #unspill(verification_key_hash);
     // FIXME this copy is not necessary if we return pstate, in that case it should be taken as argument
     i = 0;
     while (i < VERIFICATION_KEY_HASH_SIZE / 4) {
@@ -377,9 +377,9 @@ inline fn __derive_commitment_hash
         pstate[:u8 pos] = s;
         pos += 1; ctr += 1;
         if (pos == SHAKE256_RATE) {
-            () = #spill(ctr, pos, m);
+            #spill(ctr, pos, m);
             pstate = _keccakf1600_ref(pstate);
-            () = #unspill(ctr, pos, m);
+            #unspill(ctr, pos, m);
             pos = 0;
         }
     }

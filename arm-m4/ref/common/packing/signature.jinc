@@ -187,14 +187,14 @@ fn _unpack_sig(reg ptr u8[COMMITMENT_HASH_SIZE] c,
     c = #copy(sig[0 : COMMITMENT_HASH_SIZE]);
     current_position = COMMITMENT_HASH_SIZE;
 
-    () = #spill(c, hints_decoded);
+    #spill(c, hints_decoded);
 
     for i = 0 to L {
         signer_response[i * N: N] = _polyz_unpack(signer_response[i * N : N], sig[current_position : POLYZ_PACKEDBYTES]);
         current_position += POLYZ_PACKEDBYTES;
     }
 
-    () = #unspill(c, hints_decoded);
+    #unspill(c, hints_decoded);
 
     hints_decoded, ill_formed_hint = __decode_hint(hints_decoded, sig[current_position : HINT_ENCODED_SIZE]);
 

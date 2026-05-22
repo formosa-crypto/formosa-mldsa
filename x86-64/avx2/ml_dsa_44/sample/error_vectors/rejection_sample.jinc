@@ -129,7 +129,7 @@ fn rejection_sample_multiple_blocks(
         coefficient_block = #VEXTRACTI128(coefficients, 0);
 
         // Start with the first 8
-        () = #declassify(good_overall);
+        #declassify(good_overall);
         error, bytes_filled, good_overall = write_out_8_coefficients(error, bytes_filled, good_overall, coefficient_block);
 
         xof_offset += 4;
@@ -176,7 +176,7 @@ fn rejection_sample_multiple_blocks(
     while (stop_sampling != 1) {
         coefficient = (32u)randombytes[xof_offset];
         coefficient &= 0xF;
-        () = #declassify(coefficient);
+        #declassify(coefficient);
 
         if (coefficient < 15) {
             temp_u32 = coefficient;
@@ -196,7 +196,7 @@ fn rejection_sample_multiple_blocks(
         if (filled < COEFFICIENTS_IN_POLYNOMIAL) {
             coefficient = (32u)randombytes[xof_offset];
             coefficient >>= 4;
-            () = #declassify(coefficient);
+            #declassify(coefficient);
 
             if (coefficient < 15) {
                 temp_u32 = coefficient;
@@ -244,7 +244,7 @@ fn rejection_sample_one_block(
     while (stop_sampling != 1) {
         coefficient = (32u)randombytes[xof_offset];
         coefficient &= 0xF;
-        () = #declassify(coefficient);
+        #declassify(coefficient);
 
         if (coefficient < 15) {
             temp = coefficient;
@@ -264,7 +264,7 @@ fn rejection_sample_one_block(
         if (filled < COEFFICIENTS_IN_POLYNOMIAL) {
             coefficient = (32u)randombytes[xof_offset];
             coefficient >>= 4;
-            () = #declassify(coefficient);
+            #declassify(coefficient);
 
             if (coefficient < 15) {
                 temp = coefficient;

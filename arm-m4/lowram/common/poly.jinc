@@ -360,9 +360,9 @@ fn _poly_generate_challenge(
 ) -> reg ptr u32[25 * 2],
      reg ptr u32[N]
 {
-    () = #spill(challenge);
+    #spill(challenge);
     state = __shake256_init_with_commitment_hash(state, commitment_hash);
-    () = #unspill(challenge);
+    #unspill(challenge);
 
     reg u32[2] signs;
     stack u32[2] s_signs;
@@ -388,11 +388,11 @@ fn _poly_generate_challenge(
             if (pos >= SHAKE256_RATE) {
                 pos = 0;
 
-                () = #spill(j, challenge, pos);
+                #spill(j, challenge, pos);
                 s_signs = #copy(signs);
                 state = _keccakf1600_ref(state);
 
-                () = #unspill(j, challenge, pos);
+                #unspill(j, challenge, pos);
                 signs = #copy(s_signs);
             }
 
@@ -697,15 +697,15 @@ fn _poly_compute_A_times_polynomial(
 
     reg bool b;
 
-    () = #spill(polynomial, compressed_product);
+    #spill(polynomial, compressed_product);
 
     xof_state = _prepare_xof_for_element_of_A(xof_state, rho, nonce);
 
     sampled = 0;
     while (sampled < N) {
-        () = #spill(sampled);
+        #spill(sampled);
         xof_state = _keccakf1600_ref(xof_state);
-        () = #unspill(sampled);
+        #unspill(sampled);
         xof_offset = 0;
         while (xof_offset < SHAKE128_RATE) {
             if (sampled < N) {
@@ -717,12 +717,12 @@ fn _poly_compute_A_times_polynomial(
 
                 b = __cmp_b(coeff, iQ);
                 if (b) {
-                    () = #unspill(polynomial);
+                    #unspill(polynomial);
                     coeff = __mul_montgomery_reduce(coeff, polynomial[sampled]);
 
-                    () = #unspill(compressed_product);
+                    #unspill(compressed_product);
                     compressed_product = _poly_add_to_compressed_product_at_index(compressed_product, coeff, sampled);
-                    () = #spill(compressed_product);
+                    #spill(compressed_product);
 
                     sampled += 1;
                 }
@@ -931,10 +931,10 @@ fn _poly_uniform_eta(
     reg u32 ctr, ctr8, pos, n205, t;
     reg u32 buf;
 
-    () = #spill(poly);
+    #spill(poly);
     state = _prepare_state_for_shake256(state, seed, nonce);
     state = _keccakf1600_ref(state);
-    () = #unspill(poly);
+    #unspill(poly);
 
     ctr = 0;
     pos = 0;
