@@ -1,4 +1,4 @@
-from Common require "arithmetic/rounding.jinc"
+require "../../common/arithmetic/rounding.jinc"
 
 namespace coefficient {
     inline

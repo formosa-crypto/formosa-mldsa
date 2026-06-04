@@ -3,29 +3,29 @@ require "arithmetic/rounding.jinc"
 require "encoding/error_polynomial.jinc"
 require "encoding/gamma1.jinc"
 
-from Common require "hashing.jinc"
+require "../common/hashing.jinc"
 
-from Common require "sample/matrix_A.jinc"
-from Common require "sample/challenge.jinc"
-from Common require "sample/mask.jinc"
+require "../common/sample/matrix_A.jinc"
+require "../common/sample/challenge.jinc"
+require "../common/sample/mask.jinc"
 
-from Common require "row_vector.jinc"
-from Common require "column_vector.jinc"
+require "../common/row_vector.jinc"
+require "../common/column_vector.jinc"
 
-from Common require "encoding/t0.jinc"
-from Common require "encoding/t1.jinc"
-from Common require "encoding/signature.jinc"
-from Common require "encoding/s1.jinc"
-from Common require "encoding/s2.jinc"
+require "../common/encoding/t0.jinc"
+require "../common/encoding/t1.jinc"
+require "../common/encoding/signature.jinc"
+require "../common/encoding/s1.jinc"
+require "../common/encoding/s2.jinc"
 
 require "sample/error_vectors.jinc"
-from Common require "keygen.jinc"
+require "../common/keygen.jinc"
 
 require "encoding/commitment.jinc"
-from Common require "sign.jinc"
+require "../common/sign.jinc"
 
 require "encoding/commitment.jinc"
-from Common require "verify.jinc"
+require "../common/verify.jinc"
 
 // N.B.: If it seems that some functions seemingly lack annotations to guide the
 // constant-time (CT) checker, it is because it looks for #[sct=...] annotations

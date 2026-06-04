@@ -1,34 +1,34 @@
-from Common require "utilities.jinc"
-from Common require "keccakf1600.jinc"
+require "../common/utilities.jinc"
+require "../common/keccakf1600.jinc"
 
-from Common require "constants.jinc"
+require "../common/constants.jinc"
 require "params.jinc"
-from Common require "hashing.jinc"
+require "../common/hashing.jinc"
 
-from Common require "packing/t1.jinc"
-from Common require "packing/t0.jinc"
+require "../common/packing/t1.jinc"
+require "../common/packing/t0.jinc"
 
-from Common require "reduce.jinc"
-from Common require "ntt.jinc"
+require "../common/reduce.jinc"
+require "../common/ntt.jinc"
 
 require "rounding.jinc"
-from Common require "rounding.jinc"
+require "../common/rounding.jinc"
 
 require "packing/z_streaming.jinc"
 require "packing/z.jinc"
 require "packing/w1.jinc"
 require "packing/eta.jinc"
 require "rej_sample.jinc"
-from Common require "poly.jinc"
-from Common require "challenge.jinc"
+require "../common/poly.jinc"
+require "../common/challenge.jinc"
 
-from Common require "packing/signature.jinc"
-from Common require "packing/signing_key.jinc"
-from Common require "packing/verification_key.jinc"
+require "../common/packing/signature.jinc"
+require "../common/packing/signing_key.jinc"
+require "../common/packing/verification_key.jinc"
 
-from Common require "keygen.jinc"
-from Common require "sign.jinc"
-from Common require "verify.jinc"
+require "../common/keygen.jinc"
+require "../common/sign.jinc"
+require "../common/verify.jinc"
 
 #[ct = "public * secret * secret -> public * secret"]
 export fn ml_dsa_44_keygen(

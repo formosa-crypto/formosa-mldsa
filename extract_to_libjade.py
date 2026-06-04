@@ -30,7 +30,6 @@ def generate_unified_source_file(implementation, target_dir):
     _, _, parameter_set, implementation_type, architecture = implementation.split("_")
 
     impl_root = Path(architecture, implementation_type)
-    common_dir = impl_root / "common"
     ml_dsa_jazz = impl_root / "ml_dsa_{}".format(parameter_set) / "ml_dsa.jazz"
 
     target_file = target_dir / "sig.jazz"
@@ -39,8 +38,6 @@ def generate_unified_source_file(implementation, target_dir):
         subprocess.run(
             [
                 "jasminc",
-                "-I",
-                "Common={}".format(common_dir),
                 "-arch={}".format(architecture),
                 "-ptyping",
                 "-until_typing",

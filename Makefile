@@ -17,7 +17,7 @@ IMPLEMENTATION_SOURCES = $(shell find $(IMPLEMENTATION)/ -type f -name '*.jinc')
 OUTPUT_FILE_NAME = ml_dsa_$(PARAMETER_SET)_$(IMPLEMENTATION_TYPE)_$(ARCHITECTURE)
 
 $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION)/ml_dsa.jazz $(IMPLEMENTATION_SOURCES)
-	env JASMINPATH="Common=$(COMMON)" $(JASMINC) -arch=$(ARCHITECTURE) $(JASMINC_FLAGS) -o $@ $<
+	$(JASMINC) -arch=$(ARCHITECTURE) $(JASMINC_FLAGS) -o $@ $<
 
 # --------------------------------------------------------------------
 #  KAT testing and safety checking
@@ -76,18 +76,18 @@ wycheproof-test: $(TESTING_WRAPPER)
 
 .PHONY: run-interpreter
 run-interpreter: $(IMPLEMENTATION)/example.jazz $(IMPLEMENTATION)/ml_dsa.jazz
-	env JASMINPATH="Common=$(COMMON)" $(JASMINC) -arch=$(ARCHITECTURE) $< | grep 'true'
+	$(JASMINC) -arch=$(ARCHITECTURE) $< | grep 'true'
 
 # --------------------------------------------------------------------
 #  CT and SCT checking
 # --------------------------------------------------------------------
 .PHONY: check-ct
 check-ct: $(IMPLEMENTATION)/ml_dsa.jazz
-	env JASMINPATH="Common=$(COMMON)" $(JASMINCT) --arch=$(ARCHITECTURE) --doit $(JASMINCT_FLAGS) $^
+	$(JASMINCT) --arch=$(ARCHITECTURE) --doit $(JASMINCT_FLAGS) $^
 
 .PHONY: check-sct
 check-sct: $(IMPLEMENTATION)/ml_dsa.jazz
-	env JASMINPATH="Common=$(COMMON)" $(JASMINCT) $(JASMINCT_FLAGS) --speculative $^
+	$(JASMINCT) $(JASMINCT_FLAGS) --speculative $^
 
 # --------------------------------------------------------------------
 #  Benchmarking
