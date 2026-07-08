@@ -36,10 +36,10 @@ $(OUTPUT_FILE_NAME).o: arm-m4/kat_test_wrapper.c $(OUTPUT_FILE_NAME).s
 	-Wall -I$(IMPLEMENTATION) $^ -o $@ -no-pie
 
 TESTING_WRAPPER :=
-ifeq ($(ARCHITECTURE), x86-64)
-	TESTING_WRAPPER = $(OUTPUT_FILE_NAME).so
-else
+ifeq ($(ARCHITECTURE), arm-m4)
 	TESTING_WRAPPER = $(OUTPUT_FILE_NAME).o
+else
+	TESTING_WRAPPER = $(OUTPUT_FILE_NAME).so
 endif
 
 .PHONY: test

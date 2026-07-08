@@ -15,7 +15,7 @@ fn __absorb_to_generate_errors(
 
     i = 0;
     while(i < SEED_FOR_ERROR_VECTORS_SIZE) {
-        byte = rho_prime[i];
+        byte = (32u)rho_prime[i];
         state = __set_byte(state, i, byte);
         i += 1;
     }

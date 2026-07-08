@@ -32,7 +32,8 @@ namespace coefficient {
         temp = (MODULUS - 1) / 2;
         temp -= low_bits;
         temp >>s= 31;
-        temp &= MODULUS;
+        reg u32 modulus_mask = MODULUS;
+        temp &= modulus_mask;
         low_bits -= temp;
 
         return low_bits, high_bits;

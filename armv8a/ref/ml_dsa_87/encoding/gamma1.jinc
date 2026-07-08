@@ -44,12 +44,15 @@ namespace gamma1 {
             // encoded[5*i + 2]  = t0 >> 16;
             encoded_bytes = t0;
             encoded_bytes >>= 16;
-            byte = (8u)encoded_bytes;
+            byte = encoded_bytes;
+            byte &= 0xFF;
 
             // encoded[5*i + 2] |= t1 << 4;
             encoded_bytes = t1;
             encoded_bytes <<= 4;
-            byte |= (8u)encoded_bytes;
+            reg u32 andtmp_0 = encoded_bytes;
+            andtmp_0 &= 0xFF;
+            byte |= andtmp_0;
             reg u64 hoisted_index_1 = output_offset + 2;
             encoded[hoisted_index_1] = byte;
 
