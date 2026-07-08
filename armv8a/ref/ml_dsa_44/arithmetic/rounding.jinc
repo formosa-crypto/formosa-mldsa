@@ -11,7 +11,8 @@ namespace coefficient {
         high_bits >>s= 7;
 
         // Compute (( (ceil(r + 127) >> 7) * 11_275) + (1 << 23) ) >> 24;
-        high_bits *= 11_275;
+        reg u32 mulconst_101 = 11_275;
+        high_bits *= mulconst_101;
         high_bits += (1 << 23);
         high_bits >>s= 24;
 
@@ -37,7 +38,8 @@ namespace coefficient {
         temp = (MODULUS - 1) / 2;
         temp -= low_bits;
         temp >>s= 31;
-        temp &= MODULUS;
+        reg u32 modulus_mask = MODULUS;
+        temp &= modulus_mask;
 
         low_bits -= temp;
 
