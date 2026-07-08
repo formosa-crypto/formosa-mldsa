@@ -1,0 +1,28 @@
+// Byte accesses into the Keccak state at a dynamic offset.
+//
+// AArch64 addressing has no [base, #imm, reg] form: these helpers take the
+// state as a register pointer so that accesses compile to [reg, reg]
+// addressing, and perform the read-modify-write in a 32-bit register
+// (AArch64 has no byte-sized register operations).
+
+inline
+fn __get_byte(reg ptr u64[25] state, reg u64 offset) -> reg u32 {
+    reg u32 t;
+    t = (32u)state[:u8 offset];
+    return t;
+}
+
+inline
+fn __set_byte(reg ptr u64[25] state, reg u64 offset, reg u32 v) -> reg ptr u64[25] {
+    state[:u8 offset] = (8u)v;
+    return state;
+}
+
+inline
+fn __xor_byte(reg ptr u64[25] state, reg u64 offset, reg u32 v) -> reg ptr u64[25] {
+    reg u32 t;
+    t = (32u)state[:u8 offset];
+    t ^= v;
+    state[:u8 offset] = (8u)t;
+    return state;
+}

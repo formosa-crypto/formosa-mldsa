@@ -21,10 +21,16 @@ class ML_DSA(ABC):
 
 
 class ML_DSA_X86_64(ML_DSA):
+    # Architecture suffix used to locate the shared library. Subclasses that
+    # reuse this ctypes-based calling code (e.g. a natively-built AArch64
+    # shared object) only need to override this.
+    arch_suffix = "x86-64"
+
     def __init__(self, parameter_set, implementation_type):
-        ml_dsa_so_name = "ml_dsa_{}_{}_x86-64.so".format(
+        ml_dsa_so_name = "ml_dsa_{}_{}_{}.so".format(
             parameter_set,
             implementation_type,
+            self.arch_suffix,
         )
         ml_dsa = ctypes.PyDLL(Path(__file__).parent.parent / ml_dsa_so_name)
 
@@ -124,6 +130,13 @@ class ML_DSA_X86_64(ML_DSA):
             context_message_sizes,
             self.bytearray_to_ctype_copy(signature),
         )
+
+
+class ML_DSA_ARMV8A(ML_DSA_X86_64):
+    # AArch64 (ARMv8-A) runs natively on an arm64 host, so the assembly is
+    # built into a shared object and driven through the exact same ctypes
+    # calling code as the x86-64 backend; only the library name differs.
+    arch_suffix = "armv8a"
 
 
 class ML_DSA_ARM_M4(ML_DSA):

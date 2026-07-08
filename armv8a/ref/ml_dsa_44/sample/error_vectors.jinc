@@ -1,0 +1,183 @@
+from Common require "byte_utils.jinc"
+// N.B.: This file varies according to parameter set.
+
+inline
+fn __absorb_to_generate_errors(
+    reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
+    reg u32 index
+) -> stack u64[25] {
+    stack u64[25] state;
+
+    reg u32 byte;
+    reg u64 i;
+
+    state = __keccak_init_ref1(state);
+
+    i = 0;
+    while(i < SEED_FOR_ERROR_VECTORS_SIZE) {
+        byte = rho_prime[i];
+        state = __set_byte(state, i, byte);
+        i += 1;
+    }
+
+    state[:u8 SEED_FOR_ERROR_VECTORS_SIZE] = (8u)index;
+
+    // This can be set to 0 since index is never greater than
+    // ROWS_IN_MATRIX_A + COLUMNS_IN_MATRIX_A.
+    byte = 0;
+    state[:u8 65] = (8u)byte;
+
+    byte = 0x1f;
+    state[:u8 66] = (8u)byte;
+    byte = 0x80;
+    state[:u8 SHAKE256_RATE - 1] = (8u)byte;
+
+    return state;
+}
+
+fn rejection_sample_less_than_eta(
+    reg ptr u64[25] state,
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error,
+    reg u64 sampled
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL], reg u64
+{
+    reg u64 xof_offset;
+    #[public] reg u32 coefficient coefficient_mod_5;
+    reg u32 byte;
+
+    reg bool b;
+
+
+    xof_offset = 0;
+
+    while { b = xof_offset < SHAKE256_RATE; } (b) {
+
+        b = sampled < COEFFICIENTS_IN_POLYNOMIAL;
+        if (b) {
+
+            byte = __get_byte(state, xof_offset);
+
+            coefficient = (32u)byte;
+            #declassify(coefficient);
+            coefficient &= 0x0F;
+
+
+            b = coefficient < 15;
+            if (b) {
+
+                reg u32 mulconst_103 = 26;
+                coefficient_mod_5 = coefficient * mulconst_103;
+                coefficient_mod_5 >>= 7;
+                reg u32 mulconst_4 = 5;
+                coefficient_mod_5 *= mulconst_4;
+
+                coefficient -= coefficient_mod_5;
+
+                coefficient -= ETA;
+                coefficient = -coefficient;
+
+                error[sampled] = coefficient;
+
+                sampled += 1;
+            } else {
+            }
+
+            b = sampled < COEFFICIENTS_IN_POLYNOMIAL;
+            if (b) {
+
+                coefficient = (32u)byte;
+                #declassify(coefficient);
+                coefficient >>= 4;
+
+                b = coefficient < 15;
+                if (b) {
+
+                    reg u32 mulconst_104 = 26;
+                    coefficient_mod_5 = coefficient * mulconst_104;
+                    coefficient_mod_5 >>= 7;
+                    reg u32 mulconst_5 = 5;
+                    coefficient_mod_5 *= mulconst_5;
+
+                    coefficient -= coefficient_mod_5;
+                    coefficient -= ETA;
+                    coefficient = -coefficient;
+
+                    error[sampled] = coefficient;
+
+                    sampled += 1;
+                } else {
+                }
+            } else {
+            }
+
+        } else {
+        }
+
+        xof_offset += 1;
+    }
+
+    return error, sampled;
+}
+
+inline
+fn __sample_error_polynomial(
+    reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,
+    inline int i,
+    reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] error
+) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+{
+    reg u64 coefficients_sampled;
+    stack u64[25] state;
+
+    #spill(error);
+    state = __absorb_to_generate_errors(rho_prime, i);
+    state = _keccakf1600_ref1(state);
+    #unspill(error);
+
+    coefficients_sampled = 0;
+    error, coefficients_sampled = rejection_sample_less_than_eta(state, error, coefficients_sampled);
+
+    while (coefficients_sampled < COEFFICIENTS_IN_POLYNOMIAL) {
+        #spill(coefficients_sampled, error);
+        state = _keccakf1600_ref1(state);
+        #unspill(coefficients_sampled, error);
+
+        error, coefficients_sampled = rejection_sample_less_than_eta(state, error, coefficients_sampled);
+    }
+
+    return error;
+}
+
+namespace sample {
+    inline
+    fn __error_vectors(stack u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime)
+        -> #[secret] stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL],
+           #[secret] stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] {
+        stack u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s1;
+        stack u32[ROWS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] s2;
+
+        inline int i;
+
+        for i = 0 to COLUMNS_IN_MATRIX_A {
+            s1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
+                __sample_error_polynomial
+                (
+                    rho_prime,
+                    i,
+                    s1[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
+                );
+        }
+
+        for i = 0 to ROWS_IN_MATRIX_A {
+            s2[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL] =
+                __sample_error_polynomial
+                (
+                    rho_prime,
+                    COLUMNS_IN_MATRIX_A + i,
+                    s2[COEFFICIENTS_IN_POLYNOMIAL * i : COEFFICIENTS_IN_POLYNOMIAL]
+                );
+        }
+
+        return s1, s2;
+    }
+}
