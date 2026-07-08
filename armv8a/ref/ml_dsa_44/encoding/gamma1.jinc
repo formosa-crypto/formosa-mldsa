@@ -1,0 +1,256 @@
+namespace gamma1 {
+    inline
+    fn __encode_polynomial(
+        reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] encoded,
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial
+    ) -> reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE]
+    {
+        reg u32 encoded_byte temp;
+        reg u32 t0 t1 t2 t3;
+
+        reg u64 out_offset = 0;
+        reg u64 i = 0;
+
+        while (i < COEFFICIENTS_IN_POLYNOMIAL) {
+            // t[0] = GAMMA1 - a->coeffs[4*i+0];
+            t0 = GAMMA1;
+            reg u64 hoisted_index_0 = i + 0;
+            reg u32 memop_0 = polynomial[hoisted_index_0];
+            t0 -= memop_0;
+
+            // t[1] = GAMMA1 - a->coeffs[4*i+1];
+            t1 = GAMMA1;
+            reg u64 hoisted_index_1 = i + 1;
+            reg u32 memop_1 = polynomial[hoisted_index_1];
+            t1 -= memop_1;
+
+            // t[2] = GAMMA1 - a->coeffs[4*i+2];
+            t2 = GAMMA1;
+            reg u64 hoisted_index_2 = i + 2;
+            reg u32 memop_2 = polynomial[hoisted_index_2];
+            t2 -= memop_2;
+
+            // t[3] = GAMMA1 - a->coeffs[4*i+3];
+            t3 = GAMMA1;
+            reg u64 hoisted_index_3 = i + 3;
+            reg u32 memop_3 = polynomial[hoisted_index_3];
+            t3 -= memop_3;
+
+            // encoded[9*i+0]  = t[0];
+            // encoded[9*i+1]  = t[0] >> 8;
+            reg u64 hoisted_index_4 = out_offset + 0;
+            encoded[hoisted_index_4] = (8u) t0;
+
+            encoded_byte = t0;
+            encoded_byte >>= 8;
+            reg u64 hoisted_index_5 = out_offset + 1;
+            encoded[hoisted_index_5] = (8u) encoded_byte;
+
+            // encoded[9*i+2]  = t[0] >> 16;
+            // encoded[9*i+2] |= t[1] << 2;
+            encoded_byte = t0 >> 16;
+
+            temp = t1;
+            temp <<= 2;
+
+            encoded_byte |= temp;
+            reg u64 hoisted_index_6 = out_offset + 2;
+            encoded[hoisted_index_6] = (8u) encoded_byte;
+
+            // encoded[9*i+3]  = t[1] >> 6;
+            encoded_byte = t1;
+            encoded_byte >>= 6;
+            reg u64 hoisted_index_7 = out_offset + 3;
+            encoded[hoisted_index_7] = (8u) encoded_byte;
+
+            // encoded[9*i+4]  = t[1] >> 14;
+            // encoded[9*i+4] |= t[2] << 4;
+            encoded_byte = t1 >> 14;
+
+            temp = t2;
+            temp <<= 4;
+
+            encoded_byte |= temp;
+
+            reg u64 hoisted_index_8 = out_offset + 4;
+            encoded[hoisted_index_8] = (8u) encoded_byte;
+
+            // encoded[9*i+5]  = t[2] >> 4;
+            encoded_byte = t2;
+            encoded_byte >>= 4;
+            reg u64 hoisted_index_9 = out_offset + 5;
+            encoded[hoisted_index_9] = (8u) encoded_byte;
+
+            // encoded[9*i+6]  = t[2] >> 12;
+            // encoded[9*i+6] |= t[3] << 6;
+            encoded_byte = t2;
+            encoded_byte >>= 12;
+
+            temp = t3;
+            temp <<= 6;
+            encoded_byte |= temp;
+            reg u64 hoisted_index_10 = out_offset + 6;
+            encoded[hoisted_index_10] = (8u) encoded_byte;
+
+            // encoded[9*i+7]  = t[3] >> 2;
+            encoded_byte = t3;
+            encoded_byte >>= 2;
+            reg u64 hoisted_index_11 = out_offset + 7;
+            encoded[hoisted_index_11] = (8u) encoded_byte;
+
+            // encoded[9*i+8]  = t[3] >> 10;
+            encoded_byte = t3 >> 10;
+            reg u64 hoisted_index_12 = out_offset + 8;
+            encoded[hoisted_index_12] = (8u) encoded_byte;
+
+            i += 4;
+            out_offset += 9;
+        }
+
+        return encoded;
+    }
+
+    inline
+    fn __decode_to_polynomial(
+        reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL] polynomial,
+        reg ptr u8[ENCODED_GAMMA1_POLYNOMIAL_SIZE] bytes
+    ) -> reg ptr u32[COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        inline int GAMMA1_MASK = (1 << BITS_TO_ENCODE_GAMMA1_COEFFICIENT) - 1;
+
+        reg u32 coefficient temp;
+
+        reg u64 output_offset = 0;
+        reg u64 input_offset = 0;
+
+        while (input_offset < ENCODED_GAMMA1_POLYNOMIAL_SIZE) {
+            // r->coeffs[4*i+0]  = bytes[9*i+0];
+            // r->coeffs[4*i+0] |= (uint32_t)bytes[9*i+1] << 8;
+            // r->coeffs[4*i+0] |= (uint32_t)bytes[9*i+2] << 16;
+            // r->coeffs[4*i+0] &= GAMMA1_MASK;
+            // r->coeffs[4*i+0] = GAMMA1 - r->coeffs[4*i+0];
+
+            reg u64 hoisted_index_13 = input_offset + 0;
+            coefficient = (32u)bytes[hoisted_index_13];
+
+            reg u64 hoisted_index_14 = input_offset + 1;
+            temp = (32u)bytes[hoisted_index_14];
+            temp <<= 8;
+            coefficient |= temp;
+
+            reg u64 hoisted_index_15 = input_offset + 2;
+            temp = (32u)bytes[hoisted_index_15];
+            temp <<= 16;
+            coefficient |= temp;
+
+            coefficient &= GAMMA1_MASK;
+
+            coefficient -= GAMMA1;
+            coefficient = -coefficient;
+            reg u64 hoisted_index_16 = output_offset + 0;
+            polynomial[hoisted_index_16] = coefficient;
+
+            // r->coeffs[4*i+1]  = bytes[9*i+2] >> 2;
+            // r->coeffs[4*i+1] |= (uint32_t)bytes[9*i+3] << 6;
+            // r->coeffs[4*i+1] |= (uint32_t)bytes[9*i+4] << 14;
+            // r->coeffs[4*i+1] &= GAMMA1_MASK;
+            // r->coeffs[4*i+1] = GAMMA1 - r->coeffs[4*i+1];
+            reg u64 hoisted_index_17 = input_offset + 2;
+            coefficient = (32u) bytes[hoisted_index_17];
+            coefficient >>= 2;
+
+            reg u64 hoisted_index_18 = input_offset + 3;
+            temp = (32u) bytes[hoisted_index_18];
+            temp <<= 6;
+            coefficient |= temp;
+
+            reg u64 hoisted_index_19 = input_offset + 4;
+            temp = (32u) bytes[hoisted_index_19];
+            temp <<= 14;
+            coefficient |= temp;
+
+            coefficient &= GAMMA1_MASK;
+
+            coefficient -= GAMMA1;
+            coefficient = -coefficient;
+            reg u64 hoisted_index_20 = output_offset + 1;
+            polynomial[hoisted_index_20] = coefficient;
+
+            // r->coeffs[4*i+2]  = bytes[9*i+4] >> 4;
+            // r->coeffs[4*i+2] |= (uint32_t)bytes[9*i+5] << 4;
+            // r->coeffs[4*i+2] |= (uint32_t)bytes[9*i+6] << 12;
+            // r->coeffs[4*i+2] &= GAMMA1_MASK;
+            // r->coeffs[4*i+2] = GAMMA1 - r->coeffs[4*i+2];
+            reg u64 hoisted_index_21 = input_offset + 4;
+            coefficient = (32u) bytes[hoisted_index_21];
+            coefficient >>= 4;
+
+            reg u64 hoisted_index_22 = input_offset + 5;
+            temp = (32u) bytes[hoisted_index_22];
+            temp <<= 4;
+            coefficient |= temp;
+
+            reg u64 hoisted_index_23 = input_offset + 6;
+            temp = (32u) bytes[hoisted_index_23];
+            temp <<= 12;
+            coefficient |= temp;
+
+            coefficient &= GAMMA1_MASK;
+
+            coefficient -= GAMMA1;
+            coefficient = -coefficient;
+            reg u64 hoisted_index_24 = output_offset + 2;
+            polynomial[hoisted_index_24] = coefficient;
+
+            // r->coeffs[4*i+3]  = bytes[9*i+6] >> 6;
+            // r->coeffs[4*i+3] |= (uint32_t)bytes[9*i+7] << 2;
+            // r->coeffs[4*i+3] |= (uint32_t)bytes[9*i+8] << 10;
+            // r->coeffs[4*i+3] &= GAMMA1_MASK;
+            // r->coeffs[4*i+3] = GAMMA1 - r->coeffs[4*i+3];
+            reg u64 hoisted_index_25 = input_offset + 6;
+            coefficient = (32u) bytes[hoisted_index_25];
+            coefficient >>= 6;
+
+            reg u64 hoisted_index_26 = input_offset + 7;
+            temp = (32u) bytes[hoisted_index_26];
+            temp <<= 2;
+            coefficient |= temp;
+
+            reg u64 hoisted_index_27 = input_offset + 8;
+            temp = (32u) bytes[hoisted_index_27];
+            temp <<= 10;
+            coefficient |= temp;
+
+            coefficient &= GAMMA1_MASK;
+
+            coefficient -= GAMMA1;
+            coefficient = -coefficient;
+            reg u64 hoisted_index_28 = output_offset + 3;
+            polynomial[hoisted_index_28] = coefficient;
+
+            input_offset += 9;
+            output_offset += 4;
+       }
+
+        return polynomial;
+    }
+
+    inline
+    fn __decode(
+        reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL] decoded,
+        reg ptr u8[GAMMA1_ENCODED_SIZE] encoded
+    ) -> reg ptr u32[COLUMNS_IN_MATRIX_A * COEFFICIENTS_IN_POLYNOMIAL]
+    {
+        inline int i;
+
+        for i = 0 to COLUMNS_IN_MATRIX_A {
+            decoded[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL] =
+                __decode_to_polynomial(
+                    decoded[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
+                    encoded[i * ENCODED_GAMMA1_POLYNOMIAL_SIZE : ENCODED_GAMMA1_POLYNOMIAL_SIZE]
+                );
+        }
+
+        return decoded;
+    }
+}

@@ -1,0 +1,109 @@
+namespace coefficient {
+    inline
+    fn __power2round(reg u32 r) -> reg u32, reg u32 {
+        /*
+        int32_t a1; //high bits
+
+        a1 = (a + (1 << (D-1)) - 1) >> D;
+        *a0 = a - (a1 << D);
+        */
+        reg u32 highbits, lowbits;
+        reg u32 v32;
+
+        highbits = r;
+        highbits += (1 << (BITS_IN_LOWER_PART_OF_T - 1)) - 1;
+        highbits >>= BITS_IN_LOWER_PART_OF_T;
+
+        v32 = highbits;
+        v32 <<= BITS_IN_LOWER_PART_OF_T;
+
+        lowbits = r;
+        lowbits -= v32;
+
+        return highbits, lowbits;
+    }
+
+    inline
+    fn __make_hint(reg u32 a0, reg u32 a1) -> reg u32 {
+        reg u32 result;
+        reg bool condition;
+
+        result = 0;
+
+        // AArch64 CMP encodes only a 12-bit immediate; GAMMA2 exceeds that,
+        // so materialize the two bounds into registers first.
+        reg u32 gamma2_reg = GAMMA2;
+        reg u32 neg_gamma2_reg = -GAMMA2;
+
+        condition = a0 >s gamma2_reg;
+        #declassify(condition);
+        if (condition) {
+
+            result = 1;
+        } else {
+
+            condition = a0 <s neg_gamma2_reg;
+            #declassify(condition);
+            if (condition) {
+                result = 1;
+            } else {
+
+                condition = a0 == neg_gamma2_reg;
+                #declassify(condition);
+                if (condition) {
+
+                    condition = a1 != 0;
+                    #declassify(condition);
+                    if (condition) {
+                        result = 1;
+                    } else {
+                    }
+                } else {
+                }
+            }
+        }
+
+        return result;
+    }
+
+    inline
+    fn __check_norm(#[secret] reg u32 coefficient, inline int threshold) -> reg u32
+    {
+        reg u32 sign_mask;
+        reg u32 c;
+
+        reg bool sf;
+
+        reg u32 result;
+
+        // This norm is calculated using the absolute value of the
+        // signed representative in the range:
+        //
+        // -FIELD_MODULUS / 2 < r <= FIELD_MODULUS / 2.
+        //
+        // So if the coefficient is negative, get its absolute value, but
+        // don't convert it into a different representation.
+        //
+        // Also, we must not leak the sign of the centralized representative.
+        sign_mask = coefficient;
+        sign_mask >>s= 31;
+
+        c = coefficient;
+        c <<= 1;
+        c &= sign_mask;
+        coefficient = coefficient - c;
+
+        // But it is ok to leak which coefficient violates the bound since
+        // the probability for each coefficient is independent of the secret
+        // data.
+        //
+        // We've used constant-time code here to make CT and SCT checking easier.
+        // AArch64 CMP only encodes a 12-bit immediate; the bound can exceed
+        // that, so materialize it into a register first.
+        reg u32 threshold_reg = threshold;
+        sf, _, _, _ = #CMP_32(coefficient, threshold_reg);
+        result = #CSETM_32(!sf);
+
+        return result;
+    }
+}
