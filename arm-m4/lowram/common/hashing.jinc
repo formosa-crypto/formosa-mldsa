@@ -341,9 +341,9 @@ inline fn __derive_commitment_hash
         pstate[:u8 pos] = s;
         pos += 1; ctr += 1;
         if (pos == SHAKE256_RATE) {
-            #spill(ctr, pos, m);
+            #spill(ctr, m);
             pstate = _keccakf1600_ref(pstate);
-            #unspill(ctr, pos, m);
+            #unspill(ctr, m);
             pos = 0;
         }
     }
@@ -374,10 +374,10 @@ fn _shake256_absorb_w1_element
         ctr += 1;
 
         if (pos == SHAKE256_RATE) {
-            pos = 0;
-            #spill(ctr, pos, w1_element);
+            #spill(ctr, w1_element);
             pstate = _keccakf1600_ref(pstate);
-            #unspill(ctr, pos, w1_element);
+            #unspill(ctr, w1_element);
+            pos = 0;
         }
     }
 
@@ -409,9 +409,9 @@ fn _shake256_inc_absorb_mem_naive(
         mlen -= 1;
 
         if (pos == SHAKE256_RATE) {
-            #spill(m, mlen, pos);
+            #spill(m, mlen);
             pstate = _keccakf1600_ref(pstate);
-            #unspill(m, mlen, pos);
+            #unspill(m, mlen);
             pos = 0;
         }
 
