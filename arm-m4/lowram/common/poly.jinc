@@ -386,13 +386,13 @@ fn _poly_generate_challenge(
     while (j < N) {
         while {
             if (pos >= SHAKE256_RATE) {
-                pos = 0;
-
-                #spill(j, challenge, pos);
+                #spill(j, challenge);
                 s_signs = #copy(signs);
                 state = _keccakf1600_ref(state);
 
-                #unspill(j, challenge, pos);
+                pos = 0;
+
+                #unspill(j, challenge);
                 signs = #copy(s_signs);
             }
 

@@ -180,14 +180,13 @@ inline fn __verify_internal(
 
                             w1_element_packed = compressed_w_element[0 : POLYW1_PACKEDBYTES];
                             w1_element_packed = _polyw1_pack(w1_element_packed, polynomial);
+                            compressed_w_element[0 : POLYW1_PACKEDBYTES] = w1_element_packed;
 
                             ptr_to_xof_state = state_256;
                             #unspill(pos);
                             ptr_to_xof_state, pos = _shake256_absorb_w1_element(ptr_to_xof_state, pos, w1_element_packed);
                             #spill(pos);
                             state_256 = ptr_to_xof_state;
-
-                            compressed_w_element[0 : POLYW1_PACKEDBYTES] = w1_element_packed;
                         }
                     }
                 }

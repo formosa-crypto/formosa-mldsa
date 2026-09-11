@@ -377,9 +377,9 @@ inline fn __derive_commitment_hash
         pstate[:u8 pos] = s;
         pos += 1; ctr += 1;
         if (pos == SHAKE256_RATE) {
-            #spill(ctr, pos, m);
+            #spill(ctr, m);
             pstate = _keccakf1600_ref(pstate);
-            #unspill(ctr, pos, m);
+            #unspill(ctr, m);
             pos = 0;
         }
     }
