@@ -336,7 +336,8 @@ fn _hash_verification_key(
         j += 1;
     }
 
-    pstate = __add_block_end(pstate, j * 4, SHAKE256_RATE);
+    j <<= 2;
+    pstate = _shake256_add_block_end(pstate, j);
 
     pstate = _keccakf1600_ref(pstate);
 
