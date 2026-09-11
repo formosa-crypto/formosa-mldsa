@@ -48,7 +48,13 @@ fn _small_poly_invert_ntt(reg ptr u16[N] rp) -> reg ptr u16[N]
         len <<= 1;
     }
 
-    zeta = 1441;
+    // 512 = (2^16 mod q) * 128^{-1} mod q.
+    // This performs the true inverse-NTT normalization (multiply by 128^{-1})
+    // so that _small_poly_ntt followed by _small_poly_invert_ntt is the exact
+    // identity. (Using 1441 = (2^16)^2 * 128^{-1} instead leaves an extra
+    // Montgomery factor of 2^16 mod q, which is only appropriate when the
+    // inverse is paired with a Montgomery-reducing basemul.)
+    zeta = 512;
     j = 0;
     while (j < N)
     {
