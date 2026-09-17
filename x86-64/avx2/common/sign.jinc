@@ -201,7 +201,7 @@ fn __sign_internal(
                 infinity_norm_check_result =
                     polynomial::__check_infinity_norm(
                         signer_response[i * COEFFICIENTS_IN_POLYNOMIAL : COEFFICIENTS_IN_POLYNOMIAL],
-                        (int) (GAMMA1 - BETA)
+                        GAMMA1 - BETA
                     );
             }
         }
@@ -224,7 +224,7 @@ fn __sign_internal(
 
                 w0_minus_cs2 = polynomial::reduce32(w0_minus_cs2);
 
-                infinity_norm_check_result = polynomial::__check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
+                infinity_norm_check_result = polynomial::__check_infinity_norm(w0_minus_cs2, GAMMA2 - BETA);
                 #declassify(infinity_norm_check_result);
 
                 if(infinity_norm_check_result == 0) {

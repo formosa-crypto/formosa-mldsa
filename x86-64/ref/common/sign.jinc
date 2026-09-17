@@ -139,7 +139,7 @@ fn __sign_internal(
         cs1 = row_vector::invert_ntt_montgomery(cs1);
         signer_response = row_vector::__add(cs1, mask);
         signer_response = row_vector::reduce32(signer_response);
-        infinity_norm_check_result = row_vector::__check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
+        infinity_norm_check_result = row_vector::__check_infinity_norm(signer_response, GAMMA1 - BETA);
         #declassify(infinity_norm_check_result);
 
         _ = #init_msf();
@@ -149,7 +149,7 @@ fn __sign_internal(
             cs2 = column_vector::invert_ntt_montgomery(cs2);
             w0_minus_cs2 = column_vector::__subtract(w0, cs2);
             w0_minus_cs2 = column_vector::reduce32(w0_minus_cs2);
-            infinity_norm_check_result = column_vector::__check_infinity_norm(w0_minus_cs2, (int) (GAMMA2 - BETA));
+            infinity_norm_check_result = column_vector::__check_infinity_norm(w0_minus_cs2, GAMMA2 - BETA);
             #declassify(infinity_norm_check_result);
 
             _ = #init_msf();

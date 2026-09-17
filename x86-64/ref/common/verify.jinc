@@ -114,7 +114,7 @@ fn __verify_internal(
 
     signer_response = gamma1::__decode(signer_response, signature_encoded[COMMITMENT_HASH_SIZE: GAMMA1_ENCODED_SIZE]);
 
-    signer_response_outside_bounds = row_vector::__check_infinity_norm(signer_response, (int) (GAMMA1 - BETA));
+    signer_response_outside_bounds = row_vector::__check_infinity_norm(signer_response, GAMMA1 - BETA);
     #declassify(signer_response_outside_bounds);
     _ = #init_msf();
     if (signer_response_outside_bounds == 0) {
