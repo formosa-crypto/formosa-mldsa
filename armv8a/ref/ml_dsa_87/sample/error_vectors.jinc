@@ -1,4 +1,4 @@
-from Common require "byte_utils.jinc"
+require "../../common/byte_utils.jinc"
 // N.B.: This file varies according to parameter set.
 
 inline

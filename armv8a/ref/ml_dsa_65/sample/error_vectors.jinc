@@ -1,4 +1,4 @@
-from Common require "byte_utils.jinc"
+require "../../common/byte_utils.jinc"
 inline
 fn __absorb_to_generate_errors(
     reg ptr u8[SEED_FOR_ERROR_VECTORS_SIZE] rho_prime,

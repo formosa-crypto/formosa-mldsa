@@ -1,4 +1,4 @@
-from Common require "byte_utils.jinc"
+require "../byte_utils.jinc"
 inline
 fn __absorb_for_shake128(
     reg ptr u64[25] state,

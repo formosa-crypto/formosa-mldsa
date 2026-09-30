@@ -1,4 +1,4 @@
-from Common require "byte_utils.jinc"
+require "byte_utils.jinc"
 inline
 fn __prepare_state_for_shake256(
     reg ptr u8[32] randomness,
@@ -97,7 +97,6 @@ fn __keygen_internal(
 
         i += 1;
     }
-    seed_for_signing = seed_for_signing_p;
 
     signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY : S1_ENCODED_SIZE] =
         s1::__encode(signing_key[START_OF_S1_IN_ENCODED_SIGNING_KEY: S1_ENCODED_SIZE], s1);
@@ -130,7 +129,6 @@ fn __keygen_internal(
 
         i += 1;
     }
-    seed_for_matrix_A = seed_for_matrix_A_p2;
 
     verification_key[32: T1_ENCODED_SIZE]
     = t1::__encode(verification_key[32: T1_ENCODED_SIZE], t1);
@@ -151,7 +149,6 @@ fn __keygen_internal(
 
         i += 1;
     }
-    verification_key_hash = verification_key_hash_p;
 
     signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE]
     = t0::__encode(signing_key[START_OF_T0_IN_ENCODED_SIGNING_KEY: T0_ENCODED_SIZE], t0);

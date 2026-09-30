@@ -1,4 +1,4 @@
-from Common require "arithmetic/ntt.jinc"
+require "arithmetic/ntt.jinc"
 
 require "polynomial.jinc"
 
