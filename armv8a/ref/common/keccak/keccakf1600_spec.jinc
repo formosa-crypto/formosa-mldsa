@@ -1,0 +1,36 @@
+inline fn __index_spec(inline int x y) -> inline int
+{
+  inline int r;
+  r = (x % 5) + 5 * (y % 5);
+  return r;
+}
+
+
+inline fn __keccak_rho_offsets_spec(inline int i) -> inline int
+{
+  inline int r x y z t;
+
+  r = 0;
+  x = 1;
+  y = 0;
+
+  for t = 0 to 24 {
+    if (i == x + 5 * y) {
+      r = ((t + 1) * (t + 2) / 2) % 64;
+    }
+    z = (2 * x + 3 * y) % 5;
+    x = y;
+    y = z;
+  }
+
+  return r;
+}
+
+
+inline fn __rhotates_spec(inline int x y) -> inline int
+{
+  inline int i r;
+  i = __index_spec(x, y);
+  r = __keccak_rho_offsets_spec(i);
+  return r;
+}

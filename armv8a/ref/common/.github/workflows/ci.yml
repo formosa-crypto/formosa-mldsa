@@ -1,0 +1,42 @@
+name: Check EasyCrypt security proofs
+
+on:
+    push:
+        branch:
+            - 'main'
+    pull_request:
+
+env:
+    OPAMROOT: /home/charlie/.opam
+    OPAMYES: true
+    OPAMJOBS: 2
+    ECRJOBS: 1
+
+jobs:
+    default:
+        runs-on: ubuntu-latest
+        container:
+            image: ghcr.io/easycrypt/ec-build-box
+        steps:
+            -   uses: actions/checkout@v4
+                name: Initialize submodules
+                with:
+                    submodules: recursive
+            -   uses: actions/checkout@v4
+                name: Checkout EasyCrypt
+                with:
+                    repository: EasyCrypt/easycrypt
+                    ref: ${{ format('refs/heads/{0}', 'main') }}
+                    path: easycrypt
+            -   name: Update OPAM and EasyCrypt dependencies
+                run: |
+                    opam update
+                    opam pin add -n easycrypt easycrypt
+                    opam install --deps-only --depext-only --confirm-level=unsafe-yes easycrypt
+                    opam install --deps-only easycrypt
+            -   name: Install EasyCrypt
+                run: opam install easycrypt
+            -   name: Configure SMT provers
+                run: opam config exec -- easycrypt why3config -why3 ~/.why3.conf
+            -   name: Check project (security)
+                run: opam config exec -- make ECFLAGS="-jobs 1" check
