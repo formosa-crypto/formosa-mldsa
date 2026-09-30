@@ -102,7 +102,9 @@ namespace coefficient {
         // that, so materialize it into a register first.
         reg u32 threshold_reg = threshold;
         sf, _, _, _ = #CMP_32(coefficient, threshold_reg);
-        result = #CSETM_32(!sf);
+        reg u32 zero = 0;
+        result = -1;
+        result = zero if sf;
 
         return result;
     }

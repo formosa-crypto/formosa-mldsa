@@ -96,15 +96,19 @@ namespace signature {
         reg u64 previous_true_hints_seen current_true_hints_seen;
         reg u64 decoded_offset encoded_offset ill_formed_hint;
 
+        reg u64 one;
+
         ill_formed_hint = 0;
         zero_coefficient = 0;
         one_coefficient = 1;
+        one = 1;
         previous_true_hints_seen = 0;
 
         encoded_offset = 0;
         while {
             within_bounds = encoded_offset >= ROWS_IN_MATRIX_A;
-            done = #CSET(within_bounds);
+            done = 0;
+            done = one if within_bounds;
             done |= ill_formed_hint;
         } (done == 0) {
             decoded_offset = encoded_offset;
@@ -130,7 +134,8 @@ namespace signature {
 
                     while {
                         within_bounds = j >= current_true_hints_seen;
-                        done = #CSET(within_bounds);
+                        done = 0;
+                        done = one if within_bounds;
                         done |= ill_formed_hint;
                     } (done == 0) {
                         // Coefficients are ordered for strong unforgeability
@@ -166,7 +171,8 @@ namespace signature {
         encoded_offset = previous_true_hints_seen;
         while {
             within_bounds = encoded_offset >= MAX_ONES_IN_HINT;
-            done = #CSET(within_bounds);
+            done = 0;
+            done = one if within_bounds;
             done |= ill_formed_hint;
         } (done == 0) {
             hint = (64u)hint_encoded[encoded_offset];
