@@ -127,10 +127,12 @@ class ML_DSA_X86_64(ML_DSA):
 
 
 class ML_DSA_ARM_M4(ML_DSA):
-    def __init__(self, parameter_set, implementation_type):
+    # The executable is cross-compiled for arm-m4 or for armv8m, and run
+    # through QEMU.
+    def __init__(self, parameter_set, implementation_type, architecture="arm-m4"):
         self.parameter_set = parameter_set
-        self.wrapper_name = "./ml_dsa_{}_{}_arm-m4.o".format(
-            parameter_set, implementation_type
+        self.wrapper_name = "./ml_dsa_{}_{}_{}.o".format(
+            parameter_set, implementation_type, architecture
         )
 
         if parameter_set == "44":
