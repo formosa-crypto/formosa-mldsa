@@ -15,8 +15,8 @@ def pytest_addoption(parser):
         "--architecture",
         action="store",
         default="amd64",
-        help="CPU architecture: x86-64 or arm-m4",
-        choices=("x86-64", "arm-m4"),
+        help="CPU architecture: x86-64, arm-m4 or armv8m",
+        choices=("x86-64", "arm-m4", "armv8m"),
     )
     parser.addoption(
         "--implementation-type",
@@ -40,6 +40,7 @@ def ml_dsa(request):
         return ml_dsa_wrapper.ML_DSA_ARM_M4(
             request.config.getoption("--parameter-set"),
             request.config.getoption("--implementation-type"),
+            architecture,
         )
 
 

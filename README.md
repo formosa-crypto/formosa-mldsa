@@ -1,7 +1,7 @@
 formosa-mldsa
 =======
 
-Jasmin implementations of the pure, hedged version of ML-DSA for **x86-64** and **ARMv7M**.
+Jasmin implementations of the pure, hedged version of ML-DSA for **x86-64** and **ARMv7M** (also compiled for **ARMv8-M**).
 
 - [Overview](#overview)
 - [Quickstart](#quickstart)
@@ -43,6 +43,11 @@ This repository contains, for all parameter sets, the following implementations 
 
 1. A reference implementation (found under `arm-m4/ref`).
 2. An implementation that minimizes use of stack space (found under `arm-m4/lowram`).
+
+Both are also compiled for ARMv8-M with the Main and DSP extensions (e.g., the
+Cortex-M33), with `ARCHITECTURE=armv8m`: this architecture has the instructions
+of ARMv7M, and the Jasmin compiler checks data independent timing against the
+Armv8-M Architecture Reference Manual.
 
 ## Quickstart
 

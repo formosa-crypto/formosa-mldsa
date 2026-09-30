@@ -2,8 +2,12 @@ ARCHITECTURE ?= arm-m4
 PARAMETER_SET ?= 65
 IMPLEMENTATION_TYPE ?= ref
 
-COMMON = $(ARCHITECTURE)/$(IMPLEMENTATION_TYPE)/common
-IMPLEMENTATION = $(ARCHITECTURE)/$(IMPLEMENTATION_TYPE)/ml_dsa_$(PARAMETER_SET)
+# ARMv8-M (e.g., the Cortex-M33) has the instructions of ARMv7-M: the
+# implementations of arm-m4 are compiled for it.
+SOURCES_ARCHITECTURE = $(if $(filter armv8m,$(ARCHITECTURE)),arm-m4,$(ARCHITECTURE))
+
+COMMON = $(SOURCES_ARCHITECTURE)/$(IMPLEMENTATION_TYPE)/common
+IMPLEMENTATION = $(SOURCES_ARCHITECTURE)/$(IMPLEMENTATION_TYPE)/ml_dsa_$(PARAMETER_SET)
 
 JASMINC ?= jasminc
 JASMINCT ?= jasmin-ct
@@ -26,7 +30,8 @@ $(OUTPUT_FILE_NAME).s: $(IMPLEMENTATION)/ml_dsa.jazz $(IMPLEMENTATION_SOURCES)
 $(OUTPUT_FILE_NAME).so: $(OUTPUT_FILE_NAME).s
 	$(CC) $^ -fPIC -shared -o $@
 
-# For ARM-M4: Generate a cross-compiled executable to be called by python.
+# For ARM-M4 and ARMv8-M: Generate a cross-compiled executable to be called by
+# python.
 CROSS_COMPILER ?= arm-none-linux-gnueabihf-gcc
 $(OUTPUT_FILE_NAME).o: arm-m4/kat_test_wrapper.c $(OUTPUT_FILE_NAME).s
 	$(CROSS_COMPILER) \
